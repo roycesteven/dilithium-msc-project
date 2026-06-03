@@ -45,3 +45,22 @@ witness can carry noise that grows across long payment-channel chains.
 
 ## Reference
 LAS paper: eprint 2020/845. poqeth (integration template): eprint 2025/091.
+
+## LAS implementation update
+
+Implemented LAS adaptor signature as a separate module in the Dilithium reference implementation.
+
+Files added/modified:
+- `ref/las.c`: LAS core implementation.
+- `ref/las.h`: LAS public API.
+- `ref/test/test_las.c`: LAS correctness tests.
+- `ref/Makefile`: added LAS test targets for Dilithium modes 2, 3, and 5.
+- `ref/test/.gitignore`: added generated LAS test binaries.
+
+Design choice:
+- `ref/sign.c` remains unchanged to preserve the original Dilithium signing API.
+- LAS is implemented separately using Dilithium reference primitives.
+
+Test result:
+- LAS tests passed for modes 2, 3, and 5.
+- Each test reported `LAS (variant B, eprint 2020/845 Alg.2) OK: 200 iterations`.
