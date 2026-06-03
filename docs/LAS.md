@@ -382,6 +382,41 @@ lattice setting; our exact-extraction parameterisation sidesteps it for the demo
 
 ---
 
+### 7.4 A scriptless-script ledger (`ref/chain.{c,h}`, `ref/test/test_pcn.c`)
+
+To show LAS in a setting closer to a real blockchain, `chain.{c,h}` provide a small
+ledger abstraction: accounts with balances, a block height, and *adaptor-locked
+contracts* that are the scriptless analogue of a Hash-Time-Locked Contract (HTLC):
+
+- the **hash lock** is replaced by an adaptor statement `Y` — claiming requires the
+  witness `y`;
+- the **time lock** is a timeout block height — the funder may refund after it.
+
+The chain stores only public data (public keys, statements, (pre-)signatures); the
+secret keys and the `PreSign`/`Adapt` steps live in the parties' wallets, exactly as
+on a real chain. `chain_fund_swap` *pre-verifies* the funder's pre-signature before
+escrowing funds; `chain_claim_swap` *verifies* the adapted signature, pays the
+beneficiary and records it on-chain (revealing `y`); `chain_refund_swap` is gated on
+`height ≥ timeout`; `chain_extract_witness` recovers `y` from a claimed contract.
+
+`test_pcn.c` runs three hard-asserted scenarios:
+
+1. **Cross-chain atomic swap (happy path).** Alice locks 10 on chain A to Bob and
+   Bob locks 10 on chain B to Alice, both to the same `Y`. Bob claims on A (revealing
+   `y`); Alice extracts `y` and claims on B. Both legs settle (`A: 90/10, B: 10/90`).
+2. **Timeout / refund (unhappy path).** No one claims. A refund *before* the timeout
+   is rejected; after advancing the block height past each timeout both parties
+   refund and balances return to their initial values — no coins lost. The two legs
+   use *laddered* timeouts so the second claimant always has a safety window.
+3. **Multi-hop payment (a PCN).** Carol issues an invoice `(Y, y)`. Alice pays Bob
+   (11, outer/longer timeout) and Bob pays Carol (10, inner/shorter timeout), both
+   locked to the *same* `Y`. Carol pulls the inner hop with `y` (revealing it); Bob
+   extracts `y` and pulls the outer hop, recovering his forwarded 10 plus a 1 fee
+   (`Alice 89, Bob 101, Carol 10`). One secret cascades the payment along the route.
+
+This is the headline thesis artefact: a **working** post-quantum scriptless
+swap / payment-channel network, not merely the primitive in isolation.
+
 ## 8. Performance (measured)
 
 Wall-clock microseconds per operation, mode 3, 2000 iterations/op, on the build
@@ -470,6 +505,7 @@ Reading this honestly for the report:
 cd ref
 make test/test_las3   && ./test/test_las3     # functional tests
 make test/test_swap3  && ./test/test_swap3    # narrated atomic swap + asserts
+make test/test_pcn3   && ./test/test_pcn3     # scriptless HTLCs: swap / refund / PCN
 make test/bench_las3  && ./test/bench_las3    # per-operation timings
 make test/bench_compare3 && ./test/bench_compare3  # LAS vs optimised Dilithium-3
 ```

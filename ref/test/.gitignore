@@ -14,3 +14,4 @@ test_las5
 test_swap3
 bench_las3
 bench_compare3
+test_pcn3

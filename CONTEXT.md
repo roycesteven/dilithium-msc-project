@@ -11,6 +11,9 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   modes 2/3/5, zero compiler warnings.
 - ✅ **Atomic-swap demo** — `ref/test/test_swap.c` (narrated two-party, two-chain
   swap with assertions).
+- ✅ **Realistic chain integration** — `ref/chain.{c,h}` (scriptless-HTLC ledger:
+  accounts, block height, adaptor-locked contracts with claim + timeout-refund) +
+  `ref/test/test_pcn.c` (atomic-swap happy path, timeout/refund, multi-hop PCN).
 - ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings) and
   `ref/test/bench_compare.c` (LAS vs optimised Dilithium-3). Adaptor overhead is
   negligible (`PreSign≈Sign`, `PreVerify≈Verify`).
