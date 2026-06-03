@@ -18,8 +18,8 @@
 #include <stddef.h>
 #include "las.h"
 
-#define CHAIN_MAXACC   4
-#define CHAIN_MAXC     4
+#define CHAIN_MAXACC   8
+#define CHAIN_MAXC     8
 #define CHAIN_NAMELEN  16
 #define CHAIN_MSGLEN   64
 
@@ -65,6 +65,14 @@ long chain_balance(const chain *ch, int acc);
 int  chain_fund_swap(chain *ch, int from, int to, long amount,
                      const las_pk *Y, const las_sig *presig,
                      const uint8_t *claimmsg, size_t claimlen, uint64_t timeout);
+
+/* AMHL variant: identical to chain_fund_swap but pre-verifies with the K-hop
+ * bound g-k-K (las_preverify_k), as required when the route has K hops and the
+ * cumulative witness opening a hop may have infinity-norm up to K. */
+int  chain_fund_swap_k(chain *ch, int from, int to, long amount,
+                       const las_pk *Y, const las_sig *presig,
+                       const uint8_t *claimmsg, size_t claimlen, uint64_t timeout,
+                       unsigned int nhops);
 
 /* Beneficiary submits an `adapted` signature. The chain VERIFIES it against the
  * pre-authorised claim message and the funder's public key; on success it pays

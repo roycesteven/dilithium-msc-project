@@ -312,6 +312,64 @@ int las_preverify(const las_sig *presig, const uint8_t *m, size_t mlen,
   return poly_equal(&c2, &presig->c) ? 0 : -1;
 }
 
+/* AMHL K-hop PreSign: identical to las_presign but rejects at the tighter bound
+ * g-k-K (LAS_BOUND_PRESIGN_K), reserving norm budget K for the cumulative witness. */
+void las_presign_k(las_sig *presig, const uint8_t *m, size_t mlen,
+                   const las_pk *Y, const las_pk *pk, const las_sk *sk,
+                   const las_pp *pp, unsigned int nhops) {
+  uint8_t seed[64];
+  uint16_t nonce = 0;
+  unsigned int j;
+  poly y[LAS_M], w[LAS_N], wY[LAS_N], cr, c;
+
+  randombytes(seed, 64);
+  for(;;) {
+    for(j = 0; j < LAS_M; ++j)
+      sample_Sgamma(&y[j], seed, 64, nonce++);
+    las_Amul(w, pp, y);                         /* w = A y                 */
+    for(j = 0; j < LAS_N; ++j) {                 /* commit = w + Y          */
+      poly_add(&wY[j], &w[j], &Y->t[j]);
+      poly_reduce(&wY[j]);
+      poly_caddq(&wY[j]);
+    }
+    hash_challenge(&c, pk, wY, m, mlen);          /* c = H(pk, w+Y, M)       */
+    for(j = 0; j < LAS_M; ++j) {                  /* z^ = y + c r            */
+      polymul(&cr, &c, &sk->s[j]);
+      poly_add(&presig->z[j], &y[j], &cr);
+      poly_reduce(&presig->z[j]);
+    }
+    if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops)))  /* tighter bound g-k-K */
+      continue;
+    presig->c = c;
+    return;
+  }
+}
+
+int las_preverify_k(const las_sig *presig, const uint8_t *m, size_t mlen,
+                    const las_pk *Y, const las_pk *pk, const las_pp *pp,
+                    unsigned int nhops) {
+  poly w[LAS_N], wY[LAS_N], ct, c2;
+  unsigned int j;
+
+  if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops)))
+    return -1;
+
+  las_Amul(w, pp, presig->z);                    /* A z^                    */
+  for(j = 0; j < LAS_N; ++j) {                    /* w' = A z^ - c t         */
+    polymul(&ct, &presig->c, &pk->t[j]);
+    poly_sub(&w[j], &w[j], &ct);
+    poly_reduce(&w[j]);
+    poly_caddq(&w[j]);
+  }
+  for(j = 0; j < LAS_N; ++j) {                    /* w' + Y                  */
+    poly_add(&wY[j], &w[j], &Y->t[j]);
+    poly_reduce(&wY[j]);
+    poly_caddq(&wY[j]);
+  }
+  hash_challenge(&c2, pk, wY, m, mlen);            /* check c == H(pk,w'+Y,M) */
+  return poly_equal(&c2, &presig->c) ? 0 : -1;
+}
+
 int las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen,
               const las_pk *Y, const las_sk *y, const las_pk *pk, const las_pp *pp) {
   unsigned int j;
