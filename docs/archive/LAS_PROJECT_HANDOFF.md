@@ -1,6 +1,19 @@
 # LAS Project — Context Handoff for Cowork
 
-> Purpose: full project context so Cowork can help verify Claude Code's implementation, continue the build, and draft the thesis. Drop this at the root of your Cowork project. Read it first.
+> **ARCHIVE — superseded as of 2026-06-03.**
+> This document reflects the project state at mid-implementation (core + benchmarks
+> done, chain integration planned). It is kept for historical reference only.
+> **Current truth: `CLAUDE.md` at the repo root.**
+> **Current docs: `docs/LAS.md` and `docs/THEORY_IMPL_BRIDGE.md`.**
+>
+> Key changes since this was written:
+> - Chain integration (same-Y HTLC) is **done** (`ref/chain.{c,h}`, `ref/test/test_pcn.c`).
+> - AMHL (K-hop bound) is **TODO** — see `docs/LAS.md §9`.
+> - Benchmarks updated with measured values and rejection-rate analysis.
+> - Push to GitHub: code is **live on `main`** (PR #1 merged); this document's "403 blocked" note is stale.
+> - `docs/THEORY_IMPL_BRIDGE.md` maps every paper equation to the C implementation.
+
+> Purpose (original): full project context so Cowork can help verify Claude Code's implementation, continue the build, and draft the thesis. Drop this at the root of your Cowork project. Read it first.
 
 ---
 
