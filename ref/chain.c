@@ -33,9 +33,10 @@ long chain_balance(const chain *ch, int acc) {
   return ch->acc[acc].balance;
 }
 
-int chain_fund_swap(chain *ch, int from, int to, long amount,
-                    const las_pk *Y, const las_sig *presig,
-                    const uint8_t *claimmsg, size_t claimlen, uint64_t timeout) {
+int chain_fund_swap_k(chain *ch, int from, int to, long amount,
+                      const las_pk *Y, const las_sig *presig,
+                      const uint8_t *claimmsg, size_t claimlen, uint64_t timeout,
+                      unsigned int nhops) {
   swap_contract *k;
   if(ch->nc >= CHAIN_MAXC) return -1;
   if(from < 0 || from >= ch->nacc || to < 0 || to >= ch->nacc) return -1;
@@ -43,8 +44,9 @@ int chain_fund_swap(chain *ch, int from, int to, long amount,
   if(claimlen > CHAIN_MSGLEN) return -1;
 
   /* The chain accepts the funding only if the funder's conditional
-   * authorisation is a well-formed pre-signature bound to Y. */
-  if(las_preverify(presig, claimmsg, claimlen, Y, ch->acc[from].pk, ch->pp) != 0)
+   * authorisation is a well-formed pre-signature bound to Y, checked against the
+   * K-hop bound (K=1 is the single-hop / same-Y case). */
+  if(las_preverify_k(presig, claimmsg, claimlen, Y, ch->acc[from].pk, ch->pp, nhops) != 0)
     return -1;
 
   ch->acc[from].balance -= amount;          /* escrow */
@@ -58,6 +60,13 @@ int chain_fund_swap(chain *ch, int from, int to, long amount,
   k->state = SWAP_OPEN;
   k->adapted_set = 0;
   return ch->nc++;
+}
+
+int chain_fund_swap(chain *ch, int from, int to, long amount,
+                    const las_pk *Y, const las_sig *presig,
+                    const uint8_t *claimmsg, size_t claimlen, uint64_t timeout) {
+  return chain_fund_swap_k(ch, from, to, amount, Y, presig,
+                           claimmsg, claimlen, timeout, 1);
 }
 
 int chain_claim_swap(chain *ch, int cid, const las_sig *adapted) {
