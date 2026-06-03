@@ -14,7 +14,8 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
 - ✅ **Realistic chain integration** — `ref/chain.{c,h}` (scriptless-HTLC ledger:
   accounts, block height, adaptor-locked contracts with claim + timeout-refund) +
   `ref/test/test_pcn.c` (atomic-swap happy path, timeout/refund, multi-hop PCN).
-  **Model:** same-Y scriptless HTLC (all hops share one statement). Not AMHL.
+  **Model:** same-Y scriptless HTLC baseline (all hops share one statement);
+  the distinct-statement AMHL is implemented separately (next bullet).
 - ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings with rejection-rate and
   three-column size table) and `ref/test/bench_compare.c` (LAS vs Dilithium-3).
   Measured: Sign=788µs, Verify=189µs, PreSign=814µs, PreVerify=193µs, Adapt=203µs,
@@ -27,9 +28,13 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   equation mapped to C function/line).
 - ✅ **Code pushed to GitHub** — on branch `main`, up to date with `origin/main`.
   PR #1 merged. No unpushed commits.
-- **TODO: AMHL** — `test_pcn.c` uses same-Y model. The paper's Adaptor Multi-Hop
-  Lock (AMHL) requires per-hop cumulative witnesses `Y_j = A·(l_1+…+l_j)` and
-  PreSign bound `γ−κ−K`. Not yet implemented. See `docs/LAS.md §9`.
+- ✅ **AMHL (multi-hop locks)** — `ref/amhl.{c,h}` + `ref/test/test_amhl.c`
+  (`make test/test_amhl3`). Distinct per-hop cumulative statements
+  `Y_j = A·(l_1+…+l_j)`, PreSign bound `γ−κ−K` (`las_presign_k`/`las_preverify_k`,
+  macro `LAS_BOUND_PRESIGN_K`), `chain_fund_swap_k`. Demo hard-asserts wormhole
+  resistance, witness-norm growth `‖s_j‖∞≤j`, exact cascade recovery, and a
+  timeout/refund path. `test_pcn.c` retained as the same-Y baseline.
+  See `docs/LAS.md §7.5` and `docs/THEORY_IMPL_BRIDGE.md §12.5`.
 
 ## Why this project exists
 - Blockchains sign with ECDSA/Schnorr; Shor's algorithm breaks both. "Post-quantum"
@@ -87,8 +92,9 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
 - Success ladder: (min) working LAS + basic blockchain demo ✅;
   (better) benchmark vs plain Dilithium ✅ (`bench_compare`); (best) a second
   exotic scheme — **open** (needs a choice: ring / threshold / multisig).
-- **TODO: AMHL** — same-Y PCN is implemented; AMHL (K-hop bound, distinct per-hop
-  statements) is next before claiming full PCN completion. ~120 lines of code.
+- ✅ **AMHL done** — K-hop bound (`γ−κ−K`) and distinct per-hop statements
+  implemented (`ref/amhl.{c,h}`, `ref/test/test_amhl.c`); same-Y PCN retained as
+  baseline. Full PCN construction complete.
 - **TODO: report scaffolding** — `docs/LAS.md` has the technical content; the
   8000-word dissertation chapter needs to be drafted from it.
 

@@ -3,9 +3,10 @@
 *Design, implementation, correctness, testing, application and benchmarks.*
 
 This document is the technical reference for the implementation in `ref/las.{c,h}`,
-`ref/test/test_las.c`, `ref/test/test_swap.c` and `ref/test/bench_las.c`. It is
-written to be the source material for the dissertation chapter; section numbering
-maps roughly onto report sections.
+`ref/amhl.{c,h}`, `ref/chain.{c,h}`, and the tests/benchmarks under `ref/test/`
+(`test_las.c`, `test_swap.c`, `test_pcn.c`, `test_amhl.c`, `bench_las.c`,
+`bench_compare.c`). It is written to be the source material for the dissertation
+chapter; section numbering maps roughly onto report sections.
 
 ---
 
@@ -83,9 +84,11 @@ implementation is exact, but in the general lattice setting the extraction can
 carry bounded noise that *accumulates* across long payment-channel paths (the
 "knowledge gap" identified in eprint 2022/1151). For a K-hop path the extraction
 guarantee degrades unless PreSign uses the tighter bound `γ−κ−K` per hop (rather
-than `γ−κ−1`). Our implementation uses the K=1 (single-hop) bound throughout;
-the multi-hop Adaptor Multi-Hop Lock (AMHL) construction from LAS Fig. 2 is
-identified as future work (Section 9).
+than `γ−κ−1`). Both the single-hop case (Sections 4, 7) **and** the full K-hop
+Adaptor Multi-Hop Lock (AMHL) construction from LAS Fig. 2 are now implemented
+(Section 7.5): `las_presign_k` enforces the `γ−κ−K` bound, each hop carries a
+distinct cumulative statement, and the per-hop witness-norm growth `‖s_j‖∞ ≤ j`
+— the concrete face of the knowledge gap — is exhibited directly in the demo.
 
 **poqeth context.** The integration template eprint 2025/091 (poqeth, Erwig et al.)
 put *basic* PQ signatures on Ethereum. Our project extends the same idea to an
@@ -228,6 +231,12 @@ Let `t = A·r` (signer key) and `Y = A·y_w` (statement, witness `y_w`).
   `‖z‖∞ = ‖ẑ + y_w‖∞ ≤ (γ − κ − 1) + 1 = γ − κ`,
   exactly the band ordinary Verify accepts. This one-unit tightening is the whole
   reason Adapt produces in-bounds signatures. ✔
+  **Generalisation to K hops:** if the adapted witness is a *sum* of up to `K`
+  ternary vectors (`‖y_w‖∞ ≤ K`, as in the multi-hop construction of Section 7.5),
+  PreSign must instead accept only `‖ẑ‖∞ ≤ γ − κ − K`, giving
+  `‖z‖∞ ≤ (γ − κ − K) + K = γ − κ` again. This is exactly the paper's `γ−κ−K`
+  bound, implemented as `las_presign_k(…, K)` with the macro `LAS_BOUND_PRESIGN_K`.
+  Setting `K = 1` recovers the single-hop case verbatim.
 
 ### 4.2 The "tripwire": a pre-signature is **not** a signature
 A pre-signature must fail the *ordinary* verifier — otherwise the statement binding
@@ -449,8 +458,10 @@ statement `Y` locks all hops. This is a correct scriptless HTLC but not the pape
 AMHL (Adaptor Multi-Hop Lock). In the same-Y model, observing `y` from any claimed
 hop lets a party adapt *all* other hops locked to `Y` — a wormhole-style weakness on
 longer paths. The paper's AMHL assigns each hop a *different* cumulative statement
-`Y_j = A·(l_1 + … + l_j)` and uses PreSign bound `γ−κ−K` for path length K. The
-implementation of AMHL is identified as future work (Section 9).
+`Y_j = A·(l_1 + … + l_j)` and uses PreSign bound `γ−κ−K` for path length K. **AMHL
+is now implemented** (`ref/amhl.{c,h}`, `ref/test/test_amhl.c`) and described in
+Section 7.5; the same-Y demo below is retained as the simpler baseline that
+isolates the core adaptor mechanism.
 
 `test_pcn.c` runs three hard-asserted scenarios (all pass):
 
@@ -465,10 +476,95 @@ implementation of AMHL is identified as future work (Section 9).
    pulls the inner hop with `y` (revealing it); Bob extracts `y` and pulls the outer
    hop, earning his routing fee. Final: Alice=89, Bob=101, Carol=10.
 
-This is the headline thesis artefact: a **working** post-quantum scriptless swap and
-payment-channel demonstration. The same-Y model is sufficient to prove the adaptor
-mechanism is functional end-to-end; AMHL adds privacy and multi-hop safety but is
-not needed to validate the core construction.
+This is a **working** post-quantum scriptless swap and payment-channel
+demonstration. The same-Y model is sufficient to prove the adaptor mechanism is
+functional end-to-end and is the clearest baseline for isolating it; the
+multi-hop-safe AMHL construction that removes its wormhole weakness is the
+headline multi-hop artefact and is described next in Section 7.5.
+
+### 7.5 Adaptor Multi-Hop Locks — AMHL (`ref/amhl.{c,h}`, `ref/test/test_amhl.c`)
+
+The same-Y ledger of Section 7.4 proves the adaptor mechanism works, but it is
+*not* the paper's payment-channel-network construction. AMHL (LAS Fig. 2 / §5) is,
+and it is the headline multi-hop artefact of this project. It removes the
+same-Y wormhole weakness by giving every hop on a route a **distinct** statement.
+
+#### 7.5.1 Construction
+For a K-hop route `U_0 → U_1 → … → U_K` (sender `U_0`, receiver `U_K`):
+
+```
+Setup (run by the sender U_0, who knows the whole route):
+    sample increments   l_1, …, l_K  ← S_1          (ternary, ‖l_j‖∞ ≤ 1)
+    cumulative witness   s_0 = 0,  s_j = s_{j-1} + l_j = l_1 + … + l_j
+    cumulative statement Y_0 = 0,  Y_j = A·s_j       (so Y_j = Y_{j-1} + A·l_j)
+    Hop j (payer U_{j-1} → payee U_j) is locked to Y_j and opened with s_j.
+
+Secret distribution (least-privilege):
+    receiver U_K      ← s_K                 (the full witness, i.e. the "invoice")
+    intermediary U_j  ← l_{j+1}  only        (1 ≤ j < K)
+
+Pre-signing: every hop uses  las_presign_k(…, K)  → bound γ−κ−K.
+
+Cascade (claims flow right→left, receiver first):
+    U_K  Adapts hop K with s_K and publishes σ_K           ⇒ s_K becomes public
+    U_{j-1} extracts s_j from hop j, computes s_{j-1}=s_j−l_{j+1}, Adapts hop j−1
+    … down to hop 1, which the sender's first counterparty U_1 finally pulls.
+```
+
+The cumulative statements are built additively from the increment key pairs
+(`Y_j = Y_{j-1} + A·l_j`), reusing `las_keygen` to produce each `(A·l_j, l_j)` —
+no new lattice arithmetic. Adapt and Ext are **unchanged** from Section 4: Adapt
+adds the cumulative witness `s_j`, and Ext returns exactly `s_j` (it satisfies
+`A·s_j = Y_j`).
+
+#### 7.5.2 Why each property holds
+- **Distinct statements ⇒ no wormhole.** Because `Y_i ≠ Y_j` for `i ≠ j`, learning
+  the opener `s_j` of one hop reveals nothing usable about a non-adjacent hop.
+  The demo asserts the converse directly: adapting hop 1 with the receiver's secret
+  `s_K` yields a signature that ordinary `Verify` **rejects** (it would force
+  `A·z−c·t = w + Y_K ≠ w + Y_1`, a Fiat–Shamir mismatch). Only the adjacent
+  increment `l_{j+1}` bridges hop `j+1` to hop `j`.
+- **Witness-norm growth (the knowledge gap, made concrete).** `s_j` is a sum of `j`
+  ternary vectors, so `‖s_j‖∞ ≤ j ≤ K`. The demo prints this growth exactly
+  (`‖s_1‖∞ = 1, …, ‖s_4‖∞ = 4`). This is *why* every hop must pre-sign at the
+  tighter bound `γ−κ−K`: the adapted response `z = ẑ + s_j` then still satisfies
+  `‖z‖∞ ≤ (γ−κ−K) + j ≤ γ−κ` and clears ordinary `Verify`.
+- **Exact recovery.** At each hop the extractor recovers `s_j` exactly, and the
+  intermediary recomputes `s_{j-1} = s_j − l_{j+1}` exactly (asserted equal to the
+  setup value). Extraction is noise-free in this parameterisation; the residual
+  *relaxed-relation* knowledge gap is discussed in Section 9.
+- **Timeouts/refund.** Hops carry laddered timeouts (outer hops expire last, so
+  every puller retains a safety window). The refund scenario advances the block
+  height past every timeout and refunds each hop to its funder — no coins lost.
+
+#### 7.5.3 The K-hop bound in practice
+The tightening from `γ−κ−1` to `γ−κ−K` is *cryptographically essential* but has
+**negligible performance cost**: with `γ = 122880` and `K ≤ 8`, the accepted band
+shrinks by at most `K/(γ−κ) ≈ 0.007 %`, so the rejection-sampling acceptance rate
+(Section 8) is indistinguishable from the single-hop case. AMHL therefore adds no
+per-hop *signing* penalty beyond the obvious linear "K hops ⇒ K pre-signatures."
+
+#### 7.5.4 Demo output (mode 3)
+`test_amhl3` runs two hard-asserted scenarios; abridged transcript:
+
+```
+== Scenario 1: AMHL 4-hop routed payment (happy path) ==
+    hop 1: Y_1 distinct=yes   ‖s_1‖inf = 1  (<= 1)
+    hop 2: Y_2 distinct=yes   ‖s_2‖inf = 2  (<= 2)
+    hop 3: Y_3 distinct=yes   ‖s_3‖inf = 3  (<= 3)
+    hop 4: Y_4 distinct=yes   ‖s_4‖inf = 4  (<= 4)
+  funded hops: Alice→Bob(13) Bob→Carol(12) Carol→Dave(11) Dave→Erin(10)
+  wormhole check: s_4 cannot open hop 1 (distinct statement)  -> OK
+  cascade: Erin→Dave→Carol→Bob pull right-to-left, exact recovery each hop
+  balances: Alice=87 Bob=101 Carol=101 Dave=101 Erin=10   (payment + per-hop fee)
+== Scenario 2: AMHL route times out (refund path) ==
+  refund before timeout rejected; after timeouts every hop refunds  -> safe OK
+```
+
+Alice pays 10 to Erin across a 4-hop route; each of the three intermediaries earns
+a 1-unit routing fee, and the conservation `87+101+101+101+10 = 400` holds. This is
+the genuinely novel part of LAS exercised end-to-end — most adaptor-signature demos
+stop at a single swap.
 
 ## 8. Performance (measured)
 
@@ -559,19 +655,24 @@ Reading this honestly for the report:
 
 ## 9. Limitations and future work
 
-- **AMHL (multi-hop, K-hop bound).** The PCN demo uses the same-Y scriptless HTLC
-  model. The paper's AMHL assigns each hop a distinct cumulative statement
-  `Y_j = A·(l_1+…+l_j)` and uses PreSign bound `γ−κ−K` for path length K.
-  AMHL prevents the wormhole attack on longer paths and is the "proper" PCN
-  construction from the paper. Implementing it requires a `las_presign_k(…, K)`
-  variant and a new test scenario. This is the next concrete implementation target.
+- **AMHL (multi-hop, K-hop bound).** ✅ **Implemented** (Section 7.5,
+  `ref/amhl.{c,h}`, `ref/test/test_amhl.c`). Each hop carries a distinct cumulative
+  statement `Y_j = A·(l_1+…+l_j)`, pre-signing uses the `γ−κ−K` bound via
+  `las_presign_k`, and the demo asserts wormhole resistance, the witness-norm
+  growth `‖s_j‖∞ ≤ j`, exact per-hop recovery, and a timeout/refund path. The
+  same-Y scriptless HTLC (Section 7.4) is retained as the simpler baseline. A
+  remaining nicety is a *privacy*-preserving variant (per the IAS critique,
+  Section 1.1) and randomised (non-cumulative-sum) lock setups.
 
-- **Knowledge gap.** Even in the AMHL construction, the extracted witness norm
-  grows with path length K. For a K-hop path the extracted intermediate witness
-  has norm ≤ K (sum of K ternary vectors). In the paper's *relaxed* relation this
-  bounded noise grows across long payment-channel chains — acknowledged in the
-  survey (eprint 2022/1151) as a fundamental limitation of lattice adaptor
-  signatures vs. classical ones. Out of scope for this project.
+- **Knowledge gap.** The extracted witness norm grows with path length: a K-hop
+  intermediate witness has `‖s_j‖∞ ≤ j` (a sum of up to K ternary vectors), now
+  exhibited concretely by `test_amhl` (`‖s_1‖∞=1 … ‖s_4‖∞=4`). In *this*
+  parameterisation extraction is still **exact** (the cumulative witness is an
+  integer vector recovered without error). The deeper limitation is in the paper's
+  *relaxed* relation, where extraction may carry bounded noise that accumulates
+  across long chains — acknowledged in the survey (eprint 2022/1151) as a
+  fundamental gap of lattice adaptor signatures vs. classical ones. Analysing that
+  relaxed-relation noise growth is out of scope for this project.
 
 - **Modulus.** `Q ≈ 2^23` rather than the paper's `2^24` (Section 5.9). Correctness
   holds; only the MSIS/MLWE security margin differs.
@@ -596,11 +697,12 @@ Reading this honestly for the report:
 cd ref
 make test/test_las3   && ./test/test_las3     # functional tests
 make test/test_swap3  && ./test/test_swap3    # narrated atomic swap + asserts
-make test/test_pcn3   && ./test/test_pcn3     # scriptless HTLCs: swap / refund / PCN
+make test/test_pcn3   && ./test/test_pcn3     # scriptless HTLCs: swap / refund / same-Y PCN
+make test/test_amhl3  && ./test/test_amhl3    # AMHL: K-hop route, wormhole + norm-growth + refund
 make test/bench_las3  && ./test/bench_las3    # per-operation timings
 make test/bench_compare3 && ./test/bench_compare3  # LAS vs optimised Dilithium-3
 ```
-All three are mode-independent; `-DDILITHIUM_MODE=2/5` behave identically.
+All are mode-independent; `-DDILITHIUM_MODE=2/5` behave identically.
 
 ## 11. References
 1. M. F. Esgin, O. Ersoy, Z. Erkin. *Post-Quantum Adaptor Signatures and Payment

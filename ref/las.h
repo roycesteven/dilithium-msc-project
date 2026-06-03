@@ -48,6 +48,13 @@
 #define LAS_BOUND_SIGN     (LAS_GAMMA - LAS_KAPPA + 1)  /* reject |z|inf  > g-k   */
 #define LAS_BOUND_PRESIGN  (LAS_GAMMA - LAS_KAPPA)      /* reject |z^|inf > g-k-1 */
 
+/* AMHL K-hop PreSign bound: reject |z^|inf > g-k-K, i.e. accept <= g-k-K.
+ * Leaves a norm budget of K for the cumulative witness s_j = l_1+...+l_j
+ * (||s_j||inf <= j <= K), so the adapted z = z^ + s_j still satisfies
+ * ||z||inf <= (g-k-K) + K = g-k and clears the ordinary Verify bound.
+ * For K=1 this collapses to LAS_BOUND_PRESIGN (the single-hop case). */
+#define LAS_BOUND_PRESIGN_K(K)  (LAS_GAMMA - LAS_KAPPA - (int32_t)(K) + 1)
+
 /* ---- Types (vectors are plain arrays of the repo's degree-N poly) ---- */
 typedef struct { poly mat[LAS_N][LAS_ELL];          /* A' in NTT domain */
                  uint8_t seed[LAS_SEEDBYTES]; } las_pp;
@@ -72,6 +79,18 @@ void las_presign(las_sig *presig, const uint8_t *m, size_t mlen,
                  const las_pk *Y, const las_pk *pk, const las_sk *sk, const las_pp *pp);
 int  las_preverify(const las_sig *presig, const uint8_t *m, size_t mlen,
                    const las_pk *Y, const las_pk *pk, const las_pp *pp);
+
+/* AMHL K-hop variants (eprint 2020/845 Fig. 2 / Section 5).  Identical to
+ * PreSign/PreVerify except the rejection bound is the tighter g-k-K, reserving a
+ * norm budget of K for a cumulative witness of infinity-norm up to K.  Adapt and
+ * Ext are unchanged: the adapted signature is still an ordinary signature and the
+ * extracted value is the cumulative witness s_j with A*s_j == Y_j. */
+void las_presign_k(las_sig *presig, const uint8_t *m, size_t mlen,
+                   const las_pk *Y, const las_pk *pk, const las_sk *sk,
+                   const las_pp *pp, unsigned int nhops);
+int  las_preverify_k(const las_sig *presig, const uint8_t *m, size_t mlen,
+                     const las_pk *Y, const las_pk *pk, const las_pp *pp,
+                     unsigned int nhops);
 
 /* Adapt((Y,y),sigma^): PreVerify, then sigma=(c, z^+y).  Returns 0 on success. */
 int  las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen,

@@ -353,6 +353,65 @@ always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `las_keygen` via
 
 ---
 
+## 12.5 AMHL — multi-hop locks (`amhl.c`, `las_presign_k`)
+
+### Paper: AMHL (eprint 2020/845, Fig. 2 / Section 5)
+For a K-hop route, lock hop `j` with the cumulative statement `Y_j = A·s_j` where
+`s_j = l_1 + … + l_j`, and pre-sign every hop with the tightened bound `γ−κ−K`.
+
+#### The K-hop bound
+```c
+/* las.h:56 */
+#define LAS_BOUND_PRESIGN_K(K)  (LAS_GAMMA - LAS_KAPPA - (int32_t)(K) + 1)
+```
+`poly_chknorm` rejects at `≥ bound`, so this accepts `‖ẑ‖∞ ≤ γ−κ−K`. The adapted
+response `z = ẑ + s_j` then has `‖z‖∞ ≤ (γ−κ−K) + ‖s_j‖∞ ≤ (γ−κ−K) + K = γ−κ`,
+which clears ordinary `Verify`. `K=1` reproduces `LAS_BOUND_PRESIGN` exactly.
+
+```c
+/* las.c:317 — las_presign_k */   // identical to las_presign except:
+if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops))) continue;  // las.c:341
+/* las.c:348 — las_preverify_k */ // same, with LAS_BOUND_PRESIGN_K(nhops)
+```
+(The parameter is named `nhops`, not `K`, because Dilithium's `params.h` already
+defines the object-like macro `K` for its module dimension — a direct `K`
+parameter would be textually replaced by `6` and fail to compile.)
+
+#### Cumulative setup: `amhl_setup_gen`
+```c
+/* amhl.c:21 — amhl_setup_gen */
+las_keygen(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
+// s_j = s_{j-1} + l_j           (amhl.c:36, kept small/centred)
+// Y_j = Y_{j-1} + L_j = A·s_j   (amhl.c:41, canonical [0,Q))
+```
+The statements are built **additively** from the increment key pairs, so AMHL adds
+no new lattice arithmetic — it is pure reuse of `las_keygen` (= `A·(·)`) plus
+`poly_add`. `Y_0 = 0`, `s_0 = 0`.
+
+#### Adapt / Ext are unchanged
+Hop `j` is adapted with the *cumulative* witness `s_j` (= `cum[j]`), and `las_ext`
+returns exactly `s_j` because `A·s_j = Y_j` by construction. No K-specific code
+path is needed in Adapt or Ext (§11, §12).
+
+#### Witness recovery along the path: `amhl_recover_prev`
+```c
+/* amhl.c:62 — amhl_recover_prev:  prev = cur − incr */
+poly_sub(&prev->s[i], &cur->s[i], &incr->s[i]);   // s_{j-1} = s_j − l_j
+```
+After extracting `s_j` from the on-chain claim of hop `j`, intermediary `U_{j-1}`
+subtracts the increment `l_j` it was given to obtain `s_{j-1}`, the opener of its
+own hop. `test_amhl.c` asserts the recovered `s_{j-1}` equals the setup value
+byte-for-byte (exact recovery).
+
+#### Why there is no wormhole
+The statements are pairwise distinct (`Y_i ≠ Y_j`), so the opener of one hop does
+not open a non-adjacent hop. `test_amhl.c` asserts the attack fails directly:
+adapting hop 1 with the receiver's secret `s_K` produces a signature for which
+ordinary `Verify` recomputes `A·z−c·t = w + Y_K`, but the challenge was
+`c = H(pk, w + Y_1, M)`, so `H(pk, w+Y_K, M) ≠ c` and `Verify` returns false.
+
+---
+
 ## 13. Norm-bound encoding convention
 
 The paper writes "reject if `‖z‖∞ > B`" (strict). The C code uses:
@@ -398,7 +457,7 @@ Neither proof is reproduced here — see eprint 2020/845 §4 for the formal trea
 | Property | Paper | This implementation | Impact |
 |---|---|---|---|
 | Modulus `q` | ≈2^24 | 8380417 ≈ 2^23 | Correctness unaffected (Q > 2γ); reduced MSIS/MLWE security margin |
-| Multi-hop PCN | AMHL with `γ−κ−K` per hop | Same-Y scriptless HTLC | Current demo lacks AMHL privacy; same-Y leaks witness across all hops |
+| Multi-hop PCN | AMHL with `γ−κ−K` per hop | **AMHL implemented** (`amhl.c`, `las_presign_k`, §12.5) + same-Y baseline (`chain.c`) | Functionally matches the paper's multi-hop locks; a *privacy*-preserving variant remains future work |
 | Signature packing | Bit-packed, ~3210B | Full int32, 9216B in-memory | Sizes only; correctness unaffected |
 | Hint vector | Used in paper's optimised scheme | Not used (simplified scheme) | ~4× slower sign (23% vs ~80% acceptance) |
 
@@ -418,6 +477,18 @@ assertions over 200 randomised iterations:
 | Sign/Verify round-trip | Base scheme correctness |
 | Forgery check (flip bit, expect reject) | Basic unforgeability |
 
-All pass on every run. The one gap is AMHL multi-hop (see §15 above): the
-test exercises the property for `K=1` (ternary witness, depth 1), not the
-general `K`-hop case with `γ−κ−K` bound.
+`ref/test/test_amhl.c` then extends these to the multi-hop (AMHL) setting:
+
+| AMHL test step | Theorem being checked |
+|---|---|
+| `Y_j ≠ Y_{j-1}` for all hops | Distinct per-hop statements (no shared lock) |
+| `‖s_j‖∞ ≤ j` for all hops | Cumulative witness-norm growth (the `γ−κ−K` bound's reason) |
+| Adapt hop 1 with `s_K` ⇒ `Verify` rejects | Wormhole resistance (non-adjacent hops are unrelated) |
+| Right-to-left cascade all `Verify`/claim | K-hop adaptability with the `γ−κ−K` bound |
+| `Ext`→`s_j`, then `s_j − l_j == s_{j-1}` (setup) | Exact per-hop witness recovery along the path |
+| Refund rejected pre-timeout, accepted post-timeout | Time-lock safety on a route |
+
+All pass on every run. The AMHL test (`test_amhl3`, mode 3 — mode-independent by
+construction, like `test_pcn`/`test_swap`) exercises the general `K`-hop case
+(`K = 4` happy path, `K = 2` refund path) with the `γ−κ−K` bound; the single-hop
+`test_las.c` remains the `K = 1` specialisation, run on modes 2/3/5.
