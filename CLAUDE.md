@@ -14,12 +14,22 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
 - ✅ **Realistic chain integration** — `ref/chain.{c,h}` (scriptless-HTLC ledger:
   accounts, block height, adaptor-locked contracts with claim + timeout-refund) +
   `ref/test/test_pcn.c` (atomic-swap happy path, timeout/refund, multi-hop PCN).
-- ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings) and
-  `ref/test/bench_compare.c` (LAS vs optimised Dilithium-3). Adaptor overhead is
-  negligible (`PreSign≈Sign`, `PreVerify≈Verify`).
-- ✅ **Full design write-up** — `docs/LAS.md` (report source material).
-- ⏳ Push to GitHub blocked in this environment (HTTP 403, read-only token);
-  work is committed locally + exported as `las-variant-b.patch`.
+  **Model:** same-Y scriptless HTLC (all hops share one statement). Not AMHL.
+- ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings with rejection-rate and
+  three-column size table) and `ref/test/bench_compare.c` (LAS vs Dilithium-3).
+  Measured: Sign=788µs, Verify=189µs, PreSign=814µs, PreVerify=193µs, Adapt=203µs,
+  Ext=65µs. Acceptance rate ~23% per attempt (expected for simplified scheme).
+  Sizes: in-memory sig=9216B; theoretical packed=4676B; paper's optimised=~3210B
+  (different scheme — not directly comparable).
+- ✅ **Full design write-up** — `docs/LAS.md` (report source material, includes
+  literature/methodology section §1.1 for assessment rubric).
+- ✅ **Theory↔implementation bridge** — `docs/THEORY_IMPL_BRIDGE.md` (every paper
+  equation mapped to C function/line).
+- ✅ **Code pushed to GitHub** — on branch `main`, up to date with `origin/main`.
+  PR #1 merged. No unpushed commits.
+- **TODO: AMHL** — `test_pcn.c` uses same-Y model. The paper's Adaptor Multi-Hop
+  Lock (AMHL) requires per-hop cumulative witnesses `Y_j = A·(l_1+…+l_j)` and
+  PreSign bound `γ−κ−K`. Not yet implemented. See `docs/LAS.md §9`.
 
 ## Why this project exists
 - Blockchains sign with ECDSA/Schnorr; Shor's algorithm breaks both. "Post-quantum"
@@ -57,7 +67,8 @@ The bound budget, not packing. PreSign rejects at the **tighter** `γ−κ−1`;
 ternary witness has `‖y‖∞ ≤ 1`, so the adapted `z = ẑ + y` satisfies
 `‖z‖∞ ≤ γ−κ` and clears ordinary Verify. If you loosen PreSign to `γ−κ`, adapted
 signatures can exceed the bound and Verify rejects everything. (`γ = κ·d·(n+ℓ)`
-keeps the rejection-sampling acceptance rate high.)
+governs the MSIS hardness parameter; the acceptance rate is ~23% per attempt —
+expected for the simplified scheme without hint vector.)
 
 ## Known caveat (note in thesis, do NOT need to solve)
 "Knowledge gap": here the extracted `y` is **exact**; in the paper's relaxed
@@ -75,7 +86,11 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
 - Do NOT implement/analyse security proofs. Implement + benchmark + demo only.
 - Success ladder: (min) working LAS + basic blockchain demo ✅;
   (better) benchmark vs plain Dilithium ✅ (`bench_compare`); (best) a second
-  exotic scheme — open (needs a choice: ring / threshold / multisig).
+  exotic scheme — **open** (needs a choice: ring / threshold / multisig).
+- **TODO: AMHL** — same-Y PCN is implemented; AMHL (K-hop bound, distinct per-hop
+  statements) is next before claiming full PCN completion. ~120 lines of code.
+- **TODO: report scaffolding** — `docs/LAS.md` has the technical content; the
+  8000-word dissertation chapter needs to be drafted from it.
 
 ## Reference
 - LAS paper: eprint 2020/845 (Esgin, Ersoy, Erkin).

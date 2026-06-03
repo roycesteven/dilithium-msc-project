@@ -10,3 +10,5 @@ tvecs5
 ref/test/vectors2.txt
 ref/test/vectors*.txt
 *.patch
+*.pdf
+*.Identifier
