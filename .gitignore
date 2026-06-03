@@ -9,3 +9,4 @@ tvecs3
 tvecs5
 ref/test/vectors2.txt
 ref/test/vectors*.txt
+ref/sign copy.c
