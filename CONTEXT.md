@@ -11,7 +11,9 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   modes 2/3/5, zero compiler warnings.
 - ✅ **Atomic-swap demo** — `ref/test/test_swap.c` (narrated two-party, two-chain
   swap with assertions).
-- ✅ **Benchmarks** — `ref/test/bench_las.c` (per-operation timings).
+- ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings) and
+  `ref/test/bench_compare.c` (LAS vs optimised Dilithium-3). Adaptor overhead is
+  negligible (`PreSign≈Sign`, `PreVerify≈Verify`).
 - ✅ **Full design write-up** — `docs/LAS.md` (report source material).
 - ⏳ Push to GitHub blocked in this environment (HTTP 403, read-only token);
   work is committed locally + exported as `las-variant-b.patch`.
@@ -69,8 +71,8 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
   built/tested under `-DDILITHIUM_MODE=3` (also 2/5 for portability).
 - Do NOT implement/analyse security proofs. Implement + benchmark + demo only.
 - Success ladder: (min) working LAS + basic blockchain demo ✅;
-  (better) benchmark vs plain Dilithium (timings in `bench_las`); (best) a second
-  exotic scheme.
+  (better) benchmark vs plain Dilithium ✅ (`bench_compare`); (best) a second
+  exotic scheme — open (needs a choice: ring / threshold / multisig).
 
 ## Reference
 - LAS paper: eprint 2020/845 (Esgin, Ersoy, Erkin).

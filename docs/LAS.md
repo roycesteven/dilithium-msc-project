@@ -413,6 +413,44 @@ shrink them substantially and is the obvious next optimisation. (iv) `Sign`/`Pre
 dominate, due to wide `S_γ` sampling and rejection; acceptance per attempt is high
 because `γ = κ·d·(n+ℓ)`.
 
+### 8.1 Head-to-head vs. optimised Dilithium-3
+
+`bench_compare` (`ref/test/bench_compare.c`) times LAS against the NIST-optimised
+Dilithium-3 reference on the same machine. **This is not a same-security
+comparison**: Dilithium-3 uses larger module dimensions (K=6, L=5), hints,
+high/low-bit decomposition and bit-packing, at the standard modulus; LAS here is the
+simplified adaptor scheme (n=ℓ=4, no hints, unpacked objects, q≈2^23). It is an
+order-of-magnitude feasibility check plus the adaptor-overhead measurement.
+
+| Operation | Dilithium-3 (µs) | LAS (µs) |
+|---|---:|---:|
+| KeyGen | 162 | 41 |
+| Sign | 642 | 440 |
+| Verify | 155 | 104 |
+| PreSign | — | 458 |
+| PreVerify | — | 106 |
+| Adapt | — | 108 |
+| Ext | — | 33 |
+
+| Object | Dilithium-3 (B) | LAS (B) |
+|---|---:|---:|
+| public key / statement | 1952 | 4096 |
+| secret key / witness | 4032 | 8192 |
+| signature / pre-signature | 3309 | 9216 |
+
+Reading this honestly for the report:
+- **Speed.** LAS is faster per operation here, but that is *expected, not a win*: it
+  has smaller module dimensions, skips hint generation/decomposition, and sits at a
+  lower security margin. The takeaway is *feasibility* — LAS operations are in the
+  same hundreds-of-microseconds regime as a deployed PQ signature — not superiority.
+- **Size.** LAS objects are ~2–3× larger only because they are stored as full
+  `int32` coefficients while Dilithium-3 bit-packs. Applying the same packing to LAS
+  would close most of the gap and is the obvious next optimisation.
+- **Adaptor overhead (the real result).** `PreSign ≈ Sign`, `PreVerify ≈ Verify`,
+  `Adapt ≈ Verify`, and `Ext` is the cheapest operation — so adding adaptor
+  capability costs essentially nothing over the base scheme, matching eprint
+  2020/845's headline claim.
+
 ## 9. Limitations and future work
 - **Knowledge gap.** Extraction here is exact. In the paper's relaxed relation the
   extracted witness can carry bounded noise that accumulates along long channel
@@ -433,6 +471,7 @@ cd ref
 make test/test_las3   && ./test/test_las3     # functional tests
 make test/test_swap3  && ./test/test_swap3    # narrated atomic swap + asserts
 make test/bench_las3  && ./test/bench_las3    # per-operation timings
+make test/bench_compare3 && ./test/bench_compare3  # LAS vs optimised Dilithium-3
 ```
 All three are mode-independent; `-DDILITHIUM_MODE=2/5` behave identically.
 

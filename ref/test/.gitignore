@@ -13,3 +13,4 @@ test_las3
 test_las5
 test_swap3
 bench_las3
+bench_compare3
