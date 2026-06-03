@@ -16,7 +16,10 @@ all: \
   test/test_dilithium5 \
   test/test_vectors2 \
   test/test_vectors3 \
-  test/test_vectors5
+  test/test_vectors5 \
+  test/test_las2 \
+  test/test_las3 \
+  test/test_las5
 
 nistkat: \
   nistkat/PQCgenKAT_sign2 \
@@ -64,6 +67,21 @@ test/test_dilithium5: test/test_dilithium.c randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 \
 	  -o $@ $< randombytes.c $(KECCAK_SOURCES)
+
+test/test_las2: test/test_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 \
+	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
+
+test/test_las3: test/test_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
+
+test/test_las5: test/test_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
+  $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 \
+	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_vectors2: test/test_vectors.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
@@ -127,6 +145,9 @@ clean:
 	rm -f test/test_dilithium2
 	rm -f test/test_dilithium3
 	rm -f test/test_dilithium5
+	rm -f test/test_las2
+	rm -f test/test_las3
+	rm -f test/test_las5
 	rm -f test/test_vectors2
 	rm -f test/test_vectors3
 	rm -f test/test_vectors5
