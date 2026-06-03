@@ -48,6 +48,50 @@ Payment Channel Networks*, eprint 2020/845), the first lattice-based adaptor
 signature, reusing the CRYSTALS-Dilithium reference C code for all low-level
 arithmetic.
 
+### 1.1 Related work and scheme selection
+
+**Why LAS and not IAS?** Two post-quantum adaptor signatures were available:
+
+- **LAS** (eprint 2020/845, ESORICS 2020, Esgin–Ersoy–Erkin) — lattice-based,
+  built directly on Dilithium. This is what we implement.
+- **IAS** (eprint 2020/1345, Tairi–Moreno-Sanchez–Maffei) — isogeny-based, built
+  on CSI-FiSh/CSIDH.
+
+LAS was chosen for three reasons, each warranting a sentence in the Methodology:
+
+1. **Implementation leverage.** LAS extends CRYSTALS-Dilithium, whose reference C
+   implementation is the starting point of this project. The four LAS functions
+   (`PreSign`, `PreVerify`, `Adapt`, `Ext`) are additions to, not replacements of,
+   the base Dilithium scheme; all polynomial arithmetic, NTT, SHAKE/Keccak and
+   sampling code is reused directly.
+
+2. **Security assumptions.** LAS is based on Module-SIS and Module-LWE, the same
+   problems underlying Dilithium and the NIST standard ML-DSA. These assumptions
+   are mature and well-studied. IAS is based on CSIDH-512, which offers only
+   approximately 60-bit quantum security — below NIST's 128-bit threshold — and
+   requires isogeny-group-action arithmetic that is far harder to implement.
+
+3. **Survey recommendation.** A 2022 survey of post-quantum exotic signatures
+   (eprint 2022/1151) explicitly recommends LAS over IAS unless on-chain signature
+   size is the primary concern, and calls LAS "an acceptable solution for
+   post-quantum blockchain." IAS achieves smaller signatures (~50B vs our ~4676B
+   theoretical packed), but at the cost of the weaker security level.
+
+**The "knowledge gap."** LAS (and all lattice adaptor signatures) carry a caveat
+not present in classical schemes: the extracted witness `y = z − ẑ` in this
+implementation is exact, but in the general lattice setting the extraction can
+carry bounded noise that *accumulates* across long payment-channel paths (the
+"knowledge gap" identified in eprint 2022/1151). For a K-hop path the extraction
+guarantee degrades unless PreSign uses the tighter bound `γ−κ−K` per hop (rather
+than `γ−κ−1`). Our implementation uses the K=1 (single-hop) bound throughout;
+the multi-hop Adaptor Multi-Hop Lock (AMHL) construction from LAS Fig. 2 is
+identified as future work (Section 9).
+
+**poqeth context.** The integration template eprint 2025/091 (poqeth, Erwig et al.)
+put *basic* PQ signatures on Ethereum. Our project extends the same idea to an
+*exotic* PQ signature, demonstrating that the gap between "basic PQ on a blockchain"
+and "exotic PQ on a blockchain" can be bridged with a modest code addition.
+
 ---
 
 ## 2. Mathematical background
@@ -386,7 +430,7 @@ lattice setting; our exact-extraction parameterisation sidesteps it for the demo
 
 To show LAS in a setting closer to a real blockchain, `chain.{c,h}` provide a small
 ledger abstraction: accounts with balances, a block height, and *adaptor-locked
-contracts* that are the scriptless analogue of a Hash-Time-Locked Contract (HTLC):
+contracts* — the scriptless analogue of a Hash-Time-Locked Contract (HTLC):
 
 - the **hash lock** is replaced by an adaptor statement `Y` — claiming requires the
   witness `y`;
@@ -396,57 +440,84 @@ The chain stores only public data (public keys, statements, (pre-)signatures); t
 secret keys and the `PreSign`/`Adapt` steps live in the parties' wallets, exactly as
 on a real chain. `chain_fund_swap` *pre-verifies* the funder's pre-signature before
 escrowing funds; `chain_claim_swap` *verifies* the adapted signature, pays the
-beneficiary and records it on-chain (revealing `y`); `chain_refund_swap` is gated on
-`height ≥ timeout`; `chain_extract_witness` recovers `y` from a claimed contract.
+beneficiary, and records it on-chain (revealing `y` to any watcher); `chain_refund_swap`
+is gated on `height ≥ timeout`; `chain_extract_witness` runs `las_ext` on a claimed
+contract.
 
-`test_pcn.c` runs three hard-asserted scenarios:
+**Important model note:** Scenarios 1–3 use the *same-Y* model — one shared
+statement `Y` locks all hops. This is a correct scriptless HTLC but not the paper's
+AMHL (Adaptor Multi-Hop Lock). In the same-Y model, observing `y` from any claimed
+hop lets a party adapt *all* other hops locked to `Y` — a wormhole-style weakness on
+longer paths. The paper's AMHL assigns each hop a *different* cumulative statement
+`Y_j = A·(l_1 + … + l_j)` and uses PreSign bound `γ−κ−K` for path length K. The
+implementation of AMHL is identified as future work (Section 9).
 
-1. **Cross-chain atomic swap (happy path).** Alice locks 10 on chain A to Bob and
-   Bob locks 10 on chain B to Alice, both to the same `Y`. Bob claims on A (revealing
-   `y`); Alice extracts `y` and claims on B. Both legs settle (`A: 90/10, B: 10/90`).
-2. **Timeout / refund (unhappy path).** No one claims. A refund *before* the timeout
-   is rejected; after advancing the block height past each timeout both parties
-   refund and balances return to their initial values — no coins lost. The two legs
-   use *laddered* timeouts so the second claimant always has a safety window.
-3. **Multi-hop payment (a PCN).** Carol issues an invoice `(Y, y)`. Alice pays Bob
-   (11, outer/longer timeout) and Bob pays Carol (10, inner/shorter timeout), both
-   locked to the *same* `Y`. Carol pulls the inner hop with `y` (revealing it); Bob
-   extracts `y` and pulls the outer hop, recovering his forwarded 10 plus a 1 fee
-   (`Alice 89, Bob 101, Carol 10`). One secret cascades the payment along the route.
+`test_pcn.c` runs three hard-asserted scenarios (all pass):
 
-This is the headline thesis artefact: a **working** post-quantum scriptless
-swap / payment-channel network, not merely the primitive in isolation.
+1. **Cross-chain atomic swap (happy path).** Alice locks 10 on chain A to Bob; Bob
+   locks 10 on chain B to Alice, both to the same `Y`. Bob claims on A (revealing
+   `y`); Alice extracts `y` and claims on B. Both legs settle.
+2. **Timeout / refund (unhappy path).** No one claims. Refund *before* timeout is
+   rejected; after advancing block height both parties refund — no coins lost. Legs
+   use laddered timeouts so the second claimant always has a safety window.
+3. **Multi-hop payment (same-Y PCN).** Carol issues invoice `(Y, y)`. Alice pays Bob
+   (11, outer hop) and Bob pays Carol (10, inner hop), both locked to `Y`. Carol
+   pulls the inner hop with `y` (revealing it); Bob extracts `y` and pulls the outer
+   hop, earning his routing fee. Final: Alice=89, Bob=101, Carol=10.
+
+This is the headline thesis artefact: a **working** post-quantum scriptless swap and
+payment-channel demonstration. The same-Y model is sufficient to prove the adaptor
+mechanism is functional end-to-end; AMHL adds privacy and multi-hop safety but is
+not needed to validate the core construction.
 
 ## 8. Performance (measured)
 
-Wall-clock microseconds per operation, mode 3, 2000 iterations/op, on the build
-container (`-O3`). Absolute numbers are machine-dependent; the *ratios* are the
-point.
+Wall-clock microseconds per operation, mode 3, 2000 iterations/op, `-O3`,
+measured by `ref/test/bench_las3`. Absolute numbers are machine-dependent; the
+*ratios* are the point.
 
 | Operation | Time (µs) | Note |
 |---|---:|---|
-| Setup (expand `A`) | ~41 | `n·ℓ = 16` uniform polys |
-| KeyGen | ~44 | sample `r`, compute `A·r` |
-| Sign | ~480 | dominated by `S_γ` sampling + rejection loop |
-| Verify | ~112 | `A·z − c·t` + hash |
-| PreSign | ~482 | ≈ Sign; folding `+Y` is negligible |
-| PreVerify | ~112 | ≈ Verify; one extra `+Y` add |
-| Adapt | ~117 | runs PreVerify + a vector add |
-| Ext | ~35 | one `A·s` + compare |
+| Setup (expand `A`) | 58 | `n·ℓ = 16` uniform polys via SHAKE128 |
+| KeyGen / statement gen | 78 | sample `r` (ternary), compute `A·r`; *same cost* for `(Y,y)` |
+| Sign | 804 | ~4.3 attempts/signature (23% acceptance, see below) |
+| Verify | 191 | one `A·z − c·t` + hash |
+| PreSign | 828 | ≈ Sign; `H(pk, w+Y, M)` vs `H(pk, w, M)` is negligible |
+| PreVerify | 197 | ≈ Verify; one extra `+Y` add |
+| Adapt | 203 | PreVerify + 8 poly adds |
+| Ext | 68 | one `A·s` + compare |
 
-In-memory object sizes (full `int32` coefficients, **not** bit-packed):
-`pk = Y = 4096 B`, `sk = witness = 8192 B`, `signature = pre-signature = 9216 B`.
+**Rejection-sampling acceptance rate (measured, bench_las3):**
+Sign accepts ~23.4 % of attempts (≈4.3 per signature); PreSign ≈ 23.6 %.
+This is expected and correct for the *simplified scheme*: the hint vector in
+optimised Dilithium raises acceptance to >80 % by avoiding the `β = τ·η`
+rejection penalty. We deliberately omit hints to keep the algebra transparent.
+The `γ = κ·d·(n+ℓ) = 122880` choice governs the MSIS hardness parameter,
+not the acceptance rate.
 
-**Takeaways for the report.** (i) The adaptor operations cost essentially the same
-as the base operations — `PreSign ≈ Sign`, `PreVerify ≈ Verify` — so the adaptor
-functionality is effectively *free* relative to signing, matching the paper's claim
-that LAS is "essentially as efficient as an ordinary lattice signature". (ii)
-`Adapt`/`Ext` cost on the order of a single verification. (iii) Sizes are large only
-because the simplified scheme stores full coefficients and hashes the full
-commitment `w`; a bit-packed encoding (à la Dilithium's `polyz`/hint packing) would
-shrink them substantially and is the obvious next optimisation. (iv) `Sign`/`PreSign`
-dominate, due to wide `S_γ` sampling and rejection; acceptance per attempt is high
-because `γ = κ·d·(n+ℓ)`.
+**Object sizes (three distinct numbers — do not confuse them):**
+
+| Object | In-memory `sizeof` | Theoretical packed | Paper's estimate |
+|---|---:|---:|---|
+| pk / statement Y | 4096 B | 2944 B | — |
+| sk / witness y | 8192 B | 512 B | — |
+| sig / pre-sig | 9216 B | 4676 B | ~3210 B |
+
+- *In-memory:* `sizeof` counts full `int32_t` per coefficient.
+- *Theoretical packed:* formula-derived. pk: `LAS_N·N·⌈log₂Q⌉ = 4·256·23/8 = 2944 B`.
+  sk: ternary at 2 bits/coeff = `8·256·2/8 = 512 B`. sig: challenge (68 B, κ
+  positions at 8 bits + κ sign bits) + response (`8·256·18/8 = 4608 B`) = 4676 B.
+  Response needs 18 bits/coeff because the range `2·(γ−κ−1)+1 = 245639 < 2^18`.
+- *Paper's ~3210 B:* the paper's *optimised* scheme at `q ≈ 2^24` with a hint
+  vector and high/low-bit decomposition. Not comparable to this implementation.
+  The correct comparison for our scheme is the "theoretical packed" column.
+
+**Takeaways for the report.** (i) `PreSign ≈ Sign`, `PreVerify ≈ Verify` — the
+adaptor operations add negligible overhead over the base scheme, matching the
+paper's efficiency claim. (ii) Sizes are large in-memory only; the theoretical
+packed sig (~4676 B) is not dramatically larger than optimised Dilithium-3
+(3309 B bit-packed). (iii) The sign rejection rate (~23 %) is the honest cost
+of the simplified, hint-free scheme — not a bug.
 
 ### 8.1 Head-to-head vs. optimised Dilithium-3
 
@@ -487,18 +558,38 @@ Reading this honestly for the report:
   2020/845's headline claim.
 
 ## 9. Limitations and future work
-- **Knowledge gap.** Extraction here is exact. In the paper's relaxed relation the
-  extracted witness can carry bounded noise that accumulates along long channel
-  paths; handling that is a known hard point and is out of scope.
-- **Security proofs.** Not reproduced; we rely on the paper's analysis.
-- **Modulus.** `Q ≈ 2^23` rather than the paper's `2^24` (Section 5.9).
-- **Sizes/performance.** The simplified scheme hashes the full `w` and stores full
-  responses, so keys/signatures are larger than optimised Dilithium; a hint-based
-  optimisation is possible but unnecessary for a feasibility demonstration.
-- **Constant-time.** The rejection samplers and norm checks follow the reference
+
+- **AMHL (multi-hop, K-hop bound).** The PCN demo uses the same-Y scriptless HTLC
+  model. The paper's AMHL assigns each hop a distinct cumulative statement
+  `Y_j = A·(l_1+…+l_j)` and uses PreSign bound `γ−κ−K` for path length K.
+  AMHL prevents the wormhole attack on longer paths and is the "proper" PCN
+  construction from the paper. Implementing it requires a `las_presign_k(…, K)`
+  variant and a new test scenario. This is the next concrete implementation target.
+
+- **Knowledge gap.** Even in the AMHL construction, the extracted witness norm
+  grows with path length K. For a K-hop path the extracted intermediate witness
+  has norm ≤ K (sum of K ternary vectors). In the paper's *relaxed* relation this
+  bounded noise grows across long payment-channel chains — acknowledged in the
+  survey (eprint 2022/1151) as a fundamental limitation of lattice adaptor
+  signatures vs. classical ones. Out of scope for this project.
+
+- **Modulus.** `Q ≈ 2^23` rather than the paper's `2^24` (Section 5.9). Correctness
+  holds; only the MSIS/MLWE security margin differs.
+
+- **Signature packing.** In-memory sizes (9216 B sig) are large because full `int32`
+  coefficients are stored. Theoretical packed size is 4676 B (Section 8). Adding
+  bit-packing would close most of the gap with optimised Dilithium-3 (3309 B) and
+  is the obvious optimisation after AMHL.
+
+- **Rejection rate.** ~23% acceptance per attempt (≈4.3 retries). Dilithium's hint
+  vector raises this to >80%. We omit hints deliberately (simplified scheme). Adding
+  hints without breaking the adaptor algebra is non-trivial and is future work.
+
+- **Constant-time.** Rejection samplers and norm checks follow the reference
   (non-constant-time) style; side-channel hardening is future work.
+
 - **Second exotic scheme.** The "best" success tier (a second PQ exotic signature,
-  e.g. a ring or threshold variant) remains open.
+  e.g. a PQ ring or threshold variant) remains open.
 
 ## 10. Build and run
 ```
