@@ -3,9 +3,10 @@
 *Design, implementation, correctness, testing, application and benchmarks.*
 
 This document is the technical reference for the implementation in `ref/las.{c,h}`,
-`ref/amhl.{c,h}`, `ref/chain.{c,h}`, and the tests/benchmarks under `ref/test/`
-(`test_las.c`, `test_swap.c`, `test_pcn.c`, `test_amhl.c`, `bench_las.c`,
-`bench_compare.c`). It is written to be the source material for the dissertation
+`ref/amhl.{c,h}`, `ref/chain.{c,h}`, `ref/serialize.{c,h}`, and the
+tests/benchmarks under `ref/test/` (`test_las.c`, `test_swap.c`, `test_pcn.c`,
+`test_amhl.c`, `test_serde.c`, `test_kat.c`, `bench_las.c`, `bench_compare.c`,
+`bench_app.c`). It is written to be the source material for the dissertation
 chapter; section numbering maps roughly onto report sections.
 
 ---
@@ -75,8 +76,8 @@ LAS was chosen for three reasons, each warranting a sentence in the Methodology:
 3. **Survey recommendation.** A 2022 survey of post-quantum exotic signatures
    (eprint 2022/1151) explicitly recommends LAS over IAS unless on-chain signature
    size is the primary concern, and calls LAS "an acceptable solution for
-   post-quantum blockchain." IAS achieves smaller signatures (~50B vs our ~4676B
-   theoretical packed), but at the cost of the weaker security level.
+   post-quantum blockchain." IAS achieves smaller signatures (~50B vs our 4672B
+   packed), but at the cost of the weaker security level.
 
 **The "knowledge gap."** LAS (and all lattice adaptor signatures) carry a caveat
 not present in classical schemes: the extracted witness `y = z − ẑ` in this
@@ -368,10 +369,61 @@ multiplication — noted as future work, out of the project's scope.
 
 ---
 
+### 5.10 Serialisation and the on-chain verifier interface (`ref/serialize.{c,h}`)
+
+The scheme functions operate on in-memory `poly` structs, but any realistic
+deployment — and specifically an on-chain verifier in the style of poqeth
+(eprint 2025/091) — exchanges objects as **byte strings**. `serialize.{c,h}` adds
+the canonical wire/on-chain encoding plus a *validating* decoder, leaving the
+scheme code (`las.c`) untouched (clean separation):
+
+- **Encoding** (LSB-first bit packing): pk/statement `Y` at 23 bits/coeff
+  (`Q < 2^23`); sk/witness at 2 bits/coeff (ternary); signature `(c, z)` as a
+  2-bit ternary `c` plus an 18-bit offset-encoded `z`. Sizes:
+  `LAS_PK_BYTES = 2944`, `LAS_SK_BYTES = 512`, `LAS_SIG_BYTES = 4672`.
+- **Defensive decoding.** A verifier cannot trust its input, so `unpack`
+  *rejects* malformed bytes: a pk coefficient `≥ Q`, the invalid ternary code `3`,
+  or a `z` field outside the 18-bit band. `pack` symmetrically rejects
+  out-of-range inputs (e.g. a non-ternary secret, or a `z` exceeding `γ−κ`).
+- **`las_verify_packed(pk_bytes, sig_bytes, M, pp)`** is the byte-level verifier an
+  integration would call: it decodes-with-validation and runs ordinary `Verify`,
+  returning `0` only if the bytes are well-formed *and* the signature verifies.
+  This is exactly the interface a Solidity/precompile/circuit verifier consumes.
+
+`test_serde` (Section 6.3) hard-asserts round-trip identity, that a packed adapted
+signature verifies through `las_verify_packed` while a packed *pre-signature* does
+not (the statement-binding tripwire survives serialisation), that **every**
+single-byte flip of a packed signature breaks verification, and that the
+validation paths reject malformed bytes. This realises the "packed" sizes of
+Section 8 as concrete, tested code rather than formulas, and is the prerequisite
+for the planned on-chain integration.
+
+### 5.11 Deterministic API and reproducibility
+
+To make the implementation *reproducible* — a distinction-level engineering
+property, and a prerequisite for cross-checking an independent on-chain verifier —
+the randomness-consuming algorithms gain deterministic siblings:
+
+- `las_keygen_seed(pk, sk, pp, seed)` derives the secret directly from a 32-byte
+  seed (KeyGen from explicit randomness);
+- `las_sign_det` and `las_presign_det` derive the per-signature mask seed as
+  `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)` instead of drawing fresh randomness, so the
+  output is a *pure function* of the inputs.
+
+Internally `las_sign`/`las_sign_det` share one `sign_core`, and
+`las_presign`/`las_presign_k`/`las_presign_det` share one `presign_core`, differing
+only in (a) where the 64-byte mask seed comes from (fresh `randombytes` vs the
+derivation above) and (b) the rejection bound — so the deterministic and randomised
+paths are guaranteed identical in distribution and validity. Beyond reproducibility,
+deterministic signing also removes the per-signature RNG dependency and the
+nonce-reuse failure mode that has repeatedly broken classical (EC)DSA deployments —
+a desirable property in a blockchain setting.
+
 ## 6. Testing
 
 ### 6.1 Functional tests (`ref/test/test_las.c`)
-Per iteration (200 iterations, modes 2/3/5, random `pp`, keys, message):
+Per iteration (1000 iterations — the objectives' B1 acceptance bar of ≥1000 runs
+at 100 % correctness — modes 2/3/5, random `pp`, keys, message):
 1. `(pk, sk) = KeyGen`
 2. `(Y, y)  = KeyGen` — statement/witness is another key pair
 3. `σ̂ = PreSign(sk, Y, M)`
@@ -391,6 +443,32 @@ Step 4 exercises pre-signature correctness; step 5 proves the statement is genui
 that the result is an *ordinary* signature; step 8 proves witness extractability and
 *exactness* (no knowledge-gap noise in this parameterisation). Together they
 demonstrate the full adaptor-signature contract end to end.
+
+### 6.3 Serialisation tests (`ref/test/test_serde.c`)
+A separate suite exercises the byte-level encoding of Section 5.10 over 256 random
+instances, hard-asserting: (i) **round-trip** `unpack(pack(x)) == x` for pk, sk, and
+the ordinary / pre / adapted signatures; (ii) **verify-from-bytes** — a packed
+`(pk, adapted σ)` verifies via `las_verify_packed`, while a packed *pre-signature*
+is rejected (the tripwire survives serialisation); (iii) **tamper** — every one of
+the `LAS_SIG_BYTES = 4672` single-byte flips of a valid packed signature makes it
+fail verification; (iv) **validation** — `pack` and `unpack` both reject
+out-of-range inputs (coefficient `≥ Q`, non-ternary code, `z` outside the band).
+All pass, zero warnings.
+
+### 6.4 Known-answer tests (`ref/test/test_kat.c`)
+Reproducibility (objective C4) is verified by a KAT suite that fixes *all* inputs
+(public-parameter seed, key seeds, statement seeds, messages) and uses the
+deterministic API of Section 5.11. For `NVEC = 4` vectors it runs the full
+deterministic pipeline (`keygen_seed → sign_det / presign_det → adapt → ext`),
+hard-asserts the adaptor contract and that re-running the deterministic functions
+yields byte-identical output, then folds the packed bytes of every object
+(`pk, sk, σ, σ̂, σ_adapted`) into a single SHAKE256 digest and checks it against a
+**pinned 32-byte expected value**. That one fingerprint locks down the entire
+implementation: any unintended change to keygen, signing, the adaptor algebra, or
+the serialisation flips the digest. Because every step is integer/SHAKE arithmetic
+over a fixed canonical byte encoding, the digest is stable across machines and
+compilers, and an independent verifier (Solidity/circuit) can be checked against
+the same vectors. The digest is reproduced on every run; the test passes.
 
 ---
 
@@ -576,44 +654,80 @@ measured by `ref/test/bench_las3`. Absolute numbers are machine-dependent; the
 |---|---:|---|
 | Setup (expand `A`) | 58 | `n·ℓ = 16` uniform polys via SHAKE128 |
 | KeyGen / statement gen | 78 | sample `r` (ternary), compute `A·r`; *same cost* for `(Y,y)` |
-| Sign | 804 | ~4.3 attempts/signature (23% acceptance, see below) |
+| Sign | 804 | ~2.7 attempts/signature (≈37% acceptance, see below) |
 | Verify | 191 | one `A·z − c·t` + hash |
 | PreSign | 828 | ≈ Sign; `H(pk, w+Y, M)` vs `H(pk, w, M)` is negligible |
 | PreVerify | 197 | ≈ Verify; one extra `+Y` add |
 | Adapt | 203 | PreVerify + 8 poly adds |
 | Ext | 68 | one `A·s` + compare |
 
-**Rejection-sampling acceptance rate (measured, bench_las3):**
-Sign accepts ~23.4 % of attempts (≈4.3 per signature); PreSign ≈ 23.6 %.
-This is expected and correct for the *simplified scheme*: the hint vector in
-optimised Dilithium raises acceptance to >80 % by avoiding the `β = τ·η`
-rejection penalty. We deliberately omit hints to keep the algebra transparent.
-The `γ = κ·d·(n+ℓ) = 122880` choice governs the MSIS hardness parameter,
-not the acceptance rate.
+**Rejection-sampling acceptance rate (measured *directly*, bench_las3).**
+`las_sign`/`las_presign`/`las_presign_k` increment a global `las_attempts`
+counter once per rejection-loop iteration (instrumentation only — never read by
+the scheme), so the benchmark reports the **exact** average attempts per
+signature over 2000 calls rather than estimating it. Measured:
+
+| | attempts/sig | acceptance | retries |
+|---|---:|---:|---:|
+| Sign | 2.71 | 36.9 % | 1.71 |
+| PreSign | 2.77 | 36.1 % | 1.77 |
+
+This matches the closed-form prediction. One attempt is accepted iff all
+`(n+ℓ)·N = 2048` response coefficients land within `±(γ−κ)`, so the per-attempt
+acceptance is `≈ (1 − κ/γ)^{(n+ℓ)·N} = (1 − 60/122880)^{2048} ≈ 36.8 %`
+(`≈ e^{-1}`), i.e. `≈ 2.72` attempts/signature — within noise of the measured
+numbers. This is expected and correct for a Fiat–Shamir-with-aborts scheme:
+rejection sampling is intrinsic to the family. A subtle point worth stating
+precisely, because it is easy to get backwards: omitting the hint vector does
+**not** worsen our per-attempt acceptance. Optimised Dilithium rejects on *several*
+conditions each attempt — the `‖z‖∞` bound **plus** a low-order-bits check on
+`w − c·s₂` **plus** a hint-count limit — whereas this simplified scheme rejects on
+the single `‖z‖∞` bound. Additional conditions can only lower acceptance, so the
+hint-free design carries no inherent acceptance penalty; optimised Dilithium's own
+expected signing repetitions are a small single-digit count (see the Dilithium
+specification), i.e. comparable to our ≈2.7 attempts — not the >5× advantage that an
+">80% with hints" claim would imply. (That earlier figure was not merely
+unmeasured here but directionally wrong.) The `γ = κ·d·(n+ℓ) = 122880` choice
+governs the MSIS hardness parameter, not the acceptance rate.
+
+> **Correction (methodology note worth keeping in the report).** An earlier
+> version of `bench_las` *estimated* retries from the timing ratio
+> `t_sign / t_verify` and reported ~23 % acceptance (~4.3 attempts). That
+> estimator is **biased**: one Sign attempt does `n+ℓ = 8` `c·r` products plus
+> `A·y`, whereas one Verify does only `n = 4` `c·t` products plus `A·z`, so a Sign
+> attempt is dearer than a Verify and the ratio over-counts attempts. The direct
+> counter (~37 %, ~2.7 attempts) supersedes it and agrees with the `e^{-1}`
+> theory line — a small but honest example of preferring direct measurement to a
+> proxy.
 
 **Object sizes (three distinct numbers — do not confuse them):**
 
-| Object | In-memory `sizeof` | Theoretical packed | Paper's estimate |
+| Object | In-memory `sizeof` | Packed (measured, `serialize.c`) | Paper's estimate |
 |---|---:|---:|---|
 | pk / statement Y | 4096 B | 2944 B | — |
 | sk / witness y | 8192 B | 512 B | — |
-| sig / pre-sig | 9216 B | 4676 B | ~3210 B |
+| sig / pre-sig | 9216 B | 4672 B | ~3210 B |
 
 - *In-memory:* `sizeof` counts full `int32_t` per coefficient.
-- *Theoretical packed:* formula-derived. pk: `LAS_N·N·⌈log₂Q⌉ = 4·256·23/8 = 2944 B`.
-  sk: ternary at 2 bits/coeff = `8·256·2/8 = 512 B`. sig: challenge (68 B, κ
-  positions at 8 bits + κ sign bits) + response (`8·256·18/8 = 4608 B`) = 4676 B.
-  Response needs 18 bits/coeff because the range `2·(γ−κ−1)+1 = 245639 < 2^18`.
+- *Packed (measured):* these are the **actual** sizes emitted by `ref/serialize.c`
+  (`LAS_PK_BYTES`, `LAS_SK_BYTES`, `LAS_SIG_BYTES`), validated by `test_serde`, not
+  formulas. pk: 23 bits/coeff (`Q < 2^23`) → `4·256·23/8 = 2944 B`. sk: ternary at
+  2 bits/coeff → `8·256·2/8 = 512 B`. sig: challenge `c` packed as a 2-bit ternary
+  polynomial (`256·2/8 = 64 B`) + response `z` at 18 bits/coeff
+  (`8·256·18/8 = 4608 B`) = **4672 B**. (`z` needs 18 bits because the centred range
+  `2·(γ−κ)+1 = 245641 < 2^18`; packing `c` as ternary is 4 B smaller than the
+  position-encoded 68 B and simpler to validate.)
 - *Paper's ~3210 B:* the paper's *optimised* scheme at `q ≈ 2^24` with a hint
   vector and high/low-bit decomposition. Not comparable to this implementation.
-  The correct comparison for our scheme is the "theoretical packed" column.
+  The correct comparison for our scheme is the "Packed (measured)" column.
 
 **Takeaways for the report.** (i) `PreSign ≈ Sign`, `PreVerify ≈ Verify` — the
 adaptor operations add negligible overhead over the base scheme, matching the
-paper's efficiency claim. (ii) Sizes are large in-memory only; the theoretical
-packed sig (~4676 B) is not dramatically larger than optimised Dilithium-3
-(3309 B bit-packed). (iii) The sign rejection rate (~23 %) is the honest cost
-of the simplified, hint-free scheme — not a bug.
+paper's efficiency claim. (ii) Sizes are large in-memory only; the *measured*
+packed sig (4672 B) is not dramatically larger than optimised Dilithium-3
+(3309 B bit-packed), and bit-packing is now implemented, not just estimated.
+(iii) The sign rejection rate (~2.7 attempts, ≈37 % acceptance) is the honest cost
+of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` theory.
 
 ### 8.1 Head-to-head vs. optimised Dilithium-3
 
@@ -653,6 +767,128 @@ Reading this honestly for the report:
   capability costs essentially nothing over the base scheme, matching eprint
   2020/845's headline claim.
 
+### 8.2 Application-level benchmark (`ref/test/bench_app.c`)
+
+Section 8 / 8.1 measure the **signature** dimension. Wang explicitly asked for
+*two* benchmark types — the signature itself **and** the application. `bench_app3`
+supplies the second: the communication and settlement-payload cost of the two LAS
+workflows. Sizes are the **actual serialised sizes** produced by `serialize.c`
+(`LAS_PK_BYTES`, `LAS_SIG_BYTES`; Sections 5.10 and 8) — not formulas; restart
+counts are measured directly via `las_attempts`.
+
+> **Simulated ledger (scope).** `bench_app` runs against a *simulated* ledger, not a
+> deployed Ethereum or Bitcoin contract. All byte figures below are an
+> **application-level payload / settlement-footprint proxy**, not measured gas;
+> per the project scope, (pre-)signature and statement sizes stand in for
+> transaction cost. Real-chain gas measurement is out of scope (Section 9).
+
+**(1) Atomic cross-chain swap (2 parties, 2 chains, no scripts).**
+
+| Phase | Object(s) | Bytes |
+|---|---|---:|
+| Off-chain (3 messages) | `Y` + `σ̂_A` + `σ̂_B` | 2944 + 4672 + 4672 = **12 288 B** |
+| Settlement footprint (proxy) | `σ_A`, `σ_B` published | 2 × 4672 = **9 344 B** |
+| Settlement footprint incl. escrowed `Y` | + 2 × `Y` | 15 232 B |
+
+Only the two *adapted* signatures would be published on a real chain; each is a
+single ordinary-looking LAS signature. End-to-end signing work (2× PreSign + 2×
+Adapt + Ext) is a few milliseconds (a single un-averaged sample, dominated by the
+two rejection-sampled pre-signs, so it varies run to run). The harness re-asserts
+the fairness invariant (adapted sigs verify, pre-sigs do not).
+
+**(2) Multi-hop AMHL payment — cost as a function of path length K** (40 routes per
+K, mode 3; `attempts/presig` measured directly):
+
+| K | bound `γ−κ−K` | #pre-sigs | attempts/presig | presig time (ms) | settlement sigs | public statements | max `‖s_j‖∞` |
+|--:|--:|--:|--:|--:|--:|--:|--:|
+| 1 | 122820 | 1 | 2.60 | 0.74 | 4 672 B | 2 944 B | 1 |
+| 2 | 122819 | 2 | 2.30 | 1.29 | 9 344 B | 5 888 B | 2 |
+| 4 | 122817 | 4 | 2.73 | 3.01 | 18 688 B | 11 776 B | 4 |
+| 6 | 122815 | 6 | 2.95 | 4.97 | 28 032 B | 17 664 B | 6 |
+| 8 | 122813 | 8 | 2.91 | 6.61 | 37 376 B | 23 552 B | 7 |
+
+*(Representative run; the byte columns are exact — they are the `serialize.c`
+sizes `K·LAS_SIG_BYTES` and `K·LAS_PK_BYTES` — but `attempts/presig`, `presig
+time` and the realised `max‖s_j‖∞` (≤ K) are random/machine-dependent and vary
+between runs.)*
+
+Three findings for the report:
+1. **Settlement footprint is linear in K** — `K` adapted signatures + `K` public
+   statements (payload proxy, not gas); no super-linear blow-up.
+2. **Witness norm grows with the hop index, `‖s_j‖∞ ≤ j ≤ K`** (each `s_j` is a sum
+   of `j` ternary vectors; the realised maximum is at or just below `K`, e.g. 7–8
+   at K=8 across runs), the "knowledge gap" made concrete and the precise reason
+   every hop pre-signs at `γ−κ−K`.
+3. **The `γ−κ−K` tightening is performance-negligible.** Going `K = 1 → 8` shrinks
+   the accept band by `7/(γ−κ) ≈ 0.0057 %`, so `attempts/presig` is flat in `K`
+   (≈2.7–3.0, the variation is sampling noise). AMHL therefore adds **no per-hop
+   signing penalty** beyond the unavoidable "K hops ⇒ K pre-signatures." This is a
+   genuine, slightly counter-intuitive result: the bound change that makes
+   multi-hop *correct* costs essentially nothing in *speed*.
+
+### 8.3 Classical adaptor baseline — "the price of post-quantum" (`ref/test/bench_classical.c`)
+
+Meeting 2 added a second required baseline (objective B2.ii): LAS vs a
+**classical adaptor signature**. We use the **ECDSA-based adaptor** from
+`libsecp256k1-zkp` (BlockstreamResearch's fork of Bitcoin Core's libsecp256k1;
+module `ecdsa_adaptor`, production code used in Discreet Log Contracts), vendored
+at commit `95b9835` and benchmarked **on the same machine and compiler** as every
+LAS number in this document — so the comparison needs no hardware caveats. Per the
+supervisor's guidance the implementation is *reused as-is*; only the timing
+harness (which mirrors the LAS operation set one-to-one) is ours. Reproduce via
+`README_LAS.md` (one-time clone + `make test/bench_classical`).
+
+**The 2×2 timing matrix (µs/op, 2000 iters, same machine):**
+
+| Operation | ECDSA (classical basic) | ECDSA-adaptor (classical exotic) | Dilithium-3 (PQ basic) | LAS (PQ exotic) |
+|---|---:|---:|---:|---:|
+| KeyGen / statement gen | 31 | 31 | 162 | 78 |
+| Sign | 41 | — | 642 | 804 |
+| Verify | 62 | — | 155 | 191 |
+| PreSign | — | 189 | — | 828 |
+| PreVerify | — | 244 | — | 197 |
+| Adapt | — | 3 | — | 203 |
+| Ext | — | 35 | — | 68 |
+
+**Sizes (B):**
+
+| Object | ECDSA(-adaptor) | LAS (packed, measured) | ratio |
+|---|---:|---:|---:|
+| public key / statement | 33 | 2944 | ×89 |
+| secret key / witness | 32 | 512 | ×16 |
+| signature | 64 (70 DER) | 4672 | ×73 |
+| pre-signature | 162 | 4672 | ×29 |
+
+**Reading the data (the report's "let the data speak" paragraph):**
+
+1. **The price of post-quantum is overwhelmingly *communication*, not
+   computation.** Sizes grow ×29–×89; per-operation times grow far less (Verify
+   ×3.1, PreSign ×4.4, Sign ×19.5), and everything stays in the
+   sub-millisecond regime on commodity hardware. For blockchain use the size
+   column is the binding constraint (on-chain bytes), which is exactly the
+   motivation for the packing of Section 5.10.
+2. **The adaptor *overhead structure* is inverted — LAS's headline win.** In the
+   classical scheme the adaptor functionality is expensive *relative to its own
+   base*: PreSign costs 4.6× Sign and PreVerify 3.9× Verify, because the
+   pre-signature must carry and check a DLEQ proof. In LAS, PreSign ≈ Sign and
+   PreVerify ≈ Verify (×1.03): the statement folds into the Fiat–Shamir hash for
+   free. Strikingly, **LAS PreVerify (197µs) is absolutely faster than classical
+   ECDSA-adaptor PreVerify (244µs)** on the same machine.
+3. **Structural contrast worth a paragraph:** the classical pre-signature is a
+   *syntactically different object* (162 B = ECDSA sig + DLEQ proof) that cannot
+   even be parsed as a signature, whereas a LAS pre-signature shares the
+   signature format and fails ordinary Verify *cryptographically* (the `+Y`
+   tripwire, Section 4.2). LAS's adapted signature is indistinguishable from an
+   ordinary one; the classical adapted signature is too, but its pre-signature
+   pipeline needs a second verifier implementation on the wire.
+
+**Honest caveats (state in the report):** libsecp256k1 is constant-time, heavily
+optimised production code, while our LAS is a reference-style simplified scheme —
+the timing comparison therefore *flatters the classical side*; LAS additionally
+sits at a reduced security margin (`q ≈ 2²³`, Section 5.9). Neither caveat
+affects the size ratios, which are format-determined. And the entire classical
+column is broken by Shor's algorithm — that asymmetry is the thesis.
+
 ## 9. Limitations and future work
 
 - **AMHL (multi-hop, K-hop bound).** ✅ **Implemented** (Section 7.5,
@@ -677,14 +913,26 @@ Reading this honestly for the report:
 - **Modulus.** `Q ≈ 2^23` rather than the paper's `2^24` (Section 5.9). Correctness
   holds; only the MSIS/MLWE security margin differs.
 
-- **Signature packing.** In-memory sizes (9216 B sig) are large because full `int32`
-  coefficients are stored. Theoretical packed size is 4676 B (Section 8). Adding
-  bit-packing would close most of the gap with optimised Dilithium-3 (3309 B) and
-  is the obvious optimisation after AMHL.
+- **Signature packing.** ✅ **Implemented** (`ref/serialize.{c,h}`, Section 5.10):
+  bit-packed wire/on-chain encoding with a validating decoder and the
+  `las_verify_packed` byte-level verifier, giving a measured packed signature of
+  4672 B (vs 9216 B in-memory). The residual gap to optimised Dilithium-3 (3309 B)
+  is the modulus (`2^23` vs `2^24`) and the hint/decomposition compression of the
+  optimised scheme — out of scope here.
 
-- **Rejection rate.** ~23% acceptance per attempt (≈4.3 retries). Dilithium's hint
-  vector raises this to >80%. We omit hints deliberately (simplified scheme). Adding
-  hints without breaking the adaptor algebra is non-trivial and is future work.
+- **Reproducibility / KATs.** ✅ **Implemented** (`ref/test/test_kat.c`, Sections
+  5.11 and 6.4): a deterministic API (`las_keygen_seed`, `las_sign_det`,
+  `las_presign_det`) plus a pinned SHAKE256 known-answer digest over fixed vectors.
+  This satisfies objective C4's reproducibility requirement and provides the test
+  vectors a future on-chain verifier would be cross-checked against. (NIST-style
+  DRBG-seeded KAT files, if a marker wants the exact `PQCgenKAT` format, would be a
+  cosmetic add-on.)
+
+- **Rejection rate.** ≈37% acceptance per attempt (~2.7 attempts/sig), measured
+  directly and matching the `e^{-1}` theory (Section 8). Rejection sampling is
+  intrinsic to Fiat–Shamir-with-aborts; optimised Dilithium uses a hint vector that
+  we omit deliberately for transparent algebra. Re-introducing hints without
+  breaking the adaptor algebra is non-trivial and is future work.
 
 - **Constant-time.** Rejection samplers and norm checks follow the reference
   (non-constant-time) style; side-channel hardening is future work.
@@ -699,8 +947,11 @@ make test/test_las3   && ./test/test_las3     # functional tests
 make test/test_swap3  && ./test/test_swap3    # narrated atomic swap + asserts
 make test/test_pcn3   && ./test/test_pcn3     # scriptless HTLCs: swap / refund / same-Y PCN
 make test/test_amhl3  && ./test/test_amhl3    # AMHL: K-hop route, wormhole + norm-growth + refund
-make test/bench_las3  && ./test/bench_las3    # per-operation timings
+make test/test_serde3 && ./test/test_serde3   # serialisation: round-trip / verify-from-bytes / tamper
+make test/test_kat3   && ./test/test_kat3     # deterministic known-answer test (reproducibility)
+make test/bench_las3  && ./test/bench_las3    # per-operation timings + direct rejection rate
 make test/bench_compare3 && ./test/bench_compare3  # LAS vs optimised Dilithium-3
+make test/bench_app3  && ./test/bench_app3    # application cost: swap + AMHL-vs-K
 ```
 All are mode-independent; `-DDILITHIUM_MODE=2/5` behave identically.
 

@@ -12,3 +12,4 @@ ref/test/vectors*.txt
 *.patch
 *.pdf
 *.Identifier
+third_party/

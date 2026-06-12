@@ -6,7 +6,11 @@
 #include "../params.h"   /* N, Q for the summary print */
 
 #define MLEN 59
-#define NTESTS 200
+/* >=1000 randomised iterations: the objectives' B1 acceptance bar
+   ("8-point test passes 100% over >=1000 runs"). Each iteration draws fresh
+   public params, keys, statement/witness and message, so this is 1000
+   independent end-to-end exercises of the full adaptor contract. */
+#define NTESTS 1000
 
 static int witness_equal(const las_sk *a, const las_sk *b) {
   unsigned int j, k;
@@ -86,7 +90,8 @@ int main(void) {
     }
   }
 
-  printf("LAS (variant B, eprint 2020/845 Alg.2) OK: %d iterations\n", NTESTS);
+  printf("LAS (variant B, eprint 2020/845 Alg.2) OK: %d/%d iterations "
+         "(100%% correctness, 8-point adaptor contract)\n", NTESTS, NTESTS);
   printf("  params: n=%d  ell=%d  kappa=%d  gamma=%d  d(=N)=%d  Q=%d\n",
          LAS_N, LAS_ELL, LAS_KAPPA, LAS_GAMMA, N, Q);
   printf("  bounds: sign reject >=%d  presign reject >=%d   (Q-1)/8=%d\n",
