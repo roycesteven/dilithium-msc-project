@@ -62,15 +62,36 @@ typedef struct { poly t[LAS_N]; } las_pk;           /* public key / statement  t
 typedef struct { poly s[LAS_M]; } las_sk;           /* secret key / witness    r in S_1 */
 typedef struct { poly c; poly z[LAS_M]; } las_sig;  /* (pre-)signature (c, z)  */
 
+/* ---- Rejection-sampling instrumentation (measurement only) ----
+ * Counts the total number of rejection-loop attempts performed by las_sign,
+ * las_presign and las_presign_k since it was last reset.  It does NOT affect
+ * the scheme logic in any way; it exists so benchmarks can report the average
+ * restart count DIRECTLY (objectives Part D) rather than estimating it from a
+ * timing ratio.  One signing call performs (retries + 1) attempts, so the mean
+ * attempts/op = las_attempts / (#ops) and mean retries/op = that minus one.
+ * Single-threaded use only (the benchmarks are single-threaded). */
+extern unsigned long las_attempts;
+
 /* Public parameters pp = A (expanded from a public seed). */
 void las_setup(las_pp *pp, const uint8_t seed[LAS_SEEDBYTES]);
 
 /* KeyGen = Gen: r<-S_1^(n+l); t=Ar; (pk,sk)=(t,r).  Also used to make (Y,y). */
 void las_keygen(las_pk *pk, las_sk *sk, const las_pp *pp);
 
+/* Deterministic KeyGen from an explicit 32-byte seed (reproducible KAT vectors). */
+void las_keygen_seed(las_pk *pk, las_sk *sk, const las_pp *pp,
+                     const uint8_t seed[LAS_SEEDBYTES]);
+
 /* Sign / Verify (ordinary signature; Verify returns 0 on success). */
 void las_sign(las_sig *sig, const uint8_t *m, size_t mlen,
               const las_pk *pk, const las_sk *sk, const las_pp *pp);
+
+/* Deterministic Sign: the per-signature mask randomness is derived from (sk, M),
+ * so the output is a deterministic function of its inputs.  Same distribution and
+ * validity as las_sign; removes the per-signature RNG (no nonce-reuse risk) and
+ * enables reproducible known-answer tests. */
+void las_sign_det(las_sig *sig, const uint8_t *m, size_t mlen,
+                  const las_pk *pk, const las_sk *sk, const las_pp *pp);
 int  las_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
                 const las_pk *pk, const las_pp *pp);
 
@@ -91,6 +112,12 @@ void las_presign_k(las_sig *presig, const uint8_t *m, size_t mlen,
 int  las_preverify_k(const las_sig *presig, const uint8_t *m, size_t mlen,
                      const las_pk *Y, const las_pk *pk, const las_pp *pp,
                      unsigned int nhops);
+
+/* Deterministic PreSign: mask randomness derived from (sk, Y, M).  Uses the
+ * single-hop bound g-k-1, like las_presign; for reproducible adaptor KATs. */
+void las_presign_det(las_sig *presig, const uint8_t *m, size_t mlen,
+                     const las_pk *Y, const las_pk *pk, const las_sk *sk,
+                     const las_pp *pp);
 
 /* Adapt((Y,y),sigma^): PreVerify, then sigma=(c, z^+y).  Returns 0 on success. */
 int  las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen,

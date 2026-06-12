@@ -60,7 +60,7 @@ int main(void) {
   las_sk sk, y, sk2, yext;
   las_sig sig, presig, adapted, tmp;
   volatile int sink = 0;
-  double t0, t_sign, t_presign, t_verify, t_preverify;
+  double t0, t_sign, t_presign;
   int i;
 
   randombytes(ppseed, LAS_SEEDBYTES);
@@ -111,38 +111,46 @@ int main(void) {
   for(i = 0; i < NITER; ++i) sink += las_ext(&yext, &adapted, &presig, &Y, &pp);
   printf("  Ext        %9.2f us\n", (now_us() - t0) / NITER);
 
-  /* ---- Rejection-sampling retry rate ---- *
-   * las_sign / las_presign loop internally over their rejection test.
-   * We estimate average retries by timing a single inner-loop body
-   * (one A*y + challenge + z computation, no norm check) against the full
-   * Sign time.  One "attempt body" ≈ Verify time (A*z is the same cost as
-   * the inner A*y multiply; the hash is identical).  So:
-   *   avg_retries_sign ≈ t_sign / t_verify
+  /* ---- Rejection-sampling retry rate (MEASURED directly) ---- *
+   * las_sign / las_presign increment the global las_attempts counter once per
+   * rejection-loop attempt (see las.h).  Counting it across NITER signing calls
+   * gives the EXACT average attempts/op and acceptance rate - no estimation.
    *
-   * This is an INDIRECT ESTIMATE.  For direct measurement you would need
-   * to expose the counter from las.c (which we have not done to avoid
-   * modifying the scheme source).  The indirect estimate is honest because
-   * Verify's A*z is the dominant cost of one attempt body.
+   * NOTE: an earlier version estimated retries from the timing ratio
+   * t_sign / t_verify and reported ~23% acceptance (~4.3 attempts).  That
+   * estimator is BIASED: one Sign attempt body does LAS_M=8 c*r products plus
+   * A*y, whereas one Verify does only LAS_N=4 c*t products plus A*z, so a Sign
+   * attempt is dearer than a Verify and the ratio overcounts attempts.  The
+   * direct counter below (~37% acceptance, ~2.7 attempts) supersedes it and is
+   * corroborated by the theory line.
    */
   {
-    /* re-measure verify at same NITER for consistency */
-    t0 = now_us();
-    for(i = 0; i < NITER; ++i) sink += las_verify(&sig, m, mlen, &pk, &pp);
-    t_verify = (now_us() - t0) / NITER;
-    t0 = now_us();
-    for(i = 0; i < NITER; ++i) sink += las_preverify(&presig, m, mlen, &Y, &pk, &pp);
-    t_preverify = (now_us() - t0) / NITER;
+    unsigned long a0;
+    double att_sign, att_presign, p_theory;
 
-    printf("\nRejection-sampling (indirect estimate via timing ratio):\n");
-    printf("  Sign    avg retries: %.2f  (acceptance rate ~%.1f%%)\n",
-           t_sign / t_verify - 1.0,
-           100.0 * t_verify / t_sign);
-    printf("  PreSign avg retries: %.2f  (acceptance rate ~%.1f%%)\n",
-           t_presign / t_preverify - 1.0,
-           100.0 * t_preverify / t_presign);
-    printf("  Note: ~23%% acceptance per attempt is expected for the SIMPLIFIED scheme.\n");
-    printf("  Dilithium's hint vector raises this to >80%%; we omit it deliberately.\n");
-    printf("  Estimator: Sign_time / Verify_time ≈ avg attempts (same dominant cost).\n");
+    a0 = las_attempts;
+    for(i = 0; i < NITER; ++i) las_sign(&tmp, m, mlen, &pk, &sk, &pp);
+    att_sign = (double)(las_attempts - a0) / NITER;
+
+    a0 = las_attempts;
+    for(i = 0; i < NITER; ++i) las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp);
+    att_presign = (double)(las_attempts - a0) / NITER;
+
+    /* per-attempt acceptance must keep all LAS_M*N response coeffs within
+     * +-(g-k); approx (1 - k/g)^(M*N), which is ~e^-1 for these parameters. */
+    p_theory = pow(1.0 - (double)LAS_KAPPA / (double)LAS_GAMMA,
+                   (double)(LAS_M * N));
+
+    printf("\nRejection-sampling (MEASURED directly via las_attempts, %d sigs):\n", NITER);
+    printf("  Sign    : %.3f attempts/sig  -> acceptance %.1f%%, retries %.3f\n",
+           att_sign, 100.0 / att_sign, att_sign - 1.0);
+    printf("  PreSign : %.3f attempts/sig  -> acceptance %.1f%%, retries %.3f\n",
+           att_presign, 100.0 / att_presign, att_presign - 1.0);
+    printf("  Theory  : (1 - k/g)^(M*N) = %.1f%% per attempt (~%.2f attempts)\n",
+           100.0 * p_theory, 1.0 / p_theory);
+    printf("  Rejection sampling is intrinsic to Fiat-Shamir-with-aborts (optimised\n");
+    printf("  Dilithium also rejects, targeting a small expected repeat count); this\n");
+    printf("  simplified scheme just omits the hint vector, keeping the algebra clear.\n");
   }
 
   /* ---- Sizes ---- */

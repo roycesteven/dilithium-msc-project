@@ -16,3 +16,6 @@ bench_las3
 bench_compare3
 test_pcn3
 test_amhl3
+test_serde3
+test_kat3
+bench_classical

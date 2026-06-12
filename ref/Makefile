@@ -23,8 +23,11 @@ all: \
   test/test_swap3 \
   test/bench_las3 \
   test/bench_compare3 \
+  test/bench_app3 \
   test/test_pcn3 \
-  test/test_amhl3
+  test/test_amhl3 \
+  test/test_serde3 \
+  test/test_kat3
 
 nistkat: \
   nistkat/PQCgenKAT_sign2 \
@@ -103,6 +106,11 @@ test/bench_compare3: test/bench_compare.c las.c las.h randombytes.c $(KECCAK_SOU
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
+test/bench_app3: test/bench_app.c amhl.c amhl.h serialize.h las.c las.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	  -o $@ $< amhl.c las.c randombytes.c $(KECCAK_SOURCES)
+
 test/test_pcn3: test/test_pcn.c chain.c chain.h las.c las.h randombytes.c \
   $(KECCAK_SOURCES) $(KECCAK_HEADERS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
@@ -112,6 +120,32 @@ test/test_amhl3: test/test_amhl.c amhl.c amhl.h chain.c chain.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
 	  -o $@ $< amhl.c chain.c las.c randombytes.c $(KECCAK_SOURCES)
+
+test/test_serde3: test/test_serde.c serialize.c serialize.h las.c las.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+
+test/test_kat3: test/test_kat.c serialize.c serialize.h las.c las.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+
+# Classical adaptor baseline (objectives B2.ii). Requires the vendored library:
+#   git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
+#       ../third_party/secp256k1-zkp
+# Not part of `all` (needs the clone). Vendored TUs build with -w (their code);
+# the harness itself builds with the full project CFLAGS.
+SECP = ../third_party/secp256k1-zkp
+test/bench_classical: test/bench_classical.c
+	$(CC) -O3 -w -I$(SECP) -I$(SECP)/src -DENABLE_MODULE_ECDSA_ADAPTOR=1 \
+	  -c $(SECP)/src/secp256k1.c -o $(SECP)/secp256k1.o
+	$(CC) -O3 -w -I$(SECP) -I$(SECP)/src -c $(SECP)/src/precomputed_ecmult.c \
+	  -o $(SECP)/precomputed_ecmult.o
+	$(CC) -O3 -w -I$(SECP) -I$(SECP)/src -c $(SECP)/src/precomputed_ecmult_gen.c \
+	  -o $(SECP)/precomputed_ecmult_gen.o
+	$(CC) $(CFLAGS) -I$(SECP)/include -o $@ $< $(SECP)/secp256k1.o \
+	  $(SECP)/precomputed_ecmult.o $(SECP)/precomputed_ecmult_gen.o
 
 test/test_vectors2: test/test_vectors.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
@@ -181,8 +215,11 @@ clean:
 	rm -f test/test_swap3
 	rm -f test/bench_las3
 	rm -f test/bench_compare3
+	rm -f test/bench_app3
 	rm -f test/test_pcn3
 	rm -f test/test_amhl3
+	rm -f test/test_serde3
+	rm -f test/test_kat3
 	rm -f test/test_vectors2
 	rm -f test/test_vectors3
 	rm -f test/test_vectors5

@@ -6,6 +6,11 @@
 #include "randombytes.h"
 #include "fips202.h"
 
+/* Rejection-sampling attempt counter (measurement only; see las.h).
+ * Incremented once per rejection-loop iteration in las_sign/las_presign/
+ * las_presign_k.  Never read by the scheme itself. */
+unsigned long las_attempts = 0;
+
 /* ============================ helpers ============================ */
 
 /* Pack one polynomial into 4 bytes/coeff (canonical [0,Q)) for hashing. */
@@ -205,24 +210,57 @@ void las_setup(las_pp *pp, const uint8_t seed[LAS_SEEDBYTES]) {
       poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
 }
 
-void las_keygen(las_pk *pk, las_sk *sk, const las_pp *pp) {
-  uint8_t seed[LAS_SEEDBYTES];
+void las_keygen_seed(las_pk *pk, las_sk *sk, const las_pp *pp,
+                     const uint8_t seed[LAS_SEEDBYTES]) {
   unsigned int j;
-  randombytes(seed, LAS_SEEDBYTES);
   for(j = 0; j < LAS_M; ++j)
     sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);
   las_Amul(pk->t, pp, sk->s);
 }
 
-void las_sign(las_sig *sig, const uint8_t *m, size_t mlen,
-              const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
+void las_keygen(las_pk *pk, las_sk *sk, const las_pp *pp) {
+  uint8_t seed[LAS_SEEDBYTES];
+  randombytes(seed, LAS_SEEDBYTES);              /* fresh randomness */
+  las_keygen_seed(pk, sk, pp, seed);
+}
+
+/* Deterministic per-(pre)signature mask randomness: seed = SHAKE256(tag, sk, [Y], M).
+ * Makes (pre)signing a deterministic function of its inputs - reproducible KATs and
+ * no fresh per-signature randomness to mishandle (nonce-reuse safety). */
+static void det_seed(uint8_t out[64], uint8_t tag, const las_sk *sk,
+                     const las_pk *Y, const uint8_t *m, size_t mlen) {
+  keccak_state state;
+  uint8_t skb[LAS_M * N];
+  uint8_t buf[N * 4];
+  unsigned int i, k;
+
+  for(i = 0; i < LAS_M; ++i)                      /* ternary sk -> 1 byte/coeff */
+    for(k = 0; k < N; ++k)
+      skb[i * N + k] = (uint8_t)(int8_t)sk->s[i].coeffs[k];
+
+  shake256_init(&state);
+  shake256_absorb(&state, &tag, 1);              /* domain: 0=sign, 1=presign  */
+  shake256_absorb(&state, skb, sizeof skb);
+  if(Y)
+    for(i = 0; i < LAS_N; ++i) {                  /* bind the statement Y       */
+      pack_poly_canon(buf, &Y->t[i]);
+      shake256_absorb(&state, buf, N * 4);
+    }
+  shake256_absorb(&state, m, mlen);
+  shake256_finalize(&state);
+  shake256_squeeze(out, 64, &state);
+}
+
+/* Shared Sign body, parameterised by the 64-byte mask seed (random or derived). */
+static void sign_core(las_sig *sig, const uint8_t *m, size_t mlen,
+                      const las_pk *pk, const las_sk *sk, const las_pp *pp,
+                      const uint8_t seed[64]) {
   uint16_t nonce = 0;
   unsigned int j;
   poly y[LAS_M], w[LAS_N], cr, c;
 
-  randombytes(seed, 64);
   for(;;) {
+    ++las_attempts;                           /* instrumentation only */
     for(j = 0; j < LAS_M; ++j)
       sample_Sgamma(&y[j], seed, 64, nonce++);
     las_Amul(w, pp, y);                       /* w = A y           */
@@ -237,6 +275,20 @@ void las_sign(las_sig *sig, const uint8_t *m, size_t mlen,
     sig->c = c;
     return;
   }
+}
+
+void las_sign(las_sig *sig, const uint8_t *m, size_t mlen,
+              const las_pk *pk, const las_sk *sk, const las_pp *pp) {
+  uint8_t seed[64];
+  randombytes(seed, 64);
+  sign_core(sig, m, mlen, pk, sk, pp, seed);
+}
+
+void las_sign_det(las_sig *sig, const uint8_t *m, size_t mlen,
+                  const las_pk *pk, const las_sk *sk, const las_pp *pp) {
+  uint8_t seed[64];
+  det_seed(seed, 0, sk, NULL, m, mlen);        /* tag 0 = sign (no statement) */
+  sign_core(sig, m, mlen, pk, sk, pp, seed);
 }
 
 int las_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
@@ -258,15 +310,17 @@ int las_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
   return poly_equal(&c2, &sig->c) ? 0 : -1;
 }
 
-void las_presign(las_sig *presig, const uint8_t *m, size_t mlen,
-                 const las_pk *Y, const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
+/* Shared PreSign body: like sign_core but hashes (w+Y) and rejects at `bound`
+ * (g-k-1 single-hop, or g-k-K for AMHL).  Parameterised by the mask seed. */
+static void presign_core(las_sig *presig, const uint8_t *m, size_t mlen,
+                         const las_pk *Y, const las_pk *pk, const las_sk *sk,
+                         const las_pp *pp, int32_t bound, const uint8_t seed[64]) {
   uint16_t nonce = 0;
   unsigned int j;
   poly y[LAS_M], w[LAS_N], wY[LAS_N], cr, c;
 
-  randombytes(seed, 64);
   for(;;) {
+    ++las_attempts;                             /* instrumentation only */
     for(j = 0; j < LAS_M; ++j)
       sample_Sgamma(&y[j], seed, 64, nonce++);
     las_Amul(w, pp, y);                         /* w = A y                 */
@@ -281,11 +335,25 @@ void las_presign(las_sig *presig, const uint8_t *m, size_t mlen,
       poly_add(&presig->z[j], &y[j], &cr);
       poly_reduce(&presig->z[j]);
     }
-    if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN)) /* tighter bound g-k-1     */
+    if(chknorm_vec(presig->z, bound))
       continue;
     presig->c = c;
     return;
   }
+}
+
+void las_presign(las_sig *presig, const uint8_t *m, size_t mlen,
+                 const las_pk *Y, const las_pk *pk, const las_sk *sk, const las_pp *pp) {
+  uint8_t seed[64];
+  randombytes(seed, 64);
+  presign_core(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN, seed);
+}
+
+void las_presign_det(las_sig *presig, const uint8_t *m, size_t mlen,
+                     const las_pk *Y, const las_pk *pk, const las_sk *sk, const las_pp *pp) {
+  uint8_t seed[64];
+  det_seed(seed, 1, sk, Y, m, mlen);            /* tag 1 = presign (binds Y) */
+  presign_core(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN, seed);
 }
 
 int las_preverify(const las_sig *presig, const uint8_t *m, size_t mlen,
@@ -318,31 +386,8 @@ void las_presign_k(las_sig *presig, const uint8_t *m, size_t mlen,
                    const las_pk *Y, const las_pk *pk, const las_sk *sk,
                    const las_pp *pp, unsigned int nhops) {
   uint8_t seed[64];
-  uint16_t nonce = 0;
-  unsigned int j;
-  poly y[LAS_M], w[LAS_N], wY[LAS_N], cr, c;
-
   randombytes(seed, 64);
-  for(;;) {
-    for(j = 0; j < LAS_M; ++j)
-      sample_Sgamma(&y[j], seed, 64, nonce++);
-    las_Amul(w, pp, y);                         /* w = A y                 */
-    for(j = 0; j < LAS_N; ++j) {                 /* commit = w + Y          */
-      poly_add(&wY[j], &w[j], &Y->t[j]);
-      poly_reduce(&wY[j]);
-      poly_caddq(&wY[j]);
-    }
-    hash_challenge(&c, pk, wY, m, mlen);          /* c = H(pk, w+Y, M)       */
-    for(j = 0; j < LAS_M; ++j) {                  /* z^ = y + c r            */
-      polymul(&cr, &c, &sk->s[j]);
-      poly_add(&presig->z[j], &y[j], &cr);
-      poly_reduce(&presig->z[j]);
-    }
-    if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops)))  /* tighter bound g-k-K */
-      continue;
-    presig->c = c;
-    return;
-  }
+  presign_core(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN_K(nhops), seed);
 }
 
 int las_preverify_k(const las_sig *presig, const uint8_t *m, size_t mlen,

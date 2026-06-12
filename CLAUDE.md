@@ -1,5 +1,18 @@
 # Project context — LAS on Dilithium for blockchain
 
+## Working agreement (READ FIRST, every session — standing instruction from Royce)
+1. **Always start by reading the authoritative docs** to orient the task:
+   `las-objectives-meeting2.md` (current target spec — supervisor Meeting 2,
+   2026-06-08; **supersedes** `LAS_OBJECTIVES_FOR_TOP_MARK.md` where they
+   conflict) and this `CLAUDE.md`. They direct what "done" and "top-mark" mean.
+2. **Always document neatly, in structured / verbose / clear prose, with the
+   assessment criteria in mind**, whenever implementing or fixing code. Keep the
+   two living technical docs in sync with the code:
+   - `docs/LAS.md` — design/implementation/eval write-up (report source material),
+   - `docs/THEORY_IMPL_BRIDGE.md` — paper-equation → C-function/line mapping.
+   A code change is not complete until the relevant doc section reflects it.
+3. This agreement is recorded here so it does **not** need re-stating each session.
+
 ## One-line goal
 Implement LAS (Lattice-based Adaptor Signatures, eprint 2020/845) by reusing the
 CRYSTALS-Dilithium reference primitives, then demonstrate it in a post-quantum
@@ -7,8 +20,8 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
 
 ## Status (living)
 - ✅ **LAS implemented and tested** — `ref/las.{c,h}`, scheme **variant (B)** (the
-  paper's Algorithm 2). `ref/test/test_las.c` passes 200 iters on Dilithium
-  modes 2/3/5, zero compiler warnings.
+  paper's Algorithm 2). `ref/test/test_las.c` passes 1000 iters (objectives' B1
+  bar) on Dilithium modes 2/3/5, zero compiler warnings.
 - ✅ **Atomic-swap demo** — `ref/test/test_swap.c` (narrated two-party, two-chain
   swap with assertions).
 - ✅ **Realistic chain integration** — `ref/chain.{c,h}` (scriptless-HTLC ledger:
@@ -16,12 +29,16 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   `ref/test/test_pcn.c` (atomic-swap happy path, timeout/refund, multi-hop PCN).
   **Model:** same-Y scriptless HTLC baseline (all hops share one statement);
   the distinct-statement AMHL is implemented separately (next bullet).
-- ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings with rejection-rate and
-  three-column size table) and `ref/test/bench_compare.c` (LAS vs Dilithium-3).
-  Measured: Sign=788µs, Verify=189µs, PreSign=814µs, PreVerify=193µs, Adapt=203µs,
-  Ext=65µs. Acceptance rate ~23% per attempt (expected for simplified scheme).
-  Sizes: in-memory sig=9216B; theoretical packed=4676B; paper's optimised=~3210B
-  (different scheme — not directly comparable).
+- ✅ **Benchmarks** — `ref/test/bench_las.c` (per-op timings + rejection rate
+  measured *directly* via the `las_attempts` counter), `ref/test/bench_compare.c`
+  (LAS vs Dilithium-3), and `ref/test/bench_app.c` (application level: swap
+  payload + AMHL cost vs path length K, simulated-ledger proxy, not gas).
+  Measured: Sign≈790µs, Verify≈190µs, PreSign≈815µs, PreVerify≈195µs, Adapt≈205µs,
+  Ext≈65µs. Acceptance ≈37% per attempt (~2.7 attempts/sig), matching the
+  `(1−κ/γ)^{(n+ℓ)·N} ≈ e^{−1}` theory. (An older ~23% figure came from a biased
+  timing-ratio estimate — superseded, see `docs/LAS.md §8`.)
+  Sizes: in-memory sig=9216B; **measured packed (serialize.c)=4672B**; paper's
+  optimised=~3210B (different scheme — not directly comparable).
 - ✅ **Full design write-up** — `docs/LAS.md` (report source material, includes
   literature/methodology section §1.1 for assessment rubric).
 - ✅ **Theory↔implementation bridge** — `docs/THEORY_IMPL_BRIDGE.md` (every paper
@@ -35,6 +52,31 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   resistance, witness-norm growth `‖s_j‖∞≤j`, exact cascade recovery, and a
   timeout/refund path. `test_pcn.c` retained as the same-Y baseline.
   See `docs/LAS.md §7.5` and `docs/THEORY_IMPL_BRIDGE.md §12.5`.
+  **Meeting-2 note:** AMHL was re-classified as *optional/bonus* — it happens to
+  be done already, but it must not displace Stage-1/2 + benchmark work.
+- ✅ **Serialization + byte-level verifier** — `ref/serialize.{c,h}` +
+  `ref/test/test_serde.c`. Bit-packed wire encoding (pk 2944B, sk/witness 512B,
+  sig 4672B — measured, not formulas), *validating* decoder (rejects coeff≥Q,
+  non-ternary code, out-of-band z), and `las_verify_packed` = the byte interface
+  an on-chain verifier consumes. Tamper test: all 4672 single-byte flips rejected.
+  See `docs/LAS.md §5.10, §6.3`.
+- ✅ **Deterministic API + pinned KATs (C4)** — `las_keygen_seed` / `las_sign_det`
+  / `las_presign_det` (mask seed = `SHAKE256(tag‖sk‖[Y]‖M)`; shared
+  `sign_core`/`presign_core` with the randomised paths) + `ref/test/test_kat.c`
+  with a pinned SHAKE256 digest over 4 fully-deterministic vectors. Reproducible
+  across runs/machines; cross-check anchor for any future on-chain verifier.
+  See `docs/LAS.md §5.11, §6.4`.
+- ✅ **Classical adaptor baseline (Meeting-2 B2.ii)** — `ref/test/bench_classical.c`
+  (`make test/bench_classical`; needs one-time clone of
+  `third_party/secp256k1-zkp`, git-ignored, commit `95b9835`). ECDSA-adaptor
+  measured same-machine: KeyGen 31µs, Sign 41, Verify 62, PreSign 189,
+  PreVerify 244, Adapt 3, Ext 35; sizes pk 33B / sig 64B / pre-sig 162B.
+  2×2 "price of post-quantum" table + analysis in `docs/LAS.md §8.3`.
+- ✅ **Reproducibility entry point + function map (Meeting-2 B5 deliverables)** —
+  `README_LAS.md` (build/run/reproduce; upstream commit hash `2374d22` +
+  toolchain recorded, B5.1) and `docs/FUNCTION_MAP.md` (every Dilithium function
+  classified call-as-is / modify / new; headline: **zero upstream functions
+  modified**, B5.4 — also the report's "reused vs modified vs added" table, B4).
 
 ## Why this project exists
 - Blockchains sign with ECDSA/Schnorr; Shor's algorithm breaks both. "Post-quantum"
@@ -72,8 +114,9 @@ The bound budget, not packing. PreSign rejects at the **tighter** `γ−κ−1`;
 ternary witness has `‖y‖∞ ≤ 1`, so the adapted `z = ẑ + y` satisfies
 `‖z‖∞ ≤ γ−κ` and clears ordinary Verify. If you loosen PreSign to `γ−κ`, adapted
 signatures can exceed the bound and Verify rejects everything. (`γ = κ·d·(n+ℓ)`
-governs the MSIS hardness parameter; the acceptance rate is ~23% per attempt —
-expected for the simplified scheme without hint vector.)
+governs the MSIS hardness parameter; the acceptance rate is ≈37% per attempt
+(~2.7 attempts/sig, `≈ e^{−1}`) — expected for the simplified scheme without
+hint vector, and measured directly via the `las_attempts` counter.)
 
 ## Known caveat (note in thesis, do NOT need to solve)
 "Knowledge gap": here the extracted `y` is **exact**; in the paper's relaxed
@@ -85,23 +128,40 @@ fixed to `Q = 8380417 (≈2^23)`, so this build uses that `Q`. `Q > 2γ`, so
 correctness holds; only the concrete MSIS/MLWE security margin changes (out of
 scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mult.
 
-## Scope discipline (from supervisor)
+## Scope discipline (from supervisor — Meeting 2, 2026-06-08; see `las-objectives-meeting2.md`)
 - Target dilithium3 build (NIST level ~2/3) — LAS code is mode-independent and is
   built/tested under `-DDILITHIUM_MODE=3` (also 2/5 for portability).
 - Do NOT implement/analyse security proofs. Implement + benchmark + demo only.
-- Success ladder: (min) working LAS + basic blockchain demo ✅;
-  (better) benchmark vs plain Dilithium ✅ (`bench_compare`); (best) a second
-  exotic scheme — **open** (needs a choice: ring / threshold / multisig).
-- ✅ **AMHL done** — K-hop bound (`γ−κ−K`) and distinct per-hop statements
-  implemented (`ref/amhl.{c,h}`, `ref/test/test_amhl.c`); same-Y PCN retained as
-  baseline. Full PCN construction complete.
-- **TODO: report scaffolding** — `docs/LAS.md` has the technical content; the
-  8000-word dissertation chapter needs to be drafted from it.
+- **Two-stage spine (official):** Stage 1 = standalone LAS + benchmark vs pure
+  Dilithium ✅; Stage 2 = blockchain application (atomic swap / fair exchange on
+  a local/private chain) ✅ (simulated ledger; gas measurement still open).
+- **Benchmarks now need TWO baselines (B2):** (i) LAS vs pure Dilithium ✅
+  (`bench_compare`); (ii) LAS vs **classical adaptor signature** ✅
+  (`bench_classical` — libsecp256k1-zkp `ecdsa_adaptor`, vendored at `95b9835`,
+  reused as-is and measured on the same machine; full 2×2 in `docs/LAS.md §8.3`).
+  Headline: PQ price is communication (×29–89 sizes), not computation; LAS's
+  adaptor overhead ≈0 vs classical's ~4× (DLEQ); LAS PreVerify absolutely faster.
+- **Parameters:** stay on Dilithium's `q=8380417≈2²³` for now (supervisor-
+  sanctioned starting point); migration to the paper's `q≈2²⁴` is a *later,
+  documented* step with before/after benchmarks — optional if justified.
+- **Optional tier only after Stages 1–2 + both baselines are airtight:**
+  AMHL ✅ (already done — counts as bonus), IAS comparison attempt (timebox 1–2
+  days; a failed build is reportable), second exotic scheme (Falafl tops the
+  shortlist; application-layer only).
+- **Hard out-of-scope (supervisor):** Ethereum-consensus multisigs, blind/group
+  signatures, heavy ZKP/MPC — one related-work paragraph max.
+- **TODO: report draft** — supervisor-confirmed skeleton (B4): high-level design →
+  function map (✅ `docs/FUNCTION_MAP.md`) → key decisions → benchmark results
+  (both baselines) → critical analysis; code snippets only in appendix.
+  ~8000 words from `docs/LAS.md`.
 
 ## Reference
+- **Objectives (authoritative):** `las-objectives-meeting2.md` (Meeting 2,
+  supersedes `LAS_OBJECTIVES_FOR_TOP_MARK.md` where they conflict).
 - LAS paper: eprint 2020/845 (Esgin, Ersoy, Erkin).
 - poqeth (integration template): eprint 2025/091.
 - Full design + math + results: `docs/LAS.md`.
+- Reproducibility: `README_LAS.md` · function classification: `docs/FUNCTION_MAP.md`.
 
 # Report 
 2.1 Report

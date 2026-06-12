@@ -174,10 +174,29 @@ i.e., `‖z‖∞ > γ−κ = 122820`. This exactly encodes "`‖z‖∞ > γ−
 so the distribution of `z` given the accepted output is independent of `r`. This
 is the zero-knowledge property of Fiat–Shamir-with-aborts.
 
-**Acceptance rate:** Measured at ~23% per attempt (from `bench_las3`). The bound
-`γ = κ·d·(n+ℓ)` is chosen to make the MSIS hardness parameter adequate, not to
-maximise the acceptance rate. The optimised Dilithium scheme gets >80% by using
-hints to avoid the `β=τ·η` rejection penalty — we deliberately omit this.
+**Acceptance rate:** Measured **directly** at ~37% per attempt (≈2.7 attempts/sig)
+via the `las_attempts` counter in `bench_las3`, matching the closed form
+`(1 − κ/γ)^{(n+ℓ)·N} ≈ e^{-1} ≈ 36.8%`. (An earlier indirect estimate from the
+`t_sign/t_verify` timing ratio reported ~23%; it over-counts because a Sign attempt
+does `n+ℓ` `c·r` products vs a Verify's `n` `c·t` products — superseded by the
+direct counter; see `docs/LAS.md §8`.) The bound `γ = κ·d·(n+ℓ)` is chosen to make
+the MSIS hardness parameter adequate, not to maximise the acceptance rate.
+Rejection sampling is intrinsic to Fiat–Shamir-with-aborts. Omitting the hint
+vector does not *worsen* acceptance: optimised Dilithium rejects on the `‖z‖∞`
+bound **plus** a low-order-bits check and a hint-count limit, while this scheme
+rejects on `‖z‖∞` alone, and more conditions can only lower acceptance. So the
+hint-free design carries no acceptance penalty (the old ">80% with hints" framing
+was directionally wrong); Dilithium's own expected repetitions are a small
+single-digit count per its specification.
+
+**Deterministic variant (`las_sign_det`, `las.c`).** The randomised `las_sign`
+draws the 64-byte mask seed from `randombytes`; `las_sign_det` instead derives it
+as `SHAKE256(0x00 ‖ sk ‖ M)` (and `las_presign_det` as `SHAKE256(0x01 ‖ sk ‖ Y ‖ M)`),
+making (pre)signing a pure function of its inputs. Both call the same `sign_core`
+/ `presign_core` rejection loop, so distribution and validity are unchanged; the
+deterministic variants exist only for reproducible KATs (`test_kat.c`) and to
+remove the nonce-reuse failure mode. This is the standard Fiat–Shamir
+"derandomisation" (as in deterministic Dilithium), not a change to the scheme.
 
 ---
 
@@ -458,8 +477,8 @@ Neither proof is reproduced here — see eprint 2020/845 §4 for the formal trea
 |---|---|---|---|
 | Modulus `q` | ≈2^24 | 8380417 ≈ 2^23 | Correctness unaffected (Q > 2γ); reduced MSIS/MLWE security margin |
 | Multi-hop PCN | AMHL with `γ−κ−K` per hop | **AMHL implemented** (`amhl.c`, `las_presign_k`, §12.5) + same-Y baseline (`chain.c`) | Functionally matches the paper's multi-hop locks; a *privacy*-preserving variant remains future work |
-| Signature packing | Bit-packed, ~3210B | Full int32, 9216B in-memory | Sizes only; correctness unaffected |
-| Hint vector | Used in paper's optimised scheme | Not used (simplified scheme) | ~4× slower sign (23% vs ~80% acceptance) |
+| Signature packing | Bit-packed, ~3210B | Bit-packed wire/on-chain encoding **implemented** (`serialize.c`, 4672B) + full-int32 9216B in-memory structs | Sizes only; correctness unaffected. Validating decoder + `las_verify_packed` byte-level verifier added for on-chain use |
+| Hint vector | Used in paper's optimised scheme | Not used (simplified scheme) | ~2.7 attempts/sign (≈37% acceptance, measured directly); Dilithium's own rate not measured here |
 
 ---
 
