@@ -131,6 +131,12 @@ test/test_kat3: test/test_kat.c serialize.c serialize.h las.c las.h \
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
 	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
 
+# Exports a real packed LAS adapted signature for the EVM gas benchmark (evm/).
+test/export_packed: test/export_packed.c serialize.c serialize.h las.c las.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+
 # Classical adaptor baseline (objectives B2.ii). Requires the vendored library:
 #   git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
 #       ../third_party/secp256k1-zkp

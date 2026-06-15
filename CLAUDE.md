@@ -2,9 +2,9 @@
 
 ## Working agreement (READ FIRST, every session — standing instruction from Royce)
 1. **Always start by reading the authoritative docs** to orient the task:
-   `las-objectives-meeting2.md` (current target spec — supervisor Meeting 2,
-   2026-06-08; **supersedes** `LAS_OBJECTIVES_FOR_TOP_MARK.md` where they
-   conflict) and this `CLAUDE.md`. They direct what "done" and "top-mark" mean.
+   `las-context-consolidated.md` (THE objectives/target spec — Meetings 1+2
+   merged), `docs/STATUS.md` (live deliverable/test checklist), and this
+   `CLAUDE.md`. They direct what "done" and "top-mark" mean.
 2. **Always document neatly, in structured / verbose / clear prose, with the
    assessment criteria in mind**, whenever implementing or fixing code. Keep the
    two living technical docs in sync with the code:
@@ -128,7 +128,7 @@ fixed to `Q = 8380417 (≈2^23)`, so this build uses that `Q`. `Q > 2γ`, so
 correctness holds; only the concrete MSIS/MLWE security margin changes (out of
 scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mult.
 
-## Scope discipline (from supervisor — Meeting 2, 2026-06-08; see `las-objectives-meeting2.md`)
+## Scope discipline (from supervisor — Meeting 2, 2026-06-08; see `las-context-consolidated.md`)
 - Target dilithium3 build (NIST level ~2/3) — LAS code is mode-independent and is
   built/tested under `-DDILITHIUM_MODE=3` (also 2/5 for portability).
 - Do NOT implement/analyse security proofs. Implement + benchmark + demo only.
@@ -145,9 +145,9 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
   sanctioned starting point); migration to the paper's `q≈2²⁴` is a *later,
   documented* step with before/after benchmarks — optional if justified.
 - **Optional tier only after Stages 1–2 + both baselines are airtight:**
-  AMHL ✅ (already done — counts as bonus), IAS comparison attempt (timebox 1–2
-  days; a failed build is reportable), second exotic scheme (Falafl tops the
-  shortlist; application-layer only).
+  AMHL ✅ (already done — counts as bonus), on-chain LAS *verification*
+  (precompile/zk; swap+gas floor already done), parameter migration to q≈2²⁴.
+  **Focus: LAS only** — no alternative-PQ-scheme comparison in scope per Royce.
 - **Hard out-of-scope (supervisor):** Ethereum-consensus multisigs, blind/group
   signatures, heavy ZKP/MPC — one related-work paragraph max.
 - **TODO: report draft** — supervisor-confirmed skeleton (B4): high-level design →
@@ -156,11 +156,11 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
   ~8000 words from `docs/LAS.md`.
 
 ## Reference
-- **Objectives (authoritative):** `las-objectives-meeting2.md` (Meeting 2,
-  supersedes `LAS_OBJECTIVES_FOR_TOP_MARK.md` where they conflict).
+- **Objectives (authoritative):** `las-context-consolidated.md` (Meetings 1+2 merged).
+- **Live status / test checklist:** `docs/STATUS.md`.
 - LAS paper: eprint 2020/845 (Esgin, Ersoy, Erkin).
 - poqeth (integration template): eprint 2025/091.
-- Full design + math + results: `docs/LAS.md`.
+- Full design + math + results: `docs/LAS.md` · theory↔code: `docs/THEORY_IMPL_BRIDGE.md`.
 - Reproducibility: `README_LAS.md` · function classification: `docs/FUNCTION_MAP.md`.
 
 # Report 

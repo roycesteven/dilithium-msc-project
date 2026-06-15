@@ -52,14 +52,9 @@ arithmetic.
 
 ### 1.1 Related work and scheme selection
 
-**Why LAS and not IAS?** Two post-quantum adaptor signatures were available:
-
-- **LAS** (eprint 2020/845, ESORICS 2020, Esgin–Ersoy–Erkin) — lattice-based,
-  built directly on Dilithium. This is what we implement.
-- **IAS** (eprint 2020/1345, Tairi–Moreno-Sanchez–Maffei) — isogeny-based, built
-  on CSI-FiSh/CSIDH.
-
-LAS was chosen for three reasons, each warranting a sentence in the Methodology:
+**Why LAS.** **LAS** (eprint 2020/845, ESORICS 2020, Esgin–Ersoy–Erkin) is the
+first lattice-based adaptor signature, built directly on Dilithium; it is what we
+implement. Three reasons, each a Methodology sentence:
 
 1. **Implementation leverage.** LAS extends CRYSTALS-Dilithium, whose reference C
    implementation is the starting point of this project. The four LAS functions
@@ -67,17 +62,14 @@ LAS was chosen for three reasons, each warranting a sentence in the Methodology:
    the base Dilithium scheme; all polynomial arithmetic, NTT, SHAKE/Keccak and
    sampling code is reused directly.
 
-2. **Security assumptions.** LAS is based on Module-SIS and Module-LWE, the same
+2. **Security assumptions.** LAS is based on Module-SIS and Module-LWE — the same
    problems underlying Dilithium and the NIST standard ML-DSA. These assumptions
-   are mature and well-studied. IAS is based on CSIDH-512, which offers only
-   approximately 60-bit quantum security — below NIST's 128-bit threshold — and
-   requires isogeny-group-action arithmetic that is far harder to implement.
+   are mature, well-studied, and sit at the 128-bit security level.
 
-3. **Survey recommendation.** A 2022 survey of post-quantum exotic signatures
-   (eprint 2022/1151) explicitly recommends LAS over IAS unless on-chain signature
-   size is the primary concern, and calls LAS "an acceptable solution for
-   post-quantum blockchain." IAS achieves smaller signatures (~50B vs our 4672B
-   packed), but at the cost of the weaker security level.
+3. **Survey recommendation.** A 2022 systematisation of post-quantum exotic
+   signatures (eprint 2022/1151) calls LAS "an acceptable solution for post-quantum
+   blockchain"; its direct Dilithium reuse and mature security level are exactly
+   what make it the practical choice for a working implementation.
 
 **The "knowledge gap."** LAS (and all lattice adaptor signatures) carry a caveat
 not present in classical schemes: the extracted witness `y = z − ẑ` in this
@@ -889,6 +881,56 @@ sits at a reduced security margin (`q ≈ 2²³`, Section 5.9). Neither caveat
 affects the size ratios, which are format-determined. And the entire classical
 column is broken by Shor's algorithm — that asymmetry is the thesis.
 
+### 8.4 On-chain gas: a real Solidity atomic swap (`evm/`)
+
+Sections 8.2–8.3 measure cost off-chain (a simulated ledger, byte proxies). To
+answer the supervisor's "take an atomic swap, replace the signature scheme, and
+compare" directly, `evm/AdaptorSwap.sol` is a signature-scheme-agnostic HTLC escrow
+run on **Foundry's local EVM** (a private chain). The `fund`/`refund` escrow is
+shared; only the claim-time verification of the *published adapted signature*
+differs, so a gas report isolates the price of post-quantum **on-chain**:
+
+- **Classical** (`claimClassical`): the adapted ECDSA signature is verified
+  natively with the `ecrecover` precompile — how a real EVM ECDSA-adaptor swap
+  settles.
+- **Post-quantum** (`claimLAS`): the adapted LAS signature is a **real 4672-byte
+  packed lattice signature** (`evm/test/las_sig.bin`, exported deterministically
+  from the C implementation by `ref/test/export_packed`). Native lattice
+  verification (NTT + SHAKE256 over the packed signature) is **infeasible in the
+  EVM**, so this charges only the unavoidable on-chain **floor** — calldata for the
+  4672 bytes + one keccak256 pass — a strict *lower bound* on the true cost.
+
+**Measured gas (EVM gas is deterministic — not machine-dependent):**
+
+| Step | Classical (ECDSA-adaptor) | Post-quantum (LAS) |
+|---|---:|---:|
+| fund | 180,285 | 139,568 |
+| **claim** (settlement + signature check) | **75,709** (full verification) | **208,400** (floor; *no* real verification) |
+| refund | 39,330 | 39,330 |
+| deploy | 715,257 | — |
+
+The real LAS signature is 4649 non-zero / 23 zero bytes → **74,476 gas of calldata
+alone** (16 gas/non-zero byte, 4 gas/zero). Three readings for the report:
+
+1. **The on-chain price of PQ is, again, communication.** The 4672-byte signature's
+   calldata (74,476 gas) is ~97 % of the marginal claim cost and alone exceeds the
+   *entire* classical claim (75,709 gas, which includes real verification).
+2. **Even the floor is ~2.75× the full classical claim** (208,400 vs 75,709), and
+   that floor does **no** cryptographic verification.
+3. **True on-chain LAS verification is infeasible natively** — the NTT/SHAKE
+   computation over 8×256 coefficients would dwarf the block gas limit, which is
+   precisely why on-chain PQ verification needs a dedicated precompile or a
+   succinct (zk) proof of verification (the poqeth precedent for *basic* PQ). This
+   is the honest boundary of "exotic PQ on a blockchain" today: the *protocol*
+   works end-to-end (Stage 2), but native on-chain *verification* awaits
+   protocol-level EVM support — a clean, concrete future-work statement rather than
+   a hidden limitation. (`fund` differs only by stored-field count, an artefact of
+   the struct layout, not the scheme.)
+
+Reproduce: `evm/README.md` (one `export_packed` + `forge test --gas-report`).
+
+---
+
 ## 9. Limitations and future work
 
 - **AMHL (multi-hop, K-hop bound).** ✅ **Implemented** (Section 7.5,
@@ -897,8 +939,8 @@ column is broken by Shor's algorithm — that asymmetry is the thesis.
   `las_presign_k`, and the demo asserts wormhole resistance, the witness-norm
   growth `‖s_j‖∞ ≤ j`, exact per-hop recovery, and a timeout/refund path. The
   same-Y scriptless HTLC (Section 7.4) is retained as the simpler baseline. A
-  remaining nicety is a *privacy*-preserving variant (per the IAS critique,
-  Section 1.1) and randomised (non-cumulative-sum) lock setups.
+  remaining nicety is a *privacy*-preserving variant (statements are public
+  on-chain) and randomised (non-cumulative-sum) lock setups.
 
 - **Knowledge gap.** The extracted witness norm grows with path length: a K-hop
   intermediate witness has `‖s_j‖∞ ≤ j` (a sum of up to K ternary vectors), now
