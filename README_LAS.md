@@ -67,10 +67,13 @@ make test/test_las5 && ./test/test_las5
 ## Documentation index
 | File | Contents |
 |---|---|
+| [docs/LAS_WALKTHROUGH.md](docs/LAS_WALKTHROUGH.md) | **Start here** — plain-English, visual, end-to-end explainer (non-cryptographer friendly; also the video spine) |
 | [docs/LAS.md](docs/LAS.md) | Full design / implementation / testing / evaluation write-up (report source material) |
+| [evm/README.md](evm/README.md) | On-chain gas benchmark (Solidity atomic swap, classical vs LAS) |
 | [docs/FUNCTION_MAP.md](docs/FUNCTION_MAP.md) | Dilithium functions reused / not-used / new (the "clean diff" map) |
-| [docs/THEORY_IMPL_BRIDGE.md](docs/THEORY_IMPL_BRIDGE.md) | Every paper equation → C function / line |
-| [las-objectives-meeting2.md](las-objectives-meeting2.md) | Current objectives (supervisor Meeting 2) |
+| [docs/THEORY_IMPL_BRIDGE.md](docs/THEORY_IMPL_BRIDGE.md) | Every paper equation → C function |
+| [docs/STATUS.md](docs/STATUS.md) | Live deliverable / test checklist (what's done & tested) |
+| [las-context-consolidated.md](las-context-consolidated.md) | Canonical objectives (Meetings 1+2 merged) |
 
 ## Layout
 ```

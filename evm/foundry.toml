@@ -1,0 +1,8 @@
+[profile.default]
+src = "src"
+out = "out"
+test = "test"
+optimizer = true
+optimizer_runs = 200
+# allow the test to read the real packed LAS signature exported from the C side
+fs_permissions = [{ access = "read", path = "./test" }]

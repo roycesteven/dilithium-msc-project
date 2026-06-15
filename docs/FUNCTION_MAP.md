@@ -99,8 +99,22 @@ from bytes). Sizes: pk 2944 B, sk 512 B, sig 4672 B.
 `chain_extract_witness`, `chain_refund_swap`.
 
 ### 3.5 Tests / benchmarks (`ref/test/`)
-`test_las`, `test_swap`, `test_pcn`, `test_amhl`, `test_serde`, `test_kat`
-(functional/KAT); `bench_las`, `bench_compare`, `bench_app` (benchmarks).
+Functional / KAT: `test_las` (1000-iter 8-point contract, modes 2/3/5), `test_swap`,
+`test_pcn` (same-Y HTLC), `test_amhl` (multi-hop), `test_serde` (round-trip /
+verify-from-bytes / tamper), `test_kat` (pinned SHAKE256 digest).
+Benchmarks: `bench_las` (per-op + direct rejection rate), `bench_compare`
+(LAS vs optimised Dilithium-3), `bench_app` (application payload, simulated),
+`bench_classical` (LAS vs classical ECDSA-adaptor from libsecp256k1-zkp).
+Helper: `export_packed` (writes one real packed adapted signature for the EVM test).
+
+### 3.6 `evm/` — on-chain gas benchmark (Solidity, new; no C edits)
+`AdaptorSwap.sol` — a signature-agnostic HTLC escrow run on Foundry's local EVM,
+settling an atomic swap with either a classical ECDSA adapted signature
+(`claimClassical`, native `ecrecover`) or a real packed LAS adapted signature
+(`claimLAS`, the on-chain calldata+keccak floor). It consumes only the *bytes*
+produced by `serialize.c` (via `export_packed`), so it touches no C source.
+Measured gas: classical claim 75,709 vs LAS claim floor 208,400 — see
+`docs/LAS.md §8.4` and `evm/README.md`.
 
 ---
 
