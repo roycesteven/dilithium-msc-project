@@ -19,3 +19,4 @@ test_amhl3
 test_serde3
 test_kat3
 bench_classical
+export_packed
