@@ -1,10 +1,13 @@
 # Theory → Implementation Bridge
 
 *Mapping every paper equation in eprint 2020/845 (Algorithm 2) to the exact
-C function, file, and line in this implementation.*
+C function and file in this implementation. (Function names, not line numbers, so
+the references stay correct as the code evolves.)*
 
-This document is for your own understanding. Use it when reading the paper
-alongside the code, or when explaining design choices in the report.
+This document is for the reader who wants the equation-by-equation correspondence.
+For a plain-English, non-cryptographer walkthrough of the whole project, start
+with **`docs/LAS_WALKTHROUGH.md`**; for the full design/evaluation write-up see
+`docs/LAS.md`. Use this bridge when reading the paper alongside the code.
 
 ---
 
@@ -30,17 +33,17 @@ you changed it. Every claim is grounded in the code as it stands today.
 | Ring `R_q = Z_q[X]/(X^N+1)` | `poly` (struct of `int32_t coeffs[N]`) | `ref/poly.h` | degree-255 polynomial mod Q |
 | Modulus `q` | `Q` | `ref/params.h` | 8380417 (≈2^23; paper uses 2^24) |
 | Ring degree `d` | `N` | `ref/params.h` | 256 |
-| Module dimension `n` | `LAS_N` | `ref/las.h:32` | 4 |
-| Extra columns `ℓ` | `LAS_ELL` | `ref/las.h:33` | 4 |
-| Total vector length `n+ℓ` | `LAS_M` | `ref/las.h:34` | 8 |
-| Challenge weight `κ` | `LAS_KAPPA` | `ref/las.h:35` | 60 |
-| Mask bound `γ` | `LAS_GAMMA` | `ref/las.h:36` | 122880 (= κ·d·(n+ℓ) = 60·256·8) |
-| Matrix `A = [I_n \| A']` | `las_pp.mat[LAS_N][LAS_ELL]` (A' only) | `ref/las.h:52` | A' in NTT domain; identity handled implicitly |
-| Public key / statement `t = A·r` | `las_pk.t[LAS_N]` | `ref/las.h:54` | vector of n=4 polynomials in [0,Q) |
-| Secret key / witness `r ∈ S_1` | `las_sk.s[LAS_M]` | `ref/las.h:55` | vector of n+ℓ=8 ternary polynomials |
-| Signature `σ = (c, z)` | `las_sig` | `ref/las.h:56` | challenge poly + response vector |
-| Ternary set `S_1` | `{-1, 0, 1}` | — | sampled by `sample_ternary` in `las.c:169` |
-| Mask set `S_γ` | `[-γ, γ]` | — | sampled by `sample_Sgamma` in `las.c:138` |
+| Module dimension `n` | `LAS_N` | `ref/las.h` | 4 |
+| Extra columns `ℓ` | `LAS_ELL` | `ref/las.h` | 4 |
+| Total vector length `n+ℓ` | `LAS_M` | `ref/las.h` | 8 |
+| Challenge weight `κ` | `LAS_KAPPA` | `ref/las.h` | 60 |
+| Mask bound `γ` | `LAS_GAMMA` | `ref/las.h` | 122880 (= κ·d·(n+ℓ) = 60·256·8) |
+| Matrix `A = [I_n \| A']` | `las_pp.mat[LAS_N][LAS_ELL]` (A' only) | `ref/las.h` | A' in NTT domain; identity handled implicitly |
+| Public key / statement `t = A·r` | `las_pk.t[LAS_N]` | `ref/las.h` | vector of n=4 polynomials in [0,Q) |
+| Secret key / witness `r ∈ S_1` | `las_sk.s[LAS_M]` | `ref/las.h` | vector of n+ℓ=8 ternary polynomials |
+| Signature `σ = (c, z)` | `las_sig` | `ref/las.h` | challenge poly + response vector |
+| Ternary set `S_1` | `{-1, 0, 1}` | — | sampled by `sample_ternary` in `las.c` |
+| Mask set `S_γ` | `[-γ, γ]` | — | sampled by `sample_Sgamma` in `las.c` |
 
 ---
 
@@ -49,7 +52,7 @@ you changed it. Every claim is grounded in the code as it stands today.
 ### Paper: sample `A' ← R_q^{n×ℓ}` uniformly at random
 
 ```c
-/* las.c:199 — las_setup */
+/* las.c — las_setup */
 poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
 ```
 
@@ -70,18 +73,18 @@ poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
 ### Paper: `w = A·v` where `A = [I_n | A']`, `v ∈ R_q^{n+ℓ}`
 
 ```c
-/* las.c:56 — las_Amul */
+/* las.c — las_Amul */
 // identity block: w[i] += v[i]   (v[0..n-1])
 // A' block:       w[i] += Σ_j A'[i][j] * v[n+j]  (v[n..n+ℓ-1])
 ```
 
 Step by step:
-1. NTT-transform `v[n..n+ℓ-1]` → `vhat[j]` (line 61–63)
+1. NTT-transform `v[n..n+ℓ-1]` → `vhat[j]`
 2. For each output row `i`: pointwise-multiply `A'[i][j]` (already NTT) with
-   `vhat[j]`, accumulate in `acc` (lines 67–70)
-3. Inverse-NTT `acc` back to normal domain (line 72)
-4. Add identity contribution `v[i]` (line 73)
-5. Canonicalise to `[0, Q)` with `reduce` + `caddq` (lines 74–75)
+   `vhat[j]`, accumulate in `acc`
+3. Inverse-NTT `acc` back to normal domain
+4. Add identity contribution `v[i]`
+5. Canonicalise to `[0, Q)` with `reduce` + `caddq`
 
 **Why canonicalise?** The output is used either for hashing (needs a canonical
 form) or for subtraction in Verify (`A·z − c·t`). Using `[0, Q)` consistently
@@ -94,14 +97,14 @@ means the equality check `poly_equal(Ay, Y->t)` in `las_ext` is byte-exact.
 ### Paper: `r ← S_1^{n+ℓ}; t = A·r; return (pk=t, sk=r)`
 
 ```c
-/* las.c:208 — las_keygen */
+/* las.c — las_keygen */
 randombytes(seed, LAS_SEEDBYTES);            // fresh randomness
 for(j = 0; j < LAS_M; ++j)
     sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);  // r ← S_1^8
 las_Amul(pk->t, pp, sk->s);                  // t = A·r
 ```
 
-**`sample_ternary` (las.c:169):** reads 2 bits at a time from a SHAKE256 stream.
+**`sample_ternary` (las.c):** reads 2 bits at a time from a SHAKE256 stream.
 Values `{0,1,2}` map to `{-1,0,1}`; value `3` is rejected. This gives a
 uniform distribution over `{-1,0,1}` with no bias. The nonce `j` separates the
 8 component polynomials.
@@ -117,7 +120,7 @@ identical to a key pair, simplifying the interface (no separate Gen algorithm).
 ### Paper: `c = H(pk, commit, M)` where `commit = w` (Sign) or `w+Y` (PreSign)
 
 ```c
-/* las.c:115 — hash_challenge */
+/* las.c — hash_challenge */
 // 1. Absorb pk = t  (n=4 polynomials, 4 bytes/coeff, canonical [0,Q))
 // 2. Absorb commit  (n=4 polynomials, same encoding)
 // 3. Absorb message M
@@ -131,8 +134,8 @@ standard in Dilithium. The important invariant is that the SAME encoding is
 used at sign time and verify time — if you changed the encoding you would need
 to change it in both places consistently.
 
-**`las_challenge` (las.c:81):** identical to Dilithium's `poly_challenge`
-(`ref/poly.c:489`) with `TAU=60`. Places exactly `κ=60` nonzero `±1` entries
+**`las_challenge` (las.c):** identical to Dilithium's `poly_challenge`
+(`ref/poly.c`) with `TAU=60`. Places exactly `κ=60` nonzero `±1` entries
 at distinct positions in a 256-element polynomial via Fisher-Yates-style
 rejection sampling, using the first 8 squeezed bytes as sign bits.
 
@@ -148,7 +151,7 @@ return σ = (c, z)
 ```
 
 ```c
-/* las.c:217 — las_sign */
+/* las.c — las_sign */
 randombytes(seed, 64);
 for(;;) {                                          // rejection loop
     for(j=0; j<LAS_M; ++j)
@@ -210,7 +213,7 @@ return c == H(pk, w', M)
 ```
 
 ```c
-/* las.c:242 — las_verify */
+/* las.c — las_verify */
 if(chknorm_vec(sig->z, LAS_BOUND_SIGN)) return -1;   // ‖z‖∞ > γ−κ
 las_Amul(w, pp, sig->z);                              // A·z
 for(j=0; j<LAS_N; ++j) {
@@ -246,7 +249,7 @@ return σ̂ = (c, ẑ)
 ```
 
 ```c
-/* las.c:261 — las_presign */
+/* las.c — las_presign */
 las_Amul(w, pp, y);                                  // w = A·y
 for(j=0; j<LAS_N; ++j) {
     poly_add(&wY[j], &w[j], &Y->t[j]);               // w + Y  ← KEY DIFFERENCE
@@ -278,7 +281,7 @@ return c == H(pk, w'+Y, M)
 ```
 
 ```c
-/* las.c:291 — las_preverify */
+/* las.c — las_preverify */
 if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN)) return -1;
 las_Amul(w, pp, presig->z);                          // A·ẑ
 for(j=0; j<LAS_N; ++j) {
@@ -300,7 +303,7 @@ return poly_equal(&c2, &presig->c) ? 0 : -1;        // c == c2 ?
 **The tripwire (test step 5):** If you feed `σ̂` to standard `las_verify`, it
 computes `H(pk, w', M) = H(pk, w, M)`. Since `c = H(pk, w+Y, M) ≠ H(pk, w, M)`
 (with overwhelming probability over the random oracle H), standard Verify returns
-false. This is asserted in `test_las.c:67–70`.
+false. This is asserted in `test_las.c` (the tripwire, test step 5).
 
 ---
 
@@ -313,7 +316,7 @@ return σ = (c, ẑ + y_wit)
 ```
 
 ```c
-/* las.c:315 — las_adapt */
+/* las.c — las_adapt */
 if(las_preverify(presig, m, mlen, Y, pk, pp)) return -1;
 sig->c = presig->c;
 for(j=0; j<LAS_M; ++j) {
@@ -349,7 +352,7 @@ return s
 ```
 
 ```c
-/* las.c:330 — las_ext */
+/* las.c — las_ext */
 for(j=0; j<LAS_M; ++j) {
     poly_sub(&y->s[j], &sig->z[j], &presig->z[j]);  // s = z − ẑ
     poly_reduce(&y->s[j]);
@@ -380,7 +383,7 @@ For a K-hop route, lock hop `j` with the cumulative statement `Y_j = A·s_j` whe
 
 #### The K-hop bound
 ```c
-/* las.h:56 */
+/* las.h */
 #define LAS_BOUND_PRESIGN_K(K)  (LAS_GAMMA - LAS_KAPPA - (int32_t)(K) + 1)
 ```
 `poly_chknorm` rejects at `≥ bound`, so this accepts `‖ẑ‖∞ ≤ γ−κ−K`. The adapted
@@ -388,9 +391,9 @@ response `z = ẑ + s_j` then has `‖z‖∞ ≤ (γ−κ−K) + ‖s_j‖∞ �
 which clears ordinary `Verify`. `K=1` reproduces `LAS_BOUND_PRESIGN` exactly.
 
 ```c
-/* las.c:317 — las_presign_k */   // identical to las_presign except:
-if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops))) continue;  // las.c:341
-/* las.c:348 — las_preverify_k */ // same, with LAS_BOUND_PRESIGN_K(nhops)
+/* las.c — las_presign_k */   // identical to las_presign except:
+if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops))) continue;  // las.c
+/* las.c — las_preverify_k */ // same, with LAS_BOUND_PRESIGN_K(nhops)
 ```
 (The parameter is named `nhops`, not `K`, because Dilithium's `params.h` already
 defines the object-like macro `K` for its module dimension — a direct `K`
@@ -398,10 +401,10 @@ parameter would be textually replaced by `6` and fail to compile.)
 
 #### Cumulative setup: `amhl_setup_gen`
 ```c
-/* amhl.c:21 — amhl_setup_gen */
+/* amhl.c — amhl_setup_gen */
 las_keygen(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
-// s_j = s_{j-1} + l_j           (amhl.c:36, kept small/centred)
-// Y_j = Y_{j-1} + L_j = A·s_j   (amhl.c:41, canonical [0,Q))
+// s_j = s_{j-1} + l_j           (amhl.c, kept small/centred)
+// Y_j = Y_{j-1} + L_j = A·s_j   (amhl.c, canonical [0,Q))
 ```
 The statements are built **additively** from the increment key pairs, so AMHL adds
 no new lattice arithmetic — it is pure reuse of `las_keygen` (= `A·(·)`) plus
@@ -414,7 +417,7 @@ path is needed in Adapt or Ext (§11, §12).
 
 #### Witness recovery along the path: `amhl_recover_prev`
 ```c
-/* amhl.c:62 — amhl_recover_prev:  prev = cur − incr */
+/* amhl.c — amhl_recover_prev:  prev = cur − incr */
 poly_sub(&prev->s[i], &cur->s[i], &incr->s[i]);   // s_{j-1} = s_j − l_j
 ```
 After extracting `s_j` from the on-chain claim of hop `j`, intermediary `U_{j-1}`
@@ -485,7 +488,7 @@ Neither proof is reproduced here — see eprint 2020/845 §4 for the formal trea
 ## 16. Test assertions as theorems
 
 `ref/test/test_las.c` encodes the formal correctness properties as executable
-assertions over 200 randomised iterations:
+assertions over 1000 randomised iterations (modes 2/3/5):
 
 | Test step | Theorem being checked |
 |---|---|

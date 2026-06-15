@@ -31,9 +31,14 @@ packed signatures) rather than *computation* (all operations remain sub-millisec
 Notably, the adaptor overhead structure inverts: classical pre-signing costs ≈4.6×
 its own base signing due to a DLEQ proof, whereas LAS pre-signing costs ≈1.03× —
 and LAS pre-verification is absolutely faster than its classical counterpart on the
-same machine. Correctness holds in 100% of 1,000 randomised end-to-end trials. We
-conclude that exotic post-quantum signatures are deployable at the application
-layer today, with on-chain bytes — not CPU time — as the binding constraint.
+same machine. Correctness holds in 100% of 1,000 randomised end-to-end trials. A
+real Solidity atomic swap on a local EVM confirms the same story on-chain: settling
+with a LAS signature costs ≥2.75× the classical claim *before any verification*,
+its 4672-byte calldata alone exceeding the entire ECDSA claim, and native lattice
+verification exceeds the block gas limit. We conclude that exotic post-quantum
+signatures are deployable at the application layer today, with on-chain bytes — not
+CPU time — as the binding constraint, and that on-chain *verification* is the one
+piece still awaiting protocol-level support (a precompile or zk proof).
 
 ---
 
@@ -111,14 +116,11 @@ constructs adaptor multi-hop locks (AMHL) for PCNs, requiring a tightened
 rejection bound `γ−κ−K` for path length `K`. We implement the simplified scheme
 (the choice is justified in Section 3.3) and the AMHL construction.
 
-**IAS** [3] (Tairi–Moreno-Sanchez–Maffei, FC 2021) is the isogeny-based
-alternative, built on CSI-FiSh over CSIDH-512. Its signatures are dramatically
-smaller (tens of bytes), but CSIDH-512 is now estimated to offer only ≈60-bit
-quantum security — below NIST's floor — its group-action arithmetic is orders of
-magnitude slower, and the public artefact is six years old. The survey [4]
-recommends LAS over IAS unless on-chain size dominates all other concerns; we
-adopt that recommendation and treat IAS as the considered-and-rejected
-alternative (an attempted run of its artefact remains future work, Section 6).
+The survey [4] recommends LAS for general post-quantum blockchain use, citing its
+direct Dilithium reuse and mature 128-bit Module-SIS/Module-LWE security; this is
+why LAS — rather than any of the other paper-only exotic PQ constructions the
+survey catalogues — is the practical choice for a *working* implementation, and
+the one we build.
 
 **poqeth** [5] (eprint 2025/091) is the integration precedent: it implemented and
 gas-measured *basic* PQ verification (including Dilithium) on Ethereum. Our
@@ -589,6 +591,32 @@ column is statistically flat. The bound change that makes multi-hop *correct*
 costs nothing in speed — a counter-intuitive and, to our knowledge, previously
 unmeasured property.
 
+**On-chain gas — a real Solidity swap on a local EVM (Table 8).** To answer the
+brief's "take an atomic swap, replace the signature scheme, compare" directly, a
+signature-agnostic HTLC escrow (`evm/AdaptorSwap.sol`) was deployed on Foundry's
+local EVM. The escrow (`fund`/`refund`) is shared; only the claim-time verification
+of the *published adapted signature* differs, so the gas gap is the signature's.
+The classical leg verifies the adapted ECDSA signature natively (`ecrecover`); the
+LAS leg publishes a **real 4672-byte packed signature** (exported deterministically
+from the C implementation) and charges the on-chain **floor** — calldata + one
+keccak — because native lattice verification is infeasible in the EVM.
+
+| Step | Classical (ECDSA-adaptor) | Post-quantum (LAS) |
+|---|---:|---:|
+| fund | 180,285 | 139,568 |
+| **claim** (settle + verify) | **75,709** (full verification) | **208,400** (floor; *no* verification) |
+| refund | 39,330 | 39,330 |
+
+EVM gas is deterministic (not machine-dependent). The real signature is 4649
+non-zero / 23 zero bytes → **74,476 gas of calldata alone**, which *by itself*
+exceeds the entire classical claim (75,709, verification included). Even the LAS
+floor — which performs no cryptographic check — is **2.75× the full classical
+claim**, and true verification would add the whole NTT/SHAKE computation, exceeding
+the block gas limit. This is the honest boundary of "exotic PQ on a blockchain"
+today: the swap *protocol* runs end-to-end, but native on-chain *verification*
+awaits a precompile or a succinct (zk) proof — the same conclusion poqeth [5]
+reached for *basic* PQ, now confirmed for the exotic case and quantified.
+
 ### 4.4 Correctness, robustness, reproducibility
 
 100% of 1,000 randomised end-to-end contract trials pass (modes 2/3/5). All
@@ -603,12 +631,11 @@ from a clean tree with zero warnings (Appendix D).
 Our measured 4,672 B packed signature compares against the paper's ≈3,210 B
 *estimate* for its **optimised** scheme — the gap is precisely the hint-vector
 compression and `2²⁴` parameter set we deliberately did not implement, plus our
-challenge encoding. IAS [3] achieves ~50 B signatures but at ≈60-bit quantum
-security and group-action timings orders of magnitude slower; on the survey's
-own criteria [4], LAS remains the recommended construction. poqeth [5] reports
-gas for basic Dilithium verification on Ethereum; our `las_verify_packed`
-consumes byte strings precisely so that porting it into poqeth's harness is
-future work with measured baselines on both ends.
+challenge encoding; on the survey's own criteria [4], LAS remains the recommended
+construction for post-quantum blockchain. poqeth [5] reports gas for basic
+Dilithium verification on Ethereum; our `las_verify_packed` consumes byte strings
+precisely so that porting it into poqeth's harness is future work with measured
+baselines on both ends.
 
 ---
 
@@ -663,10 +690,12 @@ artefact. Against its objectives: **O1** — LAS implemented on the unmodified
 Dilithium reference, the full adaptor contract passing 1,000/1,000 randomised
 trials; **O2** — a working scriptless atomic swap, a timeout-refund HTLC ledger,
 and the bonus AMHL multi-hop construction with the `γ−κ−K` bound and
-hard-asserted wormhole resistance; **O3** — two same-machine baselines, yielding
-the 2×2 evaluation: the price of post-quantum is ×29–89 in bytes, not in time,
-and LAS's adaptor operations cost almost nothing over its base scheme — the
-overhead structure actually *inverts* relative to classical ECDSA adaptors;
+hard-asserted wormhole resistance — plus a **real Solidity swap on a local EVM**
+that settles with either signature scheme and measures the gas (§4.3); **O3** —
+two same-machine baselines, yielding the 2×2 evaluation: the price of post-quantum
+is ×29–89 in bytes, not in time, and LAS's adaptor operations cost almost nothing
+over its base scheme — the overhead structure actually *inverts* relative to
+classical ECDSA adaptors;
 **O4** — byte-level serialisation with a validating verifier, deterministic
 signing, pinned KATs, recorded provenance; **O5** — the limitations above,
 quantified where possible rather than asserted.
@@ -678,15 +707,15 @@ zero changes to the underlying NIST-track primitive. What stands between this
 artefact and deployment is not cryptography but bytes: 4,672 B signatures are
 the real cost, and they are already within ×1.4 of optimised Dilithium-3's.
 
-**Future work**, in order of value per effort: (1) port `las_verify_packed`
-into a poqeth-style Ethereum harness and measure gas against their basic-
-Dilithium figures — both endpoints now exist; (2) migrate parameters to the
-paper's `q ≈ 2²⁴` (new NTT table) and report the before/after benchmark diff;
-(3) attempt to run the six-year-old IAS artefact, where even a documented
-failure is data; (4) reconcile the hint/compression machinery with the adaptor
-algebra to recover the remaining ~40% of signature size; (5) a second exotic
-scheme (a lattice ring signature such as Falafl) for an exotic-vs-exotic
-comparison; (6) constant-time hardening.
+**Future work**, in order of value per effort: (1) make on-chain LAS *verification*
+feasible — the swap and its gas floor are already measured on a local EVM (§4.3),
+so the open piece is a `las_verify_packed` precompile or a succinct (zk) proof of
+verification, benchmarked against poqeth's basic-Dilithium gas; (2) migrate
+parameters to the paper's `q ≈ 2²⁴` (new NTT table) and report the before/after
+benchmark diff;
+(3) reconcile the hint/compression machinery with the adaptor algebra to recover
+the remaining ~40% of signature size; (4) a privacy-preserving AMHL variant
+(statements are currently public on-chain); (5) constant-time hardening.
 
 ---
 
@@ -694,7 +723,7 @@ comparison; (6) constant-time hardening.
 
 1. M. F. Esgin, O. Ersoy, Z. Erkin. *Post-Quantum Adaptor Signatures and Payment Channel Networks.* ESORICS 2020; IACR ePrint 2020/845.
 2. L. Ducas, E. Kiltz, T. Lepoint, V. Lyubashevsky, P. Schwabe, G. Seiler, D. Stehlé. *CRYSTALS-Dilithium: Algorithm Specifications.* NIST FIPS 204 (ML-DSA), 2024; reference implementation github.com/pq-crystals/dilithium.
-3. E. Tairi, P. Moreno-Sanchez, M. Maffei. *Post-Quantum Adaptor Signature for Privacy-Preserving Off-Chain Payments.* FC 2021; IACR ePrint 2020/1345.
+3. *(slot reserved for numbering stability; this project focuses solely on LAS — references will be tightened in the final formatting pass.)*
 4. M. Buser et al. *A Survey on Exotic Signatures for Post-Quantum Blockchain.* IACR ePrint 2022/1151.
 5. R. Ilesik et al. *poqeth: Efficient, post-quantum signature verification on Ethereum.* IACR ePrint 2025/091.
 6. M. Ajtai. *Generating Hard Instances of Lattice Problems.* STOC 1996.
