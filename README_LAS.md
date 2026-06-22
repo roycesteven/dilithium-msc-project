@@ -1,86 +1,182 @@
-# LAS on Dilithium — build, run, reproduce
+# LAS on Dilithium — build, run, and reproduce the results
 
-Post-quantum **Lattice-based Adaptor Signature** (LAS, Esgin–Ersoy–Erkin, IACR
+Post-quantum **Lattice-based Adaptor Signature** (LAS; Esgin, Ersoy, Erkin, IACR
 eprint 2020/845, Algorithm 2 — the *simplified* scheme) implemented on the
-CRYSTALS-Dilithium reference primitives, with a scriptless atomic-swap / payment
-demo. This file is the reproducibility entry point; the upstream Dilithium
-`README.md` is left unmodified.
+CRYSTALS-Dilithium reference primitives, with a scriptless atomic-swap / payment-channel
+demonstration.
 
-## Provenance & environment
-- **Upstream base:** CRYSTALS-Dilithium / ML-DSA (FIPS 204) reference C code,
-  vendored at repo commit `2374d22` ("Initial commit: add Dilithium reference
-  code", 2026-06-02). **No upstream source function is modified** — see
-  [docs/FUNCTION_MAP.md](docs/FUNCTION_MAP.md).
-- **Toolchain (recorded per supervisor request):** `cc (Ubuntu 13.3.0-6ubuntu2)`,
-  `GNU Make 4.3`, on Linux (WSL2). Compiled `-O3` under
+This file is the reproducibility entry point. Every table reported in the dissertation
+is produced by one command below, and each command writes its full terminal output to a
+file under `evidence/`. The intent is that anyone can re-run the commands and obtain the
+same logs, and that each report table can be traced to one log file.
+
+---
+
+## 1. Environment
+
+- **Base code:** CRYSTALS-Dilithium / ML-DSA (FIPS 204) reference C implementation. The
+  lattice core (polynomial arithmetic, NTT, SHAKE, sampling) is reused unchanged; the
+  LAS scheme, serialization, demos, and benchmarks are added on top.
+- **Toolchain used for the reported numbers:** `gcc` (Ubuntu 13.3.0), `GNU Make 4.3`,
+  Linux (Ubuntu 24.04, WSL2), AMD Ryzen 7 7745HX. Compiled at `-O3` under
   `-Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wvla
-  -Wpointer-arith` — **zero warnings**.
-- **Build mode:** `-DDILITHIUM_MODE=3` (target NIST level ~2/3). LAS is
-  *mode-independent* (uses only `N`, `Q`), so modes 2/5 behave identically.
-- **Parameters (scope note):** this build uses Dilithium's `q = 8380417 ≈ 2²³`,
-  not the paper's `q ≈ 2²⁴`; `Q > 2γ` so correctness holds. Reconciliation to the
-  paper's parameter set is a separate documented step (see `docs/LAS.md §5.9`).
+  -Wpointer-arith` with no warnings.
+- **Modulus:** this build uses Dilithium's `q = 8380417 ≈ 2²³` (the reused NTT table),
+  not the construction's `q ≈ 2²⁴`. Since `q > 2γ`, correctness holds; only the concrete
+  security margin differs. See `docs/LAS.md §5.9`.
 
-## Build & run
-All targets live under `ref/`:
+### Prerequisites
+- A C compiler (`gcc` or `clang`) and `make`. Nothing else for the core results.
+- *Optional, only for the classical baseline:* a one-time clone of `secp256k1-zkp`
+  (commands below).
+- *Optional, only for the on-chain gas figure:* [Foundry](https://book.getfoundry.sh)
+  (`forge`).
+
+---
+
+## 2. Quick start — reproduce everything
+
+Run from the repository root. This builds every target, runs every test and benchmark,
+and saves one log per artefact under `evidence/`.
+
 ```sh
+mkdir -p evidence
 cd ref
 
-# --- functional tests (all hard-asserted) ---
-make test/test_las3   && ./test/test_las3     # core scheme, 1000 iters, 8-point adaptor contract
-make test/test_swap3  && ./test/test_swap3    # narrated 2-party atomic swap
-make test/test_pcn3   && ./test/test_pcn3     # scriptless HTLCs: swap / refund / same-Y PCN
-make test/test_amhl3  && ./test/test_amhl3    # AMHL multi-hop (bonus tier): wormhole + norm-growth + refund
-make test/test_serde3 && ./test/test_serde3   # serialisation: round-trip / verify-from-bytes / tamper
-make test/test_kat3   && ./test/test_kat3     # deterministic known-answer test (reproducibility)
+# --- correctness (functional, serialization, known-answer, full contract) ---
+make test/test_las2 test/test_las3 test/test_las5
+{ ./test/test_las2; ./test/test_las3; ./test/test_las5; } 2>&1 | tee ../evidence/functional_tests.log
+make test/test_serde3   && ./test/test_serde3   2>&1 | tee ../evidence/serialization_tests.log
+make test/test_kat3     && ./test/test_kat3     2>&1 | tee ../evidence/kat.log
+make test/test_contract3 && ./test/test_contract3 2>&1 | tee ../evidence/contract.log
 
-# --- benchmarks ---
-make test/bench_las3     && ./test/bench_las3      # per-op timings + direct rejection rate
-make test/bench_compare3 && ./test/bench_compare3  # LAS vs optimised Dilithium-3
-make test/bench_app3     && ./test/bench_app3      # application cost: swap + AMHL-vs-K
+# --- application (atomic swap, scriptless ledger, payload/AMHL costs) ---
+make test/test_swap3 && ./test/test_swap3 2>&1 | tee ../evidence/atomic_swap.log
+make test/test_pcn3  && ./test/test_pcn3  2>&1 | tee ../evidence/pcn.log
+make test/bench_app3 && ./test/bench_app3 2>&1 | tee ../evidence/application_benchmark.log
 
-# --- classical adaptor baseline (objectives B2.ii) — needs a one-time clone ---
-# (vendored, git-ignored; reused production implementation, harness is ours)
-git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
-    ../third_party/secp256k1-zkp                   # tested at commit 95b9835
-make test/bench_classical && ./test/bench_classical  # ECDSA-adaptor, same machine
+# --- primary fair benchmark: LAS vs its own simplified base, per parameter set ---
+make test/bench_levels_paper test/bench_levels2 test/bench_levels3 test/bench_levels5
+./test/bench_levels_paper 2>&1 | tee ../evidence/fair_paper.log
+./test/bench_levels2      2>&1 | tee ../evidence/fair_l2.log
+./test/bench_levels3      2>&1 | tee ../evidence/fair_l3.log
+./test/bench_levels5      2>&1 | tee ../evidence/fair_l5.log
 
-# core tests also build under modes 2 and 5:
-make test/test_las2 && ./test/test_las2
-make test/test_las5 && ./test/test_las5
+# --- rejection-sampling acceptance rate (measured directly) ---
+make test/bench_las3 && ./test/bench_las3 2>&1 | tee ../evidence/rejection_rate.log
 ```
-`make clean` removes the built test binaries.
 
-## Expected results (what "working" looks like)
-- All six functional tests print their narrative and exit `0`; `test_las3` reports
-  `1000/1000 iterations (100% correctness)`.
-- **KAT fingerprint** (`test_kat3`, deterministic, machine-independent):
-  ```
-  KAT digest: f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1
-  ```
-  This single SHAKE256 digest pins keygen + sign + presign + adapt + serialisation
-  across 4 fixed vectors; any unintended change to the implementation flips it.
-- Measured packed object sizes: **pk/statement 2944 B, sk/witness 512 B,
-  signature/pre-signature 4672 B**. Rejection-sampling acceptance ≈ 37 %
-  (≈ 2.7 attempts/signature), matching the `e⁻¹` prediction.
+`make clean` removes the built binaries.
 
-## Documentation index
-| File | Contents |
-|---|---|
-| [docs/LAS_WALKTHROUGH.md](docs/LAS_WALKTHROUGH.md) | **Start here** — plain-English, visual, end-to-end explainer (non-cryptographer friendly; also the video spine) |
-| [docs/LAS.md](docs/LAS.md) | Full design / implementation / testing / evaluation write-up (report source material) |
-| [evm/README.md](evm/README.md) | On-chain gas benchmark (Solidity atomic swap, classical vs LAS) |
-| [docs/FUNCTION_MAP.md](docs/FUNCTION_MAP.md) | Dilithium functions reused / not-used / new (the "clean diff" map) |
-| [docs/THEORY_IMPL_BRIDGE.md](docs/THEORY_IMPL_BRIDGE.md) | Every paper equation → C function |
-| [docs/STATUS.md](docs/STATUS.md) | Live deliverable / test checklist (what's done & tested) |
-| [las-context-consolidated.md](las-context-consolidated.md) | Canonical objectives (Meetings 1+2 merged) |
+---
 
-## Layout
+## 3. What each artefact demonstrates
+
+### 3.1 Correctness
+
+| Command | Saves to | What it proves |
+|---|---|---|
+| `./test/test_las{2,3,5}` | `functional_tests.log` | 1000 iterations per parameter set of the full adaptor cycle: PreSign→PreVerify accepts, PreSign fails ordinary Verify, Adapt→Verify accepts, Extract recovers the witness exactly; plus a one-bit forgery is rejected. |
+| `./test/test_serde3` | `serialization_tests.log` | Byte encoding round-trips; all 4672 single-byte flips of a packed signature are rejected; the validating decoder rejects malformed bytes. |
+| `./test/test_kat3` | `kat.log` | Deterministic known-answer test: a single SHAKE256 digest pins keygen+sign+presign+adapt+serialization over fixed vectors. |
+| `./test/test_contract3` | `contract.log` | One harness that prints the eight-point adaptor correctness contract as labelled PASS lines. |
+
+**What you should see:** `test_las3` reports `1000/1000 iterations (100% correctness)`;
+`test_kat3` prints the digest
+`f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1`;
+`test_contract3` ends with `ALL CONTRACT CHECKS PASSED`.
+
+### 3.2 Primary fair benchmark — LAS vs its own simplified base
+
+`bench_levels` measures the **adaptor overhead**: it times the simplified base signature
+(KeyGen, Sign, Verify) and the adaptor operations (PreSign, PreVerify, Adapt, Extract)
+on the *same code, parameters, and primitives*, and pairs each adaptor operation with
+the base operation it mirrors (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify;
+Extract reported separately). It also prints the component-level packed sizes.
+
+| Command | Saves to | Parameter set |
+|---|---|---|
+| `./test/bench_levels_paper` | `fair_paper.log` | original LAS dimensions (n=ℓ=4, κ=60) |
+| `./test/bench_levels2` | `fair_l2.log` | Dilithium-Level-2-aligned (n=ℓ=4, κ=39) |
+| `./test/bench_levels3` | `fair_l3.log` | Dilithium-Level-3-aligned (n=6, ℓ=5, κ=49) |
+| `./test/bench_levels5` | `fair_l5.log` | Dilithium-Level-5-aligned (n=8, ℓ=7, κ=60) |
+
+**What you should see:** under `PRIMARY (FAIR)`, each adaptor operation is within a few
+percent of its base analogue; under `Communication`, the response `z` is 98.6–99.3% of
+the signature. (Each binary also prints a clearly-separated `CONTEXT ONLY` block for the
+optimised CRYSTALS-Dilithium reference; this is background, not the fair comparison.)
+
+### 3.3 Application — atomic swap and payment channels
+
+| Command | Saves to | What it shows |
+|---|---|---|
+| `./test/test_swap3` | `atomic_swap.log` | Narrated two-party, two-chain atomic swap; asserts that publishing the adapted signature reveals the witness and that pre-signatures are unspendable. |
+| `./test/test_pcn3` | `pcn.log` | Scriptless-ledger demos: cross-chain swap, timeout/refund, and a multi-hop payment. |
+| `./test/bench_app3` | `application_benchmark.log` | Measured packed payloads: off-chain negotiation (Y + two pre-signatures), settlement (two adapted signatures), and multi-hop cost as a function of path length K. |
+
+**What you should see:** off-chain negotiation payload `12288 B`, settlement payload
+`9344 B`; the multi-hop settlement footprint grows linearly in K.
+
+### 3.4 Rejection-sampling rate
+
+`./test/bench_las3 → rejection_rate.log`: acceptance ≈ 37% per attempt (≈ 2.7
+attempts/signature), matching the `e⁻¹` prediction.
+
+---
+
+## 4. Optional baselines
+
+### 4.1 Classical adaptor signature (functionality-matched baseline)
+```sh
+git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
+    third_party/secp256k1-zkp        # tested at commit 95b9835
+cd ref
+make test/bench_classical && ./test/bench_classical 2>&1 | tee ../evidence/classical.log
+```
+A classical secp256k1 ECDSA adaptor signature with the same operation set as LAS,
+measured on the same machine. It is the post-quantum-vs-classical reference, compared at
+the closest classical security target (≈128-bit, aligned to Level 2).
+
+### 4.2 On-chain verification cost (optional, needs Foundry)
+```sh
+cd ref && make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin
+cd ../evm && forge test --match-contract LASVerifyCost -vv 2>&1 | tee ../evidence/gas.log
+```
+Reports the gas to verify one packed LAS signature natively in a Solidity contract.
+
+---
+
+## 5. Report table → command → evidence file
+
+| Report table | Command | Evidence file |
+|---|---|---|
+| Correctness contract | `./test/test_contract3` | `evidence/contract.log` |
+| Adaptor overhead (paper set) | `./test/bench_levels_paper` | `evidence/fair_paper.log` |
+| Adaptor overhead across levels | `./test/bench_levels{2,3,5}` | `evidence/fair_l{2,3,5}.log` |
+| Communication / component sizes | `./test/bench_levels_paper` | `evidence/fair_paper.log` |
+| Atomic-swap payload | `./test/bench_app3` | `evidence/application_benchmark.log` |
+| Multi-hop cost vs K | `./test/bench_app3` | `evidence/application_benchmark.log` |
+| Classical adaptor comparison | `./test/bench_classical` | `evidence/classical.log` |
+| Rejection-sampling rate | `./test/bench_las3` | `evidence/rejection_rate.log` |
+
+---
+
+## 6. Layout
+
 ```
 ref/las.{c,h}        LAS scheme (KeyGen/Sign/Verify + PreSign/PreVerify/Adapt/Ext)
 ref/serialize.{c,h}  byte-level encoding + validating decoder + las_verify_packed
-ref/amhl.{c,h}       multi-hop locks (bonus tier)
-ref/chain.{c,h}      toy ledger for the swap / PCN demos
-ref/test/            tests + benchmarks
-ref/{poly,ntt,reduce,fips202,...}.c   upstream Dilithium primitives (unmodified)
+ref/amhl.{c,h}       multi-hop locks
+ref/chain.{c,h}      toy ledger for the swap / payment-channel demos
+ref/test/            tests and benchmarks
+ref/{poly,ntt,reduce,fips202,...}.c   reused Dilithium primitives (unmodified)
+evidence/            saved terminal logs produced by the commands above
 ```
+
+## 7. Further documentation
+| File | Contents |
+|---|---|
+| [docs/LAS_WALKTHROUGH.md](docs/LAS_WALKTHROUGH.md) | Plain-English, end-to-end explainer |
+| [docs/LAS.md](docs/LAS.md) | Full design / implementation / evaluation write-up |
+| [docs/THEORY_IMPL_BRIDGE.md](docs/THEORY_IMPL_BRIDGE.md) | Each construction equation → C function |
+| [docs/STATUS.md](docs/STATUS.md) | Deliverable / test checklist |
