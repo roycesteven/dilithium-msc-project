@@ -1,0 +1,54 @@
+\chapter{Conclusion and future work}
+\label{ch:conclusion}
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+This dissertation set out to implement and evaluate a post-quantum exotic signature
+scheme --- a lattice-based adaptor signature reusing the CRYSTALS-Dilithium
+primitives --- and to demonstrate it in a blockchain atomic swap. That aim was
+achieved. A complete adaptor signature was built additively on the Dilithium
+reference, with the lattice core reused unchanged and the adaptor layer, wire
+encoding, and application added as new, tested code. The scheme passes functional,
+serialization, tamper, and known-answer tests, and drives an end-to-end two-party,
+two-chain atomic swap.
+
+The evaluation answers the project's central question --- what does adaptor
+functionality cost over a plain signature, and what does post-quantum operation cost
+over a classical one --- with measured data. The primary fair comparison, LAS against
+its own simplified base, shows the adaptor layer is almost free in computation: PreSign,
+PreVerify, and Adapt each add at most about six percent over the base operation they
+mirror, at every parameter set, and this is relatively cheaper than the classical ECDSA
+adaptor, whose discrete-logarithm-equality proof dominates its adaptor cost. The real
+cost is communication: the signature is 98.6--99.3\% lattice response vector, and an
+adaptor swap additionally transmits a public-key-sized statement. The contextual
+comparison against the optimised CRYSTALS-Dilithium reference --- not algorithm-matched
+--- shows that the remaining size gap is one of packing and production optimisation,
+not of security level.
+
+Measured against the objectives, all five were met: the scheme was selected and
+justified, implemented by reuse, validated, benchmarked fairly against two baselines
+with the standard metrics, and demonstrated in an application. The principal
+qualification is scope: the parameter set's concrete security is not formally
+analysed, and the application runs on a simulated ledger rather than a live testnet.
+
+\section{Future work}
+\label{sec:future}
+
+The results point to several well-motivated directions.
+
+\begin{itemize}
+  \item \textbf{Tighter packing.} Apply Dilithium-style decomposition and a hint
+        vector to the response, and regenerate the public key from a seed, to close
+        most of the size gap identified in \cref{sec:res-comm} --- the single largest
+        practical improvement available.
+  \item \textbf{Parameter migration.} Move to the paper's $q\approx 2^{24}$ with a new
+        NTT table, and map the parameters to NIST security levels, reporting
+        before-and-after benchmarks so the security/cost trade-off is explicit.
+  \item \textbf{On-chain verification.} Develop the byte-level verifier into a
+        deployed precompile or zero-knowledge circuit, building on the measured gas
+        floor, and benchmark a swap on a live testnet.
+  \item \textbf{A new research question.} Extend toward functional adaptor
+        signatures, which would move the project from systems implementation toward a
+        novel construction and a publishable contribution.
+\end{itemize}

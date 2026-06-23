@@ -16,8 +16,10 @@ pragma solidity ^0.8.20;
 ///
 ///   • claimLAS — the adapted LAS signature is a 4672-byte packed lattice signature.
 ///     Native lattice verification (NTT + SHAKE256 over the packed signature) is
-///     INFEASIBLE in the EVM (it would exceed the block gas limit; cf. poqeth, which
-///     needed dedicated machinery even for *basic* PQ verification). This entrypoint
+///     prohibitively expensive: MEASURED at ~12M gas (~158x this contract's classical
+///     claim, ~40% of a 30M block) by the LASVerifyCost cost probe; it does NOT exceed
+///     the block gas limit, but no one would pay it. Cf. poqeth, which needed
+///     dedicated machinery even for *basic* PQ verification. This entrypoint
 ///     therefore measures the unavoidable on-chain FLOOR — paying calldata gas for the
 ///     4672-byte signature plus one keccak256 pass over it — which is a strict LOWER
 ///     BOUND on the true cost. It is deliberately NOT a real verification; see the

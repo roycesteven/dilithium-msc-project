@@ -7,6 +7,12 @@ command that reproduces each claim. Maps every item to the Meeting-2 objectives
 
 Legend: ✅ done & verified · 🟡 partial / proxy · ⬜ not done (future work).
 
+**New to the project / explaining it to someone?** Read, in order:
+`docs/LAS_WALKTHROUGH.md` (what & why, no maths) →
+`docs/PROJECT_HISTORY_EXPLAINED.md` (the step-by-step build order: which C files and
+functions were written first, and why) →
+`docs/GAS_LIMIT_INVESTIGATION.md` (the on-chain gas experiment in plain English).
+
 ---
 
 ## 1. Deliverable × status matrix
@@ -21,13 +27,17 @@ Legend: ✅ done & verified · 🟡 partial / proxy · ⬜ not done (future work
 | D6 | Byte serialisation + validating decoder + `las_verify_packed` | ✅ | ✅ | ✅ | `make test/test_serde3 && ./test/test_serde3` |
 | D7 | Deterministic API + pinned KAT (reproducibility, C4) | ✅ | ✅ | ✅ | `make test/test_kat3 && ./test/test_kat3` |
 | D8 | Benchmark 1 — per-op timings + **direct** rejection rate | ✅ | ✅ | ✅ | `make test/bench_las3 && ./test/bench_las3` |
-| D9 | Benchmark 2 — LAS vs optimised Dilithium-3 | ✅ | ✅ | ✅ | `make test/bench_compare3 && ./test/bench_compare3` |
+| D9 | Benchmark 2 — LAS vs optimised Dilithium-3 (context; superseded as headline by D20) | ✅ | ✅ | ✅ | `make test/bench_compare3 && ./test/bench_compare3` |
 | D10 | Benchmark 3 — application cost (swap payload + AMHL-vs-K) | ✅ | ✅ | ✅ | `make test/bench_app3 && ./test/bench_app3` |
 | D11 | Benchmark 4 — **classical adaptor baseline** (ECDSA, same machine) | ✅ | ✅ | ✅ | clone secp256k1-zkp (README_LAS §Build), `make test/bench_classical && ./test/bench_classical` |
 | D12 | Function map (reused/modified/added; 0 upstream modified) | ✅ | n/a | ✅ | `docs/FUNCTION_MAP.md` |
 | D13 | Reproducibility README + recorded provenance/toolchain | ✅ | n/a | ✅ | `README_LAS.md` |
-| D14 | Report draft (~8k words, B4 skeleton) | 🟡 | n/a | 🟡 | `report/REPORT_DRAFT.md` (v0.1 — needs figures + word-count pass) |
-| D15 | On-chain gas: real Solidity atomic swap on local EVM, classical vs LAS sig | ✅ | ✅ | ✅ | `cd ref && make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin; cd ../evm && forge test --gas-report` |
+| D14 | Report draft (~8k words, B4 skeleton) | 🟡 | n/a | 🟡 | `report/REPORT_DRAFT.md` (v0.1 — superseded by LaTeX scaffold D22) |
+| D15 | On-chain gas: real Solidity swap (classical vs LAS sig) **+ measured native-verify cost-probe** | ✅ | ✅ | ✅ | `cd ref && make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin; cd ../evm && forge test --gas-report && forge test --match-contract LASVerifyCost -vv` |
+| D20 | **Primary fair benchmark** (corrected 2026-06-22): LAS vs its OWN simplified base (adaptor overhead ≤~6%: PreSign/Sign, PreVerify/Verify, Adapt/Verify, Ext separate); official Dilithium = CONTEXT only ("not algorithm-matched"); ≥5 runs mean±SD; component sizes | ✅ | ✅ | ✅ | `make test/bench_levels_paper test/bench_levels2 test/bench_levels3 test/bench_levels5 && ./test/bench_levels_paper …`; `docs/LAS.md §8.1` |
+| D23 | **Correctness-contract harness** (itemised 8-point PASS): PreSign→PreVerify, tripwire, Adapt→Verify, Ext exact, tampered msg/sig, malformed bytes, deterministic | ✅ | ✅ | ✅ | `make test/test_contract3 && ./test/test_contract3` |
+| D21 | **Two-branch code-diff view** (Meeting-3): `dilithium-baseline` (pristine) vs `main`; 0 upstream sources changed | ✅ | n/a | ✅ | `git diff --name-status dilithium-baseline main -- ref/`; `docs/CODE_DIFF_VIEW.md` |
+| D22 | **LaTeX report scaffold** (Meeting-3): muthesis.cls, by chapter, official title, real benchmark tables, builds to PDF | 🟡 | n/a | ✅ | `cd report/latex && make` (TODOs: student id, figure, machine-of-record) |
 | D16 | Parameter migration to paper's q≈2²⁴ | ⬜ | ⬜ | documented as future work | — |
 | D17 | On-chain LAS *verification* (precompile or zk proof) | ⬜ | ⬜ | n/a (future work) | — *swap + gas floor already done (D15)* |
 | D18 | Second LAS-family scheme (application-layer) | ⬜ | ⬜ | n/a | — *optional stretch* |
@@ -79,15 +89,25 @@ Verify 75, PreSign 196, PreVerify 242, Adapt 3, Ext 33.
 **On-chain gas (EVM, deterministic — `evm/`, `forge test --gas-report`):** classical
 claim (ecrecover) 75,709; LAS claim *floor* 208,400 (calldata 74,476 for the real
 4672-B sig + keccak, **no** verification); fund 180k/140k; refund 39,330. LAS
-settlement floor = 2.75× the full classical claim; native verification exceeds the
-block gas limit.
+settlement floor = 2.75× the full classical claim. **Native verification cost —
+measured experiment (`evm/test/LASVerifyCost.t.sol`, `make`-free
+`forge test --match-contract LASVerifyCost -vv`):** the full `las_verify` arithmetic
+(12 fwd NTT + 8 inv NTT + 20 pointwise) is **10.08 M gas measured** on the EVM; the
+SHAKE256 challenge (~64 Keccak-f permutations) adds **~1.92 M calculated** ⇒ **≈12 M
+gas total ≈ 158× the classical claim ≈ 40 % of a 30 M block**. Correction: native
+verification is *prohibitively expensive but does **not** exceed the block gas limit*
+(EVM-native `mulmod` is 8 gas) — the earlier "exceeds the block gas limit" wording was
+an overstatement and is retracted; the real barrier is cost + missing PQ precompiles.
 
 **Three headline findings** (the report's centrepieces): (i) price of PQ is
 *communication* (×29–89 sizes; on-chain calldata 74k gas > whole classical claim)
 not *computation* (sub-ms, ≤×20 time); (ii) LAS adaptor overhead ≈0 (PreSign≈Sign,
 PreVerify≈Verify) vs the classical adaptor's ~4× DLEQ overhead — LAS PreVerify even
-absolutely faster; (iii) on-chain, the swap protocol runs but native LAS
-*verification* is infeasible in the EVM (needs precompile/zk — the poqeth boundary).
+absolutely faster; (iii) on-chain, the swap protocol runs end-to-end, and native LAS
+*verification* is **measured at ≈12 M gas (≈158× the classical claim, ≈40 % of a 30 M
+block)** — prohibitively expensive and needing a SHAKE/NTT precompile or zk proof, but
+**not** over the block gas limit (the earlier "exceeds the limit" claim was retracted
+after the `LASVerifyCost` experiment — the poqeth boundary is cost, not the ceiling).
 
 > ⚠️ For the final report, re-run all four benchmarks **in one session** on the
 > submission machine and paste the verbatim output into Appendix B with CPU/OS/date.

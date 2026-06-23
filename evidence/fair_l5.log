@@ -1,0 +1,36 @@
+==========================================================================
+ LAS parameter set: n=8 ell=7 kappa=60 gamma=230400  (N=256, Q=8380417)
+==========================================================================
+ 10 runs x 1000 iters/op; mean +/- sample SD; single thread, -O3.
+
+--------------------------------------------------------------------------
+ PRIMARY (FAIR): LAS vs its OWN simplified Dilithium base
+   same algorithm, same parameters, same primitives; only the adaptor varies
+--------------------------------------------------------------------------
+ Base scheme (simplified Dilithium = LAS KeyGen/Sign/Verify):
+   KeyGen     175.16 +/-   3.26 us
+   Sign      1591.26 +/-  30.44 us
+   Verify     409.66 +/-  17.11 us
+
+ Adaptor overhead (each adaptor op vs the base op it mirrors):
+   PreSign   vs Sign       1677.08 vs  1591.26 us   (+5.4%)
+   PreVerify vs Verify      421.71 vs   409.66 us   (+2.9%)
+   Adapt     vs Verify      428.73 vs   409.66 us   (+4.7%)
+   Ext                      156.80 +/-   4.55 us   (reported separately, no base analogue)
+   [adaptor SDs: PreSign 53.42, PreVerify 14.36, Adapt 17.49]
+
+ Communication (packed bytes; the signature is identical to the base):
+   public key pk          5888
+   secret key sk           960
+   signature (c,z)        9184   [c=64, z=9120; z is 99.3% of the sig]
+   statement Y (LAS+)     5888   (extra vs a basic signature)
+   pre-signature (LAS+)   9184
+
+--------------------------------------------------------------------------
+ CONTEXT ONLY: optimised CRYSTALS-Dilithium-5  (NOT algorithm-matched)
+   different algorithm (hint vector, Power2Round, bit-packing); module dims
+   (K=8,L=7) matched only to place the context at the same security level.
+--------------------------------------------------------------------------
+   KeyGen     402.11 +/-   7.00 us        public key   2592
+   Sign      1412.95 +/-  38.90 us        secret key   4896
+   Verify     418.48 +/-   3.36 us        signature    4627

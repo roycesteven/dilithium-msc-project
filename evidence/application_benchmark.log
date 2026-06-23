@@ -1,0 +1,48 @@
+=== LAS application-level benchmark  (mode 3) ===
+params: n=4 ell=4 kappa=60 gamma=122880 N=256 Q=8380417   (routes x40 per K)
+NOTE: SIMULATED ledger - all byte figures are an application-level payload /
+      settlement-footprint proxy, NOT measured gas on a deployed Ethereum or
+      Bitcoin contract (real-chain deployment is out of scope, see report).
+
+--- (1) Atomic cross-chain swap  (2 parties, 2 chains, no scripts) ---
+  off-chain messages exchanged before settlement:
+    1. Bob  ->Alice : statement Y         2944 B
+    2. Alice->Bob   : pre-sig sigma^_A    4672 B
+    3. Bob  ->Alice : pre-sig sigma^_B    4672 B
+    => 3 messages, 12288 B off-chain
+  simulated settlement footprint (ledger-footprint proxy; on a real chain
+  only the adapted signatures would be published):
+    chain A: sigma_A   4672 B     chain B: sigma_B   4672 B
+    => 2 signatures, 9344 B  (15232 B incl. the 2 escrowed statements Y)
+  end-to-end signing work (2x PreSign + 2x Adapt + Ext): 3.43 ms
+    rejection-sampling attempts for the 2 pre-signs (measured): 9
+  correctness: adapted sigs verify, pre-sigs do not (binding): OK
+
+--- (2) Multi-hop AMHL payment: cost as a function of path length K ---
+  (each route: K distinct cumulative statements Y_j=A*s_j; PreSign bound g-k-K)
+
+   K | bound g-k-K | #presig | attempts/presig | presig time (ms) | settle sigs  | public stmts | max||s_j||inf
+  ---+-------------+---------+-----------------+------------------+---------------+-------------+--------------
+   1 |      122820 |       1 |            2.58 |             0.82 |      4672 B   |      2944 B |    1 OK
+   2 |      122819 |       2 |            2.92 |             1.77 |      9344 B   |      5888 B |    2 OK
+   4 |      122817 |       4 |            3.04 |             3.73 |     18688 B   |     11776 B |    4 OK
+   6 |      122815 |       6 |            2.78 |             4.93 |     28032 B   |     17664 B |    6 OK
+   8 |      122813 |       8 |            3.18 |             7.56 |     37376 B   |     23552 B |    8 OK
+
+  observations:
+   - simulated settlement footprint is linear in K: K adapted signatures
+     + K public statements (a payload proxy, not gas on a deployed chain).
+   - witness norm grows as ||s_j||inf <= j (a sum of j ternary vectors):
+     this is the 'knowledge gap' made concrete, and is exactly why every
+     hop must pre-sign at the tighter g-k-K bound (so z=z^+s_j stays <= g-k).
+   - the g-k-K tightening is negligible: with g=122880, going K=1->8 shrinks the
+     accept band by ~0.0057%, so attempts/presig is ~flat in K (see table).
+
+--- literature comparison (sizes) ---
+  this work (packed)   : sig 4672 B, pk/Y 2944 B, sk/witness 512 B
+  paper optimised LAS  : sig ~3210 B   (eprint 2020/845, q~2^24, hints+packing)
+  optimised Dilithium-3: sig  3309 B   (NIST ML-DSA reference, bit-packed)
+  IAS  (eprint 2020/1345): far smaller sigs (isogeny) BUT ~60-bit quantum
+       security (CSIDH-512, below NIST's 128-bit bar) and ~100x slower.
+  => the LAS settlement object is a single ordinary-looking signature per leg;
+     bit-packing this scheme (future work) closes most of the gap to 3309 B.

@@ -11,6 +11,10 @@ exact files are given so you can verify or demo any part.*
 > plain words. Section 8 is the honest caveats. Section 9 is "run it yourself."
 > Section 10 is a glossary — flip to it whenever a word is unfamiliar.
 
+**Companion docs:** for the *build order* (which C files and functions were written
+first, and why) see `docs/PROJECT_HISTORY_EXPLAINED.md`; for the on-chain gas
+experiment in plain English see `docs/GAS_LIMIT_INVESTIGATION.md`.
+
 ---
 
 ## 1. The problem, in one breath

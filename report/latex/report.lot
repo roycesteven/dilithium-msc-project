@@ -1,0 +1,15 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Reused vs.\ modified vs.\ added (file level). The lattice core is reused byte-for-byte; only build glue is modified; the scheme and evaluation are new. Verified by diffing the \texttt {dilithium-baseline} and \texttt {main} branches (see \texttt {docs/CODE\_DIFF\_VIEW.md}).}}{17}{table.2.1}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Parameter sets, all at the shared modulus $q\approx 2^{23}$ and ring degree $N=256$. LAS and its simplified base use the LAS columns (the fair, primary comparison). The official Dilithium columns are \emph {context only}: their module dimensions are matched ($n{\leftrightarrow }K$, $\ell {\leftrightarrow }L$, $\kappa {\leftrightarrow }\tau $) but the algorithm is not (optimised, with hints/packing). The classical ECDSA adaptor is a functionality-matched, not security-matched, baseline.}}{21}{table.2.2}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract, each clause checked and passed by \texttt {test\_contract} (corroborated at scale by the 1000-iteration functional suite on modes 2/3/5, the 256-instance serialization suite, and the pinned known-answer test).}}{23}{table.3.1}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Primary fair comparison: adaptor overhead over the simplified base, paper parameters ($n{=}\ell {=}4$, $\kappa {=}60$), $\mu $s, mean $\pm $ sample SD. Overhead is the increase of each adaptor operation over its base analogue.}}{23}{table.3.2}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Adaptor overhead is small at every parameter set (\texttt {bench\_levels}). Percentages are each adaptor operation over its base analogue.}}{24}{table.3.3}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Context only --- simplified LAS base vs.\ optimised CRYSTALS-Dilithium ($\mu $s, mean $\pm $ SD). \emph {Not algorithm-matched}: Dilithium adds hints/Power2Round/packing; module dimensions are matched only to place it at a comparable security level.}}{25}{table.3.4}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces LAS objects by component (packed bytes; \texttt {bench\_levels}). The paper set shares the NIST~2 dimensions. The challenge $c$ is fixed; the response $z$ grows with $n+\ell $ and dominates the signature at every level.}}{25}{table.3.5}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Context only --- optimised CRYSTALS-Dilithium sizes (bytes) at matching module dimensions. \emph {Not algorithm-matched}; the size gap reflects Dilithium's hint/decomposition/bit-packing, not a difference in security level.}}{26}{table.3.6}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces Functionality-matched ``price of post-quantum''. Classical secp256k1 ($\approx $128-bit classical, no NIST PQ level) vs.\ post-quantum NIST~2. Timings $\mu $s/op; sizes bytes. ``---'' marks operations a basic signature lacks. The statement is produced by KeyGen and has the public-key size.}}{27}{table.3.7}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

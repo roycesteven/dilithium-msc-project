@@ -1,0 +1,7 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow. The statement $Y$ is folded into the challenge hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the pre-signature into an ordinary signature; and publishing that signature lets anyone holding the pre-signature run Extract to recover $y$. This last step is what makes an atomic swap atomic.}}{16}{figure.2.1}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

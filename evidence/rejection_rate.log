@@ -1,0 +1,38 @@
+=== LAS benchmark  (mode 3, 2000 iters/op) ===
+params: n=4  ell=4  kappa=60  gamma=122880  N=256  Q=8380417
+
+  Setup          58.36 us
+  KeyGen         73.69 us   [statement gen = same cost]
+  Sign          741.90 us
+  Verify        181.83 us
+  PreSign       795.26 us
+  PreVerify     188.10 us
+  Adapt         194.06 us
+  Ext            62.19 us
+
+Rejection-sampling (MEASURED directly via las_attempts, 2000 sigs):
+  Sign    : 2.707 attempts/sig  -> acceptance 36.9%, retries 1.707
+  PreSign : 2.783 attempts/sig  -> acceptance 35.9%, retries 1.783
+  Theory  : (1 - k/g)^(M*N) = 36.8% per attempt (~2.72 attempts)
+  Rejection sampling is intrinsic to Fiat-Shamir-with-aborts (optimised
+  Dilithium also rejects, targeting a small expected repeat count); this
+  simplified scheme just omits the hint vector, keeping the algebra clear.
+
+--- Object sizes ---
+  In-memory (sizeof, full int32 per coeff):
+    pk / statement Y : 4096 bytes
+    sk / witness y   : 8192 bytes
+    sig / pre-sig    : 9216 bytes
+
+  Theoretical packed (formula, this implementation's params):
+    pk / statement Y : 2944 bytes  [LAS_N*N*ceil(log2(Q)) bits; Q=8380417 => 23 bits/coeff]
+    sk / witness y   :  512 bytes  [LAS_M*N*2 bits; ternary needs 2 bits/coeff]
+    sig / pre-sig    : 4676 bytes  [c: 68 bytes; z: 18 bits/coeff => 4608 bytes]
+
+  Paper's estimate (~3210 bytes for signature):
+    Refers to the paper's OPTIMISED scheme (q~2^24, n=4, ell=4,
+    bit-packed with hint vector). Not directly comparable to this
+    implementation which uses q~2^23, no hints, and is unoptimised.
+    The correct comparison point is our 'theoretical packed' column above.
+
+Correctness: 100% over 2000 Sign/Verify and 2000 PreSign/PreVerify iters

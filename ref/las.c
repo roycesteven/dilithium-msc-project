@@ -144,8 +144,17 @@ static void sample_Sgamma(poly *y, const uint8_t *seed, size_t seedlen, uint16_t
   keccak_state state;
   uint8_t buf[SHAKE256_RATE];
   uint8_t nb[2];
-  uint32_t t;
+  uint32_t t, gmask;
   unsigned int ctr = 0, pos = 0;
+
+  /* Smallest (2^k - 1) >= 2*GAMMA: the rejection window for this parameter set.
+   * For the paper set (GAMMA=122880) this is 0x3FFFF (18 bits), unchanged; for
+   * larger sets GAMMA grows and the window widens automatically.  We read 3 bytes
+   * (24 bits) per attempt, which covers every supported set (2*GAMMA < 2^24). */
+  gmask = 1;
+  while(gmask < 2u*(uint32_t)LAS_GAMMA)
+    gmask <<= 1;
+  gmask -= 1;
 
   nb[0] = (uint8_t)nonce;
   nb[1] = (uint8_t)(nonce >> 8);
@@ -164,8 +173,8 @@ static void sample_Sgamma(poly *y, const uint8_t *seed, size_t seedlen, uint16_t
     t |= (uint32_t)buf[pos+1] << 8;
     t |= (uint32_t)buf[pos+2] << 16;
     pos += 3;
-    t &= 0x3FFFF;                       /* 18 bits: 2*GAMMA+1 = 245761 < 2^18 */
-    if(t < 2u*LAS_GAMMA + 1u)
+    t &= gmask;
+    if(t < 2u*(uint32_t)LAS_GAMMA + 1u)
       y->coeffs[ctr++] = (int32_t)t - LAS_GAMMA;
   }
 }
