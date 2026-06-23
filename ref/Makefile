@@ -22,7 +22,6 @@ all: \
   test/test_las5 \
   test/test_swap3 \
   test/bench_las3 \
-  test/bench_compare3 \
   test/bench_levels_paper \
   test/bench_levels2 \
   test/bench_levels3 \
@@ -111,35 +110,28 @@ test/bench_compare3: test/bench_compare.c las.c las.h randombytes.c $(KECCAK_SOU
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
-# Fair same-parameter benchmark (Meeting-3 #2-#5): simplified Dilithium vs LAS,
-# >=5 runs with std-dev, component-level size breakdown. The optimised-Dilithium
-# reference column is mode 2 (dimension-matched to LAS n=l=4) or mode 3 (NIST L3).
-test/bench_fair2: test/bench_fair.c serialize.c serialize.h las.c las.h \
-  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 \
-	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES) -lm
-
-test/bench_fair3: test/bench_fair.c serialize.c serialize.h las.c las.h \
-  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
-	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES) -lm
-
-# Same-security comparison (Meeting-3 redo): LAS instantiated at parameters matched
-# to each NIST level, vs the Dilithium mode of equal module dimensions. Each target
-# sets -DDILITHIUM_MODE and the matching -DLAS_N/-DLAS_ELL/-DLAS_KAPPA together.
-LEVELS_DEPS = test/bench_levels.c las.c las.h randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+# Primary algorithm-matched, parameter-matched adaptor-overhead benchmark:
+# the SEPARATE simplified Dilithium-style base signature (basesig.c) vs the LAS
+# adaptor operations (las.c), at matched parameters.  basesig.c and las.c are
+# distinct translation units -- the base scheme does not touch the LAS protocol.
+# Each target sets LAS_N/LAS_ELL/LAS_KAPPA explicitly for the paper,
+# Level-2-aligned, Level-3-aligned, and Level-5-aligned parameter sets.
+# DILITHIUM_MODE is used only to satisfy the Dilithium build system/params.h;
+# original/optimised Dilithium timings are not part of this benchmark.
+LEVELS_DEPS = test/bench_levels.c basesig.c basesig.h las.c las.h randombytes.c \
+  $(KECCAK_SOURCES) $(KECCAK_HEADERS)
 test/bench_levels_paper: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
-	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels2: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
-	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels3: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
-	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels5: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
-	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 
 test/bench_app3: test/bench_app.c amhl.c amhl.h serialize.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
@@ -262,8 +254,6 @@ clean:
 	rm -f test/test_swap3
 	rm -f test/bench_las3
 	rm -f test/bench_compare3
-	rm -f test/bench_fair2
-	rm -f test/bench_fair3
 	rm -f test/bench_levels_paper
 	rm -f test/bench_levels2
 	rm -f test/bench_levels3

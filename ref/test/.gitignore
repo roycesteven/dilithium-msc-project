@@ -15,8 +15,6 @@ test_swap3
 bench_las3
 bench_compare3
 bench_app3
-bench_fair2
-bench_fair3
 bench_levels_paper
 bench_levels2
 bench_levels3

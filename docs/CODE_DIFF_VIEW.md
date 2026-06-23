@@ -79,6 +79,7 @@ confirmed at the file level by this diff.
 | File | What it is |
 |---|---|
 | `ref/las.c`, `ref/las.h` | the LAS scheme: KeyGen, Sign, Verify + the adaptor operations PreSign, PreVerify, Adapt, Ext (paper Algorithm 2, "variant B") |
+| `ref/basesig.c`, `ref/basesig.h` | the **separate** simplified Dilithium-style base signature (`base_keygen`/`base_sign`/`base_verify`, `c = H(pk, w, M)`, no statement `Y`) — the fair baseline for `bench_levels`; kept out of `las.{c,h}` so the LAS protocol is untouched, shares only `las.h`'s parameter macros + struct layout |
 | `ref/serialize.c`, `ref/serialize.h` | byte-level wire/on-chain encoding + validating decoder + `las_verify_packed` |
 | `ref/amhl.c`, `ref/amhl.h` | anonymous multi-hop locks (distinct per-hop statements) — optional/bonus tier |
 | `ref/chain.c`, `ref/chain.h` | scriptless-HTLC toy ledger (accounts, block height, claim / timeout-refund) |
@@ -89,8 +90,8 @@ confirmed at the file level by this diff.
 | `ref/test/test_swap.c`, `ref/test/test_pcn.c`, `ref/test/test_amhl.c` | atomic-swap / payment-channel / multi-hop demos |
 | `ref/test/bench_las.c` | per-op timing + measured rejection rate |
 | `ref/test/bench_compare.c` | LAS vs. optimised Dilithium-3 |
-| `ref/test/bench_levels.c` | **primary fair benchmark**: LAS vs its OWN simplified base (adaptor overhead pairing); official Dilithium = context only ("not algorithm-matched"); ≥5 runs with std-dev; component-level size breakdown |
-| `ref/test/bench_fair.c` | **superseded** (read official Dilithium as a fair baseline — wrong); kept only so old references resolve; not built by `make all` |
+| `ref/test/bench_levels.c` | **primary fair benchmark**: the separate base path (`basesig.c`) vs the LAS adaptor path (`las.c`), adaptor-overhead pairing + cross-verify contract; official Dilithium = context only ("not algorithm-matched"); ≥5 runs with std-dev; component-level size breakdown |
+| `ref/test/bench_fair.c` | **removed** — an earlier benchmark that read official Dilithium as a fair baseline (wrong); replaced by `bench_levels.c` |
 | `ref/test/bench_app.c` | application-level cost vs. path length |
 | `ref/test/bench_classical.c` | classical ECDSA-adaptor baseline (libsecp256k1-zkp) |
 | `ref/test/export_packed.c` | exports a real packed signature for the EVM gas benchmark |

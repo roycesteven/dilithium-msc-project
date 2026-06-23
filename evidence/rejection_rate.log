@@ -1,18 +1,18 @@
 === LAS benchmark  (mode 3, 2000 iters/op) ===
 params: n=4  ell=4  kappa=60  gamma=122880  N=256  Q=8380417
 
-  Setup          58.36 us
-  KeyGen         73.69 us   [statement gen = same cost]
-  Sign          741.90 us
-  Verify        181.83 us
-  PreSign       795.26 us
-  PreVerify     188.10 us
-  Adapt         194.06 us
-  Ext            62.19 us
+  Setup          28.16 us
+  KeyGen         34.60 us   [statement gen = same cost]
+  Sign          320.37 us
+  Verify         78.41 us
+  PreSign       357.84 us
+  PreVerify      84.04 us
+  Adapt          87.64 us
+  Ext            28.12 us
 
 Rejection-sampling (MEASURED directly via las_attempts, 2000 sigs):
-  Sign    : 2.707 attempts/sig  -> acceptance 36.9%, retries 1.707
-  PreSign : 2.783 attempts/sig  -> acceptance 35.9%, retries 1.783
+  Sign    : 2.675 attempts/sig  -> acceptance 37.4%, retries 1.675
+  PreSign : 2.817 attempts/sig  -> acceptance 35.5%, retries 1.817
   Theory  : (1 - k/g)^(M*N) = 36.8% per attempt (~2.72 attempts)
   Rejection sampling is intrinsic to Fiat-Shamir-with-aborts (optimised
   Dilithium also rejects, targeting a small expected repeat count); this

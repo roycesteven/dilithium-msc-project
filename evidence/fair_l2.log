@@ -3,34 +3,39 @@
 ==========================================================================
  10 runs x 1000 iters/op; mean +/- sample SD; single thread, -O3.
 
---------------------------------------------------------------------------
- PRIMARY (FAIR): LAS vs its OWN simplified Dilithium base
-   same algorithm, same parameters, same primitives; only the adaptor varies
---------------------------------------------------------------------------
- Base scheme (simplified Dilithium = LAS KeyGen/Sign/Verify):
-   KeyGen      77.85 +/-   2.86 us
-   Sign       864.70 +/-  30.31 us
-   Verify     185.92 +/-   2.87 us
+--- WHAT IS COMPARED (identical code, parameters, primitives) ---
+ BASE  (simplified Dilithium-style signature; NO adaptor statement):
+   Sign     c = H(pk, w,   M)        Verify    c == H(pk, w',  M)
+ LAS ADAPTOR (same scheme; statement/lock Y folded into the hash):
+   PreSign  c = H(pk, w+Y, M)        PreVerify c == H(pk, w'+Y, M)
+   Adapt    z = z_hat + y_witness    Ext       y_witness = z - z_hat
+   Adapted sig clears ordinary Verify without an explicit +Y because
+     A(z_hat+y) - c*t = (A*z_hat - c*t) + A*y = w' + Y    (Y = A*y).
 
- Adaptor overhead (each adaptor op vs the base op it mirrors):
-   PreSign   vs Sign        906.51 vs   864.70 us   (+4.8%)
-   PreVerify vs Verify      188.26 vs   185.92 us   (+1.3%)
-   Adapt     vs Verify      189.52 vs   185.92 us   (+1.9%)
-   Ext                       63.79 +/-   0.73 us   (reported separately, no base analogue)
-   [adaptor SDs: PreSign 30.83, PreVerify 0.52, Adapt 1.28]
+--- COMPUTATION (microseconds, mean +/- sample SD) ---
 
- Communication (packed bytes; the signature is identical to the base):
-   public key pk          2944
-   secret key sk           512
-   signature (c,z)        4672   [c=64, z=4608; z is 98.6% of the sig]
-   statement Y (LAS+)     2944   (extra vs a basic signature)
-   pre-signature (LAS+)   4672
+ Base path (simplified Dilithium-style, c = H(pk, w, M); no Y):
+   KeyGen        73.24 +/-   0.76
+   Sign         866.94 +/-  20.90
+   Verify       181.23 +/-   3.24
 
---------------------------------------------------------------------------
- CONTEXT ONLY: optimised CRYSTALS-Dilithium-2  (NOT algorithm-matched)
-   different algorithm (hint vector, Power2Round, bit-packing); module dims
-   (K=4,L=4) matched only to place the context at the same security level.
---------------------------------------------------------------------------
-   KeyGen     142.95 +/-   1.07 us        public key   1312
-   Sign       695.40 +/-  17.14 us        secret key   2560
-   Verify     161.90 +/-   6.05 us        signature    2420
+ LAS adaptor path (Y folded into the hash, c = H(pk, w+Y, M)):
+   PreSign      878.53 +/-  22.66
+   PreVerify    185.79 +/-   2.07
+   Adapt        196.60 +/-   7.86
+   Ext           62.68 +/-   0.90
+
+ Adaptor overhead (adaptor op vs the base op it mirrors):
+   PreSign   vs Sign       878.53 vs   866.94   (+1.3%)
+   PreVerify vs Verify     185.79 vs   181.23   (+2.5%)
+   Adapt     vs Verify     196.60 vs   181.23   (+8.5%)
+   Ext       (separate)     62.68            (no base analogue)
+
+--- COMMUNICATION (packed bytes) ---
+   public key  pk          2944
+   secret key  sk           512
+   challenge   c             64
+   response    z           4608   (98.6% of the signature)
+   signature   (c,z)       4672
+   statement   Y           2944
+   pre-signature           4672

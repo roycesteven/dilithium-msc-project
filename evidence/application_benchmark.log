@@ -14,8 +14,8 @@ NOTE: SIMULATED ledger - all byte figures are an application-level payload /
   only the adapted signatures would be published):
     chain A: sigma_A   4672 B     chain B: sigma_B   4672 B
     => 2 signatures, 9344 B  (15232 B incl. the 2 escrowed statements Y)
-  end-to-end signing work (2x PreSign + 2x Adapt + Ext): 3.43 ms
-    rejection-sampling attempts for the 2 pre-signs (measured): 9
+  end-to-end signing work (2x PreSign + 2x Adapt + Ext): 1.61 ms
+    rejection-sampling attempts for the 2 pre-signs (measured): 3
   correctness: adapted sigs verify, pre-sigs do not (binding): OK
 
 --- (2) Multi-hop AMHL payment: cost as a function of path length K ---
@@ -23,11 +23,11 @@ NOTE: SIMULATED ledger - all byte figures are an application-level payload /
 
    K | bound g-k-K | #presig | attempts/presig | presig time (ms) | settle sigs  | public stmts | max||s_j||inf
   ---+-------------+---------+-----------------+------------------+---------------+-------------+--------------
-   1 |      122820 |       1 |            2.58 |             0.82 |      4672 B   |      2944 B |    1 OK
-   2 |      122819 |       2 |            2.92 |             1.77 |      9344 B   |      5888 B |    2 OK
-   4 |      122817 |       4 |            3.04 |             3.73 |     18688 B   |     11776 B |    4 OK
-   6 |      122815 |       6 |            2.78 |             4.93 |     28032 B   |     17664 B |    6 OK
-   8 |      122813 |       8 |            3.18 |             7.56 |     37376 B   |     23552 B |    8 OK
+   1 |      122820 |       1 |            2.65 |             0.81 |      4672 B   |      2944 B |    1 OK
+   2 |      122819 |       2 |            3.19 |             1.88 |      9344 B   |      5888 B |    2 OK
+   4 |      122817 |       4 |            3.23 |             3.82 |     18688 B   |     11776 B |    4 OK
+   6 |      122815 |       6 |            2.66 |             4.70 |     28032 B   |     17664 B |    6 OK
+   8 |      122813 |       8 |            3.11 |             7.34 |     37376 B   |     23552 B |    7 OK
 
   observations:
    - simulated settlement footprint is linear in K: K adapted signatures

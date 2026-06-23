@@ -55,7 +55,7 @@ make test/test_swap3 && ./test/test_swap3 2>&1 | tee ../evidence/atomic_swap.log
 make test/test_pcn3  && ./test/test_pcn3  2>&1 | tee ../evidence/pcn.log
 make test/bench_app3 && ./test/bench_app3 2>&1 | tee ../evidence/application_benchmark.log
 
-# --- primary fair benchmark: LAS vs its own simplified base, per parameter set ---
+# --- primary fair benchmark: base path (basesig.c) vs LAS adaptor path (las.c) ---
 make test/bench_levels_paper test/bench_levels2 test/bench_levels3 test/bench_levels5
 ./test/bench_levels_paper 2>&1 | tee ../evidence/fair_paper.log
 ./test/bench_levels2      2>&1 | tee ../evidence/fair_l2.log
@@ -86,13 +86,23 @@ make test/bench_las3 && ./test/bench_las3 2>&1 | tee ../evidence/rejection_rate.
 `f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1`;
 `test_contract3` ends with `ALL CONTRACT CHECKS PASSED`.
 
-### 3.2 Primary fair benchmark — LAS vs its own simplified base
+### 3.2 Primary fair benchmark — base signature path vs LAS adaptor path
 
-`bench_levels` measures the **adaptor overhead**: it times the simplified base signature
-(KeyGen, Sign, Verify) and the adaptor operations (PreSign, PreVerify, Adapt, Extract)
-on the *same code, parameters, and primitives*, and pairs each adaptor operation with
-the base operation it mirrors (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify;
-Extract reported separately). It also prints the component-level packed sizes.
+`bench_levels` measures the **adaptor overhead** by timing two **separate modules** at
+the same parameters and on the same primitives:
+
+- **base path** — `ref/basesig.c` (`base_keygen`/`base_sign`/`base_verify`): the
+  simplified Dilithium-style signature, `Sign` hashing `c = H(pk, w, M)` and `Verify`
+  recomputing `c = H(pk, w', M)`, with **no adaptor statement `Y`**;
+- **adaptor path** — `ref/las.c` (PreSign/PreVerify/Adapt/Extract): the same scheme with
+  the statement/lock `Y` folded into the hash (`c = H(pk, w + Y, M)`).
+
+`basesig.c` is deliberately kept out of `las.{c,h}` (the LAS protocol is untouched); it
+shares only `las.h`'s parameter macros and key/signature struct layout, so both schemes
+sit at the same security level. The benchmark pairs each adaptor operation with the base
+operation it mirrors (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify; Extract
+reported separately), checks the cross-path contract (a LAS-adapted signature verifies
+under the independent `base_verify`), and prints the component-level packed sizes.
 
 | Command | Saves to | Parameter set |
 |---|---|---|
@@ -101,10 +111,9 @@ Extract reported separately). It also prints the component-level packed sizes.
 | `./test/bench_levels3` | `fair_l3.log` | Dilithium-Level-3-aligned (n=6, ℓ=5, κ=49) |
 | `./test/bench_levels5` | `fair_l5.log` | Dilithium-Level-5-aligned (n=8, ℓ=7, κ=60) |
 
-**What you should see:** under `PRIMARY (FAIR)`, each adaptor operation is within a few
-percent of its base analogue; under `Communication`, the response `z` is 98.6–99.3% of
-the signature. (Each binary also prints a clearly-separated `CONTEXT ONLY` block for the
-optimised CRYSTALS-Dilithium reference; this is background, not the fair comparison.)
+**What you should see:** under `COMPUTATION`, each adaptor operation is within a few
+percent of its base analogue (the `Adaptor overhead` pairings); under `COMMUNICATION`,
+the response `z` is 98.6–99.3% of the signature.
 
 ### 3.3 Application — atomic swap and payment channels
 
@@ -114,8 +123,10 @@ optimised CRYSTALS-Dilithium reference; this is background, not the fair compari
 | `./test/test_pcn3` | `pcn.log` | Scriptless-ledger demos: cross-chain swap, timeout/refund, and a multi-hop payment. |
 | `./test/bench_app3` | `application_benchmark.log` | Measured packed payloads: off-chain negotiation (Y + two pre-signatures), settlement (two adapted signatures), and multi-hop cost as a function of path length K. |
 
-**What you should see:** off-chain negotiation payload `12288 B`, settlement payload
-`9344 B`; the multi-hop settlement footprint grows linearly in K.
+**What you should see:** off-chain negotiation payload `12288 B`; settlement payload
+`9344 B` (the two adapted signatures — the reported figure; `15232 B` if the two
+escrowed statements are also counted); the multi-hop settlement footprint grows
+linearly in K.
 
 ### 3.4 Rejection-sampling rate
 
@@ -148,16 +159,26 @@ Reports the gas to verify one packed LAS signature natively in a Solidity contra
 
 ## 5. Report table → command → evidence file
 
-| Report table | Command | Evidence file |
+| Report table / result | Command | Evidence file |
 |---|---|---|
-| Correctness contract | `./test/test_contract3` | `evidence/contract.log` |
+| Functional correctness (modes 2/3/5) | `./test/test_las2`, `test_las3`, `test_las5` | `evidence/functional_tests.log` |
+| Serialization / tamper / malformed | `./test/test_serde3` | `evidence/serialization_tests.log` |
+| Known-answer test (deterministic) | `./test/test_kat3` | `evidence/kat.log` |
+| Correctness contract (8-point) | `./test/test_contract3` | `evidence/contract.log` |
 | Adaptor overhead (paper set) | `./test/bench_levels_paper` | `evidence/fair_paper.log` |
 | Adaptor overhead across levels | `./test/bench_levels{2,3,5}` | `evidence/fair_l{2,3,5}.log` |
 | Communication / component sizes | `./test/bench_levels_paper` | `evidence/fair_paper.log` |
+| Atomic-swap narration | `./test/test_swap3` | `evidence/atomic_swap.log` |
+| Scriptless-ledger demos | `./test/test_pcn3` | `evidence/pcn.log` |
 | Atomic-swap payload | `./test/bench_app3` | `evidence/application_benchmark.log` |
 | Multi-hop cost vs K | `./test/bench_app3` | `evidence/application_benchmark.log` |
-| Classical adaptor comparison | `./test/bench_classical` | `evidence/classical.log` |
 | Rejection-sampling rate | `./test/bench_las3` | `evidence/rejection_rate.log` |
+| Classical adaptor comparison *(optional, §4.1)* | `./test/bench_classical` | `evidence/classical.log` |
+| On-chain verification gas *(optional, §4.2)* | `forge test --match-contract LASVerifyCost` | `evidence/gas.log` |
+
+The two *optional* rows require the one-time setup in §4 and are not part of the core
+evidence set; their logs (`classical.log`, `gas.log`) are produced only by running §4.1
+and §4.2 respectively.
 
 ---
 

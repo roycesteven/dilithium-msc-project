@@ -63,12 +63,14 @@ implement. Three reasons, each a Methodology sentence:
    sampling code is reused directly.
 
 2. **Security assumptions.** LAS is based on Module-SIS and Module-LWE — the same
-   problems underlying Dilithium and the NIST standard ML-DSA. These assumptions
-   are mature, well-studied, and sit at the 128-bit security level.
+   problems underlying Dilithium and the NIST standard ML-DSA. These assumptions are
+   mature and well-studied; in their standardised Dilithium instantiations they target
+   the 128-bit category. This build's concrete bit-security is not formally analysed and
+   uses a reduced modulus `q ≈ 2²³` (see §5.9).
 
 3. **Survey recommendation.** A 2022 systematisation of post-quantum exotic
    signatures (eprint 2022/1151) calls LAS "an acceptable solution for post-quantum
-   blockchain"; its direct Dilithium reuse and mature security level are exactly
+   blockchain"; its direct Dilithium reuse and well-studied assumption base are exactly
    what make it the practical choice for a working implementation.
 
 **The "knowledge gap."** LAS (and all lattice adaptor signatures) carry a caveat
@@ -723,15 +725,29 @@ of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` t
 
 ### 8.1 Primary comparison (`bench_levels`) — LAS vs its own simplified base
 
-> **Methodology (corrected 2026-06-22).** The **primary, fair** comparison is LAS
-> against its **own simplified Dilithium-style base**, using the *same algorithm, same
-> parameters, same primitives*. LAS's KeyGen/Sign/Verify **are** the simplified base;
-> LAS adds PreSign/PreVerify/Adapt/Ext. So the only thing that varies is the adaptor
-> layer, and the fair result is its **overhead**. Official PQ-CRYSTALS Dilithium is a
-> *different* algorithm (hints, Power2Round, decomposition, bit-packing) and appears
-> **only as context, clearly labelled "not algorithm-matched"** — never as the fair
-> baseline. (`bench_fair`/`bench_compare`, which read official Dilithium as a peer
-> baseline, are superseded.)
+> **Methodology (corrected 2026-06-22; base path modularised 2026-06-23).** The
+> **primary, fair** comparison is the **simplified Dilithium-style base signature path**
+> against the **LAS adaptor path**, using the *same parameters and same primitives*. The
+> base path is now a **separate, dedicated module** — `ref/basesig.c`
+> (`base_keygen`/`base_sign`/`base_verify`): `Sign` hashes `c = H(pk, w, M)` and `Verify`
+> recomputes `c = H(pk, w', M)` with **no statement `Y`** anywhere. The adaptor path is
+> `ref/las.c` (`PreSign`/`PreVerify`/`Adapt`/`Ext`), which folds `Y` into the hash
+> (`c = H(pk, w + Y, M)`). `basesig.c` is kept **out of `las.{c,h}`** on purpose so the
+> LAS protocol is never conflated or modified; it shares only `las.h`'s parameter macros
+> and key/signature struct layout, which keeps both schemes at the **same security level**
+> and makes their keys/signatures interchangeable. That interchangeability is verified at
+> runtime: a LAS pre-signature, once `Adapt`-ed, verifies under the **independent**
+> `base_verify` with no explicit `+Y`, because `A(ẑ+y) − c·t = (Aẑ − c·t) + A·y = w' + Y`.
+> The only thing that varies between the paths is the adaptor layer, so the fair result
+> is its **overhead**. Official PQ-CRYSTALS Dilithium is a *different* algorithm (hints,
+> Power2Round, decomposition, bit-packing) and appears **only as context, clearly
+> labelled "not algorithm-matched"** — never as the fair baseline. (`bench_fair`/
+> `bench_compare`, which read official Dilithium as a peer baseline, are superseded.)
+>
+> *Note on the figures below:* the base/Sign/Verify algorithm is unchanged by the
+> module split (`basesig.c` is behaviourally identical to the previous in-`las.c` base —
+> same sampler, same `H`, same `γ−κ` bound), so the measured overheads carry over; the
+> numbers are refreshed by re-running `make test/bench_levels_* && ./test/bench_levels_*`.
 
 **Pairing.** Each adaptor op is compared with the base op it mirrors:
 `simplified Sign vs PreSign`, `simplified Verify vs PreVerify`,
