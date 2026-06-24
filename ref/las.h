@@ -28,12 +28,35 @@
 #include <stdint.h>
 #include "poly.h"      /* poly type; pulls in params.h => N, Q (mode-independent) */
 
-/* ---- LAS parameters (paper Section 3 / Table). Self-contained. ---- */
+/* ---- LAS parameters (paper Section 3 / Table). Self-contained. ----
+ *
+ * The three primitive parameters n, ell, kappa are OVERRIDABLE at compile time
+ * (-DLAS_N=.. -DLAS_ELL=.. -DLAS_KAPPA=..) so the scheme can be instantiated at
+ * parameter sets matched to each NIST security level for a FAIR same-security
+ * comparison (see ref/test/bench_levels.c).  The defaults are the paper set, so
+ * every existing target builds unchanged.
+ *
+ *   Set        (n, ell, kappa)   matches Dilithium mode (K,L,tau)   ~NIST level
+ *   LAS-paper  (4, 4, 60)        - (paper's own choice)             -
+ *   LAS@D2     (4, 4, 39)        Dilithium-2 (4,4,39)               2
+ *   LAS@D3     (6, 5, 49)        Dilithium-3 (6,5,49)               3
+ *   LAS@D5     (8, 7, 60)        Dilithium-5 (8,7,60)               5
+ *
+ * Matching n<->K, ell<->L makes the public-key and secret dimensions equal to
+ * Dilithium's; matching kappa<->tau makes the challenge weight equal.  This is a
+ * DIMENSION-level (not formally bit-security) match; security proofs are out of
+ * project scope. */
+#ifndef LAS_N
 #define LAS_N      4                          /* n   : rows of A, dim of t (=Y) */
+#endif
+#ifndef LAS_ELL
 #define LAS_ELL    4                          /* l   : extra columns of A       */
-#define LAS_M      (LAS_N + LAS_ELL)          /* n+l : dim of r, y, z           */
+#endif
+#ifndef LAS_KAPPA
 #define LAS_KAPPA  60                         /* k   : challenge weight ||c||_1 */
-#define LAS_GAMMA  122880                     /* g = k*d*(n+l) = 60*256*8       */
+#endif
+#define LAS_M      (LAS_N + LAS_ELL)          /* n+l : dim of r, y, z           */
+#define LAS_GAMMA  ((int32_t)LAS_KAPPA * 256 * LAS_M)  /* g = k*d*(n+l), d=N=256 */
 #define LAS_SEEDBYTES 32
 
 /*

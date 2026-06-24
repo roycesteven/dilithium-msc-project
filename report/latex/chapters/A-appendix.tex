@@ -1,0 +1,90 @@
+\chapter{Code listings and reproduction}
+\label{app:code}
+
+Per the writing guide, code snippets belong in an appendix rather than the body. Only
+the most representative listings are included here; the full source is in the project
+repository.
+
+\section{Building and reproducing the benchmarks}
+\label{app:repro}
+
+The evaluation is reproducible from the commands below. The upstream Dilithium
+reference is pinned at the repository's initial commit (\texttt{2374d22}); the
+classical baseline library is the BlockstreamResearch \texttt{secp256k1-zkp}
+\texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}. The toolchain is the
+system C compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-O3}.
+
+\begin{lstlisting}[language=bash,caption={Fair benchmark and tests (first-stage
+evaluation).},label={lst:benchfair}]
+cd ref
+# fair, parameter-matched comparison (>=5 runs, mean +/- SD, component sizes)
+make test/bench_fair2 && ./test/bench_fair2   # opt. reference = Dilithium-2 (dim-matched)
+make test/bench_fair3 && ./test/bench_fair3   # opt. reference = Dilithium-3 (NIST L3)
+# per-op timings + directly measured rejection rate
+make test/bench_las3 && ./test/bench_las3
+# correctness, serialization/tamper, known-answer tests
+make test/test_las3   && ./test/test_las3
+make test/test_serde3 && ./test/test_serde3
+make test/test_kat3   && ./test/test_kat3
+# end-to-end atomic swap
+make test/test_swap3  && ./test/test_swap3
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash,caption={Classical adaptor baseline (one-time
+clone).},label={lst:classical}]
+git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
+    third_party/secp256k1-zkp        # tested at commit 95b9835
+cd ref && make test/bench_classical && ./test/bench_classical
+\end{lstlisting}
+
+\section{Auditing the reuse claim}
+\label{app:diff}
+
+The ``reused vs.\ modified vs.\ added'' claim (\cref{tab:reuse}) is verified by
+diffing the pristine baseline branch against the project branch.
+
+\begin{lstlisting}[language=bash,caption={Branch diff proving the lattice core is
+untouched (no output means identical).},label={lst:diff}]
+git diff --name-status dilithium-baseline main -- ref/
+git diff dilithium-baseline main -- ref/poly.c ref/ntt.c ref/sign.c \
+    ref/packing.c ref/polyvec.c ref/reduce.c ref/rounding.c ref/params.h
+\end{lstlisting}
+
+\section{Selected code listing: Adapt and Extract}
+\label{app:listing}
+
+The adaptor mechanism reduces to two short routines. \textsc{Adapt} adds the witness
+to the pre-signature's response; \textsc{Extract} recovers the witness by subtraction
+and confirms it against the statement. Both reuse the reference's polynomial
+arithmetic verbatim.
+
+\begin{lstlisting}[language=C,caption={\texttt{las\_adapt} and \texttt{las\_ext} from
+\texttt{ref/las.c}.},label={lst:lasc}]
+int las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen,
+              const las_pk *Y, const las_sk *y, const las_pk *pk, const las_pp *pp) {
+  unsigned int j;
+  if(las_preverify(presig, m, mlen, Y, pk, pp))
+    return -1;
+  sig->c = presig->c;
+  for(j = 0; j < LAS_M; ++j) {            /* z = z_hat + y_witness */
+    poly_add(&sig->z[j], &presig->z[j], &y->s[j]);
+    poly_reduce(&sig->z[j]);
+  }
+  return 0;
+}
+
+int las_ext(las_sk *y, const las_sig *sig, const las_sig *presig,
+            const las_pk *Y, const las_pp *pp) {
+  poly Ay[LAS_N];
+  unsigned int j;
+  for(j = 0; j < LAS_M; ++j) {            /* s = z - z_hat */
+    poly_sub(&y->s[j], &sig->z[j], &presig->z[j]);
+    poly_reduce(&y->s[j]);
+  }
+  las_Amul(Ay, pp, y->s);                  /* check A*s == Y */
+  for(j = 0; j < LAS_N; ++j)
+    if(!poly_equal(&Ay[j], &Y->t[j]))
+      return -1;
+  return 0;
+}
+\end{lstlisting}

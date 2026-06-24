@@ -1,0 +1,41 @@
+==========================================================================
+ LAS parameter set: n=6 ell=5 kappa=49 gamma=137984  (N=256, Q=8380417)
+==========================================================================
+ 10 runs x 1000 iters/op; mean +/- sample SD; single thread, -O3.
+
+--- WHAT IS COMPARED (separate modules, matched parameters, shared primitives) ---
+ BASE  (simplified Dilithium-style signature; NO adaptor statement):
+   Sign     c = H(pk, w,   M)        Verify    c == H(pk, w',  M)
+ LAS ADAPTOR (same scheme; statement/lock Y folded into the hash):
+   PreSign  c = H(pk, w+Y, M)        PreVerify c == H(pk, w'+Y, M)
+   Adapt    z = z_hat + y_witness    Ext       y_witness = z - z_hat
+   Adapted sig clears ordinary Verify without an explicit +Y because
+     A(z_hat+y) - c*t = (A*z_hat - c*t) + A*y = w' + Y    (Y = A*y).
+
+--- COMPUTATION (microseconds, mean +/- sample SD) ---
+
+ Base path (simplified Dilithium-style, c = H(pk, w, M); no Y):
+   KeyGen       105.09 +/-   1.04
+   Sign        1221.67 +/-  54.32
+   Verify       266.47 +/-   2.98
+
+ LAS adaptor path (Y folded into the hash, c = H(pk, w+Y, M)):
+   PreSign     1365.45 +/- 118.84
+   PreVerify    264.33 +/-   3.49
+   Adapt        273.01 +/-   5.55
+   Ext           93.79 +/-   6.24
+
+ Adaptor overhead (adaptor op vs the base op it mirrors):
+   PreSign   vs Sign      1365.45 vs  1221.67   (+11.8%)
+   PreVerify vs Verify     264.33 vs   266.47   (-0.8%)
+   Adapt     vs Verify     273.01 vs   266.47   (+2.5%)
+   Ext       (separate)     93.79            (no base analogue)
+
+--- COMMUNICATION (packed bytes) ---
+   public key  pk          4416
+   secret key  sk           704
+   challenge   c             64
+   response    z           6688   (99.1% of the signature)
+   signature   (c,z)       6752
+   statement   Y           4416
+   pre-signature           6752

@@ -2,9 +2,11 @@
 
 ## Working agreement (READ FIRST, every session — standing instruction from Royce)
 1. **Always start by reading the authoritative docs** to orient the task:
-   `las-context-consolidated.md` (THE objectives/target spec — Meetings 1+2
-   merged), `docs/STATUS.md` (live deliverable/test checklist), and this
-   `CLAUDE.md`. They direct what "done" and "top-mark" mean.
+   `las-context-consolidated.md` (THE objectives/target spec — Meetings 1+2+3
+   merged), `docs/STATUS.md` (live deliverable/test checklist), `PROGRESS.md`
+   (the latest session checkpoint — current objective, confirmed/safe state,
+   risks, and next exact steps), and this `CLAUDE.md`. They direct what "done"
+   and "top-mark" mean.
 2. **Always document neatly, in structured / verbose / clear prose, with the
    assessment criteria in mind**, whenever implementing or fixing code. Keep the
    two living technical docs in sync with the code:
@@ -12,6 +14,18 @@
    - `docs/THEORY_IMPL_BRIDGE.md` — paper-equation → C-function/line mapping.
    A code change is not complete until the relevant doc section reflects it.
 3. This agreement is recorded here so it does **not** need re-stating each session.
+
+## Guardrails (standing — do NOT do any of these without an explicit instruction)
+- **Do not create, delete, or switch git branches** unless explicitly requested.
+- **Do not run benchmarks or tests** (no `make`, no executing benches/tests, no
+  build-and-run) unless explicitly instructed. Edit code/docs and explain; let
+  Royce run the build/bench himself, or wait to be told to.
+- **Do not invent or estimate benchmark numbers.** Only ever report figures that
+  came from a real, reproduced run; if a number isn't measured, say so — never
+  fill a table with plausible-looking values.
+- **Do not hand-edit evidence logs** (`evidence/*.log` and any saved measurement
+  output). They are captured artefacts; regenerate them by running the tool, not
+  by typing numbers.
 
 ## One-line goal
 Implement LAS (Lattice-based Adaptor Signatures, eprint 2020/845) by reusing the

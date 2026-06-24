@@ -34,8 +34,10 @@ and LAS pre-verification is absolutely faster than its classical counterpart on 
 same machine. Correctness holds in 100% of 1,000 randomised end-to-end trials. A
 real Solidity atomic swap on a local EVM confirms the same story on-chain: settling
 with a LAS signature costs ≥2.75× the classical claim *before any verification*,
-its 4672-byte calldata alone exceeding the entire ECDSA claim, and native lattice
-verification exceeds the block gas limit. We conclude that exotic post-quantum
+its 4672-byte calldata alone exceeding the entire ECDSA claim, and a measured EVM
+cost-probe puts native lattice verification at ≈12 M gas — ≈158× the classical claim
+and ≈40% of a 30 M block: prohibitively expensive, though (correcting a common
+intuition) not over the block ceiling. We conclude that exotic post-quantum
 signatures are deployable at the application layer today, with on-chain bytes — not
 CPU time — as the binding constraint, and that on-chain *verification* is the one
 piece still awaiting protocol-level support (a precompile or zk proof).
@@ -599,7 +601,9 @@ of the *published adapted signature* differs, so the gas gap is the signature's.
 The classical leg verifies the adapted ECDSA signature natively (`ecrecover`); the
 LAS leg publishes a **real 4672-byte packed signature** (exported deterministically
 from the C implementation) and charges the on-chain **floor** — calldata + one
-keccak — because native lattice verification is infeasible in the EVM.
+keccak — because a *numerically-correct* native lattice verifier in the EVM is a
+substantial engineering effort we treat as future work; its cost we instead
+*measure* directly below.
 
 | Step | Classical (ECDSA-adaptor) | Post-quantum (LAS) |
 |---|---:|---:|
@@ -610,12 +614,41 @@ keccak — because native lattice verification is infeasible in the EVM.
 EVM gas is deterministic (not machine-dependent). The real signature is 4649
 non-zero / 23 zero bytes → **74,476 gas of calldata alone**, which *by itself*
 exceeds the entire classical claim (75,709, verification included). Even the LAS
-floor — which performs no cryptographic check — is **2.75× the full classical
-claim**, and true verification would add the whole NTT/SHAKE computation, exceeding
-the block gas limit. This is the honest boundary of "exotic PQ on a blockchain"
-today: the swap *protocol* runs end-to-end, but native on-chain *verification*
-awaits a precompile or a succinct (zk) proof — the same conclusion poqeth [5]
-reached for *basic* PQ, now confirmed for the exotic case and quantified.
+floor — which performs no cryptographic check — is **2.75× the full classical claim**.
+
+**What would *full* native verification cost?** Rather than assert that it "exceeds
+the block gas limit" — an intuition this project initially held and which turns out
+to be wrong — we measured it. A gas-faithful cost probe (`evm/LASVerifyCost.sol`)
+executes the exact arithmetic op-budget of one `las_verify` (`w' = A·ẑ − c·t`:
+12 forward NTTs, 8 inverse NTTs, 20 pointwise products over N=256) on the local EVM;
+because EVM opcode gas is independent of operand *values* (`mulmod`/`addmod` are a
+flat 8 gas), this reproduces a correct verifier's arithmetic cost without being a
+correct verifier (Table 9). The measured arithmetic is **10.08 M gas**; the SHAKE256
+challenge adds ≈64 Keccak-f[1600] permutations, ≈1.92 M gas calculated at a
+representative 30k/permutation (the EVM's native `keccak256` opcode cannot implement
+SHAKE256's padding/squeeze, so it is only a lower bound) — **≈12 M gas in total**.
+
+| `las_verify` component | gas | basis |
+|---|---:|---|
+| forward NTT ×12 | 4,537,776 | measured |
+| inverse NTT ×8 | 3,374,048 | measured |
+| pointwise ×20 | 940,500 | measured |
+| coefficient passes (~40) | ≈1,227,720 | measured (residual) |
+| **arithmetic subtotal** | **10,080,044** | **measured** |
+| SHAKE256 challenge (~64 Keccak-f) | 1,920,000 | calculated |
+| **native `las_verify`** | **≈12,000,044** | measured + calculated |
+
+That is **≈158× the classical `ecrecover` claim and ≈40% of a single 30 M block**
+(≈33% of the ~36 M limit of 2025). The honest conclusion is therefore sharper than
+"infeasible": native LAS verification is *economically absurd* (two orders of
+magnitude over the classical settlement) and an *implementation burden* (SHAKE256 and
+a negacyclic NTT in EVM bytecode), but with EVM-native modular arithmetic it does
+**not** exceed the block gas limit. This is the honest boundary of "exotic PQ on a
+blockchain" today: the swap *protocol* runs end-to-end, while native on-chain
+*verification* awaits a precompile or a succinct (zk) proof — not because a block
+cannot hold it, but because no one would pay ≈160× the classical cost to replay
+lattice arithmetic the chain has no native support for. This is the same conclusion
+poqeth [5] reached for *basic* PQ, now confirmed for the exotic case and quantified.
 
 ### 4.4 Correctness, robustness, reproducibility
 
@@ -679,7 +712,12 @@ implementation quality to first order.
 **Threats to validity.** Single machine (WSL2), wall-clock timing, and
 run-to-run variance of a few percent on the small classical timings; medians
 over ≥1,000 iterations and reported variability mitigate but do not eliminate
-this. The ledger is simulated; gas figures remain unmeasured (Section 6).
+this. The application-layer ledger is simulated, but the on-chain figures are
+real: both the swap-settlement gas (§4.3) and the native-verification cost-probe
+are deterministic EVM measurements, the latter a *lower bound* on a straightforward
+Solidity verifier (it omits matrix expansion and signature unpacking, which add gas
+but not an order of magnitude) and using a literature figure, not a same-machine
+measurement, for the per-Keccak-f permutation cost.
 
 ---
 
@@ -708,9 +746,11 @@ artefact and deployment is not cryptography but bytes: 4,672 B signatures are
 the real cost, and they are already within ×1.4 of optimised Dilithium-3's.
 
 **Future work**, in order of value per effort: (1) make on-chain LAS *verification*
-feasible — the swap and its gas floor are already measured on a local EVM (§4.3),
-so the open piece is a `las_verify_packed` precompile or a succinct (zk) proof of
-verification, benchmarked against poqeth's basic-Dilithium gas; (2) migrate
+economical — the swap, its gas floor, and the ≈12 M-gas cost of a naïve native
+verifier are now all measured on a local EVM (§4.3), so the open piece is bringing
+that figure down toward the classical claim via a `las_verify_packed` precompile or
+a succinct (zk) proof of verification, benchmarked against poqeth's basic-Dilithium
+gas; (2) migrate
 parameters to the paper's `q ≈ 2²⁴` (new NTT table) and report the before/after
 benchmark diff;
 (3) reconcile the hint/compression machinery with the adaptor algebra to recover

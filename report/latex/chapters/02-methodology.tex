@@ -1,0 +1,288 @@
+\chapter{Methodology}
+\label{ch:methodology}
+
+This chapter explains how the project work was done: the construction implemented,
+the reuse-based implementation strategy, the testing regime, and --- importantly for
+a fair evaluation --- the benchmarking methodology and the parameter choices that
+make the comparisons defensible.
+
+\section{The LAS construction}
+\label{sec:construction}
+
+LAS is a lattice adaptor signature whose base is a simplified, Dilithium-style
+Fiat--Shamir-with-aborts signature \cite{esgin2020,ducas2018}. All objects live in
+the ring $\Rq = \mathbb{Z}_q[X]/(X^N+1)$. The public matrix has the form
+$A = [\,I_n \mid A'\,] \in \Rq^{\,n\times(n+\ell)}$. A key pair is a short secret
+$r$ and its image $t = A\cdot r$; the hard relation $(Y,y)$ reuses exactly the same
+structure, so a statement is ``just another public key'' and recovering its witness
+is a Module-SIS/LWE problem.
+
+The base signature samples a masked commitment $w$, forms a challenge
+$c = H(\mathit{pk}, w, M)$, computes a response, and rejects when
+$\inftynorm{\vecz} > \gamma-\kappa$ (\cref{eq:signbound}). The adaptor extension
+\cite{esgin2020} adds four operations relative to a statement $Y$:
+\begin{itemize}
+  \item \textsc{PreSign} folds the statement into the hash,
+        $c = H(\mathit{pk}, w + Y, M)$, and rejects at the \emph{tighter} bound
+        $\gamma-\kappa-1$;
+  \item \textsc{PreVerify} recomputes $w' = A\vecz - c\,t$ and checks
+        $c = H(\mathit{pk}, w'+Y, M)$;
+  \item \textsc{Adapt} adds the witness, $\vecz \leftarrow \vecz + y$, producing a
+        signature that an ordinary verifier accepts;
+  \item \textsc{Extract} recovers $y = \vecz - \hat{\vecz}$ from a signature and its
+        pre-signature.
+\end{itemize}
+
+\begin{equation}
+  \label{eq:signbound}
+  \text{accept iff } \inftynorm{\vecz} \le \gamma-\kappa,
+  \qquad \gamma = \kappa\, d\,(n+\ell).
+\end{equation}
+
+The single subtle design point is the bound budget. \textsc{PreSign} must reject at
+the tighter bound $\gamma-\kappa-1$. The witness is ternary, so $\inftynorm{y}\le 1$,
+and after \textsc{Adapt} adds it the response satisfies $\inftynorm{\vecz}\le
+\gamma-\kappa$ and clears \cref{eq:signbound}. Loosening \textsc{PreSign} to
+$\gamma-\kappa$ would let adapted signatures exceed the bound, and ordinary verify
+would then reject every adapted signature. \Cref{fig:flow} shows the four-operation data
+flow and, crucially, where the statement $Y$ enters and where the witness $y$ is
+revealed.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      node distance=6mm and 9mm,
+      box/.style={draw, rounded corners, align=center, minimum height=8mm,
+                  inner sep=3pt, font=\small},
+      ann/.style={font=\footnotesize\itshape, align=center},
+      >={Stealth[]}]
+    \node[box] (ps)  {PreSign\\$\hat{\sigma}=(c,\hat{z})$};
+    \node[box, right=of ps] (pv) {PreVerify};
+    \node[box, right=of pv] (ad) {Adapt\\$z=\hat{z}+y$};
+    \node[box, right=of ad] (vf) {Verify /\\Publish $\sigma$};
+    \node[box, right=of vf] (ex) {Extract\\$y=z-\hat{z}$};
+    \draw[->] (ps) -- (pv);
+    \draw[->] (pv) -- (ad);
+    \draw[->] (ad) -- (vf);
+    \draw[->] (vf) -- (ex);
+    % statement Y enters at PreSign and PreVerify (hashed into the challenge)
+    \node[ann, above=of ps] (Y) {statement $Y$\\(into the hash)};
+    \draw[->, dashed] (Y) -- (ps);
+    \draw[->, dashed] (Y) -| (pv);
+    % witness y enters at Adapt; is revealed by Extract
+    \node[ann, below=of ad] (y) {witness $y$\\(secret)};
+    \draw[->, dashed] (y) -- (ad);
+    \node[ann, below=of ex] (yo) {$y$ recovered\\(now public)};
+    \draw[->, dashed] (ex) -- (yo);
+  \end{tikzpicture}
+  \caption{The LAS adaptor data flow. The statement $Y$ is folded into the challenge
+  hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the
+  pre-signature into an ordinary signature; and publishing that signature lets anyone
+  holding the pre-signature run Extract to recover $y$. This last step is what makes an
+  atomic swap atomic.}
+  \label{fig:flow}
+\end{figure}
+
+\section{Implementation strategy: reuse, do not reinvent}
+\label{sec:impl}
+
+The guiding principle is that an exotic scheme equals a basic scheme plus extra
+functions, so the lattice arithmetic should be \emph{reused}, not rewritten. The
+implementation is therefore built additively on the CRYSTALS-Dilithium C reference.
+
+\begin{table}[t]
+  \centering
+  \caption{Source files of the implementation, classified by how the reference is
+  used. The lattice core is reused unchanged; the only modified file is the build
+  script; the scheme, serialization, application, and evaluation are new.}
+  \label{tab:reuse}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Category & Files & Role \\
+    \midrule
+    Reused unchanged & \texttt{poly/polyvec/ntt/reduce/rounding}, & the entire \\
+                     & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
+    Modified         & build script & compile new targets \\
+    Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
+                     & \texttt{amhl}, \texttt{chain}, tests, benchmarks & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\Cref{tab:reuse} summarises the classification: no upstream source function is
+modified, so the security-critical lattice arithmetic is exactly the audited reference
+code, and every line specific to the adaptor scheme is new and isolated. This both
+reduces the surface for implementation error and makes the boundary between reused and
+new code unambiguous.
+
+\paragraph{Data types and the matrix product.}
+LAS is a self-contained module (\texttt{las.\{c,h\}}) over the reference's degree-$N$
+polynomial type. A key pair is a ternary secret $r$ (eight polynomials) and its image
+$t=A\,r$ (four polynomials); a (pre-)signature is a challenge $c$ and a response
+$\vecz$ of eight polynomials; a statement/witness $(Y,y)$ has exactly the key-pair
+shape. The public matrix has the form $A=[\,I_n\mid A'\,]$, so the product
+$A\,v = v_{\text{top}} + A' v_{\text{bot}}$ adds the identity block directly and
+multiplies only $A'$ in the NTT domain. This both saves work and matches exactly how
+the reference computes $A s_1$ in key generation.
+
+\paragraph{Hash, challenge, and samplers.}
+The random oracle $H$ is built from SHAKE256: it absorbs a canonical encoding of the
+public key, then the commitment ($w$ for Sign, $w+Y$ for PreSign), then the message,
+and squeezes a seed. The challenge sampler is the reference's \texttt{SampleInBall}
+with weight $\kappa=60$, which guarantees $\lVert c\rVert_1=\kappa$ and
+$\inftynorm{c}=1$. Two samplers are added: a ternary sampler for secrets and witnesses
+(two bits per coefficient), and a uniform sampler over $[-\gamma,\gamma]$ for the
+mask (an 18-bit rejection sampler). The infinity-norm rejection checks reuse the
+reference's \texttt{poly\_chknorm} directly.
+
+\paragraph{Simplifications relative to the full Dilithium scheme.}
+Following the LAS construction \cite{esgin2020}, the base signature omits the
+optimisations of the full Dilithium scheme --- the hint vector, Power2Round, and
+high/low-bit decomposition --- and hashes the full commitment $w$ rather than its high
+bits. This keeps the algebra transparent at the cost of larger keys and signatures
+(quantified in \cref{ch:results}). The module depends on no mode-specific constant, so
+the same code runs at any of the parameter sets used in the evaluation.
+
+\paragraph{Modulus (a deliberate deviation).}
+The original construction specifies $q\approx 2^{24}$. Reusing the reference NTT fixes
+the root-of-unity table to $q=8\,380\,417\approx 2^{23}$, so this implementation uses
+that modulus. Since $q>2\gamma$, every intermediate value is represented faithfully and
+correctness is unaffected; only the concrete Module-SIS/LWE security margin differs
+from the larger-modulus parameter set. Migrating to $q\approx 2^{24}$ would require a
+new NTT table and is treated as future work (\cref{sec:future}).
+
+\section{Serialization and the on-chain interface}
+\label{sec:serialize}
+
+A deployable scheme exchanges \emph{bytes}, not in-memory structs. A bit-packed wire
+encoding and a \emph{validating} decoder were implemented, together with a
+verify-from-bytes entry point (\texttt{las\_verify\_packed}) that an on-chain verifier
+would consume. The packed field widths (used for the size analysis in
+\cref{ch:results}) are: public key / statement at 23 bits/coefficient, ternary secret
+/ witness at 2 bits/coefficient, and the response $z$ at 18 bits/coefficient.
+
+A verifier cannot trust its input, so the decoder is \emph{defensive}: it rejects a
+public-key coefficient $\ge q$, the invalid ternary code, and any response field
+outside the 18-bit band. The encoder is symmetric, rejecting a non-ternary secret or
+a response exceeding $\gamma-\kappa$. This is the realistic interface a
+Solidity, precompile, or zero-knowledge-circuit verifier would expose, and it is the
+object the tamper test in \cref{sec:res-correctness} attacks.
+
+\section{Testing methodology}
+\label{sec:testing}
+
+Correctness and robustness were established with four test types.
+
+\begin{enumerate}
+  \item \textbf{Functional tests} run 1000 iterations per Dilithium mode (2, 3, and
+        5), each with fresh public parameters, keys, and message. Every iteration
+        runs the full adaptor cycle and asserts: the pre-signature pre-verifies; the
+        pre-signature \emph{fails} ordinary verify (the statement-binding tripwire);
+        the adapted signature verifies; and the extracted witness equals the original
+        \emph{exactly}. An ordinary sign/verify round-trip and a one-bit-forgery
+        rejection are also checked. Passing all 1000 iterations at every mode is the
+        bar for functional correctness.
+  \item \textbf{Serialization tests} exercise the byte encoding over 256 random
+        instances, asserting exact round-trip for keys and all signature variants.
+  \item \textbf{A tamper test} flips every one of the 4672 bytes of a valid packed
+        signature, one at a time, and asserts that all 4672 flips break verification;
+        it also checks that the validating decoder rejects malformed bytes.
+  \item \textbf{Known-answer tests} fix all inputs, run the deterministic API, fold
+        the packed bytes of every object into a single SHAKE256 digest, and compare it
+        against a pinned 32-byte value. Any unintended change to key generation,
+        signing, the adaptor algebra, or the serialization flips the digest. The
+        digest is stable across machines and compilers, so an independent on-chain
+        verifier can be cross-checked against it.
+\end{enumerate}
+
+All tests pass, and the implementation compiles with no warnings under a strict set of
+compiler diagnostics.
+
+\section{Benchmarking methodology and fair comparison}
+\label{sec:benchmethod}
+
+The evaluation separates two distinct costs and never conflates them:
+\emph{computation} cost (wall-clock time per operation) and \emph{communication}
+cost (bytes transmitted or stored). Each is measured as follows.
+
+\paragraph{Repeatability and machine of record.}
+Every timing is the mean over ten independent runs, each of one thousand iterations,
+single-threaded, compiled at \texttt{-O3}. Results are reported as mean $\pm$ sample
+standard deviation so that machine and scheduling noise are visible. All measurements
+were taken on one machine: an AMD Ryzen~7 7745HX (8 cores, 16 threads) with
+about 7.4\,GB of RAM visible to the Linux environment, running Ubuntu 24.04.3 LTS
+(kernel 6.6, under WSL2 on Windows), with GCC 13.3.0 and GNU~Make 4.3. The reference
+implementation and the classical baseline library are used at fixed versions, and each
+reported table lists the exact command that produces it (\cref{app:repro}).
+
+\paragraph{Primary (fair) comparison: LAS vs.\ its own simplified base.}
+LAS is defined over a simplified Dilithium-style base signature (Fiat--Shamir with
+aborts, ternary secrets, no hint vector); LAS is exactly that base plus the four
+adaptor operations, built on the same code, the same parameters, and the same
+primitives. The primary comparison therefore holds everything fixed except the
+adaptor layer, and measures its \emph{overhead}: this is the only same-algorithm,
+same-parameter, same-primitive comparison, so any difference it shows is genuinely the
+cost of adding adaptor functionality. Each adaptor operation is paired with the base
+operation it mirrors algorithmically:
+\begin{itemize}
+  \item \textsc{PreSign} against the base \textsc{Sign} --- both sample a masked
+        commitment, hash, and respond under rejection sampling; PreSign only folds the
+        statement $Y$ into the commitment and uses a tighter rejection bound;
+  \item \textsc{PreVerify} against the base \textsc{Verify} --- both recompute the same
+        commitment shape, PreVerify with the extra $+Y$;
+  \item \textsc{Adapt} against the base \textsc{Verify} --- Adapt runs a PreVerify and
+        then adds the witness;
+  \item \textsc{Extract} is reported separately, having no base-operation analogue.
+\end{itemize}
+
+\paragraph{Parameter sensitivity.}
+To test whether the adaptor overhead depends on the security level, the same base/adaptor
+comparison is repeated at several parameter sets. The module dimensions for these sets
+are taken from the standard Dilithium parameter choices at NIST levels~2, 3, and~5 ---
+used here purely as established, well-studied lattice dimensions to scale the scheme
+across --- together with the dimensions of the original LAS construction
+(\cref{tab:params}). Setting the row count $n$ and extra columns $\ell$ to a level's
+$(K,L)$, and the challenge weight $\kappa$ to its $\tau$, fixes the public-key, secret,
+and challenge dimensions. The implementation's parameters are compile-time constants, so
+the identical code runs at every set; the bound $\gamma=\kappa\,d\,(n+\ell)$ and the
+sampler widths follow from them. The concrete bit-security of each set is not formally
+claimed, as security proofs are beyond the scope of this work.
+
+\begin{table}[t]
+  \centering
+  \caption{Parameter sets used in the evaluation, all at modulus $q\approx 2^{23}$ and
+  ring degree $N=256$. The NIST-level dimensions follow the corresponding Dilithium
+  $(K,L,\tau)$ choices, used as reference lattice dimensions. The classical secp256k1
+  ECDSA adaptor is a functionality-matched baseline at classical security.}
+  \label{tab:params}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Set & LAS $(n,\ell,\kappa)$ & Reference dimensions / level \\
+    \midrule
+    LAS paper  & $(4,4,60)$ & original construction \\
+    NIST 2     & $(4,4,39)$ & Dilithium mode 2 $(4,4,39)$, level 2 \\
+    NIST 3     & $(6,5,49)$ & Dilithium mode 3 $(6,5,49)$, level 3 \\
+    NIST 5     & $(8,7,60)$ & Dilithium mode 5 $(8,7,60)$, level 5 \\
+    Classical  & secp256k1 ECDSA adaptor & $\approx$128-bit classical \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Component-level size analysis.}
+Rather than reporting only total object sizes, each key and signature is decomposed
+into its components (challenge $c$, response $z$, statement $Y$, witness $y$,
+pre-signature) so that the \emph{cause} of any size difference can be identified.
+This breakdown is presented in \cref{ch:results}.
+
+\paragraph{Classical baseline (functionality-matched, not security-matched).}
+The second baseline is a classical secp256k1 ECDSA adaptor signature
+\cite{secp256k1zkp}. This is \emph{not} a same-security post-quantum comparison:
+secp256k1 provides approximately 128-bit \emph{classical} security, is not
+quantum-resistant, and therefore has no corresponding NIST post-quantum level.
+Instead it is a functionality-matched ``price of post-quantum'' baseline: both schemes
+provide adaptor-signature functionality for blockchain-style atomic swaps, but they
+rely on different hardness assumptions and different algebra (classical discrete-log
+versus post-quantum lattice). LAS is evaluated as the post-quantum adaptor
+construction; the ECDSA adaptor represents the compact, widely deployed classical
+alternative. Plain ECDSA is excluded: the fair counterpart of an adaptor signature is
+another adaptor signature, not a basic one.

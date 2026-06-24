@@ -1,0 +1,24 @@
+=== LAS on a toy chain: scriptless HTLCs ===
+
+== Scenario 1: cross-chain atomic swap (happy path) ==
+  funded: chainA Alice->Bob(10), chainB Bob->Alice(10), both locked to Y
+  Bob claims on chainA -> gets 10; witness now public on chainA
+  Alice extracts y from chainA, claims on chainB -> gets 10
+  balances: chainA Alice=90 Bob=10 | chainB Alice=10 Bob=90  -> atomic OK
+
+== Scenario 2: cross-chain swap times out (refund path) ==
+  both legs funded; Bob goes offline and never reveals y
+  refund before timeout correctly rejected
+  after timeouts: Bob refunds chainB, Alice refunds chainA
+  balances restored to initial (no coins lost)  -> safe OK
+
+== Scenario 3: multi-hop payment Alice -> Bob -> Carol (PCN) ==
+  routed: Alice->Bob(11) and Bob->Carol(10), both locked to invoice Y
+  Carol claims Bob->Carol -> gets 10; witness now public
+  Bob extracts y, claims Alice->Bob -> gets 11 (recovers 10 + 1 fee)
+  balances: Alice=89 Bob=101 Carol=10  -> Carol paid, Bob earned fee OK
+
+=== All scenarios settled correctly. ===
+Adaptor signatures replace hash-locks (claim reveals the witness) and the
+block-height timeout replaces the time-lock refund path - no on-chain
+scripts, post-quantum secure.

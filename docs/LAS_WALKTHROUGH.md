@@ -11,6 +11,10 @@ exact files are given so you can verify or demo any part.*
 > plain words. Section 8 is the honest caveats. Section 9 is "run it yourself."
 > Section 10 is a glossary — flip to it whenever a word is unfamiliar.
 
+**Companion docs:** for the *build order* (which C files and functions were written
+first, and why) see `docs/PROJECT_HISTORY_EXPLAINED.md`; for the on-chain gas
+experiment in plain English see `docs/GAS_LIMIT_INVESTIGATION.md`.
+
 ---
 
 ## 1. The problem, in one breath
@@ -237,8 +241,10 @@ We deployed a real Solidity swap contract on a local Ethereum and settled it wit
 each scheme (`evm/`). Settling with ECDSA costs **75,709 gas**. Just *publishing* a
 LAS signature (4,672 bytes of calldata) — before doing any checking — already costs
 **208,400 gas**, ~2.75× more; and fully verifying a lattice signature inside the
-EVM is infeasible today (it would blow past the block limit). That's the honest
-frontier: the *swap works end-to-end*, but cheap on-chain verification needs future
+EVM is **prohibitively expensive — a measured ≈12M gas, ≈40% of a 30M-gas block**
+(it *fits* within a block, but is economically absurd and needs SHAKE256 + a
+negacyclic NTT in EVM bytecode — it is *not* a hard block-limit failure). That's the
+honest frontier: the *swap works end-to-end*, but cheap on-chain verification needs future
 blockchain support (a precompile or a zero-knowledge proof) — the same wall the
 "poqeth" project hit for basic post-quantum signatures.
 

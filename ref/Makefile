@@ -22,12 +22,23 @@ all: \
   test/test_las5 \
   test/test_swap3 \
   test/bench_las3 \
-  test/bench_compare3 \
+  test/bench_levels_paper \
+  test/bench_levels2 \
+  test/bench_levels3 \
+  test/bench_levels5 \
+  test/test_basesig_paper \
+  test/test_basesig2 \
+  test/test_basesig3 \
+  test/test_basesig5 \
   test/bench_app3 \
   test/test_pcn3 \
   test/test_amhl3 \
   test/test_serde3 \
-  test/test_kat3
+  test/test_serde_l2 \
+  test/test_serde_l3 \
+  test/test_serde_l5 \
+  test/test_kat3 \
+  test/test_contract3
 
 nistkat: \
   nistkat/PQCgenKAT_sign2 \
@@ -78,63 +89,126 @@ test/test_dilithium5: test/test_dilithium.c randombytes.c $(KECCAK_SOURCES) \
 
 test/test_las2: test/test_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_las3: test/test_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_las5: test/test_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_swap3: test/test_swap.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
-test/bench_las3: test/bench_las.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
+test/bench_las3: test/bench_las.c serialize.h las.c las.h randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
 test/bench_compare3: test/bench_compare.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
+
+# Primary algorithm-matched, parameter-matched adaptor-overhead benchmark:
+# the SEPARATE simplified Dilithium-style base signature (basesig.c) vs the LAS
+# adaptor operations (las.c), at matched parameters.  basesig.c and las.c are
+# distinct translation units -- the base scheme does not touch the LAS protocol.
+# Each target sets LAS_N/LAS_ELL/LAS_KAPPA explicitly for the paper,
+# Level-2-aligned, Level-3-aligned, and Level-5-aligned parameter sets.
+# DILITHIUM_MODE is used only to satisfy the Dilithium build system/params.h;
+# original/optimised Dilithium timings are not part of this benchmark.
+LEVELS_DEPS = test/bench_levels.c basesig.c basesig.h las.c las.h randombytes.c \
+  $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+test/bench_levels_paper: $(LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
+test/bench_levels2: $(LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
+test/bench_levels3: $(LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
+test/bench_levels5: $(LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
+
+# CHECK-gated randomised correctness test for the separate base signature (basesig.c)
+# and its interlock with the LAS adaptor (las.c), per matched parameter set.
+# This is test evidence over NTESTS iterations, not a formal/exhaustive proof.
+BASESIG_TEST_DEPS = test/test_basesig.c basesig.c basesig.h las.c las.h randombytes.c \
+  $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+test/test_basesig_paper: $(BASESIG_TEST_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES)
+test/test_basesig2: $(BASESIG_TEST_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES)
+test/test_basesig3: $(BASESIG_TEST_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES)
+test/test_basesig5: $(BASESIG_TEST_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES)
 
 test/bench_app3: test/bench_app.c amhl.c amhl.h serialize.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< amhl.c las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_pcn3: test/test_pcn.c chain.c chain.h las.c las.h randombytes.c \
   $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< chain.c las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_amhl3: test/test_amhl.c amhl.c amhl.h chain.c chain.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< amhl.c chain.c las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_serde3: test/test_serde.c serialize.c serialize.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+
+# Serde across parameter sets (test_serde3 above covers the paper dims, 4,4,60):
+# these sweep the Dilithium-2/3/5-aligned sets.  serialize.h now derives the z field
+# width from the parameters (18 bits for paper/D2, 19 for D3/D5), so every set packs
+# losslessly and round-trips.
+SERDE_LEVELS_DEPS = test/test_serde.c serialize.c serialize.h las.c las.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+test/test_serde_l2: $(SERDE_LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+test/test_serde_l3: $(SERDE_LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+test/test_serde_l5: $(SERDE_LEVELS_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
 	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
 
 test/test_kat3: test/test_kat.c serialize.c serialize.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
+	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
+
+# Consolidated correctness-contract evaluation harness (itemised PASS/FAIL).
+test/test_contract3: test/test_contract.c serialize.c serialize.h las.c las.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
 
 # Exports a real packed LAS adapted signature for the EVM gas benchmark (evm/).
 test/export_packed: test/export_packed.c serialize.c serialize.h las.c las.h \
   randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 \
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< serialize.c las.c randombytes.c $(KECCAK_SOURCES)
 
 # Classical adaptor baseline (objectives B2.ii). Requires the vendored library:
@@ -221,11 +295,23 @@ clean:
 	rm -f test/test_swap3
 	rm -f test/bench_las3
 	rm -f test/bench_compare3
+	rm -f test/bench_levels_paper
+	rm -f test/bench_levels2
+	rm -f test/bench_levels3
+	rm -f test/bench_levels5
+	rm -f test/test_basesig_paper
+	rm -f test/test_basesig2
+	rm -f test/test_basesig3
+	rm -f test/test_basesig5
 	rm -f test/bench_app3
 	rm -f test/test_pcn3
 	rm -f test/test_amhl3
 	rm -f test/test_serde3
+	rm -f test/test_serde_l2
+	rm -f test/test_serde_l3
+	rm -f test/test_serde_l5
 	rm -f test/test_kat3
+	rm -f test/test_contract3
 	rm -f test/test_vectors2
 	rm -f test/test_vectors3
 	rm -f test/test_vectors5
@@ -236,3 +322,5 @@ clean:
 	rm -f nistkat/PQCgenKAT_sign2
 	rm -f nistkat/PQCgenKAT_sign3
 	rm -f nistkat/PQCgenKAT_sign5
+	rm -f test/export_packed
+	rm -f test/bench_classical
