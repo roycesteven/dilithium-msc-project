@@ -1,7 +1,7 @@
+  [FAIL] KAT digest mismatch - reproducibility broken (or update EXPECTED on a deliberate change)
 === LAS known-answer tests (mode 3, 4 vectors) ===
   vector 0: contract OK, deterministic, serialised
   vector 1: contract OK, deterministic, serialised
   vector 2: contract OK, deterministic, serialised
   vector 3: contract OK, deterministic, serialised
-  KAT digest: f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1
-=== KAT digest matches pinned expected value. ===
+  KAT digest: 641a176c3eb2125098fdbb7ad16bfa38fb5744b52dd9696beeb7d07be1445a19

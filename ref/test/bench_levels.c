@@ -9,8 +9,14 @@
  *       BASE path     -> basesig.c  (base_keygen / base_sign / base_verify; no Y)
  *       ADAPTOR path  -> las.c      (las_presign / las_preverify / las_adapt / las_ext)
  *   las.{c,h} are untouched by the base scheme; basesig shares only las.h's parameter
- *   macros and key/signature struct layout (so both sit at the same security level and
- *   their keys/signatures are interchangeable -- see the cross-verify contract below).
+ *   macros and key/signature struct layout, so both use a matched parameter
+setting (n, ell, kappa). 
+ *    This is a dimension-aligned engineering comparison,
+not a formal same-security or NIST-equivalence claim; security proofs are out
+of scope. 
+ *    The benchmark checks ordinary-path compatibility explicitly:
+base signatures and adapted LAS signatures are verified by the independent
+base verifier, while LAS pre-signatures are deliberately rejected by ordinary base verification.
  *
  *   BASE  (simplified Dilithium-style signature; no adaptor statement Y):
  *       Sign    : c = H(pk, w,   M)            -- the commitment w is hashed as-is
@@ -43,9 +49,8 @@
  * or early-return path is ever timed. (Adapt is timed including its internal PreVerify,
  * since a real Adapt must perform it.)
  *
- * Build (Makefile sets -DLAS_N/-DLAS_ELL/-DLAS_KAPPA for each parameter set).  Matching
- * (n,ell,kappa) <-> Dilithium's (K,L,tau) keeps the comparison fair at a stated security
- * level (a dimension-level match; security proofs are out of project scope):
+ * Build (Makefile sets -DLAS_N/-DLAS_ELL/-DLAS_KAPPA for each parameter set).  
+ * The L2/L3/L5-style targets are dimension-aligned engineering settings inspired by Dilithium's parameter progression. They are used to study scaling across matched parameter sets, not to claim formal same-security equivalence.
  *     make test/bench_levels_paper   # original LAS dimensions (4,4,60)
  *     make test/bench_levels2        # (4,4,39)  ~ Dilithium-2 level
  *     make test/bench_levels3        # (6,5,49)  ~ Dilithium-3 level
@@ -191,7 +196,7 @@ int main(void) {
   printf("==========================================================================\n");
   printf(" %d runs x %d iters/op; mean +/- sample SD; single thread, -O3.\n\n", RUNS, NITER);
 
-  printf("--- WHAT IS COMPARED (identical code, parameters, primitives) ---\n");
+  printf("--- WHAT IS COMPARED (separate modules, matched parameters, shared primitives) ---\n");
   printf(" BASE  (simplified Dilithium-style signature; NO adaptor statement):\n");
   printf("   Sign     c = H(pk, w,   M)        Verify    c == H(pk, w',  M)\n");
   printf(" LAS ADAPTOR (same scheme; statement/lock Y folded into the hash):\n");

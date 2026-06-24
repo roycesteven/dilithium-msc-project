@@ -89,7 +89,8 @@ A standalone simplified Dilithium-style signature kept deliberately **out of `la
 so the LAS protocol is never conflated or modified. Public: `base_keygen`, `base_sign`
 (`c = H(pk, w, M)`, no statement `Y`), `base_verify` (`c == H(pk, w', M)`). It depends on
 `las.h` only for the shared parameter macros and the `las_pp/las_pk/las_sk/las_sig` struct
-layout, so both schemes sit at the same security level and their keys/signatures are
+layout, so both schemes use the same parameter set (a dimension-level match — `n,ℓ,κ` —
+not a formal bit-security claim; proofs are out of scope) and their keys/signatures are
 interchangeable — verified by `bench_levels`, where a LAS-`Adapt`-ed signature passes the
 independent `base_verify`. Its static helpers (`b_Amul`, `b_polymul`, `b_challenge`,
 `b_hash_challenge`, `b_sample_Sgamma`, `b_sample_ternary`, `b_pack_poly_canon`,
@@ -99,7 +100,9 @@ challenge hash matches bit-for-bit. **No upstream files modified.**
 ### 3.2 `serialize.{c,h}` — byte-level encoding (on-chain interface)
 `las_pack_pk`/`las_unpack_pk`, `las_pack_sk`/`las_unpack_sk`,
 `las_pack_sig`/`las_unpack_sig`, `las_verify_packed` (validating decoder + verify
-from bytes). Sizes: pk 2944 B, sk 512 B, sig 4672 B.
+from bytes). The `z` field width is parameter-derived (`LAS_Z_COEFF_BITS` = 18 bits for
+the paper/D2 sets, 19 for D3/D5), so every parameter set packs losslessly. Sizes
+(paper/D2): pk 2944 B, sk 512 B, sig 4672 B.
 
 ### 3.3 `amhl.{c,h}` — multi-hop locks (optional/bonus tier)
 `amhl_setup_gen` (cumulative statements `Y_j=A·(l₁+…+l_j)`), `amhl_norm`,
@@ -111,9 +114,14 @@ from bytes). Sizes: pk 2944 B, sk 512 B, sig 4672 B.
 `chain_extract_witness`, `chain_refund_swap`.
 
 ### 3.5 Tests / benchmarks (`ref/test/`)
-Functional / KAT: `test_las` (1000-iter 8-point contract, modes 2/3/5), `test_swap`,
-`test_pcn` (same-Y HTLC), `test_amhl` (multi-hop), `test_serde` (round-trip /
-verify-from-bytes / tamper), `test_kat` (pinned SHAKE256 digest).
+Functional / KAT: `test_las` (1000-iter 8-point contract, modes 2/3/5),
+`test_basesig` (1000-iter **CHECK**-gated base-signature correctness: honest verify +
+tamper/wrong-key rejection + cross-module equivalence with `las.c` + cross-path interlock
++ four negative tests — wrong statement, wrong witness, tampered pre-signature, tampered
+adapted signature; paper/2/3/5),
+`test_swap`, `test_pcn` (same-Y HTLC), `test_amhl` (multi-hop), `test_serde` (round-trip /
+verify-from-bytes / tamper, swept across parameter sets — `test_serde3` paper dims plus
+`test_serde_l2/l3/l5`), `test_kat` (pinned SHAKE256 digest).
 Benchmarks: `bench_levels` (**primary fair** benchmark — base path `basesig.c` vs LAS
 adaptor path `las.c` at matched parameters, ≥5 runs mean±SD, component sizes),
 `bench_las` (per-op + direct rejection rate), `bench_compare` (LAS vs optimised

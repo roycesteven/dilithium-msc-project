@@ -3,7 +3,7 @@
 ==========================================================================
  10 runs x 1000 iters/op; mean +/- sample SD; single thread, -O3.
 
---- WHAT IS COMPARED (identical code, parameters, primitives) ---
+--- WHAT IS COMPARED (separate modules, matched parameters, shared primitives) ---
  BASE  (simplified Dilithium-style signature; NO adaptor statement):
    Sign     c = H(pk, w,   M)        Verify    c == H(pk, w',  M)
  LAS ADAPTOR (same scheme; statement/lock Y folded into the hash):
@@ -15,21 +15,21 @@
 --- COMPUTATION (microseconds, mean +/- sample SD) ---
 
  Base path (simplified Dilithium-style, c = H(pk, w, M); no Y):
-   KeyGen       166.22 +/-   2.82
-   Sign        1562.52 +/-  38.21
-   Verify       385.97 +/-   2.47
+   KeyGen       152.69 +/-   3.57
+   Sign        1512.32 +/-  58.02
+   Verify       375.23 +/-   8.73
 
  LAS adaptor path (Y folded into the hash, c = H(pk, w+Y, M)):
-   PreSign     1621.29 +/-  52.62
-   PreVerify    400.49 +/-   2.15
-   Adapt        415.26 +/-   2.26
-   Ext          150.45 +/-   1.67
+   PreSign     1449.94 +/-  30.35
+   PreVerify    371.54 +/-   8.79
+   Adapt        393.29 +/-   4.51
+   Ext          138.74 +/-   0.62
 
  Adaptor overhead (adaptor op vs the base op it mirrors):
-   PreSign   vs Sign      1621.29 vs  1562.52   (+3.8%)
-   PreVerify vs Verify     400.49 vs   385.97   (+3.8%)
-   Adapt     vs Verify     415.26 vs   385.97   (+7.6%)
-   Ext       (separate)    150.45            (no base analogue)
+   PreSign   vs Sign      1449.94 vs  1512.32   (-4.1%)
+   PreVerify vs Verify     371.54 vs   375.23   (-1.0%)
+   Adapt     vs Verify     393.29 vs   375.23   (+4.8%)
+   Ext       (separate)    138.74            (no base analogue)
 
 --- COMMUNICATION (packed bytes) ---
    public key  pk          5888

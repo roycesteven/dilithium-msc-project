@@ -2,7 +2,7 @@
  *
  * Three distinct "size" numbers are printed and must not be confused:
  *   in-memory  : sizeof() — full int32 per coefficient, no packing
- *   packed      : theoretical formula — minimum bits for each field
+ *   packed      : canonical wire encoding (serialize.h) — = LAS_*_BYTES
  *   paper (opt) : the paper's own estimate (different params, different Q)
  */
 #define _POSIX_C_SOURCE 199309L
@@ -13,6 +13,7 @@
 #include <time.h>
 #include "../randombytes.h"
 #include "../las.h"
+#include "../serialize.h"   /* canonical packed sizes: LAS_*_BYTES / LAS_*_COEFF_BITS */
 #include "../params.h"
 
 #define NITER      2000
@@ -23,33 +24,21 @@ static double now_us(void) {
   return (double)ts.tv_sec * 1e6 + (double)ts.tv_nsec / 1e3;
 }
 
-/* las_sign / las_presign loop internally; we cannot count retries from outside.
- * Average retries are estimated via timing ratio (see below). */
+/* las_sign / las_presign increment the global las_attempts counter once per
+ * rejection-loop attempt, so retry counts are MEASURED directly in the
+ * rejection-sampling block below (the old timing-ratio estimate is superseded). */
 
-/* ---- packed-size formula ---- */
-/* Challenge c: kappa positions in [0,N), stored as 8 bits each + kappa sign bits.
- * Response z: LAS_M polynomials, each coeff in [-(gamma-kappa-1), gamma-kappa-1].
- * Range = 2*(gamma-kappa-1)+1; bits_per_coeff = ceil(log2(range+1)).
- * Public key t: LAS_N polynomials, coeffs in [0, Q); bits_per_coeff = ceil(log2(Q)).
- * Secret key r: LAS_M polynomials, ternary {-1,0,1}; 2 bits per coeff. */
-static size_t packed_sig_bytes(void) {
-  double z_range = 2.0*(LAS_GAMMA - LAS_KAPPA - 1) + 1.0;
-  int    z_bits  = (int)ceil(log2(z_range + 1.0));  /* bits to represent one z coeff */
-  size_t c_bytes = (LAS_KAPPA * 8 + 7) / 8          /* positions: 8 bits each */
-                 + (LAS_KAPPA + 7) / 8;             /* signs: 1 bit each */
-  size_t z_bytes = ((size_t)LAS_M * N * (size_t)z_bits + 7) / 8;
-  return c_bytes + z_bytes;
-}
-
-static size_t packed_pk_bytes(void) {
-  int    q_bits = (int)ceil(log2((double)Q));
-  return ((size_t)LAS_N * N * (size_t)q_bits + 7) / 8;
-}
-
-static size_t packed_sk_bytes(void) {
-  /* ternary: 3 values {-1,0,1} fit in 2 bits (value 3 rejected at sample time) */
-  return ((size_t)LAS_M * N * 2 + 7) / 8;
-}
+/* ---- packed-size: the CANONICAL wire encoding (serialize.h) ----
+ * These match the byte-level (de)serialiser in serialize.{c,h} and the report, so
+ * the benchmark agrees with LAS_*_BYTES exactly:
+ *   signature (c,z) : c = N=256 ternary coeffs x 2 bits = 64 B; z = LAS_M*N coeffs
+ *                     x 18 bits = 4608 B; total LAS_SIG_BYTES = 4672 B.
+ *   pk / statement Y: LAS_N*N x 23 bits/coeff = LAS_PK_BYTES = 2944 B.
+ *   sk / witness y  : LAS_M*N x  2 bits/coeff = LAS_SK_BYTES =  512 B.
+ * Y is the statement / public-key size and is NOT counted inside the signature. */
+static size_t packed_sig_bytes(void) { return LAS_SIG_BYTES; }  /* (c,z) only, no Y */
+static size_t packed_pk_bytes(void)  { return LAS_PK_BYTES;  }  /* pk = statement Y  */
+static size_t packed_sk_bytes(void)  { return LAS_SK_BYTES;  }  /* sk = witness y    */
 
 int main(void) {
   uint8_t ppseed[LAS_SEEDBYTES];
@@ -160,21 +149,19 @@ int main(void) {
   printf("    sk / witness y   : %4zu bytes\n", sizeof(las_sk));
   printf("    sig / pre-sig    : %4zu bytes\n", sizeof(las_sig));
 
-  printf("\n  Theoretical packed (formula, this implementation's params):\n");
+  printf("\n  Theoretical packed (canonical wire encoding, serialize.h):\n");
   printf("    pk / statement Y : %4zu bytes", packed_pk_bytes());
-  printf("  [LAS_N*N*ceil(log2(Q)) bits; Q=%d => %d bits/coeff]\n",
-         Q, (int)ceil(log2((double)Q)));
+  printf("  [LAS_N*N*%d bits; Q=%d => %d bits/coeff]\n",
+         LAS_PK_COEFF_BITS, Q, LAS_PK_COEFF_BITS);
   printf("    sk / witness y   : %4zu bytes", packed_sk_bytes());
-  printf("  [LAS_M*N*2 bits; ternary needs 2 bits/coeff]\n");
+  printf("  [LAS_M*N*%d bits; ternary needs %d bits/coeff]\n",
+         LAS_SK_COEFF_BITS, LAS_SK_COEFF_BITS);
   printf("    sig / pre-sig    : %4zu bytes", packed_sig_bytes());
-  {
-    double z_range = 2.0*(LAS_GAMMA - LAS_KAPPA - 1) + 1.0;
-    int z_bits = (int)ceil(log2(z_range + 1.0));
-    printf("  [c: %zu bytes; z: %d bits/coeff => %zu bytes]\n",
-           (size_t)(LAS_KAPPA*8/8 + (LAS_KAPPA+7)/8),
-           z_bits,
-           (size_t)((LAS_M * N * z_bits + 7) / 8));
-  }
+  printf("  [c: %zu bytes (N=%d ternary coeffs x %d bits); z: %d bits/coeff => %zu bytes]\n",
+         (size_t)((N * LAS_C_COEFF_BITS + 7) / 8),
+         N, LAS_C_COEFF_BITS,
+         LAS_Z_COEFF_BITS,
+         (size_t)((LAS_M * N * LAS_Z_COEFF_BITS + 7) / 8));
 
   printf("\n  Paper's estimate (~3210 bytes for signature):\n");
   printf("    Refers to the paper's OPTIMISED scheme (q~2^24, n=4, ell=4,\n");
@@ -182,8 +169,9 @@ int main(void) {
   printf("    implementation which uses q~2^23, no hints, and is unoptimised.\n");
   printf("    The correct comparison point is our 'theoretical packed' column above.\n");
 
-  printf("\nCorrectness: 100%% over %d Sign/Verify and %d PreSign/PreVerify iters\n",
-         NITER, NITER);
+  printf("\nNote: this is a TIMING benchmark, not a correctness check -- it times\n");
+  printf("operations but does not assert their results. Functional correctness is\n");
+  printf("verified separately by test_las / test_basesig / test_contract.\n");
 
   return (int)(sink & 0);
 }

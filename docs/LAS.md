@@ -373,11 +373,12 @@ scheme code (`las.c`) untouched (clean separation):
 
 - **Encoding** (LSB-first bit packing): pk/statement `Y` at 23 bits/coeff
   (`Q < 2^23`); sk/witness at 2 bits/coeff (ternary); signature `(c, z)` as a
-  2-bit ternary `c` plus an 18-bit offset-encoded `z`. Sizes:
-  `LAS_PK_BYTES = 2944`, `LAS_SK_BYTES = 512`, `LAS_SIG_BYTES = 4672`.
+  2-bit ternary `c` plus an offset-encoded `z` whose width is parameter-derived
+  (`LAS_Z_COEFF_BITS` = 18 bits for the paper/D2 sets, 19 for D3/D5). Sizes
+  (paper/D2): `LAS_PK_BYTES = 2944`, `LAS_SK_BYTES = 512`, `LAS_SIG_BYTES = 4672`.
 - **Defensive decoding.** A verifier cannot trust its input, so `unpack`
   *rejects* malformed bytes: a pk coefficient `≥ Q`, the invalid ternary code `3`,
-  or a `z` field outside the 18-bit band. `pack` symmetrically rejects
+  or a `z` field outside the valid band. `pack` symmetrically rejects
   out-of-range inputs (e.g. a non-ternary secret, or a `z` exceeding `γ−κ`).
 - **`las_verify_packed(pk_bytes, sig_bytes, M, pp)`** is the byte-level verifier an
   integration would call: it decodes-with-validation and runs ordinary `Verify`,
@@ -708,9 +709,10 @@ governs the MSIS hardness parameter, not the acceptance rate.
   formulas. pk: 23 bits/coeff (`Q < 2^23`) → `4·256·23/8 = 2944 B`. sk: ternary at
   2 bits/coeff → `8·256·2/8 = 512 B`. sig: challenge `c` packed as a 2-bit ternary
   polynomial (`256·2/8 = 64 B`) + response `z` at 18 bits/coeff
-  (`8·256·18/8 = 4608 B`) = **4672 B**. (`z` needs 18 bits because the centred range
-  `2·(γ−κ)+1 = 245641 < 2^18`; packing `c` as ternary is 4 B smaller than the
-  position-encoded 68 B and simpler to validate.)
+  (`8·256·18/8 = 4608 B`) = **4672 B**. (`z` needs 18 bits at the paper/D2 sets because
+  the centred range `2·(γ−κ)+1 = 245641 < 2^18`; the larger D3/D5 dimensions need 19 bits,
+  so `LAS_Z_COEFF_BITS` is selected from the parameters at compile time. Packing `c` as
+  ternary is 4 B smaller than the position-encoded 68 B and simpler to validate.)
 - *Paper's ~3210 B:* the paper's *optimised* scheme at `q ≈ 2^24` with a hint
   vector and high/low-bit decomposition. Not comparable to this implementation.
   The correct comparison for our scheme is the "Packed (measured)" column.
@@ -734,8 +736,9 @@ of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` t
 > `ref/las.c` (`PreSign`/`PreVerify`/`Adapt`/`Ext`), which folds `Y` into the hash
 > (`c = H(pk, w + Y, M)`). `basesig.c` is kept **out of `las.{c,h}`** on purpose so the
 > LAS protocol is never conflated or modified; it shares only `las.h`'s parameter macros
-> and key/signature struct layout, which keeps both schemes at the **same security level**
-> and makes their keys/signatures interchangeable. That interchangeability is verified at
+> and key/signature struct layout, which keeps both schemes on the **same parameter set**
+> (a dimension-level match — `n,ℓ,κ` — not a formal bit-security claim; security proofs are
+> out of scope) and makes their keys/signatures interchangeable. That interchangeability is verified at
 > runtime: a LAS pre-signature, once `Adapt`-ed, verifies under the **independent**
 > `base_verify` with no explicit `+Y`, because `A(ẑ+y) − c·t = (Aẑ − c·t) + A·y = w' + Y`.
 > The only thing that varies between the paths is the adaptor layer, so the fair result
@@ -768,6 +771,11 @@ sampler bit-width adapts to `γ`.
 | Adapt | Verify | 182±2 | 193±8 | +5.9% |
 | Ext | — | — | 63±0.4 | (separate) |
 | KeyGen/stmt gen | — | 80±1 (shared) | | — |
+
+*The `Adapt` row is timed **checked — it includes the internal `las_preverify`** that a
+real `las_adapt` must run before adding the witness ([las.c:431](../ref/las.c#L431)), so
+the figure is Adapt **plus** PreVerify, not a bare core. (The benchmark's own stdout
+label still prints `Adapt`; this caption is the precise reading.)*
 
 **Why these are small (structural, not coincidental):**
 - `PreSign≈Sign` — PreSign only folds `Y` into the FS commitment and uses a tighter
@@ -846,7 +854,13 @@ counts are measured directly via `las_attempts`.
 | Settlement footprint incl. escrowed `Y` | + 2 × `Y` | 15 232 B |
 
 Only the two *adapted* signatures would be published on a real chain; each is a
-single ordinary-looking LAS signature. End-to-end signing work (2× PreSign + 2×
+single ordinary-looking LAS signature. The "escrowed `Y`" row is the more
+conservative **same-`Y` scriptless-HTLC** model realised only in the *simulated*
+ledger (`ref/chain.c`, which stores `Y` as the on-chain lock); the deployed EVM
+artefact (§8.4, `evm/src/AdaptorSwap.sol`) **deliberately stores no `Y`** — its LAS
+claim path charges calldata for the final 4672-byte adapted signature alone, so the
+`Y` bytes are off-chain adaptor communication, not an on-chain cost there.
+End-to-end signing work (2× PreSign + 2×
 Adapt + Ext) is a few milliseconds (a single un-averaged sample, dominated by the
 two rejection-sampled pre-signs, so it varies run to run). The harness re-asserts
 the fairness invariant (adapted sigs verify, pre-sigs do not).

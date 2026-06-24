@@ -1,4 +1,4 @@
-=== LAS adaptor-signature correctness contract (mode 3, n=4 ell=4 kappa=60) ===
+=== LAS adaptor-signature correctness contract (mode 3, n=6 ell=5 kappa=49) ===
   [1] PreSign produces a pre-sig that PreVerify accepts PASS
   [2] the pre-signature FAILS ordinary Verify (tripwire) PASS
   [3] Adapt yields a signature ordinary Verify accepts PASS

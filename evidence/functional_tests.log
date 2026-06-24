@@ -1,9 +1,9 @@
 LAS (variant B, eprint 2020/845 Alg.2) OK: 1000/1000 iterations (100% correctness, 8-point adaptor contract)
-  params: n=4  ell=4  kappa=60  gamma=122880  d(=N)=256  Q=8380417
-  bounds: sign reject >=122821  presign reject >=122820   (Q-1)/8=1047552
+  params: n=4  ell=4  kappa=39  gamma=79872  d(=N)=256  Q=8380417
+  bounds: sign reject >=79834  presign reject >=79833   (Q-1)/8=1047552
 LAS (variant B, eprint 2020/845 Alg.2) OK: 1000/1000 iterations (100% correctness, 8-point adaptor contract)
-  params: n=4  ell=4  kappa=60  gamma=122880  d(=N)=256  Q=8380417
-  bounds: sign reject >=122821  presign reject >=122820   (Q-1)/8=1047552
+  params: n=6  ell=5  kappa=49  gamma=137984  d(=N)=256  Q=8380417
+  bounds: sign reject >=137936  presign reject >=137935   (Q-1)/8=1047552
 LAS (variant B, eprint 2020/845 Alg.2) OK: 1000/1000 iterations (100% correctness, 8-point adaptor contract)
-  params: n=4  ell=4  kappa=60  gamma=122880  d(=N)=256  Q=8380417
-  bounds: sign reject >=122821  presign reject >=122820   (Q-1)/8=1047552
+  params: n=8  ell=7  kappa=60  gamma=230400  d(=N)=256  Q=8380417
+  bounds: sign reject >=230341  presign reject >=230340   (Q-1)/8=1047552

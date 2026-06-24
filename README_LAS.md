@@ -47,8 +47,16 @@ cd ref
 make test/test_las2 test/test_las3 test/test_las5
 { ./test/test_las2; ./test/test_las3; ./test/test_las5; } 2>&1 | tee ../evidence/functional_tests.log
 make test/test_serde3   && ./test/test_serde3   2>&1 | tee ../evidence/serialization_tests.log
+# serde across parameter sets (paper dims above; D2/D3/D5-aligned dims):
+make test/test_serde_l2 test/test_serde_l3 test/test_serde_l5
+{ ./test/test_serde_l2; ./test/test_serde_l3; ./test/test_serde_l5; }
 make test/test_kat3     && ./test/test_kat3     2>&1 | tee ../evidence/kat.log
 make test/test_contract3 && ./test/test_contract3 2>&1 | tee ../evidence/contract.log
+# base-signature module correctness (CHECK-gated; honest verify + tamper / wrong-key /
+# wrong-Y / wrong-witness / tampered pre-sig / tampered adapted-sig rejection +
+# cross-module equivalence with las.c + adaptor interlock), per parameter set:
+make test/test_basesig_paper test/test_basesig2 test/test_basesig3 test/test_basesig5
+{ ./test/test_basesig_paper; ./test/test_basesig2; ./test/test_basesig3; ./test/test_basesig5; } 2>&1 | tee ../evidence/base_signature_tests.log
 
 # --- application (atomic swap, scriptless ledger, payload/AMHL costs) ---
 make test/test_swap3 && ./test/test_swap3 2>&1 | tee ../evidence/atomic_swap.log
@@ -77,11 +85,13 @@ make test/bench_las3 && ./test/bench_las3 2>&1 | tee ../evidence/rejection_rate.
 | Command | Saves to | What it proves |
 |---|---|---|
 | `./test/test_las{2,3,5}` | `functional_tests.log` | 1000 iterations per parameter set of the full adaptor cycle: PreSign→PreVerify accepts, PreSign fails ordinary Verify, Adapt→Verify accepts, Extract recovers the witness exactly; plus a one-bit forgery is rejected. |
-| `./test/test_serde3` | `serialization_tests.log` | Byte encoding round-trips; all 4672 single-byte flips of a packed signature are rejected; the validating decoder rejects malformed bytes. |
+| `./test/test_basesig{_paper,2,3,5}` | `base_signature_tests.log` | 1000 iterations per parameter set of the **separate** base-signature module (`basesig.c`): honest verify; tamper / wrong-key / wrong-statement `Y` / wrong-witness / tampered pre-signature / tampered adapted-signature all rejected; cross-module equivalence with `las.c`; and the adaptor interlock (a LAS-adapted signature verifies under the independent base verifier, a pre-signature does not). |
+| `./test/test_serde3` | `serialization_tests.log` | Byte encoding round-trips; all 4672 single-byte flips of a packed signature are rejected; the validating decoder rejects malformed bytes. Also run across the D2/D3/D5-aligned sets (`test_serde_l2/l3/l5`); the packed `z` width is parameter-derived (18 bits at paper/D2, 19 at D3/D5). |
 | `./test/test_kat3` | `kat.log` | Deterministic known-answer test: a single SHAKE256 digest pins keygen+sign+presign+adapt+serialization over fixed vectors. |
 | `./test/test_contract3` | `contract.log` | One harness that prints the eight-point adaptor correctness contract as labelled PASS lines. |
 
 **What you should see:** `test_las3` reports `1000/1000 iterations (100% correctness)`;
+each `test_basesig*` ends with `test_basesig: ALL CHECKS PASSED`;
 `test_kat3` prints the digest
 `f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1`;
 `test_contract3` ends with `ALL CONTRACT CHECKS PASSED`.
@@ -99,7 +109,8 @@ the same parameters and on the same primitives:
 
 `basesig.c` is deliberately kept out of `las.{c,h}` (the LAS protocol is untouched); it
 shares only `las.h`'s parameter macros and key/signature struct layout, so both schemes
-sit at the same security level. The benchmark pairs each adaptor operation with the base
+use the same parameter set (a dimension-level match — `n,ℓ,κ` — not a formal bit-security
+claim). The benchmark pairs each adaptor operation with the base
 operation it mirrors (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify; Extract
 reported separately), checks the cross-path contract (a LAS-adapted signature verifies
 under the independent `base_verify`), and prints the component-level packed sizes.
@@ -162,7 +173,8 @@ Reports the gas to verify one packed LAS signature natively in a Solidity contra
 | Report table / result | Command | Evidence file |
 |---|---|---|
 | Functional correctness (modes 2/3/5) | `./test/test_las2`, `test_las3`, `test_las5` | `evidence/functional_tests.log` |
-| Serialization / tamper / malformed | `./test/test_serde3` | `evidence/serialization_tests.log` |
+| Base-signature module correctness | `./test/test_basesig{_paper,2,3,5}` | `evidence/base_signature_tests.log` |
+| Serialization / tamper / malformed | `./test/test_serde3` (+ `test_serde_l2/l3/l5`) | `evidence/serialization_tests.log` |
 | Known-answer test (deterministic) | `./test/test_kat3` | `evidence/kat.log` |
 | Correctness contract (8-point) | `./test/test_contract3` | `evidence/contract.log` |
 | Adaptor overhead (paper set) | `./test/bench_levels_paper` | `evidence/fair_paper.log` |
@@ -186,6 +198,7 @@ and §4.2 respectively.
 
 ```
 ref/las.{c,h}        LAS scheme (KeyGen/Sign/Verify + PreSign/PreVerify/Adapt/Ext)
+ref/basesig.{c,h}    separate simplified Dilithium-style base signature (no Y; fair-benchmark baseline)
 ref/serialize.{c,h}  byte-level encoding + validating decoder + las_verify_packed
 ref/amhl.{c,h}       multi-hop locks
 ref/chain.{c,h}      toy ledger for the swap / payment-channel demos

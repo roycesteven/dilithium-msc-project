@@ -14,8 +14,10 @@
  * Encoding (LSB-first bit packing; see serialize.c):
  *   pk / statement Y : n   polys, 23 bits/coeff  (value in [0,Q), Q < 2^23)
  *   sk / witness     : n+l polys,  2 bits/coeff  (ternary {-1,0,1})
- *   signature (c,z)  : c as 2-bit ternary (256 coeffs) + z as 18-bit signed
- *                      (centred value in [-(g-k), g-k], offset-encoded)
+ *   signature (c,z)  : c as 2-bit ternary (256 coeffs) + z as a signed field of
+ *                      LAS_Z_COEFF_BITS bits (centred value in [-(g-k), g-k],
+ *                      offset-encoded).  The z width is selected from the actual
+ *                      parameters (18 bits for the paper/D2 sets, 19 for D3/D5).
  *
  * These sizes are the realistic on-wire footprint of THIS (simplified) scheme;
  * see docs/LAS.md Section 8 for the in-memory vs packed vs paper-estimate split.
@@ -30,16 +32,31 @@
 #define LAS_PK_COEFF_BITS  23                       /* ceil(log2 Q), Q=8380417 */
 #define LAS_SK_COEFF_BITS  2                         /* ternary {0,1,2}        */
 #define LAS_C_COEFF_BITS   2                         /* challenge is ternary    */
-#define LAS_Z_COEFF_BITS   18                        /* 2*(g-k)+1 = 245641<2^18 */
 
-/* Offset used to encode the signed response z as an unsigned 18-bit field. */
-#define LAS_Z_OFFSET       (LAS_GAMMA - LAS_KAPPA)   /* 122820 */
-#define LAS_Z_MAX          (2 * (LAS_GAMMA - LAS_KAPPA)) /* 245640, fits 18 bits */
+/* The response z is offset-encoded into an unsigned field that must hold every value
+ * in [0, LAS_Z_MAX], where LAS_Z_MAX = 2*(gamma-kappa).  The width is selected from the
+ * actual parameter set at compile time.  (The preprocessor cannot evaluate LAS_GAMMA
+ * directly because of its (int32_t) cast, so use a cast-free copy here.) */
+#define LAS_GAMMA_PP  (LAS_KAPPA * 256 * LAS_M)      /* == LAS_GAMMA, usable in #if */
+#if   (2 * (LAS_GAMMA_PP - LAS_KAPPA)) < (1 << 18)
+#define LAS_Z_COEFF_BITS 18                          /* paper (4,4,60), D2 (4,4,39) */
+#elif (2 * (LAS_GAMMA_PP - LAS_KAPPA)) < (1 << 19)
+#define LAS_Z_COEFF_BITS 19                          /* D3 (6,5,49), D5 (8,7,60)    */
+#elif (2 * (LAS_GAMMA_PP - LAS_KAPPA)) < (1 << 20)
+#define LAS_Z_COEFF_BITS 20
+#else
+#error "LAS z field needs more than 20 bits; extend the LAS_Z_COEFF_BITS table"
+#endif
 
-/* Serialised sizes in bytes (all divide evenly). */
-#define LAS_PK_BYTES  ((LAS_N * N * LAS_PK_COEFF_BITS) / 8)                        /* 2944 */
-#define LAS_SK_BYTES  ((LAS_M * N * LAS_SK_COEFF_BITS) / 8)                        /*  512 */
-#define LAS_SIG_BYTES (((N * LAS_C_COEFF_BITS) + (LAS_M * N * LAS_Z_COEFF_BITS)) / 8) /* 4672 */
+/* Offset used to encode the signed response z as an unsigned field. */
+#define LAS_Z_OFFSET       (LAS_GAMMA - LAS_KAPPA)       /* centre shift = gamma-kappa */
+#define LAS_Z_MAX          (2 * (LAS_GAMMA - LAS_KAPPA)) /* max offset-encoded value   */
+
+/* Serialised sizes in bytes (N=256 is divisible by 8, so all divide evenly).
+ * Paper/D2 sets: pk 2944, sk 512, sig 4672; D3/D5 are larger (wider z + dims). */
+#define LAS_PK_BYTES  ((LAS_N * N * LAS_PK_COEFF_BITS) / 8)
+#define LAS_SK_BYTES  ((LAS_M * N * LAS_SK_COEFF_BITS) / 8)
+#define LAS_SIG_BYTES (((N * LAS_C_COEFF_BITS) + (LAS_M * N * LAS_Z_COEFF_BITS)) / 8)
 
 /* Public key / statement.  Pack canonicalises to [0,Q); unpack REJECTS (returns
  * -1) any coefficient >= Q. */

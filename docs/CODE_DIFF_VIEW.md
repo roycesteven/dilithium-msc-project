@@ -84,7 +84,8 @@ confirmed at the file level by this diff.
 | `ref/amhl.c`, `ref/amhl.h` | anonymous multi-hop locks (distinct per-hop statements) — optional/bonus tier |
 | `ref/chain.c`, `ref/chain.h` | scriptless-HTLC toy ledger (accounts, block height, claim / timeout-refund) |
 | `ref/test/test_las.c` | LAS correctness test (1000 iters, modes 2/3/5) |
-| `ref/test/test_serde.c` | serialization round-trip + single-byte-tamper rejection |
+| `ref/test/test_basesig.c` | **CHECK**-gated base-signature correctness (1000 iters, paper/2/3/5): honest verify, tamper/wrong-key rejection, cross-module equivalence with `las.c`, cross-path interlock (tripwire + adapted-verifies-under-base + exact Ext), plus 4 negative tests (wrong statement, wrong witness, tampered pre-signature, tampered adapted signature) |
+| `ref/test/test_serde.c` | serialization round-trip + single-byte-tamper rejection + validating decoder; swept across parameter sets (`test_serde3` paper dims + `test_serde_l2/l3/l5`) |
 | `ref/test/test_kat.c` | deterministic API + pinned known-answer vectors |
 | `ref/test/test_contract.c` | consolidated correctness-contract harness (itemised 8-point PASS) |
 | `ref/test/test_swap.c`, `ref/test/test_pcn.c`, `ref/test/test_amhl.c` | atomic-swap / payment-channel / multi-hop demos |

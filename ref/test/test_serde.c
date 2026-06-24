@@ -11,7 +11,7 @@
  *                   NOT (the statement-binding tripwire survives serialisation);
  *   - tamper:       flipping any byte of a packed signature makes it fail to verify;
  *   - validation:   pack rejects out-of-range inputs and unpack rejects malformed
- *                   bytes (coeff >= Q, non-ternary code, z outside the 18-bit band).
+ *                   bytes (coeff >= Q, non-ternary code, z outside the valid band).
  *
  * It also prints the MEASURED packed sizes (these realise the "theoretical packed"
  * figures quoted in docs/LAS.md Section 8).
@@ -136,10 +136,18 @@ int main(void) {
     memset(buf, 0xFF, LAS_SK_BYTES);
     CHECK(las_unpack_sk(&tsk, buf) == -1, "unpack_sk must reject code 3");
 
-    /* sig: valid c, but first z field forced to 0x3FFFF (> LAS_Z_MAX). The z
-     * region starts at bit N*LAS_C_COEFF_BITS = 512 = byte 64. */
+    /* sig: valid c, but force the FIRST z field to all-ones (= 2^LAS_Z_COEFF_BITS - 1,
+     * which is always > LAS_Z_MAX, hence out of band, for ANY parameter set / z width).
+     * The z region is byte-aligned: it starts at bit N*LAS_C_COEFF_BITS (= 512 = byte 64). */
     CHECK(las_pack_sig(buf, &adapted) == 0, "re-pack adapted for z-validation");
-    buf[64] = 0xFF; buf[65] = 0xFF; buf[66] |= 0x03;   /* set the 18 low bits */
+    {
+      int zstart = (N * LAS_C_COEFF_BITS) / 8;         /* first z field's start byte */
+      int full   = LAS_Z_COEFF_BITS / 8;               /* whole 0xFF bytes           */
+      int rem    = LAS_Z_COEFF_BITS % 8;               /* leftover low bits          */
+      int wb;
+      for(wb = 0; wb < full; ++wb) buf[zstart + wb] = 0xFF;
+      if(rem) buf[zstart + full] |= (uint8_t)((1u << rem) - 1u);  /* keep next field's bits */
+    }
     CHECK(las_unpack_sig(&tsig, buf) == -1, "unpack_sig must reject z out of band");
     printf("validation: unpack rejects coeff>=Q, code-3 sk, and z out of band\n");
   }

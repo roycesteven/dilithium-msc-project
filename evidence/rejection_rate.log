@@ -1,18 +1,18 @@
 === LAS benchmark  (mode 3, 2000 iters/op) ===
-params: n=4  ell=4  kappa=60  gamma=122880  N=256  Q=8380417
+params: n=6  ell=5  kappa=49  gamma=137984  N=256  Q=8380417
 
-  Setup          28.16 us
-  KeyGen         34.60 us   [statement gen = same cost]
-  Sign          320.37 us
-  Verify         78.41 us
-  PreSign       357.84 us
-  PreVerify      84.04 us
-  Adapt          87.64 us
-  Ext            28.12 us
+  Setup         101.69 us
+  KeyGen         98.53 us   [statement gen = same cost]
+  Sign         1233.54 us
+  Verify        262.26 us
+  PreSign      1234.10 us
+  PreVerify     252.99 us
+  Adapt         260.13 us
+  Ext            83.85 us
 
 Rejection-sampling (MEASURED directly via las_attempts, 2000 sigs):
-  Sign    : 2.675 attempts/sig  -> acceptance 37.4%, retries 1.675
-  PreSign : 2.817 attempts/sig  -> acceptance 35.5%, retries 1.817
+  Sign    : 2.670 attempts/sig  -> acceptance 37.5%, retries 1.670
+  PreSign : 2.704 attempts/sig  -> acceptance 37.0%, retries 1.704
   Theory  : (1 - k/g)^(M*N) = 36.8% per attempt (~2.72 attempts)
   Rejection sampling is intrinsic to Fiat-Shamir-with-aborts (optimised
   Dilithium also rejects, targeting a small expected repeat count); this
@@ -20,14 +20,14 @@ Rejection-sampling (MEASURED directly via las_attempts, 2000 sigs):
 
 --- Object sizes ---
   In-memory (sizeof, full int32 per coeff):
-    pk / statement Y : 4096 bytes
-    sk / witness y   : 8192 bytes
-    sig / pre-sig    : 9216 bytes
+    pk / statement Y : 6144 bytes
+    sk / witness y   : 11264 bytes
+    sig / pre-sig    : 12288 bytes
 
-  Theoretical packed (formula, this implementation's params):
-    pk / statement Y : 2944 bytes  [LAS_N*N*ceil(log2(Q)) bits; Q=8380417 => 23 bits/coeff]
-    sk / witness y   :  512 bytes  [LAS_M*N*2 bits; ternary needs 2 bits/coeff]
-    sig / pre-sig    : 4676 bytes  [c: 68 bytes; z: 18 bits/coeff => 4608 bytes]
+  Theoretical packed (canonical wire encoding, serialize.h):
+    pk / statement Y : 4416 bytes  [LAS_N*N*23 bits; Q=8380417 => 23 bits/coeff]
+    sk / witness y   :  704 bytes  [LAS_M*N*2 bits; ternary needs 2 bits/coeff]
+    sig / pre-sig    : 6752 bytes  [c: 64 bytes (N=256 ternary coeffs x 2 bits); z: 19 bits/coeff => 6688 bytes]
 
   Paper's estimate (~3210 bytes for signature):
     Refers to the paper's OPTIMISED scheme (q~2^24, n=4, ell=4,
@@ -35,4 +35,6 @@ Rejection-sampling (MEASURED directly via las_attempts, 2000 sigs):
     implementation which uses q~2^23, no hints, and is unoptimised.
     The correct comparison point is our 'theoretical packed' column above.
 
-Correctness: 100% over 2000 Sign/Verify and 2000 PreSign/PreVerify iters
+Note: this is a TIMING benchmark, not a correctness check -- it times
+operations but does not assert their results. Functional correctness is
+verified separately by test_las / test_basesig / test_contract.
