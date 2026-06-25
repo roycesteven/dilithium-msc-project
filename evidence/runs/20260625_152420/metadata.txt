@@ -1,0 +1,63 @@
+# LAS benchmark-suite run metadata
+
+run_id     : 20260625_152420
+timestamp  : Thu Jun 25 15:24:20 BST 2026
+git_commit : ad3448cc110b28af717b5587af6d3edfe15f672f
+git_short  : ad3448c
+git_branch : main
+git_status :
+## main...origin/main
+ M .claude/skills/checkpoint/SKILL.md
+ M CLAUDE.md
+ M README_LAS.md
+ D evidence/application_benchmark.log
+ D evidence/atomic_swap.log
+ D evidence/classical.log
+ D evidence/contract.log
+ D evidence/fair_l2.log
+ D evidence/fair_l3.log
+ D evidence/fair_l5.log
+ D evidence/fair_paper.log
+ D evidence/functional_tests.log
+ D evidence/kat.log
+ D evidence/pcn.log
+ D evidence/rejection_rate.log
+ D evidence/serialization_tests.log
+ M las-context-consolidated.md
+ M ref/Makefile
+ M ref/test/bench_app.c
+ D ref/test/bench_compare.c
+ D ref/test/bench_las.c
+ M ref/test/bench_levels.c
+ D ref/test/cpucycles.c
+ D ref/test/cpucycles.h
+ D ref/test/speed_print.c
+ D ref/test/speed_print.h
+ D ref/test/test_vectors.c
+ D scripts/run_final_evidence.sh
+?? ".claude/skills/checkpoint/SKILL - Copy.md"
+?? evidence/latest
+?? evidence/runs/
+?? ref/test/dilithium_test/
+?? scripts/plot_las_benchmarks.py
+?? scripts/run_benchmark_suite.sh
+
+compiler   : cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+os_uname   : Linux LAPTOP-FHA4JR28 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+wsl        : yes  (Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025)
+cpu        : AMD Ryzen 7 7745HX with Radeon Graphics
+cpu_cores  : 16
+
+command_list :
+  make test/test_las3        && ./test/test_las3        > functional_tests.log
+  make test/test_contract3   && ./test/test_contract3   > contract.log
+  make test/test_serde3      && ./test/test_serde3      > serialization_tests.log
+  make test/test_kat3        && ./test/test_kat3        > kat.log
+  make test/test_swap3       && ./test/test_swap3       > atomic_swap.log
+  make test/test_pcn3        && ./test/test_pcn3        > pcn.log
+  make REPRO_FLAGS=... test/bench_levels_paper && ./test/bench_levels_paper > fair_paper.log
+  make REPRO_FLAGS=... test/bench_levels2      && ./test/bench_levels2      > fair_l2.log
+  make REPRO_FLAGS=... test/bench_levels3      && ./test/bench_levels3      > fair_l3.log
+  make REPRO_FLAGS=... test/bench_levels5      && ./test/bench_levels5      > fair_l5.log
+  make test/bench_app3       && ./test/bench_app3       > application_benchmark.log
+  python3 scripts/plot_las_benchmarks.py --input-dir <run> --output-dir <run>

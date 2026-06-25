@@ -8,20 +8,28 @@ HEADERS = config.h params.h api.h sign.h packing.h polyvec.h poly.h ntt.h \
 KECCAK_SOURCES = $(SOURCES) fips202.c symmetric-shake.c
 KECCAK_HEADERS = $(HEADERS) fips202.h
 
+# Optional reproducibility flags injected by scripts/run_fair_benchmarks.sh, e.g.
+#   make test/bench_levels3 REPRO_FLAGS='-DLAS_GIT_COMMIT=\"abc1234\" -DLAS_GIT_BRANCH=\"main\"'
+# A plain `make` leaves them empty (bench_levels then prints git=n/a). Metadata only;
+# it does not affect any measurement.
+REPRO_FLAGS ?=
+
 .PHONY: all speed shared clean
 
+
+#   test/test_dilithium2 \
+#   test/test_dilithium3 \
+#   test/test_dilithium5 \
+#   test/test_vectors2 \
+#   test/test_vectors3 \
+#   test/test_vectors5 \
+
+
 all: \
-  test/test_dilithium2 \
-  test/test_dilithium3 \
-  test/test_dilithium5 \
-  test/test_vectors2 \
-  test/test_vectors3 \
-  test/test_vectors5 \
   test/test_las2 \
   test/test_las3 \
   test/test_las5 \
   test/test_swap3 \
-  test/bench_las3 \
   test/bench_levels_paper \
   test/bench_levels2 \
   test/bench_levels3 \
@@ -107,15 +115,11 @@ test/test_swap3: test/test_swap.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
 
-test/bench_las3: test/bench_las.c serialize.h las.c las.h randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
-	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
-
-test/bench_compare3: test/bench_compare.c las.c las.h randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
-	  -o $@ $< las.c randombytes.c $(KECCAK_SOURCES)
+# NOTE: bench_las.c and bench_compare.c were REMOVED -- their outputs
+# (bench_las3 rejection rate; bench_compare3 LAS-vs-Dilithium-3) are not used as
+# primary evidence.  Rejection sampling now lives in bench_levels' diagnostic
+# section A; the original/optimised Dilithium head-to-head is deliberately kept
+# out of the primary table.
 
 # Primary algorithm-matched, parameter-matched adaptor-overhead benchmark:
 # the SEPARATE simplified Dilithium-style base signature (basesig.c) vs the LAS
@@ -128,16 +132,16 @@ test/bench_compare3: test/bench_compare.c las.c las.h randombytes.c $(KECCAK_SOU
 LEVELS_DEPS = test/bench_levels.c basesig.c basesig.h las.c las.h randombytes.c \
   $(KECCAK_SOURCES) $(KECCAK_HEADERS)
 test/bench_levels_paper: $(LEVELS_DEPS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
+	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=3 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
 	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels2: $(LEVELS_DEPS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
+	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
 	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels3: $(LEVELS_DEPS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
+	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels5: $(LEVELS_DEPS)
-	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
+	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
 	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 
 # CHECK-gated randomised correctness test for the separate base signature (basesig.c)
@@ -293,8 +297,6 @@ clean:
 	rm -f test/test_las3
 	rm -f test/test_las5
 	rm -f test/test_swap3
-	rm -f test/bench_las3
-	rm -f test/bench_compare3
 	rm -f test/bench_levels_paper
 	rm -f test/bench_levels2
 	rm -f test/bench_levels3

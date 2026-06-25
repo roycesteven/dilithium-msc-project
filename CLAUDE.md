@@ -1,19 +1,91 @@
 # Project context — LAS on Dilithium for blockchain
 
-## Working agreement (READ FIRST, every session — standing instruction from Royce)
-1. **Always start by reading the authoritative docs** to orient the task:
-   `las-context-consolidated.md` (THE objectives/target spec — Meetings 1+2+3
-   merged), `docs/STATUS.md` (live deliverable/test checklist), `PROGRESS.md`
-   (the latest session checkpoint — current objective, confirmed/safe state,
-   risks, and next exact steps), and this `CLAUDE.md`. They direct what "done"
-   and "top-mark" mean.
-2. **Always document neatly, in structured / verbose / clear prose, with the
-   assessment criteria in mind**, whenever implementing or fixing code. Keep the
-   two living technical docs in sync with the code:
-   - `docs/LAS.md` — design/implementation/eval write-up (report source material),
-   - `docs/THEORY_IMPL_BRIDGE.md` — paper-equation → C-function/line mapping.
-   A code change is not complete until the relevant doc section reflects it.
-3. This agreement is recorded here so it does **not** need re-stating each session.
+## Working agreement — token-saving mode
+
+Use token-saving mode by default.
+
+### Default session startup
+
+Always read this `CLAUDE.md` first.
+
+Then read only the **latest relevant section** of `PROGRESS.md` if the task continues previous repository work.
+
+Do **not** automatically read all project documents at the start of every session.
+
+Read these only when needed:
+
+* `las-context-consolidated.md` — when the task needs supervisor objectives, meeting decisions, or project scope confirmation.
+* `docs/STATUS.md` — when the task needs the current deliverable/test checklist.
+* `docs/LAS.md` — when changing or checking design, benchmark interpretation, report-source text, or implementation claims.
+* `docs/THEORY_IMPL_BRIDGE.md` — when checking paper-equation to C-function mapping.
+* `README_LAS.md` — when checking build/reproducibility instructions.
+* `docs/FUNCTION_MAP.md` — when checking reused/modified/new function classification.
+
+If the user names specific files, inspect only those files first. Read additional files only if they are directly included, referenced, or necessary to answer the task accurately.
+
+### Repository scanning
+
+Do not scan the whole repository unless the task clearly requires it.
+
+Prefer targeted inspection:
+
+1. user-named files,
+2. directly included headers/source files,
+3. relevant evidence logs,
+4. relevant documentation sections.
+
+If a wider scan is needed, explain why before doing it.
+
+### Documentation sync
+
+Documentation must stay consistent with code, but do not update documentation for every read-only audit.
+
+When implementation changes affect design, API behaviour, benchmark interpretation, report claims, or theory mapping, update the relevant documentation section.
+
+When the task is only explanation, diagnosis, Git help, or read-only review, do not edit documentation unless explicitly requested.
+
+### Subagent policy
+
+Do not spawn subagents unless the user explicitly asks.
+
+Subagents are allowed only for large independent audits, such as:
+
+* benchmark evidence versus report claims,
+* blockchain/gas/application-level audit,
+* theory-versus-implementation audit,
+* final report/rubric mapping.
+
+Do not use subagents for:
+
+* simple Git questions,
+* explaining terminal output,
+* small code edits,
+* checking one or two files,
+* writing short documentation patches.
+
+### Checkpoint policy
+
+Checkpoints must be short and append-only.
+
+A checkpoint should include only:
+
+* current branch,
+* current objective,
+* files inspected or changed,
+* key decisions,
+* evidence/logs used,
+* unresolved risks,
+* next exact action.
+
+Do not include long reasoning, full transcripts, full diffs, or repeated background.
+
+### Context management
+
+If the task is continuing the same work, use `/compact` after saving a short checkpoint.
+
+If the user switches to a different topic, recommend `/clear`.
+
+Do not keep an 8+ hour session alive unless there is a clear reason.
 
 ## Guardrails (standing — do NOT do any of these without an explicit instruction)
 - **Do not create, delete, or switch git branches** unless explicitly requested.
@@ -26,6 +98,34 @@
 - **Do not hand-edit evidence logs** (`evidence/*.log` and any saved measurement
   output). They are captured artefacts; regenerate them by running the tool, not
   by typing numbers.
+
+## Output discipline
+
+Be direct, evidence-based, and scoped.
+
+For code audits, output:
+
+1. Verdict
+2. Evidence by file/function
+3. Missing or misleading parts
+4. Exact suggested fix
+5. Whether editing is needed
+
+Do not hallucinate. If the inspected files do not prove something, say so.
+
+For benchmark/report claims:
+
+* distinguish measured evidence from interpretation,
+* cite the exact evidence log or source file,
+* never invent missing numbers,
+* flag stale or contradictory documentation.
+
+For edits:
+
+* first provide a read-only diagnosis unless the user explicitly asks for immediate editing,
+* make the smallest possible change,
+* show the diff,
+* do not run tests or benchmarks unless explicitly requested.
 
 ## One-line goal
 Implement LAS (Lattice-based Adaptor Signatures, eprint 2020/845) by reusing the

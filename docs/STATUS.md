@@ -66,7 +66,7 @@ All run with zero compiler warnings under
 | `test_serde3` | 256 random + exhaustive | round-trip pk/sk/sig; verify-from-bytes; tripwire survives packing; **all 4672 byte-flips rejected**; malformed-input rejected |
 | `test_kat3` | 4 fixed vectors | full deterministic pipeline; byte-identical re-runs; **pinned SHAKE256 digest match** |
 
-KAT digest (pinned): `f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1`.
+KAT digest (pinned): `641a176c3eb2125098fdbb7ad16bfa38fb5744b52dd9696beeb7d07be1445a19`.
 
 ---
 

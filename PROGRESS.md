@@ -107,3 +107,31 @@
 
 ## Git Note
 - Git state not rechecked by checkpoint. Visible in conversation: branch `feat/onchain-gas-and-las-only-docs` @ `2ffcca4` (local); push failed (no creds); uncommitted post-commit changes present per ambient notes.
+
+---
+
+# Checkpoint - 2026-06-25 (time n/a)
+
+Branch: main
+
+Current goal:
+- Make LAS benchmark figures report-ready and keep docs/report in sync.
+
+Done:
+- Added `protocol_step_timeline` figure (NAMED protocol steps) + 4 figure layout fixes in the plotter; regenerated evidence/latest.
+- Refreshed KAT digest to `641a176c…` across test_kat.c, README, STATUS, report.
+- doc-sync (README figure table) + report-sync (digest, retired-bench refs, new finding).
+
+Files touched/inspected:
+- scripts/plot_las_benchmarks.py, ref/test/test_kat.c, README_LAS.md, docs/STATUS.md, report/REPORT_DRAFT.md
+- plus other related files, not listed to keep checkpoint short.
+
+Evidence used:
+- evidence/latest (run 20260625_154953)
+
+Open risks:
+- Report Table 3 absolute µs are from an earlier run; full numeric re-sync (incl. bench_classical) pending.
+- On `main`; doc-sync branch-safety flagged.
+
+Next action:
+- Reconcile report Table 3 against one accepted run that includes bench_classical.

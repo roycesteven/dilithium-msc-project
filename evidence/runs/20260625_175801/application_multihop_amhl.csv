@@ -1,0 +1,6 @@
+K,bound_g_minus_k_minus_K,num_presig,attempts_per_presig,presig_time_ms,settle_sigs_bytes,public_stmts_bytes,max_witness_norm_inf,ok
+1,137935,1,2.8,1.35,6752,4416,1,OK
+2,137934,2,2.55,1.97,13504,8832,2,OK
+4,137932,4,2.82,4.7,27008,17664,4,OK
+6,137930,6,3.27,8.37,40512,26496,6,OK
+8,137928,8,3.24,10.79,54016,35328,7,OK

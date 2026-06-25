@@ -1,0 +1,29 @@
+level,component,mean_us,sd_us
+paper,A-product / commitment w,51.606,3.526
+paper,challenge hash,54.928,5.268
+paper,c*r one response poly,11.237,0.463
+paper,c*r all LAS_M polys,94.392,5.391
+paper,norm check,1.949,0.019
+paper,w + Y,5.188,0.451
+paper,z_hat + witness,5.022,0.309
+L2,A-product / commitment w,45.092,1.209
+L2,challenge hash,51.53,1.828
+L2,c*r one response poly,12.451,1.675
+L2,c*r all LAS_M polys,90.408,6.608
+L2,norm check,2.086,0.217
+L2,w + Y,4.983,0.2
+L2,z_hat + witness,5.455,0.182
+L3,A-product / commitment w,71.229,1.774
+L3,challenge hash,89.316,6.742
+L3,c*r one response poly,12.194,0.755
+L3,c*r all LAS_M polys,126.574,4.928
+L3,norm check,2.799,0.137
+L3,w + Y,8.903,0.285
+L3,z_hat + witness,8.845,0.065
+L5,A-product / commitment w,110.06,7.852
+L5,challenge hash,109.115,9.594
+L5,c*r one response poly,10.901,0.191
+L5,c*r all LAS_M polys,171.115,6.117
+L5,norm check,3.811,0.067
+L5,w + Y,12.236,0.594
+L5,z_hat + witness,12.127,0.31

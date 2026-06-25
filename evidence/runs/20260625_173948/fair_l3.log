@@ -1,0 +1,122 @@
+==========================================================================
+ LAS parameter set: n=6 ell=5 kappa=49 gamma=137984  (N=256, Q=8380417)
+   M = n + ell = 11   (dim of sk=r, witness r', mask y_mask, responses z_hat/z)
+   paper notation: pp=(A,H)  pk=t  sk=r  statement Y=t'  witness r' (=y_witness)
+   signing mask y_mask -> commitment w = A*y_mask  (hashed into c; NOT transmitted)
+==========================================================================
+ Reproducibility: compiler=13.3.0
+                  built=Jun 25 2026 17:41:30   git=ad3448c (main)
+                  (CPU / OS-WSL / run-date captured per run by
+                   scripts/run_fair_benchmarks.sh into metadata.txt)
+ 10 runs x 1000 iters/op; mean +/- sample SD; single thread, -O3.
+ One setup and one consistent state per run; primary protocol timings first,
+ then diagnostics from the SAME state (cost-attribution / communication aids).
+
+--- WHAT IS COMPARED (separate base/adaptor modules; matched parameters; shared primitives) ---
+ BASE  (simplified Dilithium-style signature; NO adaptor statement t'):
+   Sign      c = H(pk, w,      M)        Verify    c == H(pk, w',      M)
+ LAS ADAPTOR (same scheme; statement/lock Y=t' folded into the hash):
+   PreSign   c = H(pk, w + t', M),  z_hat = y_mask + c*r  (reject |z_hat|inf > gamma-kappa-1)
+   PreVerify c == H(pk, w' + t', M)
+   Adapt     z = z_hat + r'   (final response z;          reject |z|inf > gamma-kappa)
+   Ext / Extract   s = z - z_hat   (recovers the witness r')
+   Adapted sig clears ordinary Verify without an explicit +t' because
+     A(z_hat + r') - c*t = (A*z_hat - c*t) + A*r' = w' + t'   (t' = A*r').
+   pi (paper-level off-chain proof of well-formedness) is NOT implemented/measured here.
+
+##########################################################################
+# PRIMARY (protocol-level) timings -- the headline adaptor-overhead table #
+##########################################################################
+--- COMPUTATION (microseconds, mean +/- sample SD) ---
+
+ Shared (public params pp=(A,H); KeyGen -> pk=t, sk=r):
+   Setup             92.83 +/-   4.89
+   KeyGen            92.98 +/-   2.18
+
+ Base path (simplified Dilithium-style, c = H(pk, w, M); no t'):
+   Sign            1072.75 +/-  35.19
+   Verify           231.35 +/-   8.23
+
+ LAS adaptor path (statement t' folded into the hash, c = H(pk, w+t', M)):
+   PreSign         1122.60 +/-  41.69
+   PreVerify        242.90 +/-   7.98
+   Adapt            249.11 +/-   6.38
+   Ext / Extract     82.47 +/-   2.45
+
+ Adaptor overhead (adaptor op vs the base op it mirrors):
+   PreSign       vs Sign      1122.60 vs  1072.75   (+4.6%)
+   PreVerify     vs Verify     242.90 vs   231.35   (+5.0%)
+   Adapt         vs Verify     249.11 vs   231.35   (+7.7%)
+   Ext / Extract (separate)     82.47            (no base analogue)
+
+##########################################################################
+# DIAGNOSTICS (secondary; cost-attribution & communication; SAME state)  #
+##########################################################################
+--- A. REJECTION-SAMPLING DISTRIBUTION (2000 signing calls each;
+       attempts read directly from base_attempts / las_attempts) ---
+   operation                   avg accept%   min   max   p50   p95
+   Base Sign (no t')         2.678   37.3%     1    33     2     7
+   LAS PreSign (folds t')    2.791   35.8%     1    18     2     7
+   avg = mean attempts/sig; accept% = 1/avg; both schemes reject under
+   Fiat-Shamir-with-aborts at the bound gamma-kappa (Base Sign) /
+   gamma-kappa-1 (LAS PreSign).
+
+--- B. ADAPT TIMING CLARIFICATION (microseconds, mean +/- SD) ---
+   Adapt checked total       249.106 +/-  6.381   (PROTOCOL: las_adapt above, incl. internal PreVerify)
+   witness-add only            8.845 +/-  0.065   (DIAGNOSTIC ONLY: z=z_hat+r'; not a protocol op)
+   A real Adapt MUST pre-verify first; the witness-add line is a lower bound,
+   not a usable operation.  Use 'Adapt checked total' for protocol cost.
+
+--- C. COMMUNICATION (packed bytes; BYTE-LEVEL only, NOT EVM gas) ---
+   public key    pk = t                4416
+   secret key    sk = r                 704
+   statement     Y = t'               4416   (65.4% of the signature; t' has pk size)
+   witness       r' = y_witness        704   (same packed layout as sk = r)
+   challenge     c                      64
+   response      z (final)            6688   (99.1% of the signature)
+   response      z_hat (pre-sig)      6688   (same packed layout as z)
+   signature         (c, z)           6752
+   pre-signature     (c, z_hat)       6752   (same size as the signature)
+   final adapted sig (c, z)           6752   (an ordinary signature)
+   commitment    w = A*y_mask       internal computed commitment; hashed into c; not transmitted
+   -- protocol-component catalogue (context; what each object is / why counted or not) --
+   pp=(A,H)  A' seed                    32   (public params; only this 32-byte seed is transmitted)
+   pp=(A,H)  expanded A'             22080   (n*ell polys; DERIVED from the seed, NOT transmitted)
+   y_mask (signing mask, S_gamma)    6688   (n+ell polys; INTERNAL, hashed into c via w, NOT transmitted)
+   w = A*y_mask (commitment)         4416   (n polys; INTERNAL, hashed into c, NOT transmitted)
+   pi (NIZK well-formedness proof)    n/a   (paper-level off-chain proof; NOT implemented / NOT measured)
+   tx metadata (addrs/amounts/nonces) excl   (application/ledger layer; EXCLUDED from this accounting)
+   atomic-swap payload (byte-level only):
+     off-chain   = Y + 2*pre-signature        =  17920   [= t' + 2*(c, z_hat)]
+     settlement  = 2*signature                =  13504   [= 2*(c, z)]
+     settlement incl. escrowed Y = Y + 2*sig  =  17920
+   (EVM/keccak gas for on-chain verification is a separate axis; see evm/.)
+
+--- D. COMPONENT MICROBENCHMARKS (microseconds, mean +/- SD) ---
+   Cost-attribution ESTIMATES timing LOCAL COPIES of the inner steps
+   (behaviourally identical to las.c) -- NOT the protocol entry points above.
+   A-product / commitment w = A*y_mask                    71.229 +/-  1.774
+   challenge hash  c = H(pk, w(+t'), M)                   89.316 +/-  6.742
+   c*r  (one response polynomial; c is sparse)            12.194 +/-  0.755
+   c*r  (all LAS_M response polynomials)                 126.574 +/-  4.928
+   norm check  |z|inf over n+ell polys                     2.799 +/-  0.137
+   w + t'   (n polys)                                      8.903 +/-  0.285
+   z_hat + witness r'   (n+ell polys)                      8.845 +/-  0.065
+   c*t  (all LAS_N public-key polys; Verify/PreVerify)    70.041 +/-  5.767
+   KeyGen/Gen: sample r (n+ell ternary polys)              9.778 +/-  0.209
+     (KeyGen = sample r + A*r; A*r is the A-product line above; statement Y gen = KeyGen)
+   Ext: s = z - z_hat   (n+ell polys)                      8.685 +/-  0.218
+   Ext: A*s   (recompute statement; = an A-product)       72.064 +/-  1.536
+   Ext: t' == A*s check   (n polys)                        0.698 +/-  0.019
+   note: a full Sign/PreSign attempt applies c*r across LAS_M = n+ell = 11
+         response polynomials; Verify-style challenge multiplication applies
+         c*t across LAS_N = n = 6 public-key polynomials.
+
+--- E. NORM-MARGIN DIAGNOSTICS (achieved infinity-norm vs the reject bound;
+       max over the 2000 sampled accepted signatures from section A) ---
+   accepted |z|inf      max    137935   vs accept limit g-k   =    137935   (100.00% of band)
+   accepted |z^|inf     max    137934   vs accept limit g-k-1 =    137934   (100.00% of band)
+   Interpretation: the RESPONSE z/z^ saturates its band (~100%) -- the bound is
+   the binding constraint and is exactly why ~63% of attempts are rejected.
+   Contrast the AMHL cumulative WITNESS ||s_j||inf, which is tiny (<=K) vs the
+   g-k-K band: that bound is extremely loose (see bench_app, the K-series table).

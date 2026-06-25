@@ -1,0 +1,41 @@
+level,object,paper_notation,bytes
+paper,public key,pk = t,2944
+paper,secret key,sk = r,512
+paper,statement,Y = t',2944
+paper,witness,r' = y_witness,512
+paper,challenge,c,64
+paper,final response,z,4608
+paper,pre-sig response,z_hat,4608
+paper,signature,"(c, z)",4672
+paper,pre-signature,"(c, z_hat)",4672
+paper,final adapted signature,"(c, z)",4672
+L2,public key,pk = t,2944
+L2,secret key,sk = r,512
+L2,statement,Y = t',2944
+L2,witness,r' = y_witness,512
+L2,challenge,c,64
+L2,final response,z,4608
+L2,pre-sig response,z_hat,4608
+L2,signature,"(c, z)",4672
+L2,pre-signature,"(c, z_hat)",4672
+L2,final adapted signature,"(c, z)",4672
+L3,public key,pk = t,4416
+L3,secret key,sk = r,704
+L3,statement,Y = t',4416
+L3,witness,r' = y_witness,704
+L3,challenge,c,64
+L3,final response,z,6688
+L3,pre-sig response,z_hat,6688
+L3,signature,"(c, z)",6752
+L3,pre-signature,"(c, z_hat)",6752
+L3,final adapted signature,"(c, z)",6752
+L5,public key,pk = t,5888
+L5,secret key,sk = r,960
+L5,statement,Y = t',5888
+L5,witness,r' = y_witness,960
+L5,challenge,c,64
+L5,final response,z,9120
+L5,pre-sig response,z_hat,9120
+L5,signature,"(c, z)",9184
+L5,pre-signature,"(c, z_hat)",9184
+L5,final adapted signature,"(c, z)",9184

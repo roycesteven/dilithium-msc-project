@@ -1,0 +1,10 @@
+metric,value,unit,note
+statement_Y_bytes,4416,bytes,off-chain msg 1; L3-like (bench_app3: n=6 ell=5 kappa=49)
+presig_sigmaA_bytes,6752,bytes,off-chain msg 2
+presig_sigmaB_bytes,6752,bytes,off-chain msg 3
+offchain_total_bytes,17920,bytes,Y + preA + preB
+settlement_sigs_bytes,13504,bytes,sigma_A + sigma_B published
+settlement_incl_Y_bytes,22336,bytes,+ 2 escrowed statements Y
+signing_time_ms,3.5,ms,2xPreSign + 2xAdapt + Ext
+presign_attempts,6,count,measured rejection attempts (2 pre-signs)
+correctness,OK,flag,adapted sigs verify; pre-sigs do not

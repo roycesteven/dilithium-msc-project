@@ -196,7 +196,9 @@ levels. If exact matching is impossible, state the limitation honestly.
 
 **13.5 The primary Stage-1 comparison, stated precisely.** It is **not** a vague
 "LAS vs its own base". It is the **simplified Dilithium-style base signature path**
-versus the **LAS adaptor path**, on identical code/parameters/primitives:
+versus the **LAS adaptor path** — a primary algorithm-matched, parameter-matched
+adaptor-overhead benchmark over **separate base/adaptor modules over matched
+parameters and primitives**:
 - *Base path:* `Sign` uses `c = H(pk, w, M)`; `Verify` recomputes `c = H(pk, w', M)`;
   **no statement `Y` enters the hash**.
 - *LAS adaptor path:* `PreSign` uses `c = H(pk, w + Y, M)`; `PreVerify` recomputes

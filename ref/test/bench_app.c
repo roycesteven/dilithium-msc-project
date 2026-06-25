@@ -1,8 +1,8 @@
 /* Application-level benchmark for LAS (objectives Part D / C2).
  *
- * The per-operation benchmark (bench_las.c) measures the *signature* dimension.
- * This program measures the *application* dimension that the project objectives
- * also require: the communication and on-chain cost of the two LAS-based
+ * The per-operation fair benchmark (bench_levels.c) measures the *signature*
+ * dimension. This program measures the *application* dimension that the project
+ * objectives also require: the communication and on-chain cost of the two LAS-based
  * blockchain workflows built in this project.
  *
  *   (1) Atomic cross-chain swap  - messages exchanged, bytes off-chain, and the
@@ -14,9 +14,9 @@
  *       that motivates the tighter g-k-K PreSign bound.
  *
  * Sizes are reported in the "theoretical packed" model (the realistic on-wire /
- * on-chain encoding for this scheme); see bench_las.c for the in-memory vs packed
- * vs paper-estimate distinction.  Restart counts are MEASURED directly via the
- * las_attempts counter (las.h), not estimated from a timing ratio.
+ * on-chain encoding for this scheme), i.e. the LAS_*_BYTES from serialize.h.
+ * Restart counts are MEASURED directly via the las_attempts counter (las.h), not
+ * estimated from a timing ratio.
  *
  * Simulation note: per the project scope the ledger is SIMULATED (not a deployed
  * Ethereum/Bitcoin contract), so - exactly as the objectives permit - (pre-)signature

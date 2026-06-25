@@ -555,7 +555,12 @@ hundreds-of-microseconds regime as Dilithium-3. LAS Sign is 1.25× Dilithium-3
 Sign — the hint-free scheme's ≈2.7 attempts (Table 5) instead of Dilithium's
 small repetition count, partially offset by smaller module dimensions. We
 emphasise this is a feasibility statement, not a superiority claim: the two
-schemes sit at different security margins (Section 4.1).
+schemes sit at different security margins (Section 4.1). Viewed step by step
+across all four matched sets, a full LAS adaptor cycle (PreSign → PreVerify →
+Adapt → Ext) costs only ≈ +27–33% over a base Sign + Verify, and that gap is
+dominated by the *shared* rejection-sampling Sign/PreSign step — the genuinely
+adaptor-specific steps (PreVerify, Adapt, Ext) are each ≤ one ordinary Verify
+(figure `protocol_step_timeline`, named protocol steps per level).
 
 **(4) A structural contrast.** The classical pre-signature is a *syntactically
 different object* (162 B: signature plus DLEQ proof) that cannot be parsed as a
@@ -785,14 +790,17 @@ the remaining ~40% of signature size; (4) a privacy-preserving AMHL variant
 
 ## Appendix B — Full benchmark tables
 
-*(Paste the complete outputs of `bench_las3`, `bench_compare3`, `bench_app3`,
-`bench_classical` for the submission machine, with date, CPU model, and OS.)*
+*(Paste the complete fair-benchmark outputs `fair_paper.log`, `fair_l2.log`,
+`fair_l3.log`, `fair_l5.log` and `application_benchmark.log` from one
+`scripts/run_benchmark_suite.sh` run folder (`evidence/runs/<timestamp>/`, which also
+records date, CPU model and OS in `metadata.txt`), plus `bench_classical` for the
+classical baseline. The retired `bench_las3`/`bench_compare3` are no longer used.)*
 
 ## Appendix C — Parameters, bounds, and KAT
 
 Parameter table as Table 1; bound-encoding convention (`poly_chknorm` rejects at
 `≥ B`, so code bounds are paper-bounds `+1`); KAT digest
-`f7fc40f0b7752cafc083fcddd6a13759fbde9b2a2d538045cd0d62f87747e6b1` over the four
+`641a176c3eb2125098fdbb7ad16bfa38fb5744b52dd9696beeb7d07be1445a19` over the four
 pinned vectors.
 
 ## Appendix D — Reproducibility
