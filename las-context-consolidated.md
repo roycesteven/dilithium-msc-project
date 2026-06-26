@@ -1,15 +1,18 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4)
 
-> **THE canonical objectives/context file** (merges Meetings 1, 2 and 3). As of
+> **THE canonical objectives/context file** (merges Meetings 1, 2, 3 and 4). As of
 > 2026-06-13 the older `LAS_OBJECTIVES_FOR_TOP_MARK.md`, `las-objectives-meeting2.md`
 > and `docs/archive/LAS_PROJECT_HANDOFF.md` have been **deleted** — their content is
 > fully captured here (objectives), in `CLAUDE.md` (project context), and in
 > `docs/STATUS.md` (live deliverable/test checklist). This file = the *spec*;
 > `docs/STATUS.md` = the *progress tracker*.
 > Provenance tags: **[M1]** = Meeting 1 · **[M2]** = Meeting 2 (2026-06-08) ·
-> **[M3]** = Meeting 3 (2026-06-18) · **[M1→M2]** = set in M1, revised in M2.
+> **[M3]** = Meeting 3 (2026-06-18) · **[M4]** = Meeting 4 (June 2026, exact date
+> not in transcript) · **[M1→M2]** = set in M1, revised in M2.
 > Where the meetings conflict, the **later meeting wins** (M2 over M1; M3 over M2
-> for evaluation rigour / fairness — Meeting 3 raised the Stage-1 bar, see §13).
+> for evaluation rigour / fairness — M3 raised the Stage-1 bar, see §13; **M4 raised
+> the Stage-1 *presentation* bar and showed Stage 1 is NOT yet supervisor-signed-off**,
+> see §14). M4 is the latest word.
 
 ---
 
@@ -120,14 +123,24 @@ Distinction (70–80+) = novel contribution + rigorous evaluation against proper
 
 ## 10. Current status & near-term deliverables
 
-**Status (2026-06-13):** *All required Meeting-2 deliverables done & tested.* Stage 1
-(LAS + benchmark vs Dilithium), Stage 2 (atomic swap + scriptless HTLC ledger), **both
-benchmark baselines** (vs Dilithium-3, vs classical ECDSA-adaptor), function map,
-reproducibility README — all ✅. Bonus done: AMHL multi-hop, byte serialisation +
-`las_verify_packed`, deterministic API + pinned KATs. **Open:** report draft (in
-progress, `report/REPORT_DRAFT.md`), video, and the optional tier (real gas, param
-migration to 2²⁴, on-chain LAS verification, second LAS-family scheme). Full deliverable/test matrix:
-**`docs/STATUS.md`**.
+**Status (2026-06-13 code-complete; M4 caveat below):** *All required Meeting-2
+deliverables done & tested.* Stage 1 (LAS + benchmark vs Dilithium), Stage 2 (atomic
+swap + scriptless HTLC ledger), **both benchmark baselines** (vs Dilithium-3, vs
+classical ECDSA-adaptor), function map, reproducibility README — all ✅. Bonus done:
+AMHL multi-hop, byte serialisation + `las_verify_packed`, deterministic API + pinned
+KATs. **Open:** report draft (in progress, `report/REPORT_DRAFT.md`), video, and the
+optional tier (real gas, param migration to 2²⁴, on-chain LAS verification, second
+LAS-family scheme). Full deliverable/test matrix: **`docs/STATUS.md`**.
+
+> **[M4] reality check — the code is ahead of supervisor sign-off.** Despite the
+> "all done" status above, in Meeting 4 Wang reviewed the actual figures and did
+> **not** sign off Stage 1: the numbers are right but the **presentation is not yet
+> defensible** (confusing paper/L2/L3/L5 labels, missing parameter annotations,
+> cumulative timing shown instead of per-operation, no PR opened for him to review).
+> The single active priority is therefore to **finish the Stage-1 benchmark
+> *presentation* and open the baseline-vs-LAS PR** — not to add application code. See
+> §14. Stage 2 (atomic swap), local EVM gas, Foundry, and the classical comparison
+> are all explicitly deferred until Stage 1 is signed off.
 
 **Pre-Meeting-3 deliverables [M2, explicit asks] — all ✅:**
 1. Dilithium reference builds & runs on own machine — commit hash + toolchain recorded in `README_LAS.md`. ✅
@@ -229,7 +242,85 @@ make the numbers correct and the security-level comparison consistent, and set u
 two-branch code-diff view. Atomic swap / toy ledger remains Stage-2 — do not
 over-focus on it yet.
 
-## 14. Reference links
+## 14. Meeting-4 directives [M4, June 2026 — make the Stage-1 benchmark *presentation* defensible]
+
+Meeting 4 did **not** change scope or add features. Wang reviewed the actual
+benchmark figures on screen and concluded the **results are the right kind of
+numbers, but the presentation is not yet defensible**. Where M4 refines M3's
+evaluation asks, **M4 is the latest word**. Headline: *the code largely exists; the
+figures, their labels, and the explanation do not yet stand on their own.* **Stage 1
+is therefore NOT yet supervisor-signed-off** — finishing the benchmark *presentation*
+(not more application code) is the single active priority.
+
+**14.1 Figure labels are confusing — define every setting.** The labels "paper",
+"L2", "L3", "L5" are not self-explanatory: a reader cannot tell whether they mean LAS
+parameter sets, basic-Dilithium parameter sets, or simplified-Dilithium-derived
+levels. Every figure/caption must state: "paper" = the **LAS-paper** setting;
+"L2/L3/L5-like" = **simplified-Dilithium-derived LAS** parameter sets matched to
+Dilithium modes 2/3/5. Make explicit which bars are the **base signature** (blue) vs
+**LAS** (orange).
+
+**14.2 Show the key parameters beside every setting.** Annotate each setting with its
+actual parameters — `n`, `ℓ`, `M = n+ℓ`, `κ`, `γ`, `N`, security-level label — in the
+figure caption or an adjacent table, so the parameter *differences* between
+paper/L2/L3/L5 are visible. Wang: comparisons without stated parameters are
+misleading. (Royce conceded the paper setting and the L-settings are **not** identical
+parameters — that difference must be on the page.)
+
+**14.3 Per-operation timing must be the PRIMARY timing result — not cumulative.**
+[Refines M3.] Report `KeyGen`, `Sign`, `Verify`, `PreSign`, `PreVerify`, `Adapt`,
+`Ext` **independently and separately**. Rationale (Wang, explicit): in practice these
+run on different machines / by different participants (one party signs, another
+verifies later), so a single combined "workflow" number is unrealistic. Cumulative /
+end-to-end time may appear as **one additional** metric, but the headline must be
+per-operation. Benchmarking everything on **one machine is acceptable** — just report
+per operation. *Action:* the current lead figure is cumulative time; demote it and
+promote the per-operation breakdown.
+
+**14.4 Communication cost = explicit component breakdown.** [Refines M3.2.] Report
+bytes for: public key, secret key, challenge `c`, response `z`, signature `(c, z)`,
+pre-signature `(c, ẑ)`, adapted signature, and statement `Y`. If signature ≈
+pre-signature ≈ adapted signature in size, **explain why** (adapting only adds the
+small ternary witness `y` to `ẑ`, so `‖z‖∞`, and therefore the packed size, barely
+changes). Consider a clearer/zoomed scale so the small differences are visible.
+
+**14.5 State the benchmark machine.** Record CPU, OS / WSL environment, compiler +
+version, build flags, iteration count, and number of runs — so different timings on
+another machine are explained. (Already in the methodology; ensure it travels *with*
+the figures, since Wang noted he will get different numbers on his own PC.)
+
+**14.6 Keep only 3–4 main figures; summarise findings in 2–3 sentences.** Pick the
+3–4 figures that carry the most important findings; move the rest to the appendix /
+supporting evidence. Provide a 2–3 sentence plain-language takeaway, e.g. "compared
+with the simplified Dilithium-style base signature, LAS increases communication by
+×… and computation by …; the adaptor operations (`Adapt`/`Ext`) add ≈… overhead."
+Don't make the reader infer the conclusion from many figures.
+
+**14.7 Open a PR / branch-compare and invite Wang.** Open a pull request comparing
+the clean Dilithium baseline against the LAS `main` branch and **invite Wang to
+review**, so he can inspect which files were reused / modified / added and verify the
+implementation matches the intended algorithm. The supporting artefacts already exist
+(`dilithium-baseline` branch, `docs/CODE_DIFF_VIEW.md`, `docs/FUNCTION_MAP.md`) — but
+the **PR itself was not yet opened/shared** as of M4, and Royce said the repo was "not
+fully updated yet." This is a named next-meeting deliverable.
+
+**14.8 Stage ordering reaffirmed — Stage 1 before everything else.** Atomic swap (only
+a *simplified* one exists, not the paper's full construction), local EVM gas, Foundry,
+and the classical adaptor-signature comparison are all **explicitly deferred** to
+later stages. Verbatim intent: "First make the standalone LAS benchmark perfect; then
+discuss atomic swap, local EVM gas, Foundry, and classical comparison." Proceed step
+by step — Wang expects to "revise things again and again", so do not let application
+work displace finishing Stage 1.
+
+**Meeting-4 next-meeting deliverables (verbatim intent):**
+1. 3–4 cleaned benchmark figures with self-explanatory labels;
+2. key parameters shown for every setting (paper / L2 / L3 / L5);
+3. per-operation timing tables (KeyGen / Sign / Verify / PreSign / PreVerify / Adapt / Ext, each independent);
+4. component-level communication-size tables (pk, sk, `c`, `z`, `Y`, sig, pre-sig, adapted sig);
+5. a 2–3 sentence statement of the main findings;
+6. a GitHub PR / branch diff from clean Dilithium → LAS, with Wang invited.
+
+## 15. Reference links
 
 - LAS spec: https://eprint.iacr.org/2020/845
 - Survey: https://eprint.iacr.org/2022/1151

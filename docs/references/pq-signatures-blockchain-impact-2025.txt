@@ -1,0 +1,775 @@
+                                                  Assessing the Impact of Post-Quantum Digital
+                                                     Signature Algorithms on Blockchains
+                                                  Alison Gonçalves Schemitt                            Henrique Fan da Silva                         Roben Castagna Lunardi
+                                                              PUCRS                                          UNIPAMPA                                      IFRS and PUCRS
+                                                       Porto Alegre, Brazil                                Alegrete, Brazil                              Porto Alegre, Brazil
+                                                   alison.schemitt@edu.pucrs.br                  henriquefan.aluno@unipampa.edu.br                roben.lunardi@zonanorte.ifrs.edu.br
+
+                                                 Diego Kreutz                               Rodrigo Brandão Mansilha                       Avelino Francisco Zorzo
+                                                  UNIPAMPA                                            UNIPAMPA                                          PUCRS
+                                               Alegrete, Brazil                                   Alegrete, Brazil                              Porto Alegre, Brazil
+arXiv:2510.09271v1 [cs.CR] 10 Oct 2025
+
+
+
+
+                                         diegokreutz@unipampa.edu.br                          mansilha@unipampa.edu.br                         avelino.zorzo@pucrs.br
+
+
+
+                                            Abstract—The advent of quantum computing threatens the                     Shor’s algorithm [2], which poses a critical threat to crypto-
+                                         security of traditional encryption algorithms, motivating the de-             graphic systems that rely on widely deployed algorithms such
+                                         velopment of post-quantum cryptography (PQC). In 2024, the Na-                as RSA and ECDSA.
+                                         tional Institute of Standards and Technology (NIST) standardized
+                                         several PQC algorithms, marking an important milestone in the                    To address this challenge, the National Institute of Stan-
+                                         transition toward quantum-resistant security. Blockchain systems              dards and Technology (NIST) initiated a process in 2016
+                                         fundamentally rely on cryptographic primitives to guarantee data              to standardize post-quantum cryptography (PQC) algorithms.
+                                         integrity and transaction authenticity. However, widely used algo-            This effort has so far culminated in the approval of two
+                                         rithms such as ECDSA, employed in Bitcoin, Ethereum, and other                digital signature schemes: FIPS 204, the Module-Lattice-Based
+                                         networks, are vulnerable to quantum attacks. Although adopting
+                                         PQC is essential for long-term security, its computational overhead           Digital Signature Algorithm (ML-DSA) [3], formerly known
+                                         in blockchain environments remains largely unexplored. In this                as Dilithium; and FIPS 205, the Stateless Hash-Based Digital
+                                         work, we propose a methodology for benchmarking both PQC                      Signature Algorithm (SLH-DSA) [4], formerly SPHINCS+. In
+                                         and traditional cryptographic algorithms in blockchain contexts.              addition, the Falcon algorithm [5] has been approved and will
+                                         We measure signature generation and verification times across                 be standardized as FIPS 206, the Fast-Fourier Transform over
+                                         diverse computational environments and simulate their impact at
+                                         scale. Our evaluation focuses on PQC digital signature schemes                NTRU-Lattice-Based Digital Signature Algorithm (FN-DSA).
+                                         (ML-DSA, Dilithium, Falcon, Mayo, SLH-DSA, SPHINCS+, and                         Beyond these standardized schemes, we also consider Cross
+                                         Cross) across security levels 1 to 5, comparing them to ECDSA, the            [6] and Mayo [7], two candidate algorithms from the addi-
+                                         current standard in Bitcoin and Ethereum. Our results indicate                tional rounds of the NIST signature standardization process.
+                                         that PQC algorithms introduce only minor performance overhead                 Despite this progress, the performance and practicality of these
+                                         at security level 1, while in some scenarios they significantly
+                                         outperform ECDSA at higher security levels. For instance, ML-                 algorithms across heterogeneous hardware platforms, software
+                                         DSA achieves a verification time of 0.14 ms on an ARM-based                   stacks, and application environments remain insufficiently ex-
+                                         laptop at level 5, compared to 0.88 ms for ECDSA. We also                     plored.
+                                         provide an open-source implementation to ensure reproducibility                  Blockchains rely heavily on cryptography to ensure both in-
+                                         and encourage further research.                                               tegrity and authenticity. The ECDSA algorithm, widely adopted
+                                            Index Terms—Blockchain, Post-Quantum Cryptography, Digi-
+                                         tal Signatures, ML-DSA, SLH-DSA, Falcon
+                                                                                                                       in networks such as Bitcoin and Ethereum, has been shown
+                                                                                                                       to be particularly vulnerable to quantum attacks [2], [8]. This
+                                                                                                                       vulnerability highlights the urgent need to migrate blockchain
+                                                                   I. I NTRODUCTION
+                                                                                                                       systems toward post-quantum cryptographic (PQC) alternatives.
+                                           In recent years, research and development in quantum                        Although the adoption of PQC algorithms is essential for
+                                         computing have advanced significantly, leveraging quantum-                    long-term security, their computational overhead in blockchain
+                                         mechanical principles to tackle computationally intractable                   environments remains insufficiently explored [9], especially
+                                         problems [1]. Quantum computers can efficiently execute                       when compared to evaluations conducted in other domains
+                                                                                                                       [10]–[14].
+                                            This study was partially funded by the Conselho Nacional de Desenvolvi-
+                                         mento Cientı́fico e Tecnológico (CNPq) – Brazil, by the Brazilian National
+                                                                                                                          We aim to assess the performance impact on blockchain
+                                         Research and Education Network (RNP) under the Iliada Project, and by the     systems when migrating from traditional digital signature al-
+                                         Fundação de Amparo à Pesquisa do Estado do Rio Grande do Sul (FAPERGS)     gorithms (e.g., ECDSA, RSA) to PQC alternatives (e.g., ML-
+                                         through grant no. 22/2551-0000841-0 (INOVA-RS). In addition, Roben Lunardi
+                                         is supported by FAPERGS and IFRS, and holds a postdoctoral fellowship from
+                                                                                                                       DSA, SLH-DSA). This paper makes three main contributions:
+                                         CAPES (PIPD/CAPES).                                                              • Methodology: We propose a clear and reproducible
+                                                             TABLE I
+                                             C OMPARISON AMONG THIS AND RELATED WORKS .
+
+         Traditional                                 Post-Quantum                                  CPU Architecture
+                                                                                                                          Blockchain
+ Ref.     ECDSA        ML-DSA (Dilithium)   Falcon     Mayo    SLH-DSA (SPHINCS+)     Cross   X64          ARM
+                                                                                                                             focus
+ This
+             ✓                 ✓              ✓          ✓             ✓                ✓      ✓             ✓                ✓
+ work
+ [9]         ✓                 ✓              ✓          ✗             ✓                ✗      ✓             ✗                ✓
+ [10]        ✓                 ✓              ✓          ✗             ✓                ✗      ✓             ✗                ✗
+ [11]        ✓                 ✓              ✓          ✗             ✓                ✗      ✓             ✓                ✗
+ [12]        ✓                 ✓              ✗          ✗             ✗                ✗      ✓             ✗                ✗
+ [13]        ✓                 ✓              ✓          ✓             ✓                ✗      ✓             ✓                ✗
+ [14]        ✗                 ✓              ✓          ✗             ✓                ✗      ✓             ✓                ✗
+
+
+
+      methodology that combines (i) algorithm benchmarking              The studies in [10], [12] compare traditional algorithms (e.g.,
+      to evaluate isolated performance for three fundamental         ECDSA) with PQC algorithms (e.g., ML-DSA) across different
+      operations (key pair generation, signing, and signature        security levels. The work in [12] further evaluates versions with
+      verification), and (ii) large-scale simulation to assess the   and without hardware optimizations (AVX2). Both studies show
+      impact of these operations on blockchain systems. To           that ECDSA achieves the best performance among traditional
+      ensure transparency and foster further research, we provide    algorithms, while ML-DSA consistently performs best among
+      a public repository with all implementations and datasets.     PQC alternatives.
+   • Empirical Evaluation: We present an extensive empiri-              The works in [13], [14] examine PQC algorithms in the
+      cal evaluation comprising more than 31,000 runs across         context of IoT devices and general-purpose computers, with
+      three computational environments (two laptops and one          [13] also including comparisons with traditional algorithms.
+      desktop), covering two CPU architectures (x64 and ARM)         Both conclude with recommendations on algorithm suitability
+      and two operating systems (macOS and Linux). Our               depending on the target device type (desktop, laptop, or IoT).
+      analysis includes seven algorithm families, comprising         The study in [11] evaluates PQC algorithms in the context
+      62 implementations representing all NIST-defined security      of smart vehicles (V2X) and concludes that, despite the good
+      levels [15] (Levels 1–3 and 5, since no proposals exist        performance of some algorithms, none of the tested schemes
+      for Level 4), providing a comprehensive performance            fully meet the strict requirements of V2X systems.
+      characterization.                                                 Overall, related work highlights that ML-DSA performs
+   • Findings: Our results demonstrate the practical feasibility     comparably to, and in some cases better than, traditional
+      of integrating PQC algorithms into blockchain systems.         algorithms such as ECDSA, although with higher memory
+      The evidence indicates that PQC can be adopted without         consumption [9], [12]. At the same time, results show that in
+      prohibitive overhead, while also strengthening the long-       constrained environments such as IoT, PQC algorithms may not
+      term security of blockchain networks.                          satisfy all system requirements, particularly with respect to key
+   This paper is organized as follows. Section II discusses          storage and resource limitations [11].
+related work and identifies gaps our research addresses. Section        Our work differs by directly comparing standardized and
+III describes our methodology and experimental setup. Section        finalist NIST PQC algorithms with ECDSA, which remains
+IV analyzes the findings, and Section V concludes with future        the dominant digital signature scheme in blockchain systems.
+research directions.                                                 Unlike prior studies, we specifically analyze the performance
+                                                                     impact of migrating from traditional to PQC algorithms on
+                       II. R ELATED W ORKS                           block verification in blockchain environments.
+   The cryptography community has extensively discussed the
+standardization of Post-Quantum Cryptography (PQC) algo-                    III. P ROPOSED E VALUATION M ETHODOLOGY
+rithms in recent years. Table I summarizes representative works         This section presents our methodology, implementation de-
+that evaluate these algorithms. The PQC algorithms studied           tails, and experimental setup.
+in these papers were either finalists or selected as NIST
+standards. In addition, works such as [9]–[13] also provide          A. Workflow
+comparisons between PQC algorithms and traditional digital              Figure 1 illustrates the methodological workflow, which is
+signature algorithms.                                                structured into three main components: (1) Inputs, (2) Process-
+   These studies primarily assess the performance of signature       ing, and (3) Outputs.
+generation and verification. Among them, only [9] explicitly            The inputs consist of cryptographic algorithms, either tra-
+considers blockchain. This work analyzes real-time transaction       ditional or post-quantum (PQC), along with their configurable
+payloads from a local blockchain and applies them to create          parameters. We also define experimental parameters, such as
+and verify signatures using PQC algorithms and ECDSA.                the number of repetitions, to ensure statistically reliable results
+                                                             TABLE II
+ A NALYZED A LGORITHMS . A MONG THE EVALUATED ALGORITHMS , ONLY TWO SUPPORT SECURITY L EVEL 2, AND NONE ARE AVAILABLE FOR L EVEL 4.
+
+                                                                                                          Variants (46)
+  PQC?         #       Algorithm (16)            Level 1 (14)                    Level 2 (2)           Level 3 (14)                                  Level 4 (0)          Level 5 (16)
+  No           1       ECDSA                     P-256                           —                     P-384                                         —                    P-521
+               2       ML-DSA∗                   —                        ML-DSA-44                    ML-DSA-65                —                                         ML-DSA-87
+               3       Dilithium∗                —                        Dilithium2                   Dilithium3               —                                         Dilithium5
+               4       Falcon                    Falcon-512               —                            —                        —                                         Falcon-1024
+               5       Falcon-padded             Falcon-padded-512        —                            —                        —                                         Falcon-padded-1024
+               6       Mayo                      MAYO-2                   —                            MAYO-3                   —                                         MAYO-5
+               7       SPHINCS+-SHA-s            SHA2-128s-simple         —                            SHA2-192s-simple         —                                         SHA2-256s- simple
+               8       SPHINCS+-SHA-f            SHA2-128f-simple         —                            SHA2-192f-simple         —                                         SHA2-256f-simple
+  Yes          9       SPHINCS+-SHAKE-s          SHAKE-128s-simple        —                            SHAKE-192s-simple        —                                         SHAKE-256s-simple
+               10      SPHINCS+-SHAKE-f          SHAKE-128f-simple        —                            SHAKE-192f-simple        —                                         SHAKE-256f-simple
+               11      Cross-rsdp-small          Cross-rsdp-128-small     —                            Cross-rsdp-192-small     —                                         Cross-rsdp-256-small
+               12      Cross-rsdpg-small         Cross-rsdpg-128-small    —                            Cross-rsdpg-192-small    —                                         Cross-rsdpg-256-small
+               13      Cross-rsdp-balanced       Cross-rsdp-128-balanced —                             Cross-rsdp-192-balanced —                                          Cross-rsdp-256-balanced
+               14      Cross-rsdpg-balanced      Cross-rsdpg-128-balanced —                            Cross-rsdpg-192-balanced —                                         Cross-rsdpg-256-balanced
+               15      Cross-rsdp-fast           Cross-rsdp-128-fast      —                            Cross-rsdp-192-fast      —                                         Cross-rsdp-256-fast
+               16      Cross-rsdpg-fast          Cross-rsdpg-128-fast     —                            Cross-rsdpg-192-fast     —                                         Cross-rsdpg-256-fast
+  ∗ Includes legacy (pre-standardization) implementations and current NIST-standardized.
+
+
+
+
+                                                                                                                                                         Algorithm Benchmarker                   liboqs
+                          Start                                                                                                                            [Module: Python script]        [open source C library]
+                                                                                                                                                         Experimentally measures the   A C library for experimenting
+                                                                                                                                                           peformance of PQC and       with and benchmarking PQC
+                                                                                                                                                            traditional algorithms               algorithms
+      1.                  Input
+                                                                                                                        Command Line Interface            Blockchain Simulator          cryptography.hazmat
+    Inputs             Parameters                                                                                          [Module: Python script]         [Module: Python script]        [open source C library]
+                   (algorithms, trials)
+                                                                                                                             Orchestrates the            Measures the performace of    A C library for experimenting
+                                                                                                     Scientist          benchmarking and simulation       blockchain networks using      with and benchmarking
+                                                                                                     [Person]                   workflow                         simulation               traditional algorithms
+                                                                                                 Run experiments and
+                   2.a. Benchmarking                                                                                                                                                           BlockSim
+                                                                                                   analyse results.                                              Visualizer
+                      Cryptography        2.b. Simulating       2.c. Consolidating                                                                         [Module: Python script]
+                                                                                                                                                                                           [open source Python
+      2.                                                                                                                                                                                        Simulator]
+                                            Blockchain               Results
+  Processing           Algorithms                                                                                      PQCinBlock                              Generates plots
+                     (python script)        (BlockSim)          (pandas, matplotlib)                                   [Software System]                                                   Blockchain simulator
+
+
+
+
+                                                                  3.c Algorithm                                        Fig. 2. Architecture of the PQCinBlock.
+                     3.a. Algorithm       3.b. Simulation
+     3.                                       Results             and Simulation
+                         Results
+   Outputs                                   (csv files)              Plots
+                        (csv files)
+                                                                    (pdf files)
+
+                                                                                               aggregated statistics, including mean and standard deviation.
+                                                                      Finish
+                                                                                               These datasets are complemented by graphical visualizations,
+                                                                                               such as bar charts, which support interpretation and highlight
+                            Fig. 1. Methodological workflow.                                   performance trade-offs across algorithms.
+                                                                                               B. Implementation
+in both the algorithm benchmarking and blockchain simulation                                      We present PQCinBlock1 , a tool designed to evaluate
+stages.                                                                                        both traditional and post-quantum cryptographic (PQC) algo-
+                                                                                               rithms. The tool is developed with two main objectives: (1) to
+   The processing pipeline is organized into three sequential
+                                                                                               enable comprehensive comparative analysis of cryptographic
+stages. In the first stage (2.a), focused on algorithm bench-
+                                                                                               algorithms in both isolated and simulated blockchain envi-
+marking, cryptographic algorithms are executed to measure
+                                                                                               ronments, and (2) to provide extensibility for integrating new
+key performance indicators, namely key generation, signing,
+                                                                                               cryptographic schemes as they are developed.
+and verification. These baseline measurements are then used
+                                                                                                  Figure 2 illustrates the architecture of PQCinBlock. The
+in the second stage (2.b), the blockchain simulation, where the
+                                                                                               Main module receives and validates input parameters and
+behavior of the algorithms is modeled during block verification
+                                                                                               orchestrates the other modules, which operate as described
+in a distributed ledger environment. In the final stage (2.c),
+                                                                                               below.
+result synthesis, the outputs from both previous stages are
+                                                                                                  The Algorithm Benchmarker module executes the se-
+consolidated and visualized to enable comparative analysis.
+                                                                                               lected algorithms in Python, computing means and standard
+   The outputs consist of structured machine-readable datasets
+(e.g., CSV files) that contain both raw measurements and                                        1 Source code available at: https://github.com/conseg/PQCinBlock
+                                TABLE III                                    The evaluation framework simulated Bitcoin and an Ethereum-
+                         S YSTEM ENVIRONMENTS .                              based blockchain environment. To ensure statistical validity, we
+                                                                 Timer
+                                                                             executed 1,000 warm-up iterations (which were discarded), as
+Machine         CPU         Mem.             OS                              well as 10,000 measured executions per algorithm variant and
+                                                               Resolution
+ Laptop                             macOS Darwin Kernel                      1,000 simulations. Parameters are listed in Table IV.
+              Apple M1      8 GB                              40.978193 ns
+ ARM                                        24.0.0
+ Laptop                            Ubuntu 22.04.1 LTS Linux
+         Intel Core i7-1360P 32 GB                            37.980498 ns
+  x64                               Kernel 6.8.0-65-generic                                                 TABLE IV
+ Desktop
+            AMD Ryzen 7
+                             80 GB
+                                   Ubuntu 24.04.2 LTS Linux
+                                                              49.971276 ns
+                                                                                                     E VALUATION PARAMETERS .
+                5800X               Kernel 6.8.0-64-generic
+                                                                                 Argument         Value(s) Description
+                                                                                 --runs, -r       10,000    Number of executions of each algorithm.
+                                                                                                            Number of warm-up runs before the main
+deviations for key generation, signature creation, and signa-                    --warm-up, -wp   1,000     measurement, for performance stabiliza-
+ture verification. It enables the integration of new algorithms                                             tion.
+and programming languages without requiring modifications                                                   Defines the NIST security levels (1 to 5)
+                                                                                                  {1, 2, 3,
+                                                                                 --levels, -l               of the algorithms to be tested. Can receive
+to other modules. To add a new algorithm, users create a                                          5}
+                                                                                                            multiple values.
+Python file in the algorithms directory describing the                           --runs-simulator 1,000     Number of simulation runs in BlockSim.
+cryptographic variants, their security levels, and the functions                 --model          {1, 2}    Bitcoin, Etherium networks.
+
+to measure operational performance. Currently, we use the
+liboqs version 0.12.0 library for post-quantum algorithms
+                                                                                                  IV. E VALUATION R ESULTS
+and cryptography version 45.0.2 for the traditional ECDSA
+algorithm. Both libraries are wrappers for C/C++ implemen-                      We present our results through three sequential components:
+tations, enabling direct comparisons between traditional and                 (i) benchmarking of cryptographic algorithms, (ii) system-
+post-quantum approaches.                                                     level blockchain simulations, and (iii) interpretation of findings,
+   The module currently supports the algorithms listed in Table              including the identification of methodological constraints.
+II, including ECDSA, ML-DSA, several variants of SPHINCS+                    A. Benchmark of Cryptographic Algorithms
+(e.g., SPHINCS+-SHA-s, SPHINCS+-SHAKE-f), Falcon,
+                                                                                Table V presents the complete benchmark results, including
+Mayo, and multiple implementations of Cross-rsdp and
+                                                                             the mean execution time and standard deviation for each
+Cross-rsdpg. It is important to note that ML-DSA is equiv-
+                                                                             algorithm implementation across all available security levels.
+alent to Dilithium under the nomenclature adopted by NIST
+                                                                             These metrics were calculated over the specified number of runs
+in 2024 [16], while Falcon-padded is a variant of Falcon
+                                                                             for key-pair generation, signing, and verification operations.
+with fixed-length signatures.
+                                                                             Due to space constraints, ML-DSA Level 2 results are shown
+   The Blockchain Simulator models the behavior of
+                                                                             in the column designated for lower levels (1 or 2), as ML-DSA
+blockchain networks. It leverages performance metrics from
+                                                                             does not provide a Level 1 variant.
+the Algorithm Benchmarker module to assess the im-
+                                                                                The comprehensive results in Table V illustrate the complex-
+pact of cryptographic algorithms on block verification pro-
+                                                                             ity of the study, while cross-machine consistency confirms the
+cesses. Currently, we employ BlockSim [17], an open-source
+                                                                             reliability of our methodology. Among the higher-cost PQC
+blockchain simulation framework that captures the behavior of
+                                                                             algorithms, the top performers (ML-DSA and Mayo) were
+key blockchain layers, including network propagation, consen-
+                                                                             selected for further analysis.
+sus mechanisms, and incentive structures. The PQCinBlock
+                                                                                Figure 3 highlights consistent performance patterns across
+framework, using the BlockSim simulator, currently supports
+                                                                             different hardware configurations and security levels. The re-
+two blockchain models: Bitcoin and Ethereum.
+                                                                             sults confirm the expected trend of increased computational
+   The Visualizer module processes raw output data from
+                                                                             overhead with higher security levels. Notably, the small stan-
+the other components, generating plots that enable comparative
+                                                                             dard deviations across all measurements indicate statistical
+analysis of algorithm performance across different evaluation
+                                                                             reliability despite potential system-level interference, which
+scenarios. It currently produces bar plots to display both
+                                                                             validates the adequacy of our sample size.
+benchmarking results and blockchain simulation outcomes.
+                                                                                Our analysis shows that ML-DSA outperforms ECDSA in
+                                                                             most operations and security levels, except for Level 1 key-
+C. Instantiation
+                                                                             pair generation and signing operations. This comparison is
+  The experiments were conducted across multiple hardware                    particularly significant since ML-DSA’s minimum security level
+configurations (detailed in Table III) to minimize potential                 (Level 2) exceeds ECDSA’s Level 1, making its performance
+biases introduced by specific CPU architectures or operating                 advantage even more relevant. Mayo exhibits comparable or
+systems.                                                                     better performance than ECDSA at Levels 1 and 3 on x64
+  Our experimental methodology included comprehensive                        systems. At Level 5, Mayo demonstrates faster verification
+benchmarking of all available algorithm variants, including                  but slower key generation and signing operations compared to
+nominally distinct but functionally equivalent implementations.              ECDSA.
+                                                                             TABLE V
+                                            C OMPLETE R ESULTS ON THE P ERFORMANCE OF C RYPTOGRAPHY A LGORITHMS ( MS ).
+
+                                          Lower Level (1 or 2)                                             Level 3                                                    Level 5
+Algorithm              keypair (mean ± std) sign (mean ± std) verify (mean ± std) keypair (mean ± std) sign (mean ± std) verify (mean ± std) keypair (mean ± std) sign (mean ± std) verify (mean ± std)
+                                                                                              Laptop ARM
+ECDSA                    0.0198 ± 0.001   0.0441 ± 0.0021      0.0788 ± 0.0029      0.2426 ± 0.0091   0.3758 ± 0.0122     0.7366 ± 0.0162     0.2838 ± 0.0089   0.4973 ± 0.0157      0.8847 ± 0.0202
+ML-DSA                   0.049 ± 0.0041   0.2113 ± 0.1409      0.0529 ± 0.0026      0.0934 ± 0.0033   0.3425 ± 0.2338     0.0847 ± 0.0045     0.1351 ± 0.0056   0.4295 ± 0.2668      0.1402 ± 0.0055
+Dilithium                0.0218 ± 0.0013  0.0653 ± 0.0407      0.0221 ± 0.0013      0.0465 ± 0.0026   0.0979 ± 0.0604     0.0329 ± 0.0021     0.0537 ± 0.0026    0.1195 ± 0.061      0.0522 ± 0.0021
+Falcon                   5.2091 ± 1.2291   0.155 ± 0.0043       0.029 ± 0.0036                                                                16.7976 ± 4.2397 0.3071 ± 0.0062       0.0557 ± 0.0044
+Falcon-padded            5.1996 ± 1.1972  0.1552 ± 0.0044      0.0286 ± 0.0022                                                                16.7562 ± 4.226   0.3082 ± 0.0102      0.0551 ± 0.0029
+Mayo                     0.2576 ± 0.0033  0.3999 ± 0.0046      0.0342 ± 0.0015     0.3602 ± 0.0051   1.0552 ± 0.0125       0.173 ± 0.0028     0.9739 ± 0.0082   2.7203 ± 0.0161       0.379 ± 0.0045
+SPHINCS-SHA-s           39.8194 ± 4.4966 302.4854 ± 1.319      0.3056 ± 0.0144     59.0928 ± 0.2914 581.6236 ± 2.6707     0.5038 ± 0.0143     39.0708 ± 0.2259 528.3311 ± 2.7981     0.7282 ± 0.0197
+SPHINCS-SHA-f            0.6223 ± 0.0089 14.4995 ± 0.1365      0.8713 ± 0.0231      0.928 ± 0.0102   25.3311 ± 0.178      1.3657 ± 0.0246      2.4538 ± 0.023   52.2223 ± 0.3399     1.4073 ± 0.0273
+SPHINCS-SHAKE-s         73.1857 ± 0.4665 556.0264 ± 6.5939     0.5522 ± 0.0245    108.2966 ± 0.8138 975.1893 ± 6.5981     0.8076 ± 0.0241     72.2639 ± 0.5518 860.007 ± 5.8928      1.1941 ± 0.0326
+SPHINCS-SHAKE-f          1.1397 ± 0.0151 26.6009 ± 0.2408      1.5859 ± 0.0407     1.7003 ± 0.0197 43.8261 ± 0.3477       2.3626 ± 0.0443     4.5113 ± 0.0496 90.6262 ± 0.7514       2.4171 ± 0.0523
+Cross-rsdp-small         0.0144 ± 0.001   3.0152 ± 0.0302      1.7568 ± 0.0198     0.0306 ± 0.0014    4.268 ± 0.0274      2.3046 ± 0.0197      0.052 ± 0.0017    6.1769 ± 0.0642     3.0694 ± 0.0358
+Cross-rsdpg-small        0.0075 ± 0.0011   2.171 ± 0.0271      1.1833 ± 0.0156     0.0137 ± 0.0011   2.7817 ± 0.0207      1.7868 ± 0.0157     0.0219 ± 0.0012   3.7108 ± 0.0408      2.2536 ± 0.0261
+Cross-rsdp-balanced      0.0141 ± 0.0009  0.7992 ± 0.0076      0.4615 ± 0.0052     0.0306 ± 0.0013   1.8272 ± 0.0149      1.0017 ± 0.0093     0.0527 ± 0.0018   3.3201 ± 0.0297      1.7039 ± 0.0168
+Cross-rsdpg-balanced     0.0073 ± 0.0006  0.6097 ± 0.0059      0.3368 ± 0.0044     0.0137 ± 0.0008   0.7664 ± 0.0071      0.4722 ± 0.0054     0.0216 ± 0.0012   1.3359 ± 0.0111      0.8144 ± 0.0074
+Cross-rsdp-fast          0.0141 ± 0.0007  0.4544 ± 0.0131       0.2603 ± 0.007     0.0306 ± 0.0013   1.0475 ± 0.0115      0.6051 ± 0.0086     0.0517 ± 0.0014   2.0195 ± 0.0171      1.1543 ± 0.0095
+Cross-rsdpg-fast         0.0073 ± 0.0007  0.3221 ± 0.0034      0.1877 ± 0.0028     0.0136 ± 0.0008   0.6023 ± 0.0066       0.3743 ± 0.006     0.0221 ± 0.0009   1.1189 ± 0.0105      0.6675 ± 0.0068
+                                                                                               Laptop x64
+ECDSA                    0.012 ± 0.0009    0.0259 ± 0.001      0.0574 ± 0.0014      0.0775 ± 0.0013    0.1263 ± 0.0015    0.2512 ± 0.0024     0.0866 ± 0.0025   0.1754 ± 0.0046 0.3126 ± 0.0081
+ML-DSA                   0.0193 ± 0.0009   0.0493 ± 0.0277     0.0196 ± 0.0007      0.0322 ± 0.0011    0.0795 ± 0.0458     0.0315 ± 0.001     0.0491 ± 0.0017   0.0956 ± 0.0445 0.0479 ± 0.0016
+Dilithium                0.0192 ± 0.0009   0.0488 ± 0.0277     0.0193 ± 0.0009      0.0322 ± 0.0014    0.0796 ± 0.0468    0.0315 ± 0.0011     0.0504 ± 0.0015   0.0977 ± 0.0452 0.0493 ± 0.0014
+Falcon                   5.8027 ± 1.5008   0.2039 ± 0.0034     0.0434 ± 0.0026                                                                13.2128 ± 3.3529 0.2944 ± 0.0059    0.0604 ± 0.003
+Falcon-padded            4.3956 ± 1.083   0.1555 ± 0.0058      0.0319 ± 0.0007                                                                13.1972 ± 3.311    0.3002 ± 0.009   0.0592 ± 0.001
+Mayo                     0.0289 ± 0.001     0.063 ± 0.009      0.0142 ± 0.0022     0.0528 ± 0.0008      0.1867 ± 0.0023   0.0673 ± 0.0009     0.1188 ± 0.0017    0.36 ± 0.0046   0.1245 ± 0.0017
+SPHINCS-SHA-s           17.4697 ± 0.1948 132.7452 ± 1.3186     0.1787 ± 0.0059     26.2132 ± 0.2847    253.8474 ± 1.932    0.298 ± 0.0069     17.4807 ± 0.1946 231.1655 ± 1.8035 0.4163 ± 0.0094
+SPHINCS-SHA-f            0.2817 ± 0.0036   6.537 ± 0.0702       0.493 ± 0.0122     0.4189 ± 0.0048     11.3276 ± 0.1266   0.7512 ± 0.0132     1.1024 ± 0.0127 23.2572 ± 0.2587 0.7621 ± 0.0141
+SPHINCS-SHAKE-s         36.7059 ± 0.1882 279.7878 ± 0.876      0.3461 ± 0.0108     53.8654 ± 0.4963    483.193 ± 1.5473   0.4903 ± 0.0122     35.6218 ± 0.1637 423.1682 ± 1.1481 0.7043 ± 0.0154
+SPHINCS-SHAKE-f          0.577 ± 0.0062   13.4564 ± 0.1352     0.9368 ± 0.0208     0.8483 ± 0.0059     21.8742 ± 0.1583   1.3467 ± 0.0206     2.2406 ± 0.0109 44.9622 ± 0.2045 1.3681 ± 0.022
+Cross-rsdp-small         0.0155 ± 0.0007   2.0538 ± 0.0168      1.5309 ± 0.014     0.0295 ± 0.0008      2.955 ± 0.0274    2.1288 ± 0.0233     0.0439 ± 0.0013   3.9732 ± 0.0433   2.839 ± 0.0353
+Cross-rsdpg-small        0.0086 ± 0.0006    1.425 ± 0.014       0.911 ± 0.0133     0.0146 ± 0.0008      2.3393 ± 0.0275    1.4576 ± 0.017     0.0222 ± 0.0008   2.9133 ± 0.0367 1.7825 ± 0.0241
+Cross-rsdp-balanced      0.0145 ± 0.0011   0.5602 ± 0.0104     0.3905 ± 0.0071      0.03 ± 0.0043       1.2859 ± 0.0166   0.8724 ± 0.0093     0.0463 ± 0.0016    2.148 ± 0.026    1.4411 ± 0.018
+Cross-rsdpg-balanced     0.0082 ± 0.001   0.4135 ± 0.0069      0.2599 ± 0.0024     0.0141 ± 0.0006      0.6513 ± 0.0095   0.4012 ± 0.0094     0.0216 ± 0.0008   1.0667 ± 0.0158 0.6573 ± 0.0088
+Cross-rsdp-fast          0.0137 ± 0.0006   0.337 ± 0.0084      0.2101 ± 0.0023     0.0296 ± 0.0007      0.7728 ± 0.0087   0.4858 ± 0.0057      0.0458 ± 0.001    1.3681 ± 0.012  0.8397 ± 0.0076
+Cross-rsdpg-fast         0.0081 ± 0.0006   0.2336 ± 0.0138     0.1457 ± 0.0095     0.0137 ± 0.0006      0.5491 ± 0.0062   0.3446 ± 0.0039     0.0212 ± 0.0007   0.8832 ± 0.0129 0.5626 ± 0.0088
+                                                                                                Desktop
+ECDSA                     0.015 ± 0.001   0.033 ± 0.0016   0.0615 ± 0.0019          0.1218 ± 0.0045    0.1992 ± 0.0067     0.3977 ± 0.011     0.1087 ± 0.0027   0.2243 ± 0.0042 0.3909 ± 0.0067
+ML-DSA                   0.0236 ± 0.0008  0.0553 ± 0.0297 0.0226 ± 0.0006           0.0387 ± 0.0017    0.0873 ± 0.0473    0.0368 ± 0.0014     0.0605 ± 0.0019   0.1071 ± 0.0455 0.0578 ± 0.0017
+Dilithium                0.0234 ± 0.0008  0.0548 ± 0.0301 0.0225 ± 0.0006           0.0386 ± 0.0008     0.086 ± 0.0459    0.0368 ± 0.0007     0.0605 ± 0.0011   0.1086 ± 0.0467  0.0579 ± 0.001
+Falcon                   4.5585 ± 1.1817  0.1584 ± 0.0022    0.034 ± 0.002                                                                     13.5104 ± 3.46   0.3151 ± 0.0035 0.0653 ± 0.0029
+Falcon-padded            4.5356 ± 1.1917  0.1619 ± 0.0021 0.0338 ± 0.0025                                                                     13.4322 ± 3.3585 0.3197 ± 0.0078    0.0645 ± 0.001
+Mayo                     0.0237 ± 0.0007   0.0582 ± 0.001  0.0133 ± 0.0004         0.0418 ± 0.0013     0.1542 ± 0.0015     0.0473 ± 0.001      0.0884 ± 0.002   0.3045 ± 0.0031 0.0921 ± 0.0012
+SPHINCS-SHA-s           15.1549 ± 0.0525 115.2267 ± 0.2323 0.166 ± 0.0056          22.1562 ± 0.1061    212.136 ± 0.8036    0.278 ± 0.0066     14.8261 ± 0.1126 192.8551 ± 1.4157 0.3829 ± 0.0077
+SPHINCS-SHA-f            0.2407 ± 0.0033   5.5964 ± 0.021  0.4355 ± 0.0083         0.3587 ± 0.0033     9.5745 ± 0.0147    0.6604 ± 0.0083     0.9285 ± 0.0034 19.4653 ± 0.0334    0.6719 ± 0.01
+SPHINCS-SHAKE-s         32.1903 ± 0.2419 245.0352 ± 1.7179 0.3163 ± 0.0108         49.5265 ± 0.3534    444.061 ± 3.1006   0.4499 ± 0.0113     29.7797 ± 0.0936 359.8339 ± 0.6492 0.6277 ± 0.0143
+SPHINCS-SHAKE-f          0.4978 ± 0.0061 11.6084 ± 0.0367 0.8352 ± 0.0213          0.7429 ± 0.0038     19.1604 ± 0.052     1.228 ± 0.0171      1.887 ± 0.0123   38.123 ± 0.0904 1.1994 ± 0.0206
+Cross-rsdp-small         0.0154 ± 0.0007  1.9686 ± 0.0071 1.4158 ± 0.0058          0.0313 ± 0.0008     2.7865 ± 0.0118    1.9685 ± 0.0072     0.0419 ± 0.0011   3.7086 ± 0.0116  2.583 ± 0.0094
+Cross-rsdpg-small        0.0091 ± 0.0006  1.3865 ± 0.0054 0.8851 ± 0.0041           0.015 ± 0.0008      2.243 ± 0.0101    1.4572 ± 0.0064     0.0216 ± 0.0007   2.7278 ± 0.0091  1.6763 ± 0.005
+Cross-rsdp-balanced      0.0151 ± 0.0009  0.5354 ± 0.0036 0.3674 ± 0.0028           0.031 ± 0.001      1.1966 ± 0.0044    0.8251 ± 0.0033     0.0417 ± 0.0012   1.9548 ± 0.0068 1.3485 ± 0.0052
+Cross-rsdpg-balanced     0.0086 ± 0.0006  0.3987 ± 0.0023   0.248 ± 0.0018         0.0147 ± 0.0007     0.6246 ± 0.0025     0.385 ± 0.0019     0.0208 ± 0.0007   1.0061 ± 0.0051 0.6172 ± 0.0039
+Cross-rsdp-fast          0.0156 ± 0.0006  0.3178 ± 0.0021 0.1968 ± 0.0017           0.03 ± 0.0008      0.7184 ± 0.0043    0.4553 ± 0.0027      0.043 ± 0.0009   1.2472 ± 0.0066   0.794 ± 0.0037
+Cross-rsdpg-fast         0.0084 ± 0.0005  0.2208 ± 0.0017 0.1359 ± 0.0013          0.0145 ± 0.0007     0.5276 ± 0.0048     0.3249 ± 0.003     0.0205 ± 0.0007   0.8221 ± 0.0026 0.5191 ± 0.0022
+
+
+
+
+   The most pronounced performance improvement occurs in                                              the traditional algorithm ECDSA. The results show that in
+verification operations at Level 5 on the ARM-based laptop,                                           blockchain network simulations, post-quantum cryptographic
+where ML-DSA achieves a 92% reduction in verification time                                            algorithms consistently outperform ECDSA across all eval-
+compared to ECDSA (0.06 seconds versus 0.74 seconds). This                                            uated scenarios. Both ML-DSA and Mayo achieve superior
+result demonstrates the potential of post-quantum cryptographic                                       performance, with particularly notable gains at higher security
+algorithms to maintain or even enhance verification efficiency                                        levels. In particular, ML-DSA reduces execution time by 90%
+while providing higher security.                                                                      at Level 3 (63.63 ms compared to 687.60 ms for ECDSA) on a
+                                                                                                      Desktop system, demonstrating the feasibility of adopting PQC
+B. Impact on Blockchain Networks                                                                      algorithms without compromising system performance.
+   Table VI presents the complete blockchain simulation results,
+                                                                                                      C. Discussion
+including mean execution times and standard deviations for
+block verification operations across all evaluated security levels                                       As the experiments demonstrate, some PQC algorithms per-
+in Bitcoin and Ethereum networks.                                                                     form similarly to, and in some cases outperform, ECDSA,
+   Figure 4 presents the performance of the two most effi-                                            both individually and when applied in blockchain systems.
+cient post-quantum candidates, ML-DSA and Mayo, alongside                                             Therefore, migrating digital signatures from ECDSA to PQC
+            0.02                                         ecdsa                         0.24                                ecdsa                   0.28                                    ecdsa
+
+
+
+
+                                                                                                                                    Keypair
+ Keypair
+
+
+
+
+                                                                  Keypair
+              0.05                                       mldsa                 0.09                                        mldsa                0.14                                       mldsa
+                             0.26                        mayo                                 0.36                         mayo                                     0.97                   mayo
+             0.04                                                                           0.38                                                         0.50
+
+
+
+
+                                                                                                                                    Sign
+ Sign
+
+
+
+
+                                                                  Sign
+                         0.21                                                              0.34                                                         0.43
+                                     0.40                                                                          1.06                                                                        2.72
+                0.08                                                                                       0.74                                                   0.88
+
+
+
+
+                                                                                                                                    Verify
+ Verify
+
+
+
+
+                                                                  Verify
+              0.05                                                            0.08                                                              0.14
+             0.03                                                                0.17                                                                   0.38
+     0.0               0.2          0.4     0.6    0.8               0.00           0.25        0.50      0.75 1.00       1.25          0.0             0.5       1.0       1.5 2.0      2.5
+                                     Time (ms)                                                         Time (ms)                                                         Time (ms)
+            (a) Laptop ARM - Lower Level (1 or 2)                                      (b) Laptop ARM - Level 3                                           (c) Laptop ARM - Level 5
+
+            0.01                                          ecdsa                0.08                                         ecdsa
+  Keypair
+
+
+
+
+                                                                   Keypair
+                                                                                                                                                0.09                                       ecdsa
+
+
+
+
+                                                                                                                                     Keypair
+            0.02                                          mldsa              0.03                                           mldsa              0.05
+             0.03                                                             0.05                                                                                                         mldsa
+                                                          mayo                                                              mayo                 0.12                                      mayo
+             0.03                                                                0.13                                                            0.18
+  Sign
+
+
+
+
+              0.05                                                 Sign        0.08
+
+
+
+
+                                                                                                                                     Sign
+                                                                                                                                                0.10
+               0.06                                                                0.19                                                              0.36
+                0.06                                                                    0.25                                                        0.31
+  Verify
+
+
+
+
+                                                                   Verify
+
+
+
+
+                                                                                                                                     Verify
+             0.02                                                            0.03                                                              0.05
+             0.01                                                             0.07                                                              0.12
+      0.0              0.2          0.4     0.6     0.8               0.00          0.25         0.50      0.75 1.00      1.25           0.0            0.5        1.0      1.5 2.0      2.5
+                                     Time (ms)                                                          Time (ms)                                                        Time (ms)
+              (d) Laptop x64 - Lower Level (1 or 2)                                      (e) Laptop x64 - Level 3                                              (f) Laptop x64- Level 5
+
+            0.01                                         ecdsa                  0.12                                       ecdsa                0.11                                       ecdsa
+ Keypair
+
+
+
+
+                                                                  Keypair
+
+
+
+
+                                                                                                                                    Keypair
+            0.02                                         mldsa               0.04                                          mldsa               0.06                                        mldsa
+            0.02                                         mayo                0.04                                          mayo                0.09                                        mayo
+             0.03                                                                  0.20                                                          0.22
+ Sign
+
+
+
+
+                                                                  Sign
+
+
+
+
+                                                                                                                                    Sign
+              0.06                                                            0.09                                                             0.11
+              0.06                                                               0.15                                                              0.30
+               0.06                                                                            0.40                                                     0.39
+ Verify
+
+
+
+
+                                                                  Verify
+
+
+
+
+                                                                                                                                    Verify
+            0.02                                                             0.04                                                              0.06
+            0.01                                                             0.05                                                               0.09
+     0.0               0.2          0.4     0.6    0.8               0.00           0.25        0.50      0.75 1.00       1.25          0.0             0.5       1.0       1.5 2.0      2.5
+                                     Time (ms)                                                         Time (ms)                                                         Time (ms)
+               (g) Desktop - Lower Level (1 or 2)                                          (h) Desktop - Level 3                                                (i) Desktop - Level 5
+
+                                                  Fig. 3. Benchmarking: Selected Results (Lower Values Indicate Better Results).
+
+
+
+algorithms, particularly ML-DSA and Mayo, can be performed                                                 transaction confirmation, potentially affecting overall network
+smoothly in systems where application performance is the                                                   throughput.
+primary requirement. However, migrating to other algorithms,
+such as SLH-DSA and Cross-rsdp, is not recommended in these
+scenarios due to performance limitations.                                                                  D. Limitations
+   Although this study did not evaluate the sizes of public
+keys, private keys, and digital signatures, previous works [9],                                               Comparisons with other traditional algorithms, such as RSA,
+[13], [14] and published standards [3], [4] indicate that PQC-                                             were not conducted in this study. Additionally, discussions on
+generated keys and signatures are considerably larger than                                                 the adoption and potential improvements of key encapsulation
+those of ECDSA. Except SLH-DSA, which has the same key                                                     mechanisms (KEM) [18] are beyond the scope of this work.
+size as ECDSA. Systems with storage constraints, including                                                 Our focus is specifically on processing involving digital sig-
+blockchain networks and IoT devices, must balance application                                              natures, as employed in the most widely used blockchains,
+security requirements against the capacity to store these larger                                           including Bitcoin and Ethereum.
+keys and signatures when deciding which algorithms to adopt.                                                  Although some proposed solutions explore blockchain ap-
+   Moreover, adopting PQC algorithms in blockchains requires                                               plications in IoT contexts [19]–[21], we chose to concentrate
+considering not only computational performance but also the                                                our experiments on the most prevalent blockchain systems.
+impact of larger keys and signatures on transaction and block                                              Furthermore, BlockSim currently supports only Bitcoin and
+sizes. Larger signatures increase transaction size, reducing the                                           Ethereum, which are not commonly used in IoT deployments.
+number of transactions per block. Consequently, larger blocks                                              Evaluating the impact of PQC algorithms in IoT devices
+with fewer transactions can elevate latency for consensus or                                               remains an avenue for future research.
+                                                                                     TABLE VI
+                                                              C OMPLETE R ESULTS OF THE BLOCKCHAIN SIMULATIONS ( MS ).
+
+                                              Laptop ARM                                                    Laptop x64                                                      Desktop
+                                           verify (mean ± std)                                          verify (mean ± std)                                           verify (mean ± std)
+Algorithm                Lower Level             Level 3              Level 5          Lower Level            Level 3              Level 5          Lower Level             Level 3              Level 5
+                                                                                                 Bitcoin
+ECDSA                 136.2845 ± 2.3648 1273.9468 ± 22.616 1531.0027 ± 26.5852 99.2422 ± 1.7495       434.3056 ± 8.2095    541.203 ± 8.8813   106.4078 ± 2.0004 687.6015 ± 11.907 676.0999 ± 12.2533
+ML-DSA                 91.3405 ± 1.6492   146.6004 ± 2.5224 242.2411 ± 4.3684     33.8754 ± 0.5687     54.3813 ± 0.9583    82.9072 ± 1.3698    39.1121 ± 0.6682    63.6307 ± 1.1611   100.0014 ± 1.7721
+Dilithium              38.2409 ± 0.6844   56.9484 ± 1.0043    90.3939 ± 1.5367    33.4214 ± 0.6072     54.4299 ± 1.0108    85.3526 ± 1.4914    38.9487 ± 0.7239    63.698 ± 1.1343    100.1268 ± 1.8287
+Falcon                 50.221 ± 0.8659                        96.4311 ± 1.6821    75.0105 ± 1.3633                        104.4389 ± 1.8022    58.8385 ± 1.1036                       113.0021 ± 2.0954
+Falcon-padded          49.5613 ± 0.9207                       95.3122 ± 1.7944    55.1643 ± 0.9526                        102.4074 ± 1.7481    58.4768 ± 1.0218                       111.5594 ± 2.0978
+Mayo                   59.1631 ± 1.0231   299.4169 ± 5.2516 655.7262 ± 12.0629    24.5113 ± 0.4112    116.3231 ± 2.1785    215.494 ± 3.5414    22.9609 ± 0.4017    81.8565 ± 1.3578   159.3144 ± 2.9455
+SPHINCS-SHA-s         528.9003 ± 9.4844 871.5926 ± 15.626 1260.301 ± 22.5475 309.1484 ± 5.5676         515.6341 ± 9.228 720.2043 ± 12.1136 287.0224 ± 5.2349       481.1766 ± 8.638 662.8648 ± 11.1765
+SPHINCS-SHA-f        1507.3205 ± 25.3508 2361.3837 ± 42.4078 2434.5585 ± 43.5861 853.0385 ± 15.3951 1298.8756 ± 22.9854 1318.8456 ± 23.079 753.3344 ± 14.9031 1141.0721 ± 20.085 1162.6435 ± 19.3736
+SPHINCS-SHAKE-s 954.4281 ± 16.8238 1396.1869 ± 24.1091 2065.4039 ± 37.0847 599.1115 ± 10.3477 847.6319 ± 15.0924 1218.7581 ± 20.8864 547.3769 ± 9.5828 777.7835 ± 13.7176 1086.4028 ± 18.9974
+SPHINCS-SHAKE-f 2745.388 ± 45.5068 4084.8346 ± 75.6695 4180.3499 ± 73.4508 1620.9727 ± 30.3867 2330.0321 ± 41.1458 2366.5064 ± 44.7915 1444.0436 ± 25.8178 2124.6605 ± 40.8339 2074.9598 ± 36.0649
+Cross-rsdp-small     3036.4521 ± 56.3102 3987.9731 ± 67.4678 5302.8723 ± 101.464 2648.0999 ± 47.0922 3683.7922 ± 64.0329 4917.4178 ± 90.5952 2447.8821 ± 46.593 3405.9624 ± 58.4809 4468.295 ± 81.5143
+Cross-rsdpg-small    2048.0467 ± 34.9935 3090.3061 ± 56.5592 3897.5645 ± 72.9742 1575.7796 ± 27.6206 2522.9822 ± 44.7467 3083.8917 ± 52.2752 1531.6611 ± 25.7086 2522.5871 ± 43.5081 2900.9881 ± 50.9739
+Cross-rsdp-balanced 797.2513 ± 14.5664 1732.6422 ± 33.8118 2947.9559 ± 53.5516 675.7915 ± 11.7194 1508.6183 ± 27.3333 2489.3299 ± 47.2395 636.0842 ± 11.019 1427.7683 ± 24.8086 2331.9637 ± 43.0686
+Cross-rsdpg-balanced 582.2241 ± 10.2936 817.1568 ± 14.0075 1409.3277 ± 24.231 449.4047 ± 7.7085 693.8905 ± 12.7111 1137.5636 ± 21.8478 428.8288 ± 7.5287 666.3342 ± 11.1477 1068.4216 ± 18.7796
+Cross-rsdp-fast       450.1529 ± 9.1348 1047.6817 ± 16.8568 1997.015 ± 35.2195 363.3275 ± 6.6688 841.1026 ± 14.1928 1452.9939 ± 26.2099 340.7624 ± 5.5979 788.0883 ± 14.5187 1373.4859 ± 23.8799
+Cross-rsdpg-fast      324.5005 ± 5.9552 647.3387 ± 11.9267 1154.7252 ± 19.8287 252.0224 ± 4.701 596.4249 ± 10.2094 973.0883 ± 18.1496 234.9852 ± 4.4663 561.3991 ± 10.1477 897.5819 ± 15.9627
+                                                                                                   Ethereum
+ECDSA                   10.3491 ± 0.2384   96.6628 ± 2.1812      116.0763 ± 2.6017    7.4872 ± 0.1458     32.7918 ± 0.6453     40.8184 ± 0.7706    8.1537 ± 0.1449    52.7183 ± 0.9651      51.8054 ± 0.9224
+ML-DSA                  6.9448 ± 0.1578    11.1379 ± 0.2465       18.418 ± 0.4154     2.5527 ± 0.0491     4.1037 ± 0.0793      6.2515 ± 0.1186     2.9991 ± 0.0547    4.8817 ± 0.0907        7.6552 ± 0.1401
+Dilithium               2.9024 ± 0.0643     4.3213 ± 0.0929       6.8603 ± 0.1544     2.5226 ± 0.0514     4.1034 ± 0.0833       6.427 ± 0.1325     2.9824 ± 0.0535    4.8851 ± 0.0829        7.6745 ± 0.1331
+Falcon                  3.8116 ± 0.0863                           7.3194 ± 0.1698     5.6556 ± 0.1117                          7.8667 ± 0.1552     4.5113 ± 0.0813                           8.6582 ± 0.1592
+Falcon-padded           3.7618 ± 0.0863                           7.2435 ± 0.1603     4.1596 ± 0.0772                          7.7213 ± 0.1537     4.4858 ± 0.0811                           8.5432 ± 0.1531
+Mayo                    4.4919 ± 0.1002    22.7227 ± 0.5212      49.7921 ± 1.1234     1.8454 ± 0.0368     8.7817 ± 0.1695      16.2426 ± 0.3261    1.7588 ± 0.0314     6.2742 ± 0.1108       12.2031 ± 0.222
+SPHINCS-SHA-s            40.173 ± 0.903    66.1663 ± 1.5228       95.5925 ± 2.233    23.3252 ± 0.4345     38.8725 ± 0.781       54.25 ± 1.0775     22.0238 ± 0.3913     36.831 ± 0.67       50.7323 ± 0.8998
+SPHINCS-SHA-f           114.4394 ± 2.573   179.4633 ± 4.022      184.6904 ± 4.1013   64.2922 ± 1.2847     97.9234 ± 1.9218     99.2531 ± 1.9502    57.7019 ± 1.0366    87.5299 ± 1.5782     89.0286 ± 1.5921
+SPHINCS-SHAKE-s         72.6221 ± 1.6532   105.8964 ± 2.4491     156.9101 ± 3.5692   45.1136 ± 0.9134     63.956 ± 1.2467      91.8136 ± 1.7776    41.896 ± 0.7654     59.6529 ± 1.0579     83.1413 ± 1.4885
+SPHINCS-SHAKE-f        208.2749 ± 4.8916   310.2855 ± 6.8458     317.4644 ± 7.2003   122.203 ± 2.3795    175.5756 ± 3.4583    178.4881 ± 3.3593   110.7192 ± 2.0648   162.7238 ± 3.0224     158.9173 ± 2.8266
+Cross-rsdp-small       230.9886 ± 4.9499   302.7863 ± 7.0252     403.1348 ± 9.0603   199.7076 ± 4.0614 277.5764 ± 5.2626       370.2685 ± 7.317    187.608 ± 3.4582   260.9108 ± 4.6804     342.4696 ± 6.2811
+Cross-rsdpg-small      155.3068 ± 3.6172   234.7216 ± 5.221      295.9017 ± 7.0679   118.6946 ± 2.3037    190.0899 ± 3.675    232.5503 ± 4.6263   117.2321 ± 2.1072   193.0565 ± 3.5995     222.1975 ± 4.0865
+Cross-rsdp-balanced     60.5409 ± 1.3722   131.6209 ± 2.9952     224.051 ± 4.8656     50.9738 ± 0.978    113.8022 ± 2.2499    188.1103 ± 3.7592    48.732 ± 0.9241    109.3643 ± 1.8698     178.8018 ± 3.2693
+Cross-rsdpg-balanced    44.2783 ± 0.9875   62.0173 ± 1.4034       107.04 ± 2.3375     33.937 ± 0.6676     52.3021 ± 1.0433     85.7211 ± 1.6835    32.8924 ± 0.5854    51.0591 ± 0.8984     81.8082 ± 1.5069
+Cross-rsdp-fast         34.1856 ± 0.7596   79.5323 ± 1.7342      151.6858 ± 3.2924   27.3821 ± 0.5532     63.4258 ± 1.2638     109.5058 ± 2.065    26.0865 ± 0.471     60.2854 ± 1.1056     105.2215 ± 1.9187
+Cross-rsdpg-fast        24.6787 ± 0.5415   49.2222 ± 1.0755       87.569 ± 2.0809    19.0112 ± 0.3663     44.8927 ± 0.9238     73.4431 ± 1.4179    18.0222 ± 0.3291    43.0699 ± 0.7775     68.8634 ± 1.2179
+
+
+
+
+                                   V. C ONCLUSION                                                             of quantum computing: A systematic survey on the use of quantum
+                                                                                                              computing tools,” in 2022 IEEE 46th Annual Computers, Software, and
+   In this work, we presented a comparison between the per-                                                   Applications Conference (COMPSAC), 2022, pp. 520–529.
+formance of traditional algorithms, such as ECDSA, and post-                                              [2] P. W. Shor, “Algorithms for quantum computation: discrete logarithms
+quantum cryptographic (PQC) algorithms, including ML-DSA,                                                     and factoring,” in Proceedings of the 35th Annual Symposium
+                                                                                                              on Foundations of Computer Science, ser. SFCS ’94. USA:
+Falcon, and SPHINCS+, both in isolation and within blockchain                                                 IEEE Computer Society, 1994, p. 124–134. [Online]. Available:
+systems. We also introduced a tool that benchmarks the core                                                   https://doi.org/10.1109/SFCS.1994.365700
+operations of these algorithms—key generation, signing, and                                               [3] NIST, “Module-lattice-based digital signature standard,” National Insti-
+                                                                                                              tute of Standards and Technology, Tech. Rep. FIPS PUB 204, 2024,
+verification—and simulates their impact on blockchain.                                                        disponı́vel em: https://doi.org/10.6028/NIST.FIPS.204.
+   Our results indicate that certain PQC algorithms, particularly                                         [4] NIST, “Stateless hash-based digital signature standard,” National Institute
+ML-DSA and Mayo, outperform ECDSA, especially at higher                                                       of Standards and Technology, Tech. Rep. FIPS PUB 205, 2024, disponı́vel
+                                                                                                              em: https://doi.org/10.6028/NIST.FIPS.205.
+security levels. As expected, performance decreases as security                                           [5] P.-A. Fouque, J. Hoffstein, P. Kirchner, V. Lyubashevsky, T. Pornin,
+levels increase, reflecting the corresponding rise in computa-                                                T. Prest, T. Ricosset, G. Seiler, W. Whyte, Z. Zhang et al., “Falcon:
+tional overhead. These findings suggest that replacing algo-                                                  Fast-fourier lattice-based compact signatures over ntru,” Submission to
+                                                                                                              the NIST’s post-quantum cryptography standardization process, vol. 36,
+rithms vulnerable to Shor’s algorithm is feasible, provided the                                               no. 5, pp. 1–75, 2018.
+effects of larger key and signature sizes on network throughput                                           [6] M. Baldi, A. Barenghi, S. Bitzer, P. Karl, F. Manganiello, A. Pavoni,
+are considered.                                                                                               G. Pelosi, P. Santini, J. Schupp, F. Slaughter et al., “Codes and restricted
+                                                                                                              objects signature scheme,” Submission to the NIST Post-Quantum Cryp-
+   As Future work, we intend to investigate the impact of public                                              tography Standardization Process. Algorithm Specifications and Support-
+key, private key and digital signature sizes on blockchain stor-                                              ing Documentation. Version, 2025.
+age and network traffic, evaluating their implications for system                                         [7] W. Beullens, “Mayo: practical post-quantum signatures from oil-and-
+                                                                                                              vinegar maps,” in International Conference on Selected Areas in Cryp-
+efficiency, scalability, and operational viability. Moreover, the                                             tography. Springer, 2021, pp. 355–376.
+modular architecture of PQCinBlock allows the integration                                                 [8] Z. Yang, H. Alfauri, B. Farkiani, R. Jain, R. D. Pietro, and A. Erbad,
+of new algorithms, programming languages, and experimental                                                    “A survey and comparison of post-quantum and quantum blockchains,”
+                                                                                                              Commun. Surveys Tuts., vol. 26, no. 2, p. 967–1002, Apr. 2024. [Online].
+scenarios, enabling the tool to support both traditional and post-                                            Available: https://doi.org/10.1109/COMST.2023.3325761
+quantum digital signature schemes in future studies.                                                      [9] P. Juaristi, I. Agudo, R. Rios, and L. Ricci, “Benchmarking post-quantum
+                                                                                                              cryptography in ethereum-based blockchains,” in Computer Security.
+                                       R EFERENCES                                                            ESORICS 2024 International Workshops.             Cham: Springer Nature
+                                                                                                              Switzerland, 2025, pp. 340–353.
+ [1] P. B. Upama, M. J. H. Faruk, M. Nazim, M. Masum, H. Shahriar,                                       [10] M. I. Garcı́a-Cid, R. Martı́n, D. Domingo, L. Ortiz, and V. Martı́n,
+     G. Uddin, S. Barzanjeh, S. I. Ahamed, and A. Rahman, “Evolution                                          “Comparative evaluation of quantum-resistant digital signatures,” in 2024
+                                                               136.28                                                         1273.95                                                       1531.00
+
+
+
+
+                                                                                                                                        Bitcoin
+                                                                        Bitcoin
+ Bitcoin
+
+                                             91.34                                      146.60                                                              242.24
+                                     59.16                                                   299.42                                                                     655.73
+
+              10.35                                                                   96.66                                                           116.08
+
+
+
+
+                                                                                                                                        Ethereum
+                                                                        Ethereum
+ Ethereum
+
+
+
+
+             6.94                                             ecdsa                11.14                                      ecdsa                18.42                                    ecdsa
+                                                              mldsa                22.72
+                                                                                                                              mldsa                 49.79
+                                                                                                                                                                                            mldsa
+            4.49                                              mayo                                                            mayo                                                          mayo
+        0        25           50       75 100          125      150            0            250     500      750 1000 1250                     0                 500         1000         1500
+                                     Time (ms)                                                            Time (ms)                                                      Time (ms)
+            (a) Laptop ARM - Lower Level (1 or 2)                                             (b) Laptop ARM - Level 3                                        (c) Laptop ARM - Level 5
+
+                                               99.24                                                434.31                                                           541.20
+ Bitcoin
+
+
+
+
+                                                                        Bitcoin
+
+
+
+
+                                                                                                                                        Bitcoin
+                        33.88                                                       54.38                                                            82.91
+                     24.51                                                            116.32                                                             215.49
+
+              7.49                                                                  32.79                                                           40.82
+ Ethereum
+
+
+
+
+                                                                        Ethereum
+
+
+
+
+                                                                                                                                        Ethereum
+            2.55                                              ecdsa                4.10                                       ecdsa                6.25                                     ecdsa
+            1.85
+                                                              mldsa                8.78
+                                                                                                                              mldsa                16.24
+                                                                                                                                                                                            mldsa
+                                                              mayo                                                            mayo                                                          mayo
+        0        25           50       75 100          125      150            0            250     500      750 1000 1250                     0                 500         1000         1500
+                                     Time (ms)                                                            Time (ms)                                                      Time (ms)
+            (d) Laptop x64 - Lower Level (1 or 2)                                              (e) Laptop x64 - Level 3                                        (f) Laptop x64 - Level 5
+
+                                                 106.41                                                      687.60                                                     676.10
+ Bitcoin
+
+
+
+
+                                                                        Bitcoin
+
+
+
+
+                                                                                                                                        Bitcoin
+                             39.11                                                   63.63                                                           100.00
+                     22.96                                                            81.86                                                            159.31
+
+              8.15                                                                   52.72                                                          51.81
+ Ethereum
+
+
+
+
+                                                                        Ethereum
+
+
+
+
+                                                                                                                                        Ethereum
+            3.00                                              ecdsa                4.88                                       ecdsa                7.66                                     ecdsa
+            1.76
+                                                              mldsa                6.27
+                                                                                                                              mldsa                12.20
+                                                                                                                                                                                            mldsa
+                                                              mayo                                                            mayo                                                          mayo
+        0        25           50       75 100          125      150            0            250     500      750 1000 1250                     0                 500         1000         1500
+                                     Time (ms)                                                            Time (ms)                                                      Time (ms)
+              (g) Desktop - Lower Level (1 or 2)                                                  (h) Desktop - Level 3                                           (i) Desktop - Level 5
+
+                                                             Fig. 4. Main Simulation Results (Lower Values Indicate Better Results).
+
+
+
+     International Conference on Quantum Communications, Networking, and                                            events/news/2024/08/nist-releases-first-3-finalized-post-quantum-
+     Computing (QCNC), 2024, pp. 226–230.                                                                           encryption-standards.
+[11] B. Lonc, A. Aubry, H. Bakhti, M. Christofi, and H. A. Mehrez, “Feasibil-                                  [17] M. Alharby and A. van Moorsel, “Blocksim: An extensible simulation
+     ity and benchmarking of post-quantum cryptography in the cooperative                                           tool for blockchain systems,” Frontiers in Blockchain, vol. Volume 3
+     its ecosystem,” in 2023 IEEE Vehicular Networking Conference (VNC),                                            - 2020, 2020. [Online]. Available: https://www.frontiersin.org/journals/
+     2023, pp. 215–222.                                                                                             blockchain/articles/10.3389/fbloc.2020.00028
+[12] E. D. Demir, B. Bilgin, and M. C. Onbasli, “Performance analysis                                          [18] J. Yu, Y. Ding, Y. Guo, K. Kotani, and H. Sato, “Inj-kyber: Enhancing
+     and industry deployment of post-quantum cryptography algorithms,”                                              crystals-kyber with information injection within a bio-kem framework,” in
+     2025, preprint arXiv:2503.12952 [cs.CR]. [Online]. Available: https:                                           2023 IEEE 22nd International Conference on Trust, Security and Privacy
+     //arxiv.org/abs/2503.12952                                                                                     in Computing and Communications (TrustCom), 2023, pp. 1639–1644.
+                                                                                                               [19] A. Dorri, S. S. Kanhere, and R. Jurdak, “Towards an optimized blockchain
+[13] D. Commey, B. Appiah, G. S. Klogo, W. Bagyl-Bac, and J. D. Gadze,
+                                                                                                                    for iot,” in Proceedings of the second international conference on
+     “Performance analysis and deployment considerations of post-quantum
+                                                                                                                    Internet-of-Things design and implementation, 2017, pp. 173–178.
+     cryptography for consumer electronics,” 2025, preprint arXiv:2505.02239
+                                                                                                               [20] R. C. Lunardi, R. A. Michelin, H. C. Nunes, C. V. Neu, A. F. Zorzo, and
+     [cs.CR]. [Online]. Available: https://arxiv.org/abs/2505.02239
+                                                                                                                    S. S. Kanhere, “Consensus algorithms on appendable-block blockchains:
+[14] G. Fitzgibbon and C. Ottaviani, “Constrained device performance                                                Impact and security analysis,” Mobile Networks and Applications, vol. 27,
+     benchmarking with the implementation of post-quantum cryptography,”                                            no. 4, pp. 1408–1420, 2022.
+     Cryptography, vol. 8, no. 2, 2024. [Online]. Available: https:                                            [21] C. Hou, W. Yang, Y. Wang, Z. Zhang, S. Chen, and B. Li, “A multi-
+     //www.mdpi.com/2410-387X/8/2/21                                                                                blockchain based anonymous cross-domain authentication scheme for
+[15] NIST,      “Call     for  proposals     for    public-key     cryptographic                                    industrial internet of things,” in 2024 IEEE 23rd International Conference
+     algorithms,” National Institute of Standards and Technology,                                                   on Trust, Security and Privacy in Computing and Communications
+     Gaithersburg, MD, Federal Register Notice Vol. 81, No.                                                         (TrustCom), 2024, pp. 1125–1134.
+     241,     pp.     93915-93918,    Dec.      2016.    [Online].    Available:
+     https://csrc.nist.gov/CSRC/media/Projects/Post-Quantum-Cryptography/
+     documents/call-for-proposals-final-dec-2016.pdf
+[16] NIST, “Nist releases first 3 finalized post-quantum encryption
+     standards,” Aug. 2024, disponı́vel em: https://www.nist.gov/news-
+

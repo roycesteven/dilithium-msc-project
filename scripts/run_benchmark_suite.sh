@@ -6,21 +6,30 @@
 #
 #     evidence/runs/YYYYMMDD_HHMMSS/
 #
-# and writes EVERYTHING for that run directly inside it (no logs/, figures/ or
-# tables/ subfolders, and nothing under figures/benchmark, tables/benchmark or
-# evidence/final-runs):
+# whose generated outputs are ORGANISED INTO SUBFOLDERS so the Meeting-4 Stage-1
+# paper figures are never mixed with debug/report/application output:
 #
 #     metadata.txt MANIFEST.md
-#     functional_tests.log contract.log serialization_tests.log kat.log
-#     atomic_swap.log pcn.log
-#     fair_paper.log fair_l2.log fair_l3.log fair_l5.log
-#     application_benchmark.log
-#     classical.log            (ECDSA-adaptor baseline; only if third_party present)
-#     *.csv  *.png  *.pdf      (written by scripts/plot_las_benchmarks.py)
+#     logs/                 raw benchmark/test stdout (*.log)
+#     tables/               CSV evidence parsed from the logs (+ report_figure_manifest.csv)
+#     paper_package/        Stage-1 MAIN package for Wang/report (Table 1 + 3 figures + KEY_FINDINGS.md)
+#     appendix_package/     optional supporting figure (rejection_sampling_paper.*)
+#     debug_figures/        cumulative timing, internal attribution, report/duplicate, parameter PNGs
+#     application_package/   Stage-2 atomic-swap / AMHL multi-hop figures
 #
-# Older runs are never overwritten or deleted; evidence/latest is repointed at the
-# newest run.  Build the benchmarks and run them yourself when you want fresh
-# numbers -- this script does the building and running; do NOT edit any log by hand.
+# Pipeline:
+#   1. build + run the C benchmarks; stdout goes into logs/.
+#   2. scripts/plot_las_benchmarks.py parses the logs into a transient .stage/ and
+#      produces ALL evidence CSVs + debug/report/application figures, which are then
+#      distributed into tables/, debug_figures/ and application_package/.
+#   3. scripts/plot_las_paper_figures.py reads tables/ and writes ONLY the Stage-1
+#      paper package into paper_package/ (+ rejection_sampling_paper.* into
+#      appendix_package/).
+#
+# Older runs are never overwritten or deleted; only generated OUTPUT locations are
+# organised, never the raw evidence. evidence/latest is repointed at the newest run.
+# Build the benchmarks and run them yourself when you want fresh numbers -- this
+# script does the building and running; do NOT edit any log by hand.
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -31,7 +40,8 @@ if [ -e "$RUN_DIR" ]; then
   echo "Refusing to overwrite existing run directory: $RUN_DIR" >&2
   exit 1
 fi
-mkdir -p "$RUN_DIR"
+mkdir -p "$RUN_DIR"/logs "$RUN_DIR"/tables "$RUN_DIR"/paper_package \
+         "$RUN_DIR"/appendix_package "$RUN_DIR"/debug_figures "$RUN_DIR"/application_package
 
 # --- reproducibility provenance ------------------------------------------------
 COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo n/a)"
@@ -41,19 +51,24 @@ REPRO="-DLAS_GIT_COMMIT=\\\"$COMMIT\\\" -DLAS_GIT_BRANCH=\\\"$BRANCH\\\""
 
 # The exact command list this run uses (recorded verbatim in metadata.txt).
 read -r -d '' CMD_LIST <<'EOF' || true
-make test/test_las3        && ./test/test_las3        > functional_tests.log
-make test/test_contract3   && ./test/test_contract3   > contract.log
-make test/test_serde3      && ./test/test_serde3      > serialization_tests.log
-make test/test_kat3        && ./test/test_kat3        > kat.log
-make test/test_swap3       && ./test/test_swap3       > atomic_swap.log
-make test/test_pcn3        && ./test/test_pcn3        > pcn.log
-make REPRO_FLAGS=... test/bench_levels_paper && ./test/bench_levels_paper > fair_paper.log
-make REPRO_FLAGS=... test/bench_levels2      && ./test/bench_levels2      > fair_l2.log
-make REPRO_FLAGS=... test/bench_levels3      && ./test/bench_levels3      > fair_l3.log
-make REPRO_FLAGS=... test/bench_levels5      && ./test/bench_levels5      > fair_l5.log
-make test/bench_app3       && ./test/bench_app3       > application_benchmark.log
-make test/bench_classical  && ./test/bench_classical  > classical.log   # only if third_party/secp256k1-zkp present
-python3 scripts/plot_las_benchmarks.py --input-dir <run> --output-dir <run>
+make test/test_las3        && ./test/test_las3        > logs/functional_tests.log
+make test/test_contract3   && ./test/test_contract3   > logs/contract.log
+make test/test_serde3      && ./test/test_serde3      > logs/serialization_tests.log
+make test/test_kat3        && ./test/test_kat3        > logs/kat.log
+make test/test_swap3       && ./test/test_swap3       > logs/atomic_swap.log
+make test/test_pcn3        && ./test/test_pcn3        > logs/pcn.log
+make REPRO_FLAGS=... test/bench_levels_paper && ./test/bench_levels_paper > logs/fair_paper.log
+make REPRO_FLAGS=... test/bench_levels2      && ./test/bench_levels2      > logs/fair_l2.log
+make REPRO_FLAGS=... test/bench_levels3      && ./test/bench_levels3      > logs/fair_l3.log
+make REPRO_FLAGS=... test/bench_levels5      && ./test/bench_levels5      > logs/fair_l5.log
+make test/bench_app3       && ./test/bench_app3       > logs/application_benchmark.log
+make test/bench_classical  && ./test/bench_classical  > logs/classical.log   # only if third_party/secp256k1-zkp present
+# generated outputs, organised into subfolders (NOT written flat into the run root):
+python3 scripts/plot_las_benchmarks.py --input-dir <stage> --output-dir <stage>
+#   -> tables/*.csv (+ report_figure_manifest.csv), debug_figures/*, application_package/*
+python3 scripts/plot_las_paper_figures.py --input-dir tables --output-dir paper_package --appendix-dir appendix_package
+#   -> paper_package/* (Table 1 + 3 figures + KEY_FINDINGS.md + paper_figure_manifest.csv)
+#   -> appendix_package/rejection_sampling_paper.*
 EOF
 
 {
@@ -84,11 +99,12 @@ EOF
 cd "$ROOT/ref"
 
 # build_run <make-target> <binary> <logfile> [extra make vars...]
+# stdout is captured into the run's logs/ subfolder.
 build_run() {
   target="$1"; binary="$2"; logfile="$3"; shift 3
   make "$@" "$target"
-  "./$binary" > "$RUN_DIR/$logfile"
-  echo "  wrote $logfile"
+  "./$binary" > "$RUN_DIR/logs/$logfile"
+  echo "  wrote logs/$logfile"
 }
 
 echo "Correctness / test evidence:"
@@ -119,32 +135,122 @@ else
   echo "       (clone it per README_LAS.md, then re-run to capture this baseline)"
 fi
 
-# --- CSVs + figures, written directly into the SAME run folder -----------------
 cd "$ROOT"
-python3 scripts/plot_las_benchmarks.py --input-dir "$RUN_DIR" --output-dir "$RUN_DIR"
 
-# --- MANIFEST.md (lists what the run folder actually contains) -----------------
-{
-  echo "# Run $STAMP -- contents"
-  echo
-  echo "Self-contained evidence for one LAS benchmark run. Generated by"
-  echo "scripts/run_benchmark_suite.sh; older runs are never overwritten."
-  echo
-  echo "## Logs (raw benchmark/test stdout -- do not edit by hand)"
-  for f in functional_tests.log contract.log serialization_tests.log kat.log \
-           atomic_swap.log pcn.log fair_paper.log fair_l2.log fair_l3.log \
-           fair_l5.log application_benchmark.log classical.log; do
-    [ -f "$RUN_DIR/$f" ] && echo "- $f"
+# --- stage 2: parse logs -> CSVs + debug/application figures, then distribute ---
+# plot_las_benchmarks.py reads logs (and metadata.txt) from ONE directory and writes
+# everything flat into one directory, so we give it a transient staging dir and then
+# MOVE its outputs into the organised subfolders by explicit allowlist. The script
+# itself is unchanged (its parsers stay compatible); only output LOCATIONS change.
+STAGE="$RUN_DIR/.stage"
+mkdir -p "$STAGE"
+cp "$RUN_DIR"/logs/*.log "$STAGE"/
+cp "$RUN_DIR/metadata.txt" "$STAGE/"
+python3 scripts/plot_las_benchmarks.py --input-dir "$STAGE" --output-dir "$STAGE"
+
+# CSV evidence (+ the full report figure manifest) -> tables/
+TABLE_CSVS="parameter_sets.csv primary_timing.csv adaptor_overhead.csv \
+rejection_sampling.csv communication_components.csv computation_components.csv \
+las_object_catalogue.csv report_figure_manifest.csv application_atomic_swap.csv \
+application_payload_breakdown.csv application_multihop_amhl.csv"
+
+# Stage-2 application figures -> application_package/
+APP_FIGS="application_atomic_swap_payload_breakdown application_multihop_payload_vs_k \
+application_multihop_presign_time_vs_k application_multihop_norm_vs_k"
+
+# cumulative timing, internal attribution, report/duplicate variants, parameter PNGs
+DEBUG_FIGS="parameter_sets per_operation_timing communication_components_clean \
+timing_timeline_base_vs_las protocol_step_timeline timing_overhead_clean \
+computation_component_absolute communication_summary_clean adaptor_overhead_vs_level \
+acceptance_vs_level component_scaling_vs_level verify_ext_attribution_vs_level \
+parameter_sets_report per_operation_timing_report adaptor_overhead_vs_level_report \
+communication_components_clean_report"
+
+stage_move() {   # $1=dest-subfolder ; rest=exact filenames in the stage
+  d="$1"; shift
+  for f in "$@"; do [ -f "$STAGE/$f" ] && mv "$STAGE/$f" "$RUN_DIR/$d/"; done
+  return 0
+}
+stage_move_fig() {   # $1=dest-subfolder ; rest=figure basenames (.png + .pdf)
+  d="$1"; shift
+  for b in "$@"; do
+    for e in png pdf; do [ -f "$STAGE/$b.$e" ] && mv "$STAGE/$b.$e" "$RUN_DIR/$d/"; done
   done
+  return 0
+}
+
+stage_move tables $TABLE_CSVS
+stage_move_fig application_package $APP_FIGS
+stage_move_fig debug_figures $DEBUG_FIGS
+
+# Anything still in the stage (e.g. plot_las_benchmarks' own *_paper duplicates,
+# its KEY_FINDINGS*.md / paper_figure_manifest.csv, the copied logs/metadata) is
+# discarded: the canonical Stage-1 paper package is produced below by
+# plot_las_paper_figures.py, and the raw logs already live in logs/.
+rm -rf "$STAGE"
+
+# --- stage 3: the Meeting-4 Stage-1 paper package (from the CSV tables) ---------
+python3 scripts/plot_las_paper_figures.py \
+  --input-dir "$RUN_DIR/tables" \
+  --output-dir "$RUN_DIR/paper_package" \
+  --appendix-dir "$RUN_DIR/appendix_package"
+
+# --- paper_package/README.md (what to show Wang) -------------------------------
+{
+  echo "# Stage-1 LAS paper package (Meeting-4)"
   echo
-  echo "## CSV tables"
-  for f in "$RUN_DIR"/*.csv; do [ -e "$f" ] && echo "- $(basename "$f")"; done
+  echo "Show THESE files to Wang for the Meeting-4 Stage-1 discussion. Everything else"
+  echo "in this run (../debug_figures, ../application_package, ../tables, ../logs) is"
+  echo "appendix / debug / evidence only."
   echo
-  echo "## Figures (PNG + PDF)"
-  for f in "$RUN_DIR"/*.png; do [ -e "$f" ] && echo "- $(basename "$f") (+ .pdf)"; done
+  echo "- parameter_sets_paper.tex                  Table 1 -- parameter settings"
+  echo "- per_operation_timing_paper.pdf/.png       Figure 1 -- per-operation computation timing"
+  echo "- communication_components_paper.pdf/.png   Figure 2 -- communication / serialized sizes"
+  echo "- adaptor_overhead_paper.pdf/.png           Figure 3 -- adaptor overhead vs ordinary operation"
+  echo "- KEY_FINDINGS.md                           2-3 sentence summary"
+  echo "- paper_figure_manifest.csv                 provenance of each output"
   echo
-  echo "See report_figure_manifest.csv for which figures are main-report vs appendix,"
-  echo "the claim each supports, and any caution notes."
+  echo "Optional appendix: ../appendix_package/rejection_sampling_paper.pdf/.png"
+} > "$RUN_DIR/paper_package/README.md"
+
+# --- MANIFEST.md (organised; states the main package explicitly) ---------------
+{
+  echo "# Run $STAMP -- contents (organised)"
+  echo
+  echo "Self-contained evidence for one LAS benchmark run, organised into subfolders so"
+  echo "the Meeting-4 Stage-1 paper figures are not mixed with debug/application output."
+  echo "Generated by scripts/run_benchmark_suite.sh; older runs are never overwritten."
+  echo
+  echo "## MAIN PACKAGE for Wang / report Stage 1  ->  paper_package/"
+  echo "Show these for the Meeting-4 Stage-1 discussion; everything else is appendix/debug/evidence."
+  echo "- paper_package/parameter_sets_paper.tex                  (Table 1: parameter settings)"
+  echo "- paper_package/per_operation_timing_paper.pdf/.png       (Figure 1: per-operation computation)"
+  echo "- paper_package/communication_components_paper.pdf/.png   (Figure 2: communication / storage sizes)"
+  echo "- paper_package/adaptor_overhead_paper.pdf/.png           (Figure 3: adaptor overhead vs ordinary op)"
+  echo "- paper_package/KEY_FINDINGS.md, paper_package/paper_figure_manifest.csv"
+  echo "Optional appendix:"
+  echo "- appendix_package/rejection_sampling_paper.pdf/.png      (explains timing variance; NOT main)"
+  echo
+  echo "## logs/ (raw benchmark/test stdout -- do not edit by hand)"
+  for f in "$RUN_DIR"/logs/*.log; do [ -e "$f" ] && echo "- logs/$(basename "$f")"; done
+  echo
+  echo "## tables/ (CSV evidence parsed from the logs)"
+  for f in "$RUN_DIR"/tables/*.csv; do [ -e "$f" ] && echo "- tables/$(basename "$f")"; done
+  echo
+  echo "## paper_package/ (Meeting-4 Stage-1 MAIN package)"
+  for f in "$RUN_DIR"/paper_package/*; do [ -e "$f" ] && echo "- paper_package/$(basename "$f")"; done
+  echo
+  echo "## appendix_package/ (optional supporting figures)"
+  for f in "$RUN_DIR"/appendix_package/*; do [ -e "$f" ] && echo "- appendix_package/$(basename "$f")"; done
+  echo
+  echo "## debug_figures/ (cumulative timing, internal attribution, report/duplicate, parameter PNGs)"
+  for f in "$RUN_DIR"/debug_figures/*.png; do [ -e "$f" ] && echo "- debug_figures/$(basename "$f") (+ .pdf)"; done
+  echo
+  echo "## application_package/ (Stage-2: atomic swap, AMHL/multi-hop -- NOT Stage-1)"
+  for f in "$RUN_DIR"/application_package/*.png; do [ -e "$f" ] && echo "- application_package/$(basename "$f") (+ .pdf)"; done
+  echo
+  echo "Provenance: metadata.txt (CPU/OS/compiler/git). Full per-figure classification:"
+  echo "tables/report_figure_manifest.csv and paper_package/paper_figure_manifest.csv."
 } > "$RUN_DIR/MANIFEST.md"
 
 # --- repoint evidence/latest at the newest run (keep older runs) ---------------
@@ -161,4 +267,5 @@ else
 fi
 
 echo
-echo "Run complete. Everything is in: $RUN_DIR"
+echo "Run complete. Organised evidence in: $RUN_DIR"
+echo "  -> show paper_package/ to Wang (Stage-1); see MANIFEST.md for the full layout."

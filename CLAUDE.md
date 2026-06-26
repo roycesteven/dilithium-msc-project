@@ -18,6 +18,7 @@ Read these only when needed:
 * `docs/STATUS.md` — when the task needs the current deliverable/test checklist.
 * `docs/LAS.md` — when changing or checking design, benchmark interpretation, report-source text, or implementation claims.
 * `docs/THEORY_IMPL_BRIDGE.md` — when checking paper-equation to C-function mapping.
+* `docs/paper/LAS_2020_845_NOTATION.md` — when editing LAS labels, benchmark plots, report text, API/README explanations, or protocol comments (see the source-of-truth rule below).
 * `README_LAS.md` — when checking build/reproducibility instructions.
 * `docs/FUNCTION_MAP.md` — when checking reused/modified/new function classification.
 
@@ -86,6 +87,19 @@ If the task is continuing the same work, use `/compact` after saving a short che
 If the user switches to a different topic, recommend `/clear`.
 
 Do not keep an 8+ hour session alive unless there is a clear reason.
+
+## LAS paper source-of-truth rule
+
+Before editing LAS labels, benchmark plots, report text, API documentation,
+README explanations, or comments explaining the protocol, read:
+
+`docs/paper/LAS_2020_845_NOTATION.md`
+
+That file is the repo's curated working guide derived from `2020-845.pdf`. If it
+conflicts with `2020-845.pdf`, the PDF wins. If a detail is not present in the
+guide, check `2020-845.pdf` before editing. Do not invent paper notation, do not
+rename variables casually, and mark uncertain details as TODO rather than
+guessing.
 
 ## Guardrails (standing — do NOT do any of these without an explicit instruction)
 - **Do not create, delete, or switch git branches** unless explicitly requested.
