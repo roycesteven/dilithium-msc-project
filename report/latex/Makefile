@@ -26,9 +26,16 @@ endif
 # Word count (muthesis `wordcount` option reads word.count). Do not run from
 # inside LaTeX; the texcount output may need manual editing.
 wordcount:
-	perl texcount.pl -1 -sum -relaxed -inc $(MAIN).tex > word.count || \
-	  texcount -1 -sum -relaxed -inc $(MAIN).tex > word.count
+	@if command -v texcount >/dev/null 2>&1; then \
+		texcount -1 -sum -relaxed -inc report.tex > word.count; \
+	elif [ -f texcount.pl ]; then \
+		perl texcount.pl -1 -sum -relaxed -inc report.tex > word.count; \
+	else \
+		echo "ERROR: texcount not installed."; \
+		exit 127; \
+	fi
 	@echo "word.count written; enable the 'wordcount' class option to print it."
+	@cat word.count
 
 clean:
 	rm -f *.aux *.bbl *.blg *.log *.lof *.lot *.toc *.out *.fls \

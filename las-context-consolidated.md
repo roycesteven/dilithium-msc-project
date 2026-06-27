@@ -143,7 +143,7 @@ LAS-family scheme). Full deliverable/test matrix: **`docs/STATUS.md`**.
 > are all explicitly deferred until Stage 1 is signed off.
 
 **Pre-Meeting-3 deliverables [M2, explicit asks] — all ✅:**
-1. Dilithium reference builds & runs on own machine — commit hash + toolchain recorded in `README_LAS.md`. ✅
+1. Dilithium reference builds & runs on own machine — commit hash + toolchain recorded in `README.md`. ✅
 2. Literature check on LAS follow-ups (LAS + survey 2022/1151) — captured in `docs/LAS.md §1.1`. ✅
 3. Language decision — C. ✅
 4. **Function map** (call-as-is / modify / new; 0 upstream functions modified) — `docs/FUNCTION_MAP.md`. ✅

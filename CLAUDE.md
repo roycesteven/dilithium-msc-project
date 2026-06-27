@@ -19,7 +19,7 @@ Read these only when needed:
 * `docs/LAS.md` — when changing or checking design, benchmark interpretation, report-source text, or implementation claims.
 * `docs/THEORY_IMPL_BRIDGE.md` — when checking paper-equation to C-function mapping.
 * `docs/paper/LAS_2020_845_NOTATION.md` — when editing LAS labels, benchmark plots, report text, API/README explanations, or protocol comments (see the source-of-truth rule below).
-* `README_LAS.md` — when checking build/reproducibility instructions.
+* `README.md` — when checking build/reproducibility instructions.
 * `docs/FUNCTION_MAP.md` — when checking reused/modified/new function classification.
 
 If the user names specific files, inspect only those files first. Read additional files only if they are directly included, referenced, or necessary to answer the task accurately.
@@ -201,7 +201,7 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   PreVerify 244, Adapt 3, Ext 35; sizes pk 33B / sig 64B / pre-sig 162B.
   2×2 "price of post-quantum" table + analysis in `docs/LAS.md §8.3`.
 - ✅ **Reproducibility entry point + function map (Meeting-2 B5 deliverables)** —
-  `README_LAS.md` (build/run/reproduce; upstream commit hash `2374d22` +
+  `README.md` (build/run/reproduce; upstream commit hash `2374d22` +
   toolchain recorded, B5.1) and `docs/FUNCTION_MAP.md` (every Dilithium function
   classified call-as-is / modify / new; headline: **zero upstream functions
   modified**, B5.4 — also the report's "reused vs modified vs added" table, B4).
@@ -289,7 +289,7 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
 - LAS paper: eprint 2020/845 (Esgin, Ersoy, Erkin).
 - poqeth (integration template): eprint 2025/091.
 - Full design + math + results: `docs/LAS.md` · theory↔code: `docs/THEORY_IMPL_BRIDGE.md`.
-- Reproducibility: `README_LAS.md` · function classification: `docs/FUNCTION_MAP.md`.
+- Reproducibility: `README.md` · function classification: `docs/FUNCTION_MAP.md`.
 
 # Report 
 2.1 Report

@@ -15,7 +15,12 @@ the ring $\Rq = \mathbb{Z}_q[X]/(X^N+1)$. The public matrix has the form
 $A = [\,I_n \mid A'\,] \in \Rq^{\,n\times(n+\ell)}$. A key pair is a short secret
 $r$ and its image $t = A\cdot r$; the hard relation $(Y,y)$ reuses exactly the same
 structure, so a statement is ``just another public key'' and recovering its witness
-is a Module-SIS/LWE problem.
+is a Module-SIS/LWE problem. Crucially, \emph{key generation is shared}: LAS reuses
+the basic signature's KeyGen unchanged, and the statement/witness pair $(Y,y)$ is
+produced by that very same generator. LAS is therefore exactly the basic signature
+--- KeyGen, Sign, Verify --- plus the four adaptor operations below, which is why
+every comparison in this report pairs a LAS operation with the basic operation it
+extends.
 
 The base signature samples a masked commitment $w$, forms a challenge
 $c = H(\mathit{pk}, w, M)$, computes a response, and rejects when
@@ -28,7 +33,7 @@ $\inftynorm{\vecz} > \gamma-\kappa$ (\cref{eq:signbound}). The adaptor extension
   \item \textsc{PreVerify} recomputes $w' = A\vecz - c\,t$ and checks
         $c = H(\mathit{pk}, w'+Y, M)$;
   \item \textsc{Adapt} adds the witness, $\vecz \leftarrow \vecz + y$, producing a
-        signature that an ordinary verifier accepts;
+        signature that the basic verifier accepts;
   \item \textsc{Extract} recovers $y = \vecz - \hat{\vecz}$ from a signature and its
         pre-signature.
 \end{itemize}
@@ -43,7 +48,7 @@ The single subtle design point is the bound budget. \textsc{PreSign} must reject
 the tighter bound $\gamma-\kappa-1$. The witness is ternary, so $\inftynorm{y}\le 1$,
 and after \textsc{Adapt} adds it the response satisfies $\inftynorm{\vecz}\le
 \gamma-\kappa$ and clears \cref{eq:signbound}. Loosening \textsc{PreSign} to
-$\gamma-\kappa$ would let adapted signatures exceed the bound, and ordinary verify
+$\gamma-\kappa$ would let adapted signatures exceed the bound, and basic verify
 would then reject every adapted signature. \Cref{fig:flow} shows the four-operation data
 flow and, crucially, where the statement $Y$ enters and where the witness $y$ is
 revealed.
@@ -77,7 +82,7 @@ revealed.
   \end{tikzpicture}
   \caption{The LAS adaptor data flow. The statement $Y$ is folded into the challenge
   hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the
-  pre-signature into an ordinary signature; and publishing that signature lets anyone
+  pre-signature into a basic signature; and publishing that signature lets anyone
   holding the pre-signature run Extract to recover $y$. This last step is what makes an
   atomic swap atomic.}
   \label{fig:flow}
@@ -177,9 +182,9 @@ Correctness and robustness were established with four test types.
   \item \textbf{Functional tests} run 1000 iterations per Dilithium mode (2, 3, and
         5), each with fresh public parameters, keys, and message. Every iteration
         runs the full adaptor cycle and asserts: the pre-signature pre-verifies; the
-        pre-signature \emph{fails} ordinary verify (the statement-binding tripwire);
+        pre-signature \emph{fails} basic verify (the statement-binding tripwire);
         the adapted signature verifies; and the extracted witness equals the original
-        \emph{exactly}. An ordinary sign/verify round-trip and a one-bit-forgery
+        \emph{exactly}. A basic sign/verify round-trip and a one-bit-forgery
         rejection are also checked. Passing all 1000 iterations at every mode is the
         bar for functional correctness.
   \item \textbf{Serialization tests} exercise the byte encoding over 256 random
@@ -250,22 +255,29 @@ claimed, as security proofs are beyond the scope of this work.
 
 \begin{table}[t]
   \centering
-  \caption{Parameter sets used in the evaluation, all at modulus $q\approx 2^{23}$ and
-  ring degree $N=256$. The NIST-level dimensions follow the corresponding Dilithium
-  $(K,L,\tau)$ choices, used as reference lattice dimensions. The classical secp256k1
-  ECDSA adaptor is a functionality-matched baseline at classical security.}
+  \caption{Parameter sets used in the evaluation. The \emph{LAS-2020/845 reference}
+  set is the original paper's parameter set; the \emph{Simplified Dilithium-II/III/V}
+  sets reuse the dimensions of Dilithium modes~2/3/5 (so the public-key, secret, and
+  challenge dimensions line up with NIST levels~2/3/5) and are engineering benchmark
+  settings, \emph{not} formal NIST/ML-DSA security-equivalence claims. All lattice sets
+  share the ring degree $N=256$ and modulus $q=8\,380\,417\approx 2^{23}$ inherited from
+  the reused Dilithium NTT; \emph{Simplified Dilithium-III} is the project's target set.
+  The classical secp256k1 ECDSA adaptor is a functionality-matched baseline at
+  $\approx$128-bit classical security. \Cref{tab:notation} defines each symbol.}
   \label{tab:params}
-  \begin{tabular}{@{}lll@{}}
-    \toprule
-    Set & LAS $(n,\ell,\kappa)$ & Reference dimensions / level \\
-    \midrule
-    LAS paper  & $(4,4,60)$ & original construction \\
-    NIST 2     & $(4,4,39)$ & Dilithium mode 2 $(4,4,39)$, level 2 \\
-    NIST 3     & $(6,5,49)$ & Dilithium mode 3 $(6,5,49)$, level 3 \\
-    NIST 5     & $(8,7,60)$ & Dilithium mode 5 $(8,7,60)$, level 5 \\
-    Classical  & secp256k1 ECDSA adaptor & $\approx$128-bit classical \\
-    \bottomrule
-  \end{tabular}
+  \includegraphics[width=\linewidth]{figures/tab_params}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption{Security and scheme parameters: the symbol, its meaning, and the value(s)
+  it takes across the parameter sets, \emph{listed in the row order of}
+  \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
+  paper's ring-degree symbol $d$ is written $N$ here, because the reused Dilithium NTT
+  fixes $N=256$. The figure and table captions in \cref{ch:results} refer back to these
+  names and values.}
+  \label{tab:notation}
+  \includegraphics[width=\linewidth]{figures/tab_notation}
 \end{table}
 
 \paragraph{Component-level size analysis.}

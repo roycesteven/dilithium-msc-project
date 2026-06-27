@@ -24,7 +24,7 @@ Scope:
 - evm/README.md
 - ref/test/export_packed.c
 - ref/serialize.*
-- README_LAS.md
+- README.md
 - docs/LAS.md
 - docs/STATUS.md
 - evidence/gas.log

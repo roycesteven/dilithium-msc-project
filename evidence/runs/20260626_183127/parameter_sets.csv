@@ -1,5 +1,0 @@
-level,display,meaning,n,ell,M,kappa,gamma,N,Q
-paper,paper-derived (default LAS),"Paper-derived default LAS setting; built on Dilithium modulus Q=8380417, not the exact paper modulus.",4,4,8,60,122880,256,8380417
-L2,L2-like,L2-like LAS/Base setting from simplified Dilithium-2 dimensions (not a formal NIST security claim).,4,4,8,39,79872,256,8380417
-L3,L3-like (target),L3-like LAS/Base setting from simplified Dilithium-3 dimensions (target; not a formal NIST security claim).,6,5,11,49,137984,256,8380417
-L5,L5-like,L5-like LAS/Base setting from simplified Dilithium-5 dimensions (not a formal NIST security claim).,8,7,15,60,230400,256,8380417

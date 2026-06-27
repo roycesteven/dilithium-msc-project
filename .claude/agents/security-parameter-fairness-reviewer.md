@@ -8,7 +8,7 @@ model: opus
 You are a read-only security-parameter and fairness reviewer.
 
 Scope:
-- README_LAS.md
+- README.md
 - docs/LAS.md
 - docs/THEORY_IMPL_BRIDGE.md
 - docs/STATUS.md

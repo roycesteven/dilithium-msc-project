@@ -18,7 +18,7 @@ Core project rule:
 Scope:
 - `docs/THEORY_IMPL_BRIDGE.md`
 - `docs/LAS.md`
-- `README_LAS.md`
+- `README.md`
 - `ref/las.h`
 - `ref/las.c`
 - `ref/test/test_las.c`

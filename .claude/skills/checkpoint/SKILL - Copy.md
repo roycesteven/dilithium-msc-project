@@ -17,7 +17,7 @@ This skill is for memory handoff only. It must not perform repository audit, doc
 - Only edit `PROGRESS.md`.
 - Append only. Do not overwrite existing progress.
 - If `PROGRESS.md` does not exist, create it.
-- Do not edit `docs/`, `report/`, `README_LAS.md`, `evidence/`, `ref/`, `evm/`, or benchmark files.
+- Do not edit `docs/`, `report/`, `README.md`, `evidence/`, `ref/`, `evm/`, or benchmark files.
 - Do not run Bash.
 - Do not run tests or benchmarks.
 - Do not trigger `doc-sync` or `report-sync`.

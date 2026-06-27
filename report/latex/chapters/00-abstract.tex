@@ -26,8 +26,9 @@ the optimised CRYSTALS-Dilithium reference is reported only as context, and a cl
 ECDSA adaptor as a functionality-matched ``price of post-quantum'' baseline. Every
 timing is a mean over ten runs with its standard deviation. The data show that the
 adaptor layer is almost free in computation --- PreSign, PreVerify, and Adapt each add
-at most about six percent over the base operation they mirror, at every parameter set,
-and Extract is the cheapest operation. The real cost is \emph{communication}: the
+only single-digit overhead (at most about eight percent) over the basic operation they
+mirror, at every parameter set, and Extract is the cheapest operation. The real cost is
+\emph{communication}: the
 signature is 98.6--99.3\% lattice response vector $z$, and an adaptor swap additionally
 transmits a public-key-sized statement. The atomic-swap demonstration settles both
 legs of a two-party, two-chain exchange and asserts that a pre-signature is unspendable

@@ -20,7 +20,7 @@
  * Methodology notes (report these alongside the numbers):
  *  - REUSED implementation (supervisor-sanctioned): we time their code as-is;
  *    only this harness is ours.  Library commit is printed by `make` provenance
- *    (third_party/secp256k1-zkp, see README_LAS.md).
+ *    (third_party/secp256k1-zkp, see README.md).
  *  - libsecp256k1 is constant-time, heavily optimised production code; the LAS
  *    side is a reference-style simplified scheme.  The comparison therefore
  *    *flatters* the classical side - state this honestly.

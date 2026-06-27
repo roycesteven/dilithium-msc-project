@@ -1,0 +1,20 @@
+=== Classical adaptor baseline: libsecp256k1-zkp ecdsa_adaptor ===
+(same machine/compiler as bench_las3; 2000 iterations/op; reused
+ production implementation - only this timing harness is ours)
+
+  KeyGen / statement gen     33.68 us
+  Sign   (ECDSA)            45.16 us
+  Verify (ECDSA)            68.82 us
+  PreSign   (encrypt)      206.69 us
+  PreVerify (verify)       268.41 us
+  Adapt     (decrypt)        3.51 us
+  Ext       (recover)       36.06 us
+
+  sizes: pk/statement 33 B (compressed) | sk/witness 32 B |
+         sig 64 B compact (70 B DER) | pre-sig (adaptor) 162 B
+
+  note: the 162 B pre-signature is a syntactically distinct object
+  (ECDSA sig + DLEQ proof); LAS pre-sigs share the signature format
+  and fail Verify cryptographically. Constant-time production code -
+  comparison flatters the classical side vs reference-style LAS.
+=== classical baseline OK ===

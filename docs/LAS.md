@@ -905,7 +905,7 @@ at commit `95b9835` and benchmarked **on the same machine and compiler** as ever
 LAS number in this document — so the comparison needs no hardware caveats. Per the
 supervisor's guidance the implementation is *reused as-is*; only the timing
 harness (which mirrors the LAS operation set one-to-one) is ours. Reproduce via
-`README_LAS.md` (one-time clone + `make test/bench_classical`).
+`README.md` (one-time clone + `make test/bench_classical`).
 
 **The 2×2 timing matrix (µs/op, 2000 iters, same machine):**
 

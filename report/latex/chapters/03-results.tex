@@ -27,8 +27,8 @@ lists the checks and their outcomes.
     \# & Property & Result \\
     \midrule
     1 & PreSign produces a pre-signature that PreVerify accepts & pass \\
-    2 & the pre-signature \emph{fails} ordinary Verify (statement-binding tripwire) & pass \\
-    3 & Adapt yields a signature that ordinary Verify accepts & pass \\
+    2 & the pre-signature \emph{fails} basic Verify (statement-binding tripwire) & pass \\
+    3 & Adapt yields a signature that basic Verify accepts & pass \\
     4 & Extract recovers the witness \emph{exactly} ($y'=y$) & pass \\
     5a & a tampered message fails Verify & pass \\
     5b & every single bit-flip of the packed signature is rejected & pass \\
@@ -39,7 +39,7 @@ lists the checks and their outcomes.
 \end{table}
 
 Each clause matters. Clauses~1--4 are the adaptor contract itself: a pre-signature is
-verifiable yet unspendable (the tripwire, clause~2), becomes an ordinary signature
+verifiable yet unspendable (the tripwire, clause~2), becomes a basic signature
 once the witness is added (clause~3), and the act of completing it reveals the witness
 (clause~4) --- the mechanism that makes an atomic swap atomic. Clauses~5--6 are
 robustness: the byte-level verifier an on-chain integration would consume must not
@@ -53,74 +53,58 @@ flags.
 
 The primary, fair comparison is LAS against its own simplified base, since they share
 algorithm, parameters, and primitives (\cref{sec:benchmethod}); it measures the
-overhead of the adaptor layer. \Cref{tab:overhead} reports it at the paper parameters,
-pairing each adaptor operation with the base operation it mirrors. Each entry is the
-mean $\pm$ sample standard deviation over ten runs of one thousand iterations
-(\texttt{bench\_levels}).
+overhead of the adaptor layer. \Cref{tab:overhead} reports it at the project's target
+setting, \emph{Simplified Dilithium-III} ($n{=}6$, $\ell{=}5$, $\kappa{=}49$;
+\cref{tab:params,tab:notation}), pairing each adaptor operation with the basic
+operation it mirrors; \cref{tab:overhead-levels} then confirms the same overhead at all
+four settings. Each entry is the mean $\pm$ sample standard deviation over ten runs of
+one thousand iterations (\texttt{bench\_levels}).
 
 \begin{table}[t]
   \centering
-  \caption{Primary fair comparison: adaptor overhead over the simplified base, paper
-  parameters ($n{=}\ell{=}4$, $\kappa{=}60$), $\mu$s, mean $\pm$ sample SD. Overhead is
-  the increase of each adaptor operation over its base analogue.}
+  \caption{Key overhead summary at the \emph{Simplified Dilithium-III} (target) setting
+  ($n{=}6$, $\ell{=}5$, $M{=}11$, $\kappa{=}49$, $\gamma{=}137\,984$, $N{=}256$,
+  $q{=}8\,380\,417$); $\mu$s/op, mean $\pm$ sample SD over 10 runs $\times$ 1000
+  iterations (\texttt{bench\_levels}). Overhead is each adaptor operation over its basic
+  analogue; KeyGen (and statement generation) is shared by the basic signature and LAS.}
   \label{tab:overhead}
-  \begin{tabular}{@{}llrr r@{}}
-    \toprule
-    Adaptor op & paired base op & base ($\mu$s) & adaptor ($\mu$s) & overhead \\
-    \midrule
-    PreSign   & Sign   & $763 \pm 27$ & $797 \pm 26$ & $+4.4\%$ \\
-    PreVerify & Verify & $182 \pm 2$  & $191 \pm 4$  & $+5.0\%$ \\
-    Adapt     & Verify & $182 \pm 2$  & $193 \pm 8$  & $+5.9\%$ \\
-    Extract   & ---    & ---          & $63 \pm 0.4$ & (separate) \\
-    \midrule
-    KeyGen / statement gen & & \multicolumn{2}{c}{$80 \pm 1$ (shared)} & --- \\
-    \bottomrule
-  \end{tabular}
+  \includegraphics[width=0.9\linewidth]{figures/tab_overhead_l3}
 \end{table}
 
 The result is that the adaptor layer is almost free in computation, and the numbers
 are not just small --- they are small \emph{for structural reasons}:
 \begin{itemize}
-  \item \textbf{PreSign $\approx$ Sign} ($+4.4\%$): PreSign runs the same masked-commit,
+  \item \textbf{PreSign $\approx$ Sign} ($+6.7\%$): PreSign runs the same masked-commit,
         hash, respond, reject loop as Sign; it only adds the statement $Y$ into the
         Fiat--Shamir commitment and rejects at a slightly tighter bound. Neither
         changes the asymptotic work.
-  \item \textbf{PreVerify $\approx$ Verify} ($+5.0\%$): PreVerify recomputes the same
+  \item \textbf{PreVerify $\approx$ Verify} ($+3.1\%$): PreVerify recomputes the same
         commitment shape as Verify, differing only by the $+Y$ addition before hashing.
-  \item \textbf{Adapt $\approx$ Verify} ($+5.9\%$): Adapt first runs a PreVerify and
+  \item \textbf{Adapt $\approx$ Verify} ($+8.1\%$): Adapt first runs a PreVerify and
         then adds the witness vector, so it costs about one verification plus a few
         polynomial additions.
-  \item \textbf{Extract is cheapest and reported separately}: it has no base analogue;
+  \item \textbf{Extract is cheapest and reported separately}: it has no basic analogue;
         it only subtracts $z-\hat z$ and checks $A\,y=Y$.
 \end{itemize}
 
 This overhead is stable across security levels. \Cref{tab:overhead-levels} repeats the
-measurement at each parameter set: the adaptor premium stays at or below roughly six
-percent everywhere, so adding adaptor functionality does not become more expensive as
-the scheme is scaled up.
+measurement at each parameter set: the adaptor premium stays in the single digits ---
+at most about eight percent --- everywhere, so adding adaptor functionality does not
+become more expensive as the scheme is scaled up.
 
 \begin{table}[t]
   \centering
-  \caption{Adaptor overhead is small at every parameter set (\texttt{bench\_levels}).
-  Percentages are each adaptor operation over its base analogue.}
+  \caption{Adaptor overhead is small at every parameter set (\texttt{bench\_levels};
+  mean over 10 runs $\times$ 1000 iters, Extract in $\mu$s). Percentages are each
+  adaptor operation over its basic analogue.}
   \label{tab:overhead-levels}
-  \begin{tabular}{@{}lrrrr@{}}
-    \toprule
-    Set $(n,\ell,\kappa)$ & PreSign/Sign & PreVerify/Verify & Adapt/Verify & Extract ($\mu$s) \\
-    \midrule
-    paper $(4,4,60)$ & $+4.4\%$ & $+5.0\%$ & $+5.9\%$ & 63 \\
-    NIST 2 $(4,4,39)$ & $+4.8\%$ & $+5.0\%$ & $+4.4\%$ & 64 \\
-    NIST 3 $(6,5,49)$ & $+3.2\%$ & $+3.9\%$ & $+3.6\%$ & 100 \\
-    NIST 5 $(8,7,60)$ & $+3.3\%$ & $+3.8\%$ & $+1.9\%$ & 150 \\
-    \bottomrule
-  \end{tabular}
+  \includegraphics[width=\linewidth]{figures/tab_overhead_levels}
 \end{table}
 
 Signing and pre-signing are dearer than verification because they use rejection
 sampling. The acceptance rate was measured directly, by counting rejection-loop
-attempts rather than estimating from a timing ratio: at the paper parameters
-approximately 37\% of attempts are accepted, so a signature takes about 2.7 attempts
-on average. This matches the closed-form prediction: one attempt is accepted only if
+attempts rather than estimating from a timing ratio: at every setting approximately
+37\% of attempts are accepted, so a signature takes about 2.7 attempts on average. This matches the closed-form prediction: one attempt is accepted only if
 all $(n+\ell)\cdot N$ response coefficients fall within the bound, giving a per-attempt
 acceptance of $(1-\kappa/\gamma)^{(n+\ell)N}\approx e^{-1}\approx 36.8\%$. Rejection
 sampling is intrinsic to the Fiat--Shamir-with-aborts family, not a defect of this
@@ -137,32 +121,19 @@ size, not merely to state that signatures are large.
 
 \begin{table}[t]
   \centering\small
-  \caption{LAS objects by component (packed bytes; \texttt{bench\_levels}). The paper
-  set shares the NIST~2 dimensions. The challenge $c$ is fixed; the response $z$ grows
-  with $n+\ell$ and dominates the signature at every level.}
+  \caption{LAS objects by component (packed bytes; \texttt{bench\_levels}). The
+  LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The
+  challenge $c$ is fixed; the response $z$ grows with $n+\ell$ and dominates the
+  signature at every setting.}
   \label{tab:components}
-  \begin{tabular}{@{}lrrr@{}}
-    \toprule
-    Component & NIST 2 $(4,4)$ & NIST 3 $(6,5)$ & NIST 5 $(8,7)$ \\
-    \midrule
-    $c$ (challenge)      & 64    & 64    & 64 \\
-    $z$ (response)       & 4608  & 6688  & 9120 \\
-    \textbf{Signature $(c,z)$} & \textbf{4672} & \textbf{6752} & \textbf{9184} \\
-    \quad $z$ as \% of signature & 98.6\% & 99.1\% & 99.3\% \\
-    \addlinespace
-    Public key $pk$      & 2944  & 4416  & 5888 \\
-    Secret key $sk$      & 512   & 704   & 960 \\
-    Statement $Y$ (LAS only)     & 2944 & 4416 & 5888 \\
-    Witness $y$ (LAS only)       & 512  & 704  & 960 \\
-    Pre-signature (LAS only)     & 4672 & 6752 & 9184 \\
-    \bottomrule
-  \end{tabular}
+  \includegraphics[width=0.85\linewidth]{figures/tab_components}
 \end{table}
 
 Two points follow, and together they give the sharp conclusion of the evaluation:
 \begin{itemize}
   \item \textbf{The response $z$ is essentially the entire signature} --- 98.6\% at
-        NIST~2, rising to 99.3\% at NIST~5. The challenge $c$ is a fixed 64 bytes and
+        Simplified Dilithium-II, rising to 99.3\% at Simplified Dilithium-V. The
+        challenge $c$ is a fixed 64 bytes and
         is irrelevant to size. Any optimisation of LAS signatures is an optimisation
         of $z$.
   \item \textbf{An adaptor swap additionally transmits a public-key-sized statement
@@ -172,8 +143,8 @@ Two points follow, and together they give the sharp conclusion of the evaluation
 
 \noindent\textbf{The sharp conclusion: the cost of LAS is not adaptor computation but
 communication --- specifically the response vector $z$ and the statement $Y$.} The
-preceding section showed the adaptor operations add at most about six percent of
-compute over the base scheme; this section shows the objects that move on the wire are
+preceding section showed the adaptor operations add at most about eight percent of
+compute over the basic scheme; this section shows the objects that move on the wire are
 one to a few kilobytes, dominated by $z$. For a blockchain setting, where every byte is
 stored and replicated, this is the property that matters, and it is a far more useful
 statement than ``the signature is 4672 bytes''.
@@ -183,6 +154,26 @@ The response is stored at its full width: each coefficient occupies 18--19 bits
 clearest opportunity for reducing the on-wire footprint, since compressing $z$ would
 shrink the signature, pre-signature, and settlement payload together; it is left as
 future work (\cref{sec:future}).
+
+For a single reference point, \cref{tab:complete-l3} consolidates \emph{every}
+communication object and \emph{every} protocol operation at the target setting next to
+the basic signature, so the complete cost of the adaptor layer can be read in one
+place: the key pair and KeyGen are shared, the four adaptor operations add single-digit
+time overhead, and the only extra objects on the wire are the public statement $Y$ and
+the signature-sized pre-signature.
+
+\begin{table}[t]
+  \centering\small
+  \caption{Complete LAS vs.\ basic-signature comparison at the \emph{Simplified
+  Dilithium-III} (target) setting ($n{=}6$, $\ell{=}5$, $M{=}11$, $\kappa{=}49$,
+  $\gamma{=}137\,984$, $N{=}256$, $q{=}8\,380\,417$). \emph{Top:} communication ---
+  packed bytes of every object. \emph{Bottom:} computation --- $\mu$s/op, mean $\pm$
+  sample SD over 10 runs $\times$ 1000 iterations (\texttt{bench\_levels}). ``Basic'' is
+  the simplified Dilithium-style base signature; shared rows are byte- or
+  cycle-identical in both. The adapted signature is itself a valid basic signature.}
+  \label{tab:complete-l3}
+  \includegraphics[width=0.95\linewidth]{figures/tab_complete_l3}
+\end{table}
 
 \subsection{The price of post-quantum: classical adaptor baseline}
 \label{sec:res-classical}
@@ -198,50 +189,35 @@ therefore measures the practical cost of moving from a classical adaptor signatu
 post-quantum one. Plain ECDSA is not used, because the counterpart of an adaptor
 signature is another adaptor signature.
 
-For this baseline LAS is instantiated using Dilithium-Level-2-aligned parameters, and
-only that level is used. The reason is that secp256k1 offers roughly 128-bit classical
-security, and the nearest post-quantum target is NIST level~2 (also pitched at the
-128-bit category); aligning LAS to level~2 therefore gives the most like-for-like
-security target for the classical scheme. Comparing the 128-bit classical adaptor
-against LAS at level~3 or level~5 would pit it against a deliberately stronger
-post-quantum configuration and would understate the classical scheme, so the
-higher levels are reserved for the parameter-sensitivity study of
-\cref{sec:res-compute} and not used here. \Cref{tab:classical} reports both schemes at
-their adaptor operations.
+For this baseline LAS is instantiated at the \emph{Simplified Dilithium-II} parameters,
+and only that setting is used. The reason is that secp256k1 offers roughly 128-bit
+classical security, and the nearest post-quantum target is NIST level~2 (also pitched at
+the 128-bit category); aligning LAS to the Dilithium-II dimensions therefore gives the
+most like-for-like security target for the classical scheme. Comparing the 128-bit
+classical adaptor against LAS at the Simplified Dilithium-III or -V settings would pit
+it against a deliberately stronger post-quantum configuration and would understate the
+classical scheme, so the higher settings are reserved for the parameter-sensitivity
+study of \cref{sec:res-compute} and not used here. \Cref{tab:classical} reports both
+schemes at their adaptor operations.
 
 \begin{table}[t]
   \centering
   \caption{Classical vs.\ post-quantum adaptor signature: same functionality, different
-  security foundation. Classical secp256k1 ($\approx$128-bit classical) and LAS with
-  Dilithium-Level-2-aligned parameters. Timings $\mu$s/op; sizes bytes. The statement
-  is produced by KeyGen and has the public-key size.}
+  security foundation. Classical secp256k1 ($\approx$128-bit classical) and LAS at the
+  \emph{Simplified Dilithium-II} parameters. Timings $\mu$s/op (mean over 10 runs
+  $\times$ 1000 iterations, same machine); sizes in bytes. KeyGen also produces the
+  statement/witness, which take the public-key/secret-key size.}
   \label{tab:classical}
-  \begin{tabular}{@{}lrr@{}}
-    \toprule
-    & ECDSA adaptor & LAS adaptor \\
-    & (classical) & (post-quantum) \\
-    \midrule
-    KeyGen    & 31  & 77 \\
-    Sign      & 41  & 857 \\
-    Verify    & 62  & 181 \\
-    PreSign   & 189 & 898 \\
-    PreVerify & 244 & 190 \\
-    Adapt     & 3   & 189 \\
-    Extract   & 35  & 64 \\
-    \midrule
-    public key / statement & 33 & 2944 \\
-    secret key / witness   & 32 & 512 \\
-    signature              & 64 & 4672 \\
-    \bottomrule
-  \end{tabular}
+  \includegraphics[width=0.72\linewidth]{figures/tab_classical}
 \end{table}
 
 This baseline compares two adaptor-signature schemes with the same high-level
 functionality but different security assumptions: classical discrete-log security
 versus post-quantum lattice security. Two findings stand out. First, the post-quantum
 price is paid almost entirely in \emph{size}: LAS's public key and signature are
-roughly 45--90 times larger than the classical adaptor's, whereas the operation times
-stay within the same order of magnitude. Second, the two schemes pay their
+roughly 70 to 90 times larger than the classical adaptor's, whereas the operation times
+differ by at most about twenty times and stay sub-millisecond. Second, the two schemes
+pay their
 \emph{adaptor} overhead in opposite ways. The classical ECDSA adaptor must attach a
 discrete-logarithm-equality proof, so its PreSign and PreVerify are several times its
 own basic sign and verify; LAS folds the statement into a hash it already computes, so
@@ -262,7 +238,7 @@ Bob, who knows $y$, adapts and publishes his signature to claim Alice's coin; th
 of publishing reveals $y$, which Alice extracts and uses to adapt and publish her own
 signature, claiming Bob's coin. Either both legs settle or neither does. The demo
 prints this narrative and asserts every step, including the counterfactual that a
-pre-adaptation signature fails ordinary verification.
+pre-adaptation signature fails basic verification.
 
 A small ledger abstraction takes this closer to a real chain: accounts with balances,
 a block height, and adaptor-locked contracts (the scriptless analogue of a

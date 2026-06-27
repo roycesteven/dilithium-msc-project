@@ -23,10 +23,12 @@ parsing fails loudly if a required value is missing or inconsistent; the optiona
 application log is skipped with a clear warning if absent or malformed (without
 failing the fair-benchmark outputs).
 
-Paper notation: pp=(A,H), pk=t, sk=r, statement Y=t', witness r'(=y_witness),
-signing mask y_mask, commitment w=A*y_mask (hashed into c, NOT transmitted),
-pre-signature response z_hat, final response z, Ext/Extract s=z-z_hat. The base
-path and the LAS adaptor path are two separate protocols and are never summed.
+Paper notation (eprint 2020/845): pp=(A,H), pk=t, sk=r, statement Y=t', witness r'
+(the y of the pair (Y,y); Algorithm 2 writes r':=y), masking randomness y,
+commitment w=A*y (hashed into c, NOT transmitted), pre-signature response z_hat
+(ASCII fallback for the paper's hat-z), final response z, Ext s=z-z_hat. No invented
+aliases are used. The base path and the LAS adaptor path are two separate protocols
+and are never summed.
 """
 import argparse
 import csv
@@ -54,37 +56,38 @@ HEADLINE = "L3"   # Dilithium-3-aligned: the project's stated target set
 # NOT self-explanatory). These are LAS PARAMETER SETS derived from simplified
 # Dilithium dimensions, NOT formal NIST security-level claims. (LaTeX-safe text.)
 LEVEL_DESC = {
-    "paper": "Paper-derived default LAS setting; built on Dilithium modulus "
+    "paper": "LAS-2020/845 reference parameter set; built on the Dilithium modulus "
              "Q=8380417, not the exact paper modulus.",
-    "L2": "L2-like LAS/Base setting from simplified Dilithium-2 dimensions "
-          "(not a formal NIST security claim).",
-    "L3": "L3-like LAS/Base setting from simplified Dilithium-3 dimensions "
-          "(target; not a formal NIST security claim).",
-    "L5": "L5-like LAS/Base setting from simplified Dilithium-5 dimensions "
-          "(not a formal NIST security claim).",
+    "L2": "Simplified Dilithium-II parameter setting (LAS/Base) from the Dilithium "
+          "mode-2 dimensions (not a formal NIST security claim).",
+    "L3": "Simplified Dilithium-III parameter setting (LAS/Base) from the Dilithium "
+          "mode-3 dimensions (target; not a formal NIST security claim).",
+    "L5": "Simplified Dilithium-V parameter setting (LAS/Base) from the Dilithium "
+          "mode-5 dimensions (not a formal NIST security claim).",
 }
 # Short display labels for figures/tables (the data keys stay paper/L2/L3/L5).
 LEVEL_DISPLAY = {
-    "paper": "paper-derived (default LAS)",
-    "L2": "L2-like",
-    "L3": "L3-like (target)",
-    "L5": "L5-like",
+    "paper": "LAS-2020/845 reference",
+    "L2": "Simplified Dilithium-II",
+    "L3": "Simplified Dilithium-III (target)",
+    "L5": "Simplified Dilithium-V",
 }
 # Compact labels for the paper-facing package (one short token per setting).
 PAPER_DISPLAY = {
-    "paper": "paper-derived",
-    "L2": "L2-like",
-    "L3": "L3-like",
-    "L5": "L5-like",
+    "paper": "LAS-2020/845 reference",
+    "L2": "Simplified Dilithium-II",
+    "L3": "Simplified Dilithium-III",
+    "L5": "Simplified Dilithium-V",
 }
 # Distinct fill per level for grouped/per-level bars.
 LEVEL_COLORS = ["#6baed6", "#fd8d3c", "#74c476", "#9e9ac8"]
 # One shared sentence that disambiguates the axes a reader cannot infer.
 LEVELS_CAPTION = (
-    'Settings are LAS parameter sets, NOT formal NIST levels: "paper-derived" '
-    "uses Dilithium's modulus; L2/L3/L5-like derive from simplified "
-    "Dilithium-2/3/5 dimensions.   Base = simplified Dilithium-style signature "
-    "(no statement Y);  LAS = adaptor path (statement Y folded into the hash)."
+    "Settings are LAS parameter sets, NOT formal NIST levels: the LAS-2020/845 "
+    "reference set uses Dilithium's modulus; the Simplified Dilithium-II/III/V sets "
+    "reuse the Dilithium mode-2/3/5 dimensions.   Base = simplified Dilithium-style "
+    "basic signature (no statement Y);  LAS = adaptor path (statement Y folded into "
+    "the hash)."
 )
 
 
@@ -178,7 +181,9 @@ def parse_log(path):
         d["t_presign"] = _anchored_mean_sd(prim, r"PreSign", "PreSign")
         d["t_preverify"] = _anchored_mean_sd(prim, r"PreVerify", "PreVerify")
         d["t_adapt"] = _anchored_mean_sd(prim, r"Adapt", "Adapt")
-        d["t_ext"] = _anchored_mean_sd(prim, r"Ext\s*/\s*Extract", "Ext / Extract")
+        # Tolerant: matches the current "Ext" label and the older "Ext / Extract"
+        # label, so existing logs and regenerated logs both parse.
+        d["t_ext"] = _anchored_mean_sd(prim, r"Ext(?:\s*/\s*Extract)?", "Ext")
 
         over = _section(lines, "Adaptor overhead", "# DIAGNOSTICS")
 
@@ -227,7 +232,8 @@ def parse_log(path):
         d["sz_pk"] = grab_int(r"pk = t\s+(\d+)", "pk")
         d["sz_sk"] = grab_int(r"sk = r\s+(\d+)", "sk")
         d["sz_Y"] = grab_int(r"Y = t'\s+(\d+)", "Y")
-        d["sz_ywit"] = grab_int(r"r' = y_witness\s+(\d+)", "y_witness")
+        # Tolerant: matches the current "r'" label and the older "r' = y_witness".
+        d["sz_ywit"] = grab_int(r"r'(?:\s*=\s*y_witness)?\s+(\d+)", "witness r'")
         d["sz_c"] = grab_int(r"^\s*challenge\s+c\s+(\d+)", "c")
         d["sz_z"] = grab_int(r"z \(final\)\s+(\d+)", "z")
         d["sz_zhat"] = grab_int(r"z_hat \(pre-sig\)\s+(\d+)", "z_hat")
@@ -396,7 +402,7 @@ COL = {
     "base_verify": "#fdd0a2", "las_preverify": "#d94701",
     "adapt": "#6a51a3", "witness_add": "#bcbddc", "ext": "#238b45",
     "c": "#d9a7a0", "z": "#99000d", "zhat": "#cb181d",
-    "Y": "#1b9e9e", "y_witness": "#238b45", "w": "#969696",
+    "Y": "#1b9e9e", "witness": "#238b45", "w": "#969696",
     "hash": "#feb24c", "cr_all": "#3182bd", "norm": "#bdbdbd",
     "pk": "#6baed6", "sk": "#74c476", "sig": "#525252", "presig": "#08519c",
 }
@@ -520,8 +526,7 @@ def make_per_op_timing(data, out_dir, machine):
         ax.bar([x + off for x in xs], means, width, yerr=sds, capsize=2,
                color=LEVEL_COLORS[i % len(LEVEL_COLORS)], edgecolor="black",
                linewidth=0.3,
-               label="%s  (n=%d, ℓ=%d, κ=%d)"
-               % (LEVEL_DISPLAY.get(lvl, lvl), d["n"], d["ell"], d["kappa"]))
+               label="%s" % LEVEL_DISPLAY.get(lvl, lvl))
     ax.set_xticks(xs)
     ax.set_xticklabels([n.replace(" ", "\n") for n, _ in ops], fontsize=8.5)
     ax.set_ylabel("time per operation (µs)")
@@ -553,11 +558,11 @@ def make_comm_components(data, out_dir, machine):
         ("public key  pk = t", dh["sz_pk"], COL["pk"]),
         ("secret key  sk = r", dh["sz_sk"], COL["sk"]),
         ("statement  Y = t'", dh["sz_Y"], COL["Y"]),
-        ("adaptor witness  r' (= y_witness)", dh["sz_ywit"], COL["y_witness"]),
+        ("adaptor witness  r'", dh["sz_ywit"], COL["witness"]),
         ("challenge  c", dh["sz_c"], COL["c"]),
-        ("response  z / z_hat", dh["sz_z"], COL["z"]),
+        ("response  z / ẑ", dh["sz_z"], COL["z"]),
         ("signature  (c, z)", dh["sz_sig"], COL["sig"]),
-        ("pre-signature  (c, z_hat)", dh["sz_presig"], COL["presig"]),
+        ("pre-signature  (c, ẑ)", dh["sz_presig"], COL["presig"]),
         ("adapted sig  (c, z)", dh["sz_adapted"], COL["adapt"]),
     ]
     ys = list(range(len(rows)))[::-1]
@@ -577,8 +582,8 @@ def make_comm_components(data, out_dir, machine):
                  % (LEVEL_DISPLAY.get(hl, hl), dh["n"], dh["ell"], dh["kappa"],
                     100.0 * dh["sz_z"] / dh["sz_sig"]))
     note = textwrap.fill(
-        "signature = (c, z),  pre-signature = (c, z_hat),  "
-        "adapted = (c, z_hat + r'):  all %d B — same encoded size because the "
+        "signature = (c, z),  pre-signature = (c, ẑ),  "
+        "adapted = (c, ẑ + r'):  all %d B — same encoded size because the "
         "adaptor witness r' changes the response value, it does not add a new "
         "serialized field." % dh["sz_sig"], 118)
     ax.grid(axis="x", alpha=0.3)
@@ -628,7 +633,7 @@ def make_param_table_report(data, out_dir):
 
 def make_per_op_timing_report(data, out_dir):
     """per_operation_timing_report: per-operation timing, one bar per parameter set,
-    mean +/- SD error bars, ordinary signature vs LAS adaptor. No title/footer."""
+    mean +/- SD error bars, basic signature vs LAS adaptor. No title/footer."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -650,14 +655,13 @@ def make_per_op_timing_report(data, out_dir):
         ax.bar([x + off for x in xs], means, width, yerr=sds, capsize=2,
                color=LEVEL_COLORS[i % len(LEVEL_COLORS)], edgecolor="black",
                linewidth=0.3,
-               label="%s  (n=%d, ℓ=%d, κ=%d)"
-               % (LEVEL_DISPLAY.get(lvl, lvl), d["n"], d["ell"], d["kappa"]))
+               label="%s" % LEVEL_DISPLAY.get(lvl, lvl))
     ax.set_xticks(xs)
     ax.set_xticklabels([n for n, _ in ops])
     ax.set_ylabel("time per operation (microseconds)")
     ymax = ax.get_ylim()[1]
     ax.axvline(n_base - 0.5, color="#888888", linestyle="--", linewidth=1.0)
-    ax.text((n_base - 1) / 2.0, ymax * 0.97, "ordinary signature operations",
+    ax.text((n_base - 1) / 2.0, ymax * 0.97, "basic signature operations",
             ha="center", va="top", fontsize=10, fontweight="bold", color="#333333")
     ax.text((n_base + len(ops) - 1) / 2.0, ymax * 0.97, "LAS adaptor operations",
             ha="center", va="top", fontsize=10, fontweight="bold", color="#08519c")
@@ -668,15 +672,15 @@ def make_per_op_timing_report(data, out_dir):
 
 
 def make_adaptor_overhead_report(data, out_dir):
-    """adaptor_overhead_vs_level_report: adaptor op vs the mirrored ordinary op (%),
+    """adaptor_overhead_vs_level_report: adaptor op vs the mirrored basic op (%),
     grouped by parameter set, value labels. No title/footer."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     levels = _levels_in_order(data)
-    short = {"paper": "paper-derived", "L2": "L2-like", "L3": "L3-like",
-             "L5": "L5-like"}
+    short = {"paper": "LAS-2020/845 reference", "L2": "Simplified Dilithium-II",
+             "L3": "Simplified Dilithium-III", "L5": "Simplified Dilithium-V"}
     xs = list(range(len(levels)))
     fig, ax = plt.subplots(figsize=(8.8, 5.2))
     ov_series = [("PreSign versus Sign", "o_presign", COL["las_presign"]),
@@ -695,11 +699,9 @@ def make_adaptor_overhead_report(data, out_dir):
     ax.axhline(0, color="black", linewidth=0.6)
     ax.set_ylim(top=max(allvals) * 1.28)              # headroom so the legend clears the bars
     ax.set_xticks(xs)
-    ax.set_xticklabels(["%s\nn=%d, ℓ=%d, κ=%d"
-                        % (short.get(lvl, lvl), data[lvl]["n"], data[lvl]["ell"],
-                           data[lvl]["kappa"]) for lvl in levels], fontsize=7.5)
+    ax.set_xticklabels([short.get(lvl, lvl) for lvl in levels], fontsize=7.5)
     ax.set_xlabel("parameter setting (scaling context)")
-    ax.set_ylabel("overhead versus ordinary operation (percent)", fontsize=9)
+    ax.set_ylabel("overhead versus basic operation (percent)", fontsize=9)
     ax.legend(fontsize=8, loc="upper right")
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "adaptor_overhead_vs_level_report")
@@ -718,12 +720,12 @@ def make_comm_components_report(data, out_dir):
         ("public key  pk = t", dh["sz_pk"], COL["pk"]),
         ("secret key  sk = r", dh["sz_sk"], COL["sk"]),
         ("statement  Y = t'", dh["sz_Y"], COL["Y"]),
-        ("adaptor witness  r' (= y_witness)", dh["sz_ywit"], COL["y_witness"]),
+        ("adaptor witness  r'", dh["sz_ywit"], COL["witness"]),
         ("challenge  c", dh["sz_c"], COL["c"]),
-        ("response  z / z_hat", dh["sz_z"], COL["z"]),
+        ("response  z / ẑ", dh["sz_z"], COL["z"]),
         ("signature  (c, z)", dh["sz_sig"], COL["sig"]),
-        ("pre-signature  (c, z_hat)", dh["sz_presig"], COL["presig"]),
-        ("adapted signature  (c, z = z_hat + r')", dh["sz_adapted"], COL["adapt"]),
+        ("pre-signature  (c, ẑ)", dh["sz_presig"], COL["presig"]),
+        ("adapted signature  (c, z = ẑ + r')", dh["sz_adapted"], COL["adapt"]),
     ]
     ys = list(range(len(rows)))[::-1]
     fig, ax = plt.subplots(figsize=(10.5, 5.0))
@@ -742,9 +744,9 @@ def make_comm_components_report(data, out_dir):
 
 
 # ---------------------------------------------------------------------------
-# PAPER-FACING package (Meeting-4 final set). Main story = ordinary (basic)
-# simplified-Dilithium signature vs LAS adaptor signature. paper / L2-like /
-# L3-like / L5-like are engineering parameter settings only. Style: no baked-in
+# PAPER-FACING package (Meeting-4 final set). Main story = the basic simplified
+# Dilithium-style signature vs the LAS adaptor signature. The LAS-2020/845 reference
+# and Simplified Dilithium-II/III/V are engineering parameter settings only. Style: no baked-in
 # long title, no machine footer, no caption paragraph; explanation lives in the
 # LaTeX caption / KEY_FINDINGS_paper.md.
 # ---------------------------------------------------------------------------
@@ -766,7 +768,7 @@ def write_param_sets_paper_tex(data, out_dir):
             d["gamma"], d["N"], d["Q"]))
     out += [
         "\\hline",
-        "\\multicolumn{8}{l}{\\footnotesize paper-derived, L2-like, L3-like and L5-like are engineering parameter settings} \\\\",
+        "\\multicolumn{8}{l}{\\footnotesize the LAS-2020/845 reference and the Simplified Dilithium-II/III/V sets are engineering parameter settings} \\\\",
         "\\multicolumn{8}{l}{\\footnotesize for scaling context, not formal NIST-equivalent security levels.} \\\\",
         "\\hline",
         "\\end{tabular}",
@@ -775,7 +777,7 @@ def write_param_sets_paper_tex(data, out_dir):
 
 
 def make_per_op_timing_paper(data, out_dir):
-    """Figure 1 (paper): per-operation timing at the headline setting; ordinary
+    """Figure 1 (paper): per-operation timing at the headline setting; basic
     signature operations vs LAS adaptor operations, reported independently (not
     cumulatively), mean +/- standard deviation."""
     import matplotlib
@@ -806,16 +808,17 @@ def make_per_op_timing_paper(data, out_dir):
     ax.set_ylabel("time per operation (microseconds)")
     ax.set_ylim(0, top * 1.30)
     ax.axvline(n_ord - 0.5, color="#888888", linestyle="--", linewidth=1.0)
-    ax.text((n_ord - 1) / 2.0, top * 1.24, "ordinary signature", ha="center",
+    ax.text((n_ord - 1) / 2.0, top * 1.24, "basic signature", ha="center",
             va="top", fontsize=10, fontweight="bold", color="#08306b")
     ax.text((n_ord + len(ops) - 1) / 2.0, top * 1.24, "LAS adaptor", ha="center",
             va="top", fontsize=10, fontweight="bold", color="#08519c")
-    ax.text(0.0, 1.02, "%s setting: n=%d, ℓ=%d, κ=%d"
-            % (PAPER_DISPLAY.get(hl, hl), d["n"], d["ell"], d["kappa"]),
+    # Short scientific setting label only; the full parameter list (n, ℓ, M, κ, γ,
+    # N, q) lives in the report \caption, not baked into the plot body.
+    ax.text(0.0, 1.02, "%s setting" % PAPER_DISPLAY.get(hl, hl),
             transform=ax.transAxes, ha="left", va="bottom", fontsize=9,
             color="#444444")
     # No legend: the dashed divider, the two group labels and the colour grouping
-    # already identify ordinary (light) vs LAS (dark) bars unambiguously.
+    # already identify basic (light) vs LAS (dark) bars unambiguously.
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "per_operation_timing_paper")
 
@@ -832,7 +835,7 @@ def write_per_op_paper_tex(data, out_dir):
         "\\hline",
         head,
         "\\hline",
-        "\\multicolumn{%d}{l}{\\textit{ordinary signature}} \\\\" % ncol,
+        "\\multicolumn{%d}{l}{\\textit{basic signature}} \\\\" % ncol,
     ]
 
     def row(name, key):
@@ -860,7 +863,7 @@ def write_per_op_paper_tex(data, out_dir):
 def make_comm_components_paper(data, out_dir):
     """Figure 2 (paper): serialized component sizes at the headline setting. The
     three signature objects share one colour so their equal size is obvious; the
-    statement Y is highlighted as the LAS-added object. All components are shown
+    statement Y is highlighted as the adaptor-lock object. All components are shown
     (pk, sk, c, z/z_hat, Y, witness, signature, pre-signature, adapted signature)."""
     import matplotlib
     matplotlib.use("Agg")
@@ -873,12 +876,12 @@ def make_comm_components_paper(data, out_dir):
         ("public key  (pk = t)", dh["sz_pk"], COL["pk"]),
         ("secret key  (sk = r)", dh["sz_sk"], COL["sk"]),
         ("challenge  c", dh["sz_c"], COL["c"]),
-        ("response  z / z_hat", dh["sz_z"], COL["z"]),
-        ("statement  Y = t'  (LAS-added)", dh["sz_Y"], "#1b9e9e"),
-        ("adaptor witness  r' (= y_witness)", dh["sz_ywit"], COL["y_witness"]),
+        ("response  z / ẑ", dh["sz_z"], COL["z"]),
+        ("statement  Y = t'", dh["sz_Y"], "#1b9e9e"),
+        ("adaptor witness  r'", dh["sz_ywit"], COL["witness"]),
         ("signature  (c, z)", dh["sz_sig"], sig_c),
-        ("pre-signature  (c, z_hat)", dh["sz_presig"], sig_c),
-        ("adapted signature  (c, z = z_hat + r')", dh["sz_adapted"], sig_c),
+        ("pre-signature  (c, ẑ)", dh["sz_presig"], sig_c),
+        ("adapted signature  (c, z = ẑ + r')", dh["sz_adapted"], sig_c),
     ]
     ys = list(range(len(rows)))[::-1]
     fig, ax = plt.subplots(figsize=(10.5, 5.2))
@@ -909,7 +912,7 @@ def write_comm_paper_tex(data, out_dir):
         ("challenge", "$c$", d["sz_c"]),
         ("response", "$z$ / $\\hat{z}$", d["sz_z"]),
         ("statement", "$Y=t'$", d["sz_Y"]),
-        ("adaptor witness", "$r'=y_{\\mathrm{witness}}$", d["sz_ywit"]),
+        ("adaptor witness", "$r'$", d["sz_ywit"]),
         ("signature", "$(c, z)$", d["sz_sig"]),
         ("pre-signature", "$(c, \\hat{z})$", d["sz_presig"]),
         ("adapted signature", "$(c, z)$", d["sz_adapted"]),
@@ -926,7 +929,7 @@ def write_comm_paper_tex(data, out_dir):
         out.append("%s & %s & %d \\\\" % (obj, nota, sz))
     out += [
         "\\hline",
-        "\\multicolumn{3}{l}{\\footnotesize ordinary signature, pre-signature and adapted signature have the same size;} \\\\",
+        "\\multicolumn{3}{l}{\\footnotesize basic signature, pre-signature and adapted signature have the same size;} \\\\",
         "\\multicolumn{3}{l}{\\footnotesize LAS adds the statement $Y$, it does not enlarge the final signature.} \\\\",
         "\\hline",
         "\\end{tabular}",
@@ -935,7 +938,7 @@ def write_comm_paper_tex(data, out_dir):
 
 
 def make_adaptor_overhead_paper(data, out_dir):
-    """Figure 3 (paper): adaptor overhead (percent) versus the matching ordinary
+    """Figure 3 (paper): adaptor overhead (percent) versus the matching basic
     operation, across the parameter settings. Values are parsed, never hardcoded."""
     import matplotlib
     matplotlib.use("Agg")
@@ -960,12 +963,10 @@ def make_adaptor_overhead_paper(data, out_dir):
     ax.axhline(0, color="black", linewidth=0.6)
     ax.set_ylim(top=max(allvals) * 1.28)
     ax.set_xticks(xs)
-    ax.set_xticklabels(["%s\nn=%d, ℓ=%d, κ=%d"
-                        % (PAPER_DISPLAY.get(lvl, lvl), data[lvl]["n"],
-                           data[lvl]["ell"], data[lvl]["kappa"]) for lvl in levels],
+    ax.set_xticklabels([PAPER_DISPLAY.get(lvl, lvl) for lvl in levels],
                        fontsize=7.5)
     ax.set_xlabel("parameter setting (scaling context)")
-    ax.set_ylabel("overhead versus ordinary operation (percent)", fontsize=9)
+    ax.set_ylabel("overhead versus basic operation (percent)", fontsize=9)
     ax.legend(fontsize=8, loc="upper right")
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "adaptor_overhead_paper")
@@ -973,7 +974,7 @@ def make_adaptor_overhead_paper(data, out_dir):
 
 def make_rejection_sampling_paper(data, out_dir):
     """Appendix (paper, optional): rejection-sampling acceptance per attempt for the
-    ordinary Sign and the LAS PreSign across settings. Explains timing variance and
+    basic Sign and the LAS PreSign across settings. Explains timing variance and
     shows the adaptor does not change acceptance. Not part of the main claim."""
     import matplotlib
     matplotlib.use("Agg")
@@ -986,16 +987,14 @@ def make_rejection_sampling_paper(data, out_dir):
     las_acc = [data[lvl]["rej_las"]["accept_pct"] for lvl in levels]
     w = 0.36
     fig, ax = plt.subplots(figsize=(8.4, 4.6))
-    ax.bar([x - w / 2 for x in xs], base_acc, w, label="ordinary Sign",
+    ax.bar([x - w / 2 for x in xs], base_acc, w, label="basic Sign",
            color=COL["base_sign"], edgecolor="black", linewidth=0.3)
     ax.bar([x + w / 2 for x in xs], las_acc, w, label="LAS PreSign",
            color=COL["las_presign"], edgecolor="black", linewidth=0.3)
     ax.axhline(eul, color="#d94701", linestyle="--", linewidth=1.2,
                label="1/e = %.1f percent" % eul)
     ax.set_xticks(xs)
-    ax.set_xticklabels(["%s\nn=%d, ℓ=%d, κ=%d"
-                        % (PAPER_DISPLAY.get(lvl, lvl), data[lvl]["n"],
-                           data[lvl]["ell"], data[lvl]["kappa"]) for lvl in levels],
+    ax.set_xticklabels([PAPER_DISPLAY.get(lvl, lvl) for lvl in levels],
                        fontsize=7.5)
     ax.set_xlabel("parameter setting (scaling context)")
     ax.set_ylabel("acceptance per attempt (percent)")
@@ -1006,7 +1005,7 @@ def make_rejection_sampling_paper(data, out_dir):
 
 
 def write_key_findings_paper(data, out_dir):
-    """Paper-facing key findings (2-3 concise points) answering: vs ordinary
+    """Paper-facing key findings (2-3 concise points) answering: vs basic
     Sign/Verify, what extra computation and communication does LAS add?"""
     hl = _headline(data)
     d = data[hl]
@@ -1019,28 +1018,28 @@ def write_key_findings_paper(data, out_dir):
     lines = [
         "# Key findings (paper-facing; headline = %s setting)" % disp,
         "",
-        "Main comparison: the ordinary (basic) simplified-Dilithium signature versus "
-        "the LAS adaptor signature. paper-derived / L2-like / L3-like / L5-like are "
-        "engineering parameter settings for scaling context, not formal "
-        "NIST-equivalent security levels.",
+        "Main comparison: the basic simplified Dilithium-style signature versus "
+        "the LAS adaptor signature. The LAS-2020/845 reference and the Simplified "
+        "Dilithium-II/III/V sets are engineering parameter settings for scaling "
+        "context, not formal NIST-equivalent security levels.",
         "",
-        "1. **Extra computation is small.** On top of the ordinary Sign and Verify, "
+        "1. **Extra computation is small.** On top of the basic Sign and Verify, "
         "LAS adds four operations. At the %s setting PreSign costs %+.1f%% versus "
         "Sign, PreVerify %+.1f%% versus Verify, and Adapt %+.1f%% versus Verify "
         "(Adapt %.0f microseconds, Ext %.0f microseconds); Ext extracts the witness "
-        "s = z - z_hat. Pre-signing and pre-verification mirror ordinary signing and "
+        "s = z - ẑ. Pre-signing and pre-verification mirror basic signing and "
         "verification, so the adaptor adds roughly one extra signing pass plus a few "
         "verification-scale operations." % (disp, pp, pvp, adp, ad, ext),
         "",
-        "2. **The final signature does not grow.** The ordinary signature, the "
+        "2. **The final signature does not grow.** The basic signature, the "
         "pre-signature and the adapted signature are byte-identical (%d bytes), "
-        "because Adapt computes z = z_hat + r' (it changes the response value, not "
+        "because Adapt computes z = ẑ + r' (it changes the response value, not "
         "the serialized structure)." % d["sz_sig"],
         "",
         "3. **LAS adds one public communication object: the statement.** Beyond the "
-        "ordinary signature, LAS publishes the statement Y (%d bytes, the same size "
+        "basic signature, LAS publishes the statement Y (%d bytes, the same size "
         "as the public key) that locks the signature, plus the adaptor witness "
-        "r' (= y_witness, %d bytes) held privately by the signer. The extra "
+        "r' (%d bytes) held privately by the signer. The extra "
         "communication is the statement Y, not a larger signature."
         % (d["sz_Y"], d["sz_ywit"]),
     ]
@@ -1056,7 +1055,7 @@ def write_paper_manifest(out_dir, have_app, have_mh):
          "Parameter settings: n, ell, M=n+ell, kappa, gamma, N, Q",
          "engineering settings for scaling context, not NIST-equivalent security levels"],
         ["per_operation_timing_paper.png/.pdf", "Figure 1 (main)",
-         "Per-operation computation: ordinary signature (KeyGen/Sign/Verify) vs LAS "
+         "Per-operation computation: basic signature (KeyGen/Sign/Verify) vs LAS "
          "adaptor (PreSign/PreVerify/Adapt/Ext) at the headline setting; mean +/- SD",
          "operations reported independently, not cumulatively"],
         ["per_operation_timing_paper.tex", "Figure 1 companion table (main)",
@@ -1068,13 +1067,13 @@ def write_paper_manifest(out_dir, have_app, have_mh):
         ["communication_components_paper.tex", "Table 2 (main)",
          "Same component sizes as Figure 2, as a table", ""],
         ["adaptor_overhead_paper.png/.pdf", "Figure 3 (main)",
-         "Adaptor overhead (percent) vs the matching ordinary operation across "
+         "Adaptor overhead (percent) vs the matching basic operation across "
          "settings (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify)",
          "x-axis is parameter setting / scaling context, not a security-level comparison"],
         ["KEY_FINDINGS_paper.md", "main (text)",
          "Extra computation; signature size unchanged; statement Y added", ""],
         ["rejection_sampling_paper.png/.pdf", "appendix (optional, supporting)",
-         "Rejection-sampling acceptance per attempt (~1/e) for ordinary Sign and LAS "
+         "Rejection-sampling acceptance per attempt (~1/e) for basic Sign and LAS "
          "PreSign; explains timing variance and that the adaptor does not change it",
          "supporting only, not part of the main claim"],
     ]
@@ -1128,7 +1127,7 @@ def make_fair_plots(data, out_dir, machine=""):
     base_ops = [("Sign", "t_sign", COL["base_sign"]), ("Verify", "t_verify", COL["base_verify"])]
     las_ops = [("PreSign", "t_presign", COL["las_presign"]),
                ("PreVerify", "t_preverify", COL["las_preverify"]),
-               ("Adapt", "t_adapt", COL["adapt"]), ("Ext / Extract", "t_ext", COL["ext"])]
+               ("Adapt", "t_adapt", COL["adapt"]), ("Ext", "t_ext", COL["ext"])]
     rows = []   # (label, [(segname,color,value)...])
     for lvl in levels:
         rows.append(("%s · Base" % lvl, [(n, c, data[lvl][k][0]) for n, k, c in base_ops]))
@@ -1169,7 +1168,7 @@ def make_fair_plots(data, out_dir, machine=""):
         return out
 
     step_labels = ["Sign /\nPreSign", "Verify /\nPreVerify", "Adapt\n(LAS only)",
-                   "Ext·Extract\n(LAS only)"]
+                   "Ext\n(LAS only)"]
     fig, axes = plt.subplots(2, 2, figsize=(11, 7.4), squeeze=False)
     flat = [a for row in axes for a in row]
     for ax, lvl in zip(flat, levels):
@@ -1233,7 +1232,7 @@ def make_fair_plots(data, out_dir, machine=""):
     axR.text(0, t1 * 1.05, "%+.1f%%" % dh["o_preverify"][2], ha="center", fontsize=9, fontweight="bold")
     axR.text(1, t2 * 1.05, "%+.1f%%" % dh["o_adapt"][2], ha="center", fontsize=9, fontweight="bold")
     axR.set_xticks([0, 1, 2])
-    axR.set_xticklabels(["Verify\nvs PreVerify", "Verify\nvs Adapt", "Ext /\nExtract"])
+    axR.set_xticklabels(["Verify\nvs PreVerify", "Verify\nvs Adapt", "Ext"])
     axR.set_ylim(0, tR * 1.18)
     axR.set_title("verify-side ops")
     axR.grid(axis="y", alpha=0.3)
@@ -1244,12 +1243,12 @@ def make_fair_plots(data, out_dir, machine=""):
     _save(fig, out_dir, "timing_overhead_clean")
 
     # 3. computation_component_absolute (headline; horizontal, sorted) -------------
-    comps = [("A-product / commitment w=A·y_mask", dh["c_aprod"], COL["w"]),
+    comps = [("A-product / commitment w=A·y", dh["c_aprod"], COL["w"]),
              ("challenge hash", dh["c_hash"], COL["hash"]),
              ("c·r (all LAS_M response polys)", dh["c_cr_all"], COL["cr_all"]),
              ("norm check", dh["c_norm"], COL["norm"]),
-             ("w + Y", dh["c_wY"], COL["Y"]),
-             ("z_hat + r'", dh["c_zwit"], COL["witness_add"])]
+             ("w + t'", dh["c_wY"], COL["Y"]),
+             ("ẑ + r'", dh["c_zwit"], COL["witness_add"])]
     comps.sort(key=lambda t: t[1][0])
     fig, ax = plt.subplots(figsize=(8.5, 4.2))
     ys = list(range(len(comps)))
@@ -1273,11 +1272,11 @@ def make_fair_plots(data, out_dir, machine=""):
     fig, ax = plt.subplots(figsize=(9.0, 4.0))
     items = [
         ("signature\n(c + z)", [("c", COL["c"], dh["sz_c"]), ("z", COL["z"], dh["sz_z"])], dh["sz_sig"]),
-        ("pre-signature\n(c + z_hat)", [("c", COL["c"], dh["sz_c"]), ("z_hat", COL["zhat"], dh["sz_zhat"])], dh["sz_presig"]),
+        ("pre-signature\n(c + ẑ)", [("c", COL["c"], dh["sz_c"]), ("ẑ", COL["zhat"], dh["sz_zhat"])], dh["sz_presig"]),
         ("off-chain\n(Y + 2·pre-sig)", [("payload", COL["las_presign"], dh["pl_offchain"])], dh["pl_offchain"]),
         ("settlement\n(2·signature)", [("payload", COL["sig"], dh["pl_settlement"])], dh["pl_settlement"]),
     ]
-    LEG = {"c", "z", "z_hat"}                       # only the c/z segments carry a legend entry
+    LEG = {"c", "z", "ẑ"}                           # only the c/z segments carry a legend entry
     ys = list(range(len(items)))[::-1]
     seen = set()
     totals = []
@@ -1298,7 +1297,7 @@ def make_fair_plots(data, out_dir, machine=""):
     ax.set_yticks(ys)
     ax.set_yticklabels([it[0] for it in items], fontsize=9)
     ax.set_xlabel("packed bytes  (byte-level payload only, NOT EVM gas)")
-    ax.set_title("Communication summary (%s) — response z / z_hat is %.1f%% of the signature"
+    ax.set_title("Communication summary (%s) — response z / ẑ is %.1f%% of the signature"
                  % (hl, 100.0 * dh["sz_z"] / dh["sz_sig"]))
     ax.legend(fontsize=8, ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.14), frameon=False)
     fig.text(0.5, -0.02, "detailed c / z splits per level: communication_components.csv",
@@ -1330,7 +1329,7 @@ def make_fair_plots(data, out_dir, machine=""):
     ax.axhline(0, color="black", linewidth=0.6)
     ax.set_xticks(xs)
     ax.set_xticklabels([_level_tick(data[lvl], lvl) for lvl in levels], fontsize=7.5)
-    ax.set_ylabel("overhead vs the mirrored ordinary op (%)")
+    ax.set_ylabel("overhead vs the mirrored basic op (%)")
     ax.set_title("Adaptor overhead across parameter sets")
     ax.legend(fontsize=8); ax.grid(axis="y", alpha=0.3)
     _add_footer(fig, machine)
@@ -1360,7 +1359,7 @@ def make_fair_plots(data, out_dir, machine=""):
     comp_series = [("c*r one poly (sparse c)", "c_cr_one", "o-", COL["cr_all"]),
                    ("c*r all n+ell polys", "c_cr_all", "s-", COL["las_presign"]),
                    ("c*t all n pk polys", "c_ct", "^-", COL["las_preverify"]),
-                   ("A-product (w=A*y_mask)", "c_aprod", "D-", COL["w"]),
+                   ("A-product (w=A*y)", "c_aprod", "D-", COL["w"]),
                    ("challenge hash", "c_hash", "v-", COL["hash"])]
     for lbl, key, style, c in comp_series:
         ax.plot(xs, [data[lvl][key][0] for lvl in levels], style, color=c,
@@ -1393,7 +1392,7 @@ def make_fair_plots(data, out_dir, machine=""):
                  ("challenge hash", "c_hash", COL["hash"]),
                  ("norm check", "c_norm", COL["norm"])],
            "t_verify", "Verify = A*z - c*t + hash (+ norm)")
-    _stack(axE, [("s = z - z_hat", "c_ext_sub", COL["witness_add"]),
+    _stack(axE, [("s = z - ẑ", "c_ext_sub", COL["witness_add"]),
                  ("A*s (re-derive Y)", "c_ext_amul", COL["w"]),
                  ("t'==A*s check", "c_ext_check", COL["norm"])],
            "t_ext", "Ext ~ one A*s (re-derive the statement)")
@@ -1441,7 +1440,7 @@ def make_app_plots(a, out_dir):
     ax.set_yticks(ys)
     ax.set_yticklabels([it[0] for it in items], fontsize=9)
     ax.set_xlabel("packed bytes  (simulated-ledger proxy, NOT EVM gas)")
-    ax.set_title("Atomic-swap payload breakdown  (L3-like; bench_app3)")
+    ax.set_title("Atomic-swap payload breakdown  (Simplified Dilithium-III; bench_app3)")
     ax.legend(fontsize=8, ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.18), frameon=False)
     ax.grid(axis="x", alpha=0.3)
     _save(fig, out_dir, "application_atomic_swap_payload_breakdown")
@@ -1458,7 +1457,7 @@ def make_app_plots(a, out_dir):
                 label="public statements (K·Y)")
         ax.set_xlabel("path length K (hops)")
         ax.set_ylabel("packed bytes")
-        ax.set_title("Multi-hop AMHL settlement payload vs K  (L3-like)")
+        ax.set_title("Multi-hop AMHL settlement payload vs K  (Simplified Dilithium-III)")
         ax.legend(fontsize=8)
         ax.grid(alpha=0.3)
         _save(fig, out_dir, "application_multihop_payload_vs_k")
@@ -1468,7 +1467,7 @@ def make_app_plots(a, out_dir):
         ax.plot(Ks, [r["presig_time_ms"] for r in mh], "o-", color=COL["las_presign"])
         ax.set_xlabel("path length K (hops)")
         ax.set_ylabel("pre-sign time per route (ms)")
-        ax.set_title("Multi-hop AMHL pre-sign time vs K  (L3-like)")
+        ax.set_title("Multi-hop AMHL pre-sign time vs K  (Simplified Dilithium-III)")
         ax.grid(alpha=0.3)
         _save(fig, out_dir, "application_multihop_presign_time_vs_k")
         made.append("application_multihop_presign_time_vs_k")
@@ -1477,14 +1476,14 @@ def make_app_plots(a, out_dir):
         # bound g-k-K, BOTH on one log axis so the (huge) gap is visible -- the
         # bound is extremely loose (the witness ||s_j||inf is tiny: <= K).
         fig, ax = plt.subplots(figsize=(7.5, 4.2))
-        ax.plot(Ks, [r["max_norm"] for r in mh], "o-", color=COL["y_witness"],
+        ax.plot(Ks, [r["max_norm"] for r in mh], "o-", color=COL["witness"],
                 label="achieved max ||s_j||inf  (cumulative witness)")
         ax.plot(Ks, [r["bound_gkK"] for r in mh], "s--", color=COL["las_preverify"],
                 label="PreSign bound g-k-K")
         ax.set_yscale("log")
         ax.set_xlabel("path length K (hops)")
         ax.set_ylabel("infinity norm  (log scale)")
-        ax.set_title("AMHL witness norm vs PreSign bound g-k-K  (L3-like): the bound is "
+        ax.set_title("AMHL witness norm vs PreSign bound g-k-K  (Simplified Dilithium-III): the bound is "
                      "extremely loose")
         ax.legend(fontsize=8, loc="center right")
         ax.grid(alpha=0.3, which="both")
@@ -1529,7 +1528,7 @@ def write_fair_csvs(data, out_dir):
 
     ops = [("Setup", "t_setup"), ("KeyGen", "t_keygen"), ("Sign", "t_sign"),
            ("Verify", "t_verify"), ("PreSign", "t_presign"), ("PreVerify", "t_preverify"),
-           ("Adapt", "t_adapt"), ("Ext / Extract", "t_ext")]
+           ("Adapt", "t_adapt"), ("Ext", "t_ext")]
     rows = [[lvl, data[lvl]["n"], data[lvl]["ell"], data[lvl]["kappa"], lab,
              data[lvl][k][0], data[lvl][k][1]] for lvl in levels for lab, k in ops]
     _writer(out_dir, "primary_timing.csv",
@@ -1542,7 +1541,7 @@ def write_fair_csvs(data, out_dir):
                           ("Adapt vs Verify", "o_adapt")):
             ad, ba, pct = d[key]
             rows.append([lvl, pair, ad, ba, pct])
-        rows.append([lvl, "Ext / Extract (separate)", d["t_ext"][0], "", ""])
+        rows.append([lvl, "Ext (separate)", d["t_ext"][0], "", ""])
     _writer(out_dir, "adaptor_overhead.csv",
             ["level", "pair", "adaptor_us", "base_us", "overhead_pct"], rows)
 
@@ -1555,7 +1554,7 @@ def write_fair_csvs(data, out_dir):
             ["level", "operation", "avg_attempts", "acceptance_pct", "min", "max", "p50", "p95"], rows)
 
     comps = [("pk = t", "sz_pk"), ("sk = r", "sz_sk"), ("Y = t'", "sz_Y"),
-             ("r' = y_witness", "sz_ywit"), ("c", "sz_c"), ("z", "sz_z"), ("z_hat", "sz_zhat"),
+             ("r'", "sz_ywit"), ("c", "sz_c"), ("z", "sz_z"), ("z_hat", "sz_zhat"),
              ("signature (c,z)", "sz_sig"), ("pre-signature (c,z_hat)", "sz_presig"),
              ("final adapted sig (c,z)", "sz_adapted")]
     rows = [[lvl, lab, data[lvl][k], round(100.0 * data[lvl][k] / data[lvl]["sz_sig"], 2)]
@@ -1574,7 +1573,7 @@ def write_fair_csvs(data, out_dir):
             ["level", "component", "mean_us", "sd_us"], rows)
 
     cat = [("public key", "pk = t", "sz_pk"), ("secret key", "sk = r", "sz_sk"),
-           ("statement", "Y = t'", "sz_Y"), ("witness", "r' = y_witness", "sz_ywit"),
+           ("statement", "Y = t'", "sz_Y"), ("witness", "r'", "sz_ywit"),
            ("challenge", "c", "sz_c"), ("final response", "z", "sz_z"),
            ("pre-sig response", "z_hat", "sz_zhat"), ("signature", "(c, z)", "sz_sig"),
            ("pre-signature", "(c, z_hat)", "sz_presig"),
@@ -1594,7 +1593,7 @@ def write_fair_csvs(data, out_dir):
 
 
 def write_app_csvs(a, out_dir):
-    note = "L3-like (bench_app3: n=%d ell=%d kappa=%d)" % (a["n"], a["ell"], a["kappa"])
+    note = "Simplified Dilithium-III (bench_app3: n=%d ell=%d kappa=%d)" % (a["n"], a["ell"], a["kappa"])
     rows = [
         ["statement_Y_bytes", a["sw_Y"], "bytes", "off-chain msg 1; " + note],
         ["presig_sigmaA_bytes", a["sw_preA"], "bytes", "off-chain msg 2"],
@@ -1647,36 +1646,37 @@ def write_key_findings(data, out_dir, machine):
         "# Key findings (auto-generated; headline = %s; machine: %s)"
         % (disp, machine or "n/a"),
         "",
-        "**Question answered: compared with the ordinary (basic) Dilithium-style "
+        "**Question answered: compared with the basic simplified Dilithium-style "
         "signature, how much extra computation and communication does the LAS "
         "exotic adaptor signature add?**",
         "",
-        "1. **Extra computation.** The ordinary signature uses Sign and Verify; the "
+        "1. **Extra computation.** The basic signature uses Sign and Verify; the "
         "LAS adaptor adds four operations. At the %s setting: PreSign takes %.0f "
         "microseconds versus Sign at %.0f (%+.1f%%); PreVerify takes %.0f versus "
         "Verify at %.0f (%+.1f%%); Adapt takes %.0f microseconds (%+.1f%% versus "
         "Verify); and Ext takes %.0f microseconds. Pre-signing and pre-verification "
-        "stay close to ordinary signing and verification, so the adaptor machinery "
+        "stay close to basic signing and verification, so the adaptor machinery "
         "costs roughly one extra signing pass plus a few verification-scale operations."
         % (disp, ps, sg, pp, pv, vf, pvp, ad, adp, ext),
         "",
-        "2. **Extra communication: the signature does not grow.** The ordinary "
+        "2. **Extra communication: the signature does not grow.** The basic "
         "signature, the pre-signature and the adapted signature are all byte-"
-        "identical (%d bytes), because Adapt computes z = z_hat + r' (it changes the "
+        "identical (%d bytes), because Adapt computes z = ẑ + r' (it changes the "
         "response value, not the serialized structure). Inside the signature the "
         "response z is %.1f%% of the bytes and the challenge c is only %d bytes."
         % (d["sz_sig"], zpct, d["sz_c"]),
         "",
         "3. **Extra communication: LAS adds one public object, the statement.** "
-        "Beyond the ordinary signature, LAS publishes the statement Y (%d bytes, the "
+        "Beyond the basic signature, LAS publishes the statement Y (%d bytes, the "
         "same size as the public key) that locks the signature, plus the adaptor "
         "witness r' (%d bytes) held privately by the signer. So moving from the "
-        "ordinary signature to the LAS adaptor signature costs essentially one extra "
+        "basic signature to the LAS adaptor signature costs essentially one extra "
         "public-key-sized object on the wire, not a larger signature."
         % (d["sz_Y"], d["sz_ywit"]),
         "",
-        "_The settings paper / L2-like / L3-like / L5-like are engineering parameter "
-        "settings used for scaling context, not formal NIST security levels. "
+        "_The LAS-2020/845 reference and the Simplified Dilithium-II/III/V sets are "
+        "engineering parameter settings used for scaling context, not formal NIST "
+        "security levels. "
         "Sources: per-operation timings -> primary_timing.csv / "
         "per_operation_timing_report.*; component sizes -> "
         "communication_components.csv / communication_components_clean_report.*; "
@@ -1693,13 +1693,13 @@ def write_manifest(out_dir, have_app, have_mh):
     H = ["figure_file", "use_in_report_main_or_appendix", "claim_supported", "caution_note"]
     rows = [
         # ---- MAIN SET (report-clean _report figures; captions live in LaTeX) ----
-        # Main story = ordinary (basic) PQ signature vs LAS (exotic) PQ adaptor
+        # Main story = the basic simplified Dilithium-style signature vs LAS (exotic) PQ adaptor
         # signature. paper / L2-like / L3-like / L5-like are scaling context only.
         ["per_operation_timing_report.png/.pdf", "main",
-         "PRIMARY computation result: ordinary signature operations (KeyGen, Sign, "
+         "PRIMARY computation result: basic signature operations (KeyGen, Sign, "
          "Verify) versus LAS adaptor operations (PreSign, PreVerify, Adapt, Ext), per "
          "operation; parameter settings shown only as scaling context",
-         "report-clean; error bars = sample standard deviation; story is ordinary vs LAS, not paper vs L2/L3/L5"],
+         "report-clean; error bars = sample standard deviation; story is basic vs LAS, not paper vs L2/L3/L5"],
         ["communication_components_clean_report.png/.pdf", "main",
          "PRIMARY communication result: byte size of every object (public key, secret "
          "key, statement, adaptor witness, challenge, response, signature, "
@@ -1708,9 +1708,9 @@ def write_manifest(out_dir, have_app, have_mh):
          "report-clean; serialized size in bytes, not on-chain gas; headline setting"],
         ["adaptor_overhead_vs_level_report.png/.pdf", "main",
          "Overhead / scaling support: percent overhead of each LAS adaptor operation "
-         "versus the matching ordinary operation, across the paper, L2-like, L3-like "
+         "versus the matching basic operation, across the paper, L2-like, L3-like "
          "and L5-like parameter settings",
-         "supporting; shows the ordinary-vs-LAS overhead stays small as parameters scale"],
+         "supporting; shows the basic-vs-LAS overhead stays small as parameters scale"],
         ["parameter_sets_report.png/.pdf", "main",
          "Setup / context (NOT a result): the engineering parameter settings paper, "
          "L2-like, L3-like, L5-like used for scaling; defines module ranks n and ell, "
@@ -1739,7 +1739,7 @@ def write_manifest(out_dir, have_app, have_mh):
          "cumulative supporting view; demoted in favour of per_operation_timing"],
         ["timing_overhead_clean.png/.pdf", "appendix",
          "Adaptor overhead per mirrored pair: PreSign~Sign, PreVerify~Verify, Adapt~Verify",
-         "headline-level pairs; per-level numbers in adaptor_overhead.csv; Ext has no mirrored ordinary op"],
+         "headline-level pairs; per-level numbers in adaptor_overhead.csv; Ext has no mirrored basic op"],
         ["computation_component_absolute.png/.pdf", "appendix",
          "Where LAS compute time goes (A-product/hash/c*r dominate)",
          "DIAGNOSTIC component attribution from local copies, NOT a full-protocol %"],
@@ -1775,7 +1775,7 @@ def write_manifest(out_dir, have_app, have_mh):
          "diagnostic component timings incl. c*r one-poly",
          "diagnostic attribution, not protocol %"],
         ["las_object_catalogue.csv", "table only",
-         "object sizes with paper notation (pk=t, sk=r, Y=t', r'=y_witness, ...)",
+         "object sizes with paper notation (pk=t, sk=r, Y=t', r', ...)",
          "no figure generated by default (catalogue bar chart was too crowded)"],
     ]
     if have_app:

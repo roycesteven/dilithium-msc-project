@@ -17,8 +17,9 @@ The evaluation answers the project's central question --- what does adaptor
 functionality cost over a plain signature, and what does post-quantum operation cost
 over a classical one --- with measured data. The primary fair comparison, LAS against
 its own simplified base, shows the adaptor layer is almost free in computation: PreSign,
-PreVerify, and Adapt each add at most about six percent over the base operation they
-mirror, at every parameter set, and this is relatively cheaper than the classical ECDSA
+PreVerify, and Adapt each add only single-digit overhead (at most about eight percent)
+over the basic operation they mirror, at every parameter set, and this is relatively
+cheaper than the classical ECDSA
 adaptor, whose discrete-logarithm-equality proof dominates its adaptor cost. The real
 cost is communication: the signature is 98.6--99.3\% lattice response vector, and an
 adaptor swap additionally transmits a public-key-sized statement. The contextual

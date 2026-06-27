@@ -57,21 +57,22 @@
 \@writefile{toc}{\contentsline {section}{\numberline {2.1}The LAS construction}{15}{section.2.1}\protected@file@percent }
 \newlabel{sec:construction}{{2.1}{15}{The LAS construction}{section.2.1}{}}
 \newlabel{sec:construction@cref}{{[section][1][2]2.1}{[1][15][]15}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow. The statement $Y$ is folded into the challenge hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the pre-signature into an ordinary signature; and publishing that signature lets anyone holding the pre-signature run Extract to recover $y$. This last step is what makes an atomic swap atomic.}}{16}{figure.2.1}\protected@file@percent }
-\newlabel{fig:flow}{{2.1}{16}{The LAS adaptor data flow. The statement $Y$ is folded into the challenge hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the pre-signature into an ordinary signature; and publishing that signature lets anyone holding the pre-signature run Extract to recover $y$. This last step is what makes an atomic swap atomic}{figure.2.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow. The statement $Y$ is folded into the challenge hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the pre-signature into a basic signature; and publishing that signature lets anyone holding the pre-signature run Extract to recover $y$. This last step is what makes an atomic swap atomic.}}{16}{figure.2.1}\protected@file@percent }
+\newlabel{fig:flow}{{2.1}{16}{The LAS adaptor data flow. The statement $Y$ is folded into the challenge hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the pre-signature into a basic signature; and publishing that signature lets anyone holding the pre-signature run Extract to recover $y$. This last step is what makes an atomic swap atomic}{figure.2.1}{}}
 \newlabel{fig:flow@cref}{{[figure][1][2]2.1}{[1][16][]16}}
 \newlabel{eq:signbound}{{2.1}{16}{The LAS construction}{equation.2.1}{}}
-\newlabel{eq:signbound@cref}{{[equation][1][2]2.1}{[1][15][]16}}
+\newlabel{eq:signbound@cref}{{[equation][1][2]2.1}{[1][16][]16}}
 \@writefile{toc}{\contentsline {section}{\numberline {2.2}Implementation strategy: reuse, do not reinvent}{16}{section.2.2}\protected@file@percent }
 \newlabel{sec:impl}{{2.2}{16}{Implementation strategy: reuse, do not reinvent}{section.2.2}{}}
 \newlabel{sec:impl@cref}{{[section][2][2]2.2}{[1][16][]16}}
-\@writefile{lot}{\contentsline {table}{\numberline {2.1}{\ignorespaces Reused vs.\ modified vs.\ added (file level). The lattice core is reused byte-for-byte; only build glue is modified; the scheme and evaluation are new. Verified by diffing the \texttt  {dilithium-baseline} and \texttt  {main} branches (see \texttt  {docs/CODE\_DIFF\_VIEW.md}).}}{17}{table.2.1}\protected@file@percent }
-\newlabel{tab:reuse}{{2.1}{17}{Reused vs.\ modified vs.\ added (file level). The lattice core is reused byte-for-byte; only build glue is modified; the scheme and evaluation are new. Verified by diffing the \texttt {dilithium-baseline} and \texttt {main} branches (see \texttt {docs/CODE\_DIFF\_VIEW.md})}{table.2.1}{}}
+\citation{esgin2020}
+\@writefile{lot}{\contentsline {table}{\numberline {2.1}{\ignorespaces Source files of the implementation, classified by how the reference is used. The lattice core is reused unchanged; the only modified file is the build script; the scheme, serialization, application, and evaluation are new.}}{17}{table.2.1}\protected@file@percent }
+\newlabel{tab:reuse}{{2.1}{17}{Source files of the implementation, classified by how the reference is used. The lattice core is reused unchanged; the only modified file is the build script; the scheme, serialization, application, and evaluation are new}{table.2.1}{}}
 \newlabel{tab:reuse@cref}{{[table][1][2]2.1}{[1][16][]17}}
 \@writefile{toc}{\contentsline {paragraph}{Data types and the matrix product.}{17}{section*.15}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Hash, challenge, and samplers.}{17}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Simplifications relative to optimised Dilithium.}{17}{section*.17}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Modulus (a deliberate, documented deviation).}{18}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Simplifications relative to the full Dilithium scheme.}{17}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Modulus (a deliberate deviation).}{18}{section*.18}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {2.3}Serialization and the on-chain interface}{18}{section.2.3}\protected@file@percent }
 \newlabel{sec:serialize}{{2.3}{18}{Serialization and the on-chain interface}{section.2.3}{}}
 \newlabel{sec:serialize@cref}{{[section][3][2]2.3}{[1][18][]18}}
@@ -83,125 +84,123 @@
 \newlabel{sec:benchmethod@cref}{{[section][5][2]2.5}{[1][19][]19}}
 \@writefile{toc}{\contentsline {paragraph}{Repeatability and machine of record.}{19}{section*.19}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Primary (fair) comparison: LAS vs.\ its own simplified base.}{20}{section*.20}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Context only: official CRYSTALS-Dilithium (not algorithm-matched).}{20}{section*.21}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Component-level size analysis.}{20}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Parameter sensitivity.}{20}{section*.21}\protected@file@percent }
 \citation{secp256k1zkp}
-\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Parameter sets, all at the shared modulus $q\approx 2^{23}$ and ring degree $N=256$. LAS and its simplified base use the LAS columns (the fair, primary comparison). The official Dilithium columns are \emph  {context only}: their module dimensions are matched ($n{\leftrightarrow }K$, $\ell {\leftrightarrow }L$, $\kappa {\leftrightarrow }\tau $) but the algorithm is not (optimised, with hints/packing). The classical ECDSA adaptor is a functionality-matched, not security-matched, baseline.}}{21}{table.2.2}\protected@file@percent }
-\newlabel{tab:params}{{2.2}{21}{Parameter sets, all at the shared modulus $q\approx 2^{23}$ and ring degree $N=256$. LAS and its simplified base use the LAS columns (the fair, primary comparison). The official Dilithium columns are \emph {context only}: their module dimensions are matched ($n{\leftrightarrow }K$, $\ell {\leftrightarrow }L$, $\kappa {\leftrightarrow }\tau $) but the algorithm is not (optimised, with hints/packing). The classical ECDSA adaptor is a functionality-matched, not security-matched, baseline}{table.2.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Parameter sets used in the evaluation. The \emph  {LAS-2020/845 reference} set is the original paper's parameter set; the \emph  {Simplified Dilithium-II/III/V} sets reuse the dimensions of Dilithium modes~2/3/5 (so the public-key, secret, and challenge dimensions line up with NIST levels~2/3/5) and are engineering benchmark settings, \emph  {not} formal NIST/ML-DSA security-equivalence claims. All lattice sets share the ring degree $N=256$ and modulus $q=8\,380\,417\approx 2^{23}$ inherited from the reused Dilithium NTT; \emph  {Simplified Dilithium-III} is the project's target set. The classical secp256k1 ECDSA adaptor is a functionality-matched baseline at $\approx $128-bit classical security. \Cref  {tab:notation} defines each symbol.}}{21}{table.2.2}\protected@file@percent }
+\newlabel{tab:params}{{2.2}{21}{Parameter sets used in the evaluation. The \emph {LAS-2020/845 reference} set is the original paper's parameter set; the \emph {Simplified Dilithium-II/III/V} sets reuse the dimensions of Dilithium modes~2/3/5 (so the public-key, secret, and challenge dimensions line up with NIST levels~2/3/5) and are engineering benchmark settings, \emph {not} formal NIST/ML-DSA security-equivalence claims. All lattice sets share the ring degree $N=256$ and modulus $q=8\,380\,417\approx 2^{23}$ inherited from the reused Dilithium NTT; \emph {Simplified Dilithium-III} is the project's target set. The classical secp256k1 ECDSA adaptor is a functionality-matched baseline at $\approx $128-bit classical security. \Cref {tab:notation} defines each symbol}{table.2.2}{}}
 \newlabel{tab:params@cref}{{[table][2][2]2.2}{[1][20][]21}}
+\@writefile{toc}{\contentsline {paragraph}{Component-level size analysis.}{21}{section*.22}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Classical baseline (functionality-matched, not security-matched).}{21}{section*.23}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {3}Results and discussion}{22}{chapter.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2.3}{\ignorespaces Security and scheme parameters: the symbol, its meaning, and the value(s) it takes across the parameter sets, \emph  {listed in the row order of} \cref  {tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The paper's ring-degree symbol $d$ is written $N$ here, because the reused Dilithium NTT fixes $N=256$. The figure and table captions in \cref  {ch:results} refer back to these names and values.}}{22}{table.2.3}\protected@file@percent }
+\newlabel{tab:notation}{{2.3}{22}{Security and scheme parameters: the symbol, its meaning, and the value(s) it takes across the parameter sets, \emph {listed in the row order of} \cref {tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The paper's ring-degree symbol $d$ is written $N$ here, because the reused Dilithium NTT fixes $N=256$. The figure and table captions in \cref {ch:results} refer back to these names and values}{table.2.3}{}}
+\newlabel{tab:notation@cref}{{[table][3][2]2.3}{[1][20][]22}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Results and discussion}{23}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:results}{{3}{22}{Results and discussion}{chapter.3}{}}
-\newlabel{ch:results@cref}{{[chapter][3][]3}{[1][22][]22}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.1}Correctness and robustness}{22}{section.3.1}\protected@file@percent }
-\newlabel{sec:res-correctness}{{3.1}{22}{Correctness and robustness}{section.3.1}{}}
-\newlabel{sec:res-correctness@cref}{{[section][1][3]3.1}{[1][22][]22}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract, each clause checked and passed by \texttt  {test\_contract} (corroborated at scale by the 1000-iteration functional suite on modes 2/3/5, the 256-instance serialization suite, and the pinned known-answer test).}}{23}{table.3.1}\protected@file@percent }
-\newlabel{tab:contract}{{3.1}{23}{The adaptor-signature correctness contract, each clause checked and passed by \texttt {test\_contract} (corroborated at scale by the 1000-iteration functional suite on modes 2/3/5, the 256-instance serialization suite, and the pinned known-answer test)}{table.3.1}{}}
-\newlabel{tab:contract@cref}{{[table][1][3]3.1}{[1][22][]23}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Primary fair comparison: adaptor overhead over the simplified base, paper parameters ($n{=}\ell {=}4$, $\kappa {=}60$), $\mu $s, mean $\pm $ sample SD. Overhead is the increase of each adaptor operation over its base analogue.}}{23}{table.3.2}\protected@file@percent }
-\newlabel{tab:overhead}{{3.2}{23}{Primary fair comparison: adaptor overhead over the simplified base, paper parameters ($n{=}\ell {=}4$, $\kappa {=}60$), $\mu $s, mean $\pm $ sample SD. Overhead is the increase of each adaptor operation over its base analogue}{table.3.2}{}}
-\newlabel{tab:overhead@cref}{{[table][2][3]3.2}{[1][23][]23}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.2}Computation cost}{23}{section.3.2}\protected@file@percent }
-\newlabel{sec:res-compute}{{3.2}{23}{Computation cost}{section.3.2}{}}
-\newlabel{sec:res-compute@cref}{{[section][2][3]3.2}{[1][22][]23}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.3}{\ignorespaces Adaptor overhead is small at every parameter set (\texttt  {bench\_levels}). Percentages are each adaptor operation over its base analogue.}}{24}{table.3.3}\protected@file@percent }
-\newlabel{tab:overhead-levels}{{3.3}{24}{Adaptor overhead is small at every parameter set (\texttt {bench\_levels}). Percentages are each adaptor operation over its base analogue}{table.3.3}{}}
-\newlabel{tab:overhead-levels@cref}{{[table][3][3]3.3}{[1][24][]24}}
-\@writefile{toc}{\contentsline {paragraph}{Context: the optimised Dilithium reference (not algorithm-matched).}{24}{section*.24}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3.4}{\ignorespaces Context only --- simplified LAS base vs.\ optimised CRYSTALS-Dilithium ($\mu $s, mean $\pm $ SD). \emph  {Not algorithm-matched}: Dilithium adds hints/Power2Round/packing; module dimensions are matched only to place it at a comparable security level.}}{25}{table.3.4}\protected@file@percent }
-\newlabel{tab:context-compute}{{3.4}{25}{Context only --- simplified LAS base vs.\ optimised CRYSTALS-Dilithium ($\mu $s, mean $\pm $ SD). \emph {Not algorithm-matched}: Dilithium adds hints/Power2Round/packing; module dimensions are matched only to place it at a comparable security level}{table.3.4}{}}
-\newlabel{tab:context-compute@cref}{{[table][4][3]3.4}{[1][25][]25}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.5}{\ignorespaces LAS objects by component (packed bytes; \texttt  {bench\_levels}). The paper set shares the NIST~2 dimensions. The challenge $c$ is fixed; the response $z$ grows with $n+\ell $ and dominates the signature at every level.}}{25}{table.3.5}\protected@file@percent }
-\newlabel{tab:components}{{3.5}{25}{LAS objects by component (packed bytes; \texttt {bench\_levels}). The paper set shares the NIST~2 dimensions. The challenge $c$ is fixed; the response $z$ grows with $n+\ell $ and dominates the signature at every level}{table.3.5}{}}
-\newlabel{tab:components@cref}{{[table][5][3]3.5}{[1][25][]25}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.3}Communication cost and component breakdown}{25}{section.3.3}\protected@file@percent }
-\newlabel{sec:res-comm}{{3.3}{25}{Communication cost and component breakdown}{section.3.3}{}}
-\newlabel{sec:res-comm@cref}{{[section][3][3]3.3}{[1][25][]25}}
+\newlabel{ch:results}{{3}{23}{Results and discussion}{chapter.3}{}}
+\newlabel{ch:results@cref}{{[chapter][3][]3}{[1][23][]23}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}Correctness and robustness}{23}{section.3.1}\protected@file@percent }
+\newlabel{sec:res-correctness}{{3.1}{23}{Correctness and robustness}{section.3.1}{}}
+\newlabel{sec:res-correctness@cref}{{[section][1][3]3.1}{[1][23][]23}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract, each clause checked and passed by \texttt  {test\_contract} (corroborated at scale by the 1000-iteration functional suite on modes 2/3/5, the 256-instance serialization suite, and the pinned known-answer test).}}{24}{table.3.1}\protected@file@percent }
+\newlabel{tab:contract}{{3.1}{24}{The adaptor-signature correctness contract, each clause checked and passed by \texttt {test\_contract} (corroborated at scale by the 1000-iteration functional suite on modes 2/3/5, the 256-instance serialization suite, and the pinned known-answer test)}{table.3.1}{}}
+\newlabel{tab:contract@cref}{{[table][1][3]3.1}{[1][23][]24}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Key overhead summary at the \emph  {Simplified Dilithium-III} (target) setting ($n{=}6$, $\ell {=}5$, $M{=}11$, $\kappa {=}49$, $\gamma {=}137\,984$, $N{=}256$, $q{=}8\,380\,417$); $\mu $s/op, mean $\pm $ sample SD over 10 runs $\times $ 1000 iterations (\texttt  {bench\_levels}). Overhead is each adaptor operation over its basic analogue; KeyGen (and statement generation) is shared by the basic signature and LAS.}}{24}{table.3.2}\protected@file@percent }
+\newlabel{tab:overhead}{{3.2}{24}{Key overhead summary at the \emph {Simplified Dilithium-III} (target) setting ($n{=}6$, $\ell {=}5$, $M{=}11$, $\kappa {=}49$, $\gamma {=}137\,984$, $N{=}256$, $q{=}8\,380\,417$); $\mu $s/op, mean $\pm $ sample SD over 10 runs $\times $ 1000 iterations (\texttt {bench\_levels}). Overhead is each adaptor operation over its basic analogue; KeyGen (and statement generation) is shared by the basic signature and LAS}{table.3.2}{}}
+\newlabel{tab:overhead@cref}{{[table][2][3]3.2}{[1][24][]24}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}Computation cost}{24}{section.3.2}\protected@file@percent }
+\newlabel{sec:res-compute}{{3.2}{24}{Computation cost}{section.3.2}{}}
+\newlabel{sec:res-compute@cref}{{[section][2][3]3.2}{[1][23][]24}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.3}{\ignorespaces Adaptor overhead is small at every parameter set (\texttt  {bench\_levels}; mean over 10 runs $\times $ 1000 iters, Extract in $\mu $s). Percentages are each adaptor operation over its basic analogue.}}{25}{table.3.3}\protected@file@percent }
+\newlabel{tab:overhead-levels}{{3.3}{25}{Adaptor overhead is small at every parameter set (\texttt {bench\_levels}; mean over 10 runs $\times $ 1000 iters, Extract in $\mu $s). Percentages are each adaptor operation over its basic analogue}{table.3.3}{}}
+\newlabel{tab:overhead-levels@cref}{{[table][3][3]3.3}{[1][25][]25}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.4}{\ignorespaces LAS objects by component (packed bytes; \texttt  {bench\_levels}). The LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The challenge $c$ is fixed; the response $z$ grows with $n+\ell $ and dominates the signature at every setting.}}{26}{table.3.4}\protected@file@percent }
+\newlabel{tab:components}{{3.4}{26}{LAS objects by component (packed bytes; \texttt {bench\_levels}). The LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The challenge $c$ is fixed; the response $z$ grows with $n+\ell $ and dominates the signature at every setting}{table.3.4}{}}
+\newlabel{tab:components@cref}{{[table][4][3]3.4}{[1][26][]26}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}Communication cost and component breakdown}{26}{section.3.3}\protected@file@percent }
+\newlabel{sec:res-comm}{{3.3}{26}{Communication cost and component breakdown}{section.3.3}{}}
+\newlabel{sec:res-comm@cref}{{[section][3][3]3.3}{[1][25][]26}}
 \citation{secp256k1zkp}
-\@writefile{lot}{\contentsline {table}{\numberline {3.6}{\ignorespaces Context only --- optimised CRYSTALS-Dilithium sizes (bytes) at matching module dimensions. \emph  {Not algorithm-matched}; the size gap reflects Dilithium's hint/decomposition/bit-packing, not a difference in security level.}}{26}{table.3.6}\protected@file@percent }
-\newlabel{tab:context-sizes}{{3.6}{26}{Context only --- optimised CRYSTALS-Dilithium sizes (bytes) at matching module dimensions. \emph {Not algorithm-matched}; the size gap reflects Dilithium's hint/decomposition/bit-packing, not a difference in security level}{table.3.6}{}}
-\newlabel{tab:context-sizes@cref}{{[table][6][3]3.6}{[1][26][]26}}
-\@writefile{toc}{\contentsline {paragraph}{Context: sizes against the optimised Dilithium reference (not algorithm-matched).}{26}{section*.25}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3.7}{\ignorespaces Functionality-matched ``price of post-quantum''. Classical secp256k1 ($\approx $128-bit classical, no NIST PQ level) vs.\ post-quantum NIST~2. Timings $\mu $s/op; sizes bytes. ``---'' marks operations a basic signature lacks. The statement is produced by KeyGen and has the public-key size.}}{27}{table.3.7}\protected@file@percent }
-\newlabel{tab:classical}{{3.7}{27}{Functionality-matched ``price of post-quantum''. Classical secp256k1 ($\approx $128-bit classical, no NIST PQ level) vs.\ post-quantum NIST~2. Timings $\mu $s/op; sizes bytes. ``---'' marks operations a basic signature lacks. The statement is produced by KeyGen and has the public-key size}{table.3.7}{}}
-\newlabel{tab:classical@cref}{{[table][7][3]3.7}{[1][27][]27}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3.1}The price of post-quantum: classical adaptor baseline}{27}{subsection.3.3.1}\protected@file@percent }
 \newlabel{sec:res-classical}{{3.3.1}{27}{The price of post-quantum: classical adaptor baseline}{subsection.3.3.1}{}}
-\newlabel{sec:res-classical@cref}{{[subsection][1][3,3]3.3.1}{[1][26][]27}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.4}Application demonstration}{28}{section.3.4}\protected@file@percent }
-\newlabel{sec:res-app}{{3.4}{28}{Application demonstration}{section.3.4}{}}
-\newlabel{sec:res-app@cref}{{[section][4][3]3.4}{[1][28][]28}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.5}Threats to validity}{29}{section.3.5}\protected@file@percent }
-\newlabel{sec:res-validity}{{3.5}{29}{Threats to validity}{section.3.5}{}}
-\newlabel{sec:res-validity@cref}{{[section][5][3]3.5}{[1][28][]29}}
+\newlabel{sec:res-classical@cref}{{[subsection][1][3,3]3.3.1}{[1][27][]27}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.5}{\ignorespaces Complete LAS vs.\ basic-signature comparison at the \emph  {Simplified Dilithium-III} (target) setting ($n{=}6$, $\ell {=}5$, $M{=}11$, $\kappa {=}49$, $\gamma {=}137\,984$, $N{=}256$, $q{=}8\,380\,417$). \emph  {Top:} communication --- packed bytes of every object. \emph  {Bottom:} computation --- $\mu $s/op, mean $\pm $ sample SD over 10 runs $\times $ 1000 iterations (\texttt  {bench\_levels}). ``Basic'' is the simplified Dilithium-style base signature; shared rows are byte- or cycle-identical in both. The adapted signature is itself a valid basic signature.}}{28}{table.3.5}\protected@file@percent }
+\newlabel{tab:complete-l3}{{3.5}{28}{Complete LAS vs.\ basic-signature comparison at the \emph {Simplified Dilithium-III} (target) setting ($n{=}6$, $\ell {=}5$, $M{=}11$, $\kappa {=}49$, $\gamma {=}137\,984$, $N{=}256$, $q{=}8\,380\,417$). \emph {Top:} communication --- packed bytes of every object. \emph {Bottom:} computation --- $\mu $s/op, mean $\pm $ sample SD over 10 runs $\times $ 1000 iterations (\texttt {bench\_levels}). ``Basic'' is the simplified Dilithium-style base signature; shared rows are byte- or cycle-identical in both. The adapted signature is itself a valid basic signature}{table.3.5}{}}
+\newlabel{tab:complete-l3@cref}{{[table][5][3]3.5}{[1][27][]28}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.6}{\ignorespaces Classical vs.\ post-quantum adaptor signature: same functionality, different security foundation. Classical secp256k1 ($\approx $128-bit classical) and LAS at the \emph  {Simplified Dilithium-II} parameters. Timings $\mu $s/op (mean over 10 runs $\times $ 1000 iterations, same machine); sizes in bytes. KeyGen also produces the statement/witness, which take the public-key/secret-key size.}}{29}{table.3.6}\protected@file@percent }
+\newlabel{tab:classical}{{3.6}{29}{Classical vs.\ post-quantum adaptor signature: same functionality, different security foundation. Classical secp256k1 ($\approx $128-bit classical) and LAS at the \emph {Simplified Dilithium-II} parameters. Timings $\mu $s/op (mean over 10 runs $\times $ 1000 iterations, same machine); sizes in bytes. KeyGen also produces the statement/witness, which take the public-key/secret-key size}{table.3.6}{}}
+\newlabel{tab:classical@cref}{{[table][6][3]3.6}{[1][28][]29}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Application demonstration}{29}{section.3.4}\protected@file@percent }
+\newlabel{sec:res-app}{{3.4}{29}{Application demonstration}{section.3.4}{}}
+\newlabel{sec:res-app@cref}{{[section][4][3]3.4}{[1][29][]29}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}Threats to validity}{30}{section.3.5}\protected@file@percent }
+\newlabel{sec:res-validity}{{3.5}{30}{Threats to validity}{section.3.5}{}}
+\newlabel{sec:res-validity@cref}{{[section][5][3]3.5}{[1][30][]30}}
 \citation{esgin2020}
 \citation{survey2022}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}Evaluation and reflection}{30}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Evaluation and reflection}{31}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:evaluation}{{4}{30}{Evaluation and reflection}{chapter.4}{}}
-\newlabel{ch:evaluation@cref}{{[chapter][4][]4}{[1][30][]30}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Evaluation against the objectives}{30}{section.4.1}\protected@file@percent }
-\newlabel{sec:eval-objectives}{{4.1}{30}{Evaluation against the objectives}{section.4.1}{}}
-\newlabel{sec:eval-objectives@cref}{{[section][1][4]4.1}{[1][30][]30}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}Reflection on the approach}{31}{section.4.2}\protected@file@percent }
-\newlabel{sec:eval-reflection}{{4.2}{31}{Reflection on the approach}{section.4.2}{}}
-\newlabel{sec:eval-reflection@cref}{{[section][2][4]4.2}{[1][31][]31}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.3}Limitations}{31}{section.4.3}\protected@file@percent }
-\newlabel{sec:eval-limitations}{{4.3}{31}{Limitations}{section.4.3}{}}
-\newlabel{sec:eval-limitations@cref}{{[section][3][4]4.3}{[1][31][]31}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusion and future work}{33}{chapter.5}\protected@file@percent }
+\newlabel{ch:evaluation}{{4}{31}{Evaluation and reflection}{chapter.4}{}}
+\newlabel{ch:evaluation@cref}{{[chapter][4][]4}{[1][31][]31}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Evaluation against the objectives}{31}{section.4.1}\protected@file@percent }
+\newlabel{sec:eval-objectives}{{4.1}{31}{Evaluation against the objectives}{section.4.1}{}}
+\newlabel{sec:eval-objectives@cref}{{[section][1][4]4.1}{[1][31][]31}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Reflection on the approach}{32}{section.4.2}\protected@file@percent }
+\newlabel{sec:eval-reflection}{{4.2}{32}{Reflection on the approach}{section.4.2}{}}
+\newlabel{sec:eval-reflection@cref}{{[section][2][4]4.2}{[1][32][]32}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Limitations}{32}{section.4.3}\protected@file@percent }
+\newlabel{sec:eval-limitations}{{4.3}{32}{Limitations}{section.4.3}{}}
+\newlabel{sec:eval-limitations@cref}{{[section][3][4]4.3}{[1][32][]32}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusion and future work}{34}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:conclusion}{{5}{33}{Conclusion and future work}{chapter.5}{}}
-\newlabel{ch:conclusion@cref}{{[chapter][5][]5}{[1][33][]33}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.1}Conclusions}{33}{section.5.1}\protected@file@percent }
-\newlabel{sec:conclusions}{{5.1}{33}{Conclusions}{section.5.1}{}}
-\newlabel{sec:conclusions@cref}{{[section][1][5]5.1}{[1][33][]33}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.2}Future work}{34}{section.5.2}\protected@file@percent }
-\newlabel{sec:future}{{5.2}{34}{Future work}{section.5.2}{}}
-\newlabel{sec:future@cref}{{[section][2][5]5.2}{[1][34][]34}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Code listings and reproduction}{35}{appendix.A}\protected@file@percent }
+\newlabel{ch:conclusion}{{5}{34}{Conclusion and future work}{chapter.5}{}}
+\newlabel{ch:conclusion@cref}{{[chapter][5][]5}{[1][34][]34}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Conclusions}{34}{section.5.1}\protected@file@percent }
+\newlabel{sec:conclusions}{{5.1}{34}{Conclusions}{section.5.1}{}}
+\newlabel{sec:conclusions@cref}{{[section][1][5]5.1}{[1][34][]34}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Future work}{35}{section.5.2}\protected@file@percent }
+\newlabel{sec:future}{{5.2}{35}{Future work}{section.5.2}{}}
+\newlabel{sec:future@cref}{{[section][2][5]5.2}{[1][35][]35}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Code listings and reproduction}{36}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:code}{{A}{35}{Code listings and reproduction}{appendix.A}{}}
-\newlabel{app:code@cref}{{[appendix][1][2147483647]A}{[1][35][]35}}
-\@writefile{toc}{\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{35}{section.A.1}\protected@file@percent }
-\newlabel{app:repro}{{A.1}{35}{Building and reproducing the benchmarks}{section.A.1}{}}
-\newlabel{app:repro@cref}{{[subappendix][1][2147483647,1]A.1}{[1][35][]35}}
-\newlabel{lst:benchfair}{{A.1}{35}{Fair benchmark and tests (first-stage evaluation)}{lstlisting.A.1}{}}
-\newlabel{lst:benchfair@cref}{{[listing][1][2147483647,1]A.1}{[1][35][]35}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.1}Fair benchmark and tests (first-stage evaluation).}{35}{lstlisting.A.1}\protected@file@percent }
-\newlabel{lst:classical}{{A.2}{36}{Classical adaptor baseline (one-time clone)}{lstlisting.A.2}{}}
-\newlabel{lst:classical@cref}{{[listing][2][2147483647,1]A.2}{[1][36][]36}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.2}Classical adaptor baseline (one-time clone).}{36}{lstlisting.A.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {A.2}Auditing the reuse claim}{36}{section.A.2}\protected@file@percent }
-\newlabel{app:diff}{{A.2}{36}{Auditing the reuse claim}{section.A.2}{}}
-\newlabel{app:diff@cref}{{[subappendix][2][2147483647,1]A.2}{[1][36][]36}}
-\newlabel{lst:diff}{{A.3}{36}{Branch diff proving the lattice core is untouched (no output means identical)}{lstlisting.A.3}{}}
-\newlabel{lst:diff@cref}{{[listing][3][2147483647,1]A.3}{[1][36][]36}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.3}Branch diff proving the lattice core is untouched (no output means identical).}{36}{lstlisting.A.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {A.3}Selected code listing: Adapt and Extract}{36}{section.A.3}\protected@file@percent }
-\newlabel{app:listing}{{A.3}{36}{Selected code listing: Adapt and Extract}{section.A.3}{}}
-\newlabel{app:listing@cref}{{[subappendix][3][2147483647,1]A.3}{[1][36][]36}}
-\newlabel{lst:lasc}{{A.4}{36}{\texttt {las\_adapt} and \texttt {las\_ext} from \texttt {ref/las.c}}{lstlisting.A.4}{}}
-\newlabel{lst:lasc@cref}{{[listing][4][2147483647,1]A.4}{[1][36][]36}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.4}\texttt  {las\_adapt} and \texttt  {las\_ext} from \texttt  {ref/las.c}.}{36}{lstlisting.A.4}\protected@file@percent }
-\bibstyle{alpha}
+\newlabel{app:code}{{A}{36}{Code listings and reproduction}{appendix.A}{}}
+\newlabel{app:code@cref}{{[appendix][1][2147483647]A}{[1][36][]36}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{36}{section.A.1}\protected@file@percent }
+\newlabel{app:repro}{{A.1}{36}{Building and reproducing the benchmarks}{section.A.1}{}}
+\newlabel{app:repro@cref}{{[subappendix][1][2147483647,1]A.1}{[1][36][]36}}
+\newlabel{lst:benchfair}{{A.1}{36}{Fair benchmark and tests (first-stage evaluation)}{lstlisting.A.1}{}}
+\newlabel{lst:benchfair@cref}{{[listing][1][2147483647,1]A.1}{[1][36][]36}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.1}Fair benchmark and tests (first-stage evaluation).}{36}{lstlisting.A.1}\protected@file@percent }
+\newlabel{lst:classical}{{A.2}{37}{Classical adaptor baseline (one-time clone)}{lstlisting.A.2}{}}
+\newlabel{lst:classical@cref}{{[listing][2][2147483647,1]A.2}{[1][37][]37}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.2}Classical adaptor baseline (one-time clone).}{37}{lstlisting.A.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.2}Auditing the reuse claim}{37}{section.A.2}\protected@file@percent }
+\newlabel{app:diff}{{A.2}{37}{Auditing the reuse claim}{section.A.2}{}}
+\newlabel{app:diff@cref}{{[subappendix][2][2147483647,1]A.2}{[1][37][]37}}
+\newlabel{lst:diff}{{A.3}{37}{Branch diff proving the lattice core is untouched (no output means identical)}{lstlisting.A.3}{}}
+\newlabel{lst:diff@cref}{{[listing][3][2147483647,1]A.3}{[1][37][]37}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.3}Branch diff proving the lattice core is untouched (no output means identical).}{37}{lstlisting.A.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.3}Selected code listing: Adapt and Extract}{37}{section.A.3}\protected@file@percent }
+\newlabel{app:listing}{{A.3}{37}{Selected code listing: Adapt and Extract}{section.A.3}{}}
+\newlabel{app:listing@cref}{{[subappendix][3][2147483647,1]A.3}{[1][37][]37}}
+\newlabel{lst:lasc}{{A.4}{37}{\texttt {las\_adapt} and \texttt {las\_ext} from \texttt {ref/las.c}}{lstlisting.A.4}{}}
+\newlabel{lst:lasc@cref}{{[listing][4][2147483647,1]A.4}{[1][37][]37}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.4}\texttt  {las\_adapt} and \texttt  {las\_ext} from \texttt  {ref/las.c}.}{37}{lstlisting.A.4}\protected@file@percent }
+\bibstyle{plain}
 \bibdata{refs}
-\bibcite{aumayr2021}{AEE{$^{+}$}21}
-\bibcite{poqeth2025}{Ano25}
-\bibcite{survey2022}{B{$^{+}$}22}
-\bibcite{secp256k1zkp}{{Blo}24}
-\bibcite{ducas2018}{DKL{$^{+}$}18}
-\bibcite{esgin2020}{EEE20}
-\bibcite{lyubashevsky2012}{Lyu12}
-\@writefile{toc}{\contentsline {chapter}{Bibliography}{38}{appendix*.26}\protected@file@percent }
-\bibcite{malavolta2019}{MMSS{$^{+}$}19}
-\bibcite{nist2024}{{Nat}24}
-\bibcite{poelstra2017}{Poe17}
-\bibcite{shor1997}{Sho97}
-\gdef \@abspage@last{39}
+\bibcite{poqeth2025}{1}
+\bibcite{aumayr2021}{2}
+\bibcite{secp256k1zkp}{3}
+\bibcite{survey2022}{4}
+\bibcite{ducas2018}{5}
+\bibcite{esgin2020}{6}
+\bibcite{lyubashevsky2012}{7}
+\bibcite{malavolta2019}{8}
+\@writefile{toc}{\contentsline {chapter}{Bibliography}{39}{appendix*.24}\protected@file@percent }
+\bibcite{nist2024}{9}
+\bibcite{poelstra2017}{10}
+\bibcite{shor1997}{11}
+\gdef \@abspage@last{40}

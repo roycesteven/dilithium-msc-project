@@ -8,7 +8,7 @@ model: opus
 You are a read-only reproducibility reviewer.
 
 Scope:
-- README_LAS.md
+- README.md
 - docs/STATUS.md
 - ref/Makefile
 - evidence/**/*.log

@@ -57,6 +57,10 @@ Algorithm 2 names the Ext output s = z − z_hat; Definition 3 uses y only as th
 
 ### ASCII-safe fallbacks (use these in code/plain-text contexts)
 
+These are ASCII renderings of the paper's symbols for code, logs, and CSV columns
+only. They are **fallbacks, not new mathematical notation**: in report text and in
+rendered figure labels use the paper symbols (`ẑ`, `σ̂`, `ℓ`, `κ`, `γ`, …).
+
 | Unicode | ASCII fallback |
 |---------|----------------|
 | `σ`     | `sigma`        |
@@ -199,8 +203,8 @@ Analysis"** incl. **Eq. (7)** (p.11–12).
 | `pk = t` | public key | `pk` |
 | `sk = r` | secret key | `sk` |
 | `Y = t'` | statement / lock | `Y` |
-| `y` (in Sign / PreSign) | masking / signing randomness | `y_mask` |
-| `y` = `r'` (in Adapt / Gen) | adaptor witness | `y_witness` / `r'` |
+| `y` (sampled in Sign / PreSign) | masking randomness | `y` |
+| `y` in `(Y, y)`; `r' := y` in Adapt | witness | `r'` |
 | `c` | challenge | `c` |
 | `ẑ` / `z_hat` | pre-signature response | `z_hat` |
 | `z` | final / adapted response | `z` |
@@ -208,16 +212,13 @@ Analysis"** incl. **Eq. (7)** (p.11–12).
 | `σ = (c, z)` | ordinary / adapted signature | `signature` / `adapted signature` |
 | `s` | extracted witness (`Ext`) | extracted witness |
 
-> **Notation subtlety to respect (do not collapse):** the paper overloads `y`.
-> In `Sign`/`PreSign` (Alg. 1 Step 7, Alg. 2 Step 2) `y` is the **masking
-> randomness** sampled from `S_γ`. In Definition 3 and `Adapt` (Alg. 2 Step 24,
-> via `r' := y`) `y` is the **witness**. **In report and implementation
-> explanations, use `y_mask` for the signing/masking randomness and `y_witness`
-> (= the paper's `r'`) for the adaptor witness** — never the bare `y` for both.
-> Keep them distinct; never imply the masking randomness and the witness are the
-> same vector. (The Algorithm 1–2 transcriptions above keep the paper's bare `y`
-> because they reproduce the paper verbatim; the `y_mask`/`y_witness` split is
-> for our own prose, figures, and code.)
+> **Notation subtlety (preserve the paper's `y`; do NOT introduce aliases):**
+> The paper overloads `y`. In `Sign`/`PreSign`, `y` is the sampled masking
+> randomness. In `Adapt((Y, y), …)`, `y` is the witness, and Algorithm 2 writes
+> `r' := y`. This guide preserves the paper notation and does not introduce
+> aliases. When prose needs to disambiguate, do it in words — "the `y` sampled in
+> PreSign" vs "the `y` in the statement–witness pair `(Y, y)`" (the paper's
+> `r'`) — never with invented symbols such as `y_mask` or `y_witness`.
 
 ## 8. Report and figure label rules
 
@@ -240,7 +241,7 @@ Analysis"** incl. **Eq. (7)** (p.11–12).
   `Q = 8380417` or a different concrete encoding; say **"paper-derived / default
   LAS setting"** (see §6).
 - Do **not** say Adapt **appends the witness as a new serialized field**. Say
-  **Adapt computes `z = ẑ + r'` (= `z_hat + y_witness`)**, so the encoded
+  **Adapt computes `z = ẑ + r'`** (ASCII `z = z_hat + r'`), so the encoded
   structure stays `σ = (c, z)` — same shape as an ordinary signature.
 
 ## 9. Plot typography rules for thesis figures

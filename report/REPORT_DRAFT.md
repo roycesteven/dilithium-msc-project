@@ -808,5 +808,5 @@ pinned vectors.
 Upstream Dilithium vendored at commit `2374d22`; classical baseline
 `secp256k1-zkp` at `95b9835` (one-time clone, git-ignored). Toolchain:
 `cc (Ubuntu 13.3.0)`, GNU Make 4.3, Linux/WSL2, `-O3`, zero warnings under the
-project's full warning set. Build/run: see `README_LAS.md`; every test and
+project's full warning set. Build/run: see `README.md`; every test and
 benchmark in this report is a single `make` target.

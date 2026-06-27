@@ -1,7 +1,12 @@
-\newcommand{\etalchar}[1]{$^{#1}$}
-\begin{thebibliography}{MMSS{\etalchar{+}}19}
+\begin{thebibliography}{10}
 
-\bibitem[AEE{\etalchar{+}}21]{aumayr2021}
+\bibitem{poqeth2025}
+Anonymous.
+\newblock poqeth: Towards post-quantum ethereum (placeholder title).
+\newblock Cryptology ePrint Archive, Report 2025/091, 2025.
+\newblock \url{https://eprint.iacr.org/2025/091}.
+
+\bibitem{aumayr2021}
 Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Krist\'of
   Hostakov\'a, Matteo Maffei, Pedro Moreno-Sanchez, and Siavash Riahi.
 \newblock Generalized channels from limited blockchain scripts and adaptor
@@ -9,47 +14,41 @@ Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Krist\'of
 \newblock In {\em Advances in Cryptology -- ASIACRYPT 2021}, volume 13091 of
   {\em Lecture Notes in Computer Science}, pages 635--664. Springer, 2021.
 
-\bibitem[Ano25]{poqeth2025}
-Anonymous.
-\newblock poqeth: Towards post-quantum ethereum (placeholder title).
-\newblock Cryptology ePrint Archive, Report 2025/091, 2025.
-\newblock \url{https://eprint.iacr.org/2025/091}.
-
-\bibitem[B{\etalchar{+}}22]{survey2022}
-Maxime Buser et~al.
-\newblock A survey on exotic signatures for post-quantum blockchain: Challenges
-  and research directions.
-\newblock {\em ACM Computing Surveys}, 2022.
-\newblock Cryptology ePrint Archive, Report 2022/1151.
-
-\bibitem[{Blo}24]{secp256k1zkp}
+\bibitem{secp256k1zkp}
 {Blockstream Research}.
 \newblock {secp256k1-zkp}: Ecdsa adaptor signature module.
 \newblock Software library, 2024.
 \newblock \url{https://github.com/BlockstreamResearch/secp256k1-zkp}, commit
   95b9835.
 
-\bibitem[DKL{\etalchar{+}}18]{ducas2018}
+\bibitem{survey2022}
+Maxime Buser et~al.
+\newblock A survey on exotic signatures for post-quantum blockchain: Challenges
+  and research directions.
+\newblock {\em ACM Computing Surveys}, 2022.
+\newblock Cryptology ePrint Archive, Report 2022/1151.
+
+\bibitem{ducas2018}
 L\'eo Ducas, Eike Kiltz, Tancr\`ede Lepoint, Vadim Lyubashevsky, Peter Schwabe,
   Gregor Seiler, and Damien Stehl\'e.
 \newblock {CRYSTALS-Dilithium}: A lattice-based digital signature scheme.
 \newblock {\em IACR Transactions on Cryptographic Hardware and Embedded
   Systems}, 2018(1):238--268, 2018.
 
-\bibitem[EEE20]{esgin2020}
+\bibitem{esgin2020}
 Muhammed~F. Esgin, O\u{g}uzhan Ersoy, and Zekeriya Erkin.
 \newblock Post-quantum adaptor signatures and payment channel networks.
 \newblock In {\em Computer Security -- ESORICS 2020}, volume 12309 of {\em
   Lecture Notes in Computer Science}, pages 378--397. Springer, 2020.
 \newblock Cryptology ePrint Archive, Report 2020/845.
 
-\bibitem[Lyu12]{lyubashevsky2012}
+\bibitem{lyubashevsky2012}
 Vadim Lyubashevsky.
 \newblock Lattice signatures without trapdoors.
 \newblock In {\em Advances in Cryptology -- EUROCRYPT 2012}, volume 7237 of
   {\em Lecture Notes in Computer Science}, pages 738--755. Springer, 2012.
 
-\bibitem[MMSS{\etalchar{+}}19]{malavolta2019}
+\bibitem{malavolta2019}
 Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
   Matteo Maffei.
 \newblock Anonymous multi-hop locks for blockchain scalability and
@@ -57,19 +56,19 @@ Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
 \newblock In {\em 26th Annual Network and Distributed System Security Symposium
   (NDSS 2019)}. The Internet Society, 2019.
 
-\bibitem[{Nat}24]{nist2024}
+\bibitem{nist2024}
 {National Institute of Standards and Technology}.
 \newblock Module-lattice-based digital signature standard.
 \newblock FIPS Publication 204, 2024.
 \newblock U.S. Department of Commerce.
 
-\bibitem[Poe17]{poelstra2017}
+\bibitem{poelstra2017}
 Andrew Poelstra.
 \newblock Scriptless scripts.
 \newblock Presentation, Milan Bitcoin meetup / Blockstream, 2017.
 \newblock \url{https://github.com/apoelstra/scriptless-scripts}.
 
-\bibitem[Sho97]{shor1997}
+\bibitem{shor1997}
 Peter~W. Shor.
 \newblock Polynomial-time algorithms for prime factorization and discrete
   logarithms on a quantum computer.

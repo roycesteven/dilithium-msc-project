@@ -52,7 +52,7 @@ This skill may update only these files when needed:
 
 ```text
 PROGRESS.md
-README_LAS.md
+README.md
 docs/STATUS.md
 docs/PROJECT_HISTORY_EXPLAINED.md
 docs/LAS.md
@@ -328,7 +328,7 @@ Do not update for:
 
 ---
 
-### `README_LAS.md`
+### `README.md`
 
 Purpose:
 
@@ -405,18 +405,11 @@ If `origin/main` is unavailable or the diff command fails, do not guess. Update 
 
 ## Branch Safety Rule
 
-If the current branch is `main`, do not edit any files.
+`main` is the active working branch for this project, so doc-sync runs normally on `main`.
 
-Stop and tell the user:
-
-```text
-You are on `main`. Switch to the working/review branch before running doc-sync.
-
-Suggested command:
-git switch las-work-cleanup
-```
-
-`main` is reserved for verified work only.
+Only stop if the repository is in a detached-HEAD state or no branch can be determined
+(e.g. `git branch --show-current` returns empty). In that case, do not edit any files and
+tell the user to check out a branch first.
 
 ---
 
@@ -438,7 +431,7 @@ Update:
 
 ```text
 docs/STATUS.md
-README_LAS.md if reproduce commands changed
+README.md if reproduce commands changed
 PROGRESS.md summary
 ```
 
@@ -538,7 +531,7 @@ Do not edit report.
 Update:
 
 ```text
-README_LAS.md
+README.md
 docs/STATUS.md if reproduce command changed
 PROGRESS.md summary
 ```
@@ -568,7 +561,7 @@ Update:
 docs/GAS_LIMIT_INVESTIGATION.md
 docs/LAS.md if the main technical/evaluation interpretation changed
 docs/STATUS.md if gas benchmark/evidence status changed
-README_LAS.md if reproduce commands changed
+README.md if reproduce commands changed
 PROGRESS.md summary
 ```
 

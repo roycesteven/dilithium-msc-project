@@ -1,6 +1,6 @@
 # Project STATUS & Test Checklist — single source of truth for "what's done / tested"
 
-*Living tracker. Updated 2026-06-13. Read this first to see, at a glance, every
+*Living tracker. Updated 2026-06-27. Read this first to see, at a glance, every
 deliverable, whether it is **built**, **tested**, and **documented**, plus the one
 command that reproduces each claim. Maps every item to the Meeting-2 objectives
 (`las-context-consolidated.md`) and to the report's assessment criteria (`CLAUDE.md`).*
@@ -29,9 +29,9 @@ functions were written first, and why) →
 | D8 | Benchmark 1 — per-op timings + **direct** rejection rate | ✅ | ✅ | ✅ | `make test/bench_las3 && ./test/bench_las3` |
 | D9 | Benchmark 2 — LAS vs optimised Dilithium-3 (context; superseded as headline by D20) | ✅ | ✅ | ✅ | `make test/bench_compare3 && ./test/bench_compare3` |
 | D10 | Benchmark 3 — application cost (swap payload + AMHL-vs-K) | ✅ | ✅ | ✅ | `make test/bench_app3 && ./test/bench_app3` |
-| D11 | Benchmark 4 — **classical adaptor baseline** (ECDSA, same machine) | ✅ | ✅ | ✅ | clone secp256k1-zkp (README_LAS §Build), `make test/bench_classical && ./test/bench_classical` |
+| D11 | Benchmark 4 — **classical adaptor baseline** (ECDSA, same machine) | ✅ | ✅ | ✅ | clone secp256k1-zkp (README.md §4.1), `make test/bench_classical && ./test/bench_classical` |
 | D12 | Function map (reused/modified/added; 0 upstream modified) | ✅ | n/a | ✅ | `docs/FUNCTION_MAP.md` |
-| D13 | Reproducibility README + recorded provenance/toolchain | ✅ | n/a | ✅ | `README_LAS.md` |
+| D13 | Reproducibility README + recorded provenance/toolchain | ✅ | n/a | ✅ | `README.md` |
 | D14 | Report draft (~8k words, B4 skeleton) | 🟡 | n/a | 🟡 | `report/REPORT_DRAFT.md` (v0.1 — superseded by LaTeX scaffold D22) |
 | D15 | On-chain gas: real Solidity swap (classical vs LAS sig) **+ measured native-verify cost-probe** | ✅ | ✅ | ✅ | `cd ref && make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin; cd ../evm && forge test --gas-report && forge test --match-contract LASVerifyCost -vv` |
 | D20 | **Primary fair benchmark** (corrected 2026-06-22; base path modularised to `basesig.c` 2026-06-23): separate base path (`basesig.c`) vs LAS adaptor path (`las.c`) — adaptor overhead (PreSign/Sign, PreVerify/Verify, Adapt/Verify, Ext separate) + cross-verify contract; official Dilithium = CONTEXT only ("not algorithm-matched"); ≥5 runs mean±SD; component sizes | ✅ | ✅ | ✅ | `make test/bench_levels_paper test/bench_levels2 test/bench_levels3 test/bench_levels5 && ./test/bench_levels_paper …`; `docs/LAS.md §8.1` |
@@ -49,6 +49,36 @@ benchmark baselines, function map, reproducibility) is ✅ done & tested. AMHL,
 serialisation, KATs, **and the on-chain Solidity gas benchmark (D15)** are ✅ done.
 What remains is the **report polish** (D14), the **video** (D19), and the
 explicitly-optional tier (D16–D18).
+
+### Meeting-4 Stage-1 *presentation* (done 2026-06-27 · evidence run `20260627_135247` · commit `aba9003`)
+
+Meeting 4: the numbers were already right; the *presentation* had to become
+defensible (self-explanatory labels, parameters on the page, per-operation timing,
+captions). Now done:
+
+- **Self-explanatory figure labels.** `paper-derived` / `L2-like` / `L3-like` /
+  `L5-like` replaced by **LAS-2020/845 reference** and **Simplified Dilithium-II/III/V**
+  in `scripts/plot_las_benchmarks.py` + `scripts/plot_las_paper_figures.py`; **all**
+  figure artefacts in `evidence/latest/{paper_package,tables,debug_figures,application_package,appendix_package}`
+  regenerated from the captured logs — **numbers unchanged, labels only** (numeric CSVs
+  verified byte-identical).
+- **`ordinary signature` → `basic signature`** everywhere (figures, sidecar `.tex`,
+  `KEY_FINDINGS*`); the `statement Y = t' (LAS-added)` label is now just `statement Y = t'`.
+- **Full parameters go in the report caption, not the plot body** (supervisor steer):
+  in-figure setting annotations carry only the short scientific name; `n, ℓ, M, κ, γ,
+  N, q` and their values live in `report/latex` captions that point at the new
+  parameter tables.
+- **Report sync (`report/latex/`):** added a complete parameter **notation+values**
+  table (`tab:notation`) and a fuller parameter table (`tab:params`); a **key overhead
+  summary at the Simplified Dilithium-III target** (`tab:overhead`); a **complete
+  communication+computation vs basic-signature table** (`tab:complete-l3`); KeyGen now
+  documented as **shared** between the basic signature and LAS; per-op/levels/components/
+  classical tables + abstract/conclusion synced to evidence run `20260627_135247`
+  (headline overhead now ≤ ~8 %). Report passes a clean `pdflatex` error-check (final
+  PDF build is Royce's).
+- **Still open (Meeting-4 named deliverable):** open the clean-Dilithium → LAS **PR**
+  and invite Wang — supporting artefacts already exist (`dilithium-baseline` branch,
+  `docs/CODE_DIFF_VIEW.md`, `docs/FUNCTION_MAP.md`).
 
 ---
 
@@ -80,8 +110,17 @@ Verify ≈163, PreSign ≈703, PreVerify ≈180, Adapt ≈186, Ext ≈58.
 Rejection sampling **measured directly**: Sign 2.72 attempts (36.8%), PreSign 2.81
 (35.6%) — matches `(1−κ/γ)^{(n+ℓ)N} ≈ e⁻¹ = 36.8%`.
 
-**Classical baseline (bench_classical, same machine):** KeyGen 31, Sign 43,
-Verify 75, PreSign 196, PreVerify 242, Adapt 3, Ext 33.
+**Fair primary (bench_levels, evidence run `20260627_135247`) — Simplified
+Dilithium-III (target), µs mean±SD, 10×1000:** KeyGen 114±5, Sign 1270±28,
+Verify 280±7, PreSign 1355±62 (+6.7% vs Sign), PreVerify 288±2 (+3.1% vs Verify),
+Adapt 302±5 (+8.1% vs Verify), Ext 101±3. Acceptance ≈37%/attempt at every setting.
+Headline adaptor overhead ≤ ~8% across all four settings (paper/L2/L3/L5). These are
+the numbers now in `report/latex` (`tab:overhead`, `tab:overhead-levels`,
+`tab:complete-l3`).
+
+**Classical baseline (bench_classical, evidence run `20260627_135247`):** KeyGen 34,
+Sign 45, Verify 69, PreSign 207, PreVerify 268, Adapt 4, Ext 36; sizes pk 33, sk 32,
+sig 64 (70 DER), pre-sig 162.
 
 **Sizes (bytes):** LAS packed pk/Y **2944**, sk/witness **512**, sig=pre-sig
 **4672** (in-memory `sizeof` 4096/8192/9216). Classical: pk 33, sk 32, sig 64
@@ -145,10 +184,15 @@ beat [60s]; (6) limitations + future work [30s]. Talking-head in corner.
 
 ## 6. Immediate next actions (in order)
 
-1. **Report draft polish** (`report/REPORT_DRAFT.md`): redraw the 4 ASCII figures,
-   run a word-count pass to land in 7–9k, paste a one-session benchmark run (incl.
-   `forge test --gas-report`) into Appendix B, format references consistently.
-2. **Video** per §5 storyboard.
-3. *(optional tier, only after draft is supervisor-approved)* D16 param migration to
+1. **Open the clean-Dilithium → LAS PR and invite Wang** (Meeting-4 named
+   deliverable): artefacts ready (`dilithium-baseline` branch, `docs/CODE_DIFF_VIEW.md`,
+   `docs/FUNCTION_MAP.md`).
+2. **Report polish** (`report/latex/`): the Stage-1 presentation tables, parameter
+   notation, and basic-vs-LAS comparisons are in (Meeting-4); next is a word-count pass
+   to 7–9k, embedding the regenerated `evidence/latest/paper_package` figures with the
+   parameter-rich captions, and a references pass. (`report/REPORT_DRAFT.md` is the
+   superseded v0.1.)
+3. **Video** per §5 storyboard.
+4. *(optional tier, only after draft is supervisor-approved)* D16 param migration to
    q≈2²⁴ / on-chain LAS *verification* (precompile or zk — the swap + gas floor are
    already done in D15) / a second LAS-family scheme.

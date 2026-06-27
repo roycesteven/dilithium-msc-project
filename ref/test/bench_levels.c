@@ -25,8 +25,8 @@
  *   LAS ADAPTOR  (the SAME scheme, with the statement/lock Y bound into the hash):
  *       PreSign  : c = H(pk, w + Y, M)         -- Y (the adaptor lock) is folded in
  *       PreVerify: w' = A*z^ - c*t; accept iff c == H(pk, w' + Y, M)
- *       Adapt    : z = z^ + y_witness
- *       Ext      : y_witness = z - z^
+ *       Adapt    : z = z^ + r'
+ *       Ext      : s = z - z^
  *   Why the adapted signature passes the ORDINARY base Verify with no explicit +Y:
  *       A*z - c*t = A*(z^ + y) - c*t = (A*z^ - c*t) + A*y = w' + Y      (Y = A*y).
  *
@@ -39,13 +39,13 @@
  *       B. Adapt timing clarification: the real protocol cost ("Adapt checked total",
  *          i.e. las_adapt incl. its internal las_preverify -- this is the protocol
  *          Adapt timing above) plus a diagnostic-only lower bound ("witness-add only",
- *          just z = z_hat + y).  witness-add only is NOT a protocol operation; a real
+ *          just z = z_hat + r').  witness-add only is NOT a protocol operation; a real
  *          Adapt MUST pre-verify first.
  *       C. Communication-derived packed byte sizes and ratios, plus the byte-level
  *          atomic-swap payload.  These are BYTE-LEVEL payloads only and are deliberately
  *          NOT mixed with EVM gas (the on-chain cost is a separate axis; see evm/).
  *          Also a protocol-component catalogue (pp=(A,H) seed/expanded A', the internal
- *          y_mask and commitment w, the unimplemented proof pi, excluded tx metadata).
+ *          mask y and commitment w, the unimplemented proof pi, excluded tx metadata).
  *       D. Operation-level component microbenchmarks.  These time LOCAL COPIES of the
  *          protocol's inner steps -- behaviourally identical to las.c's static helpers,
  *          duplicated here exactly as basesig.c duplicates them, so las.c is not touched
@@ -301,7 +301,7 @@ static void mc_add_wY(poly out[LAS_N], const poly w[LAS_N], const las_pk *Y) {
   }
 }
 
-/* z = z_hat + y over the n+l response polynomials (the Adapt witness add).
+/* z = z_hat + r' over the n+l response polynomials (the Adapt witness add).
  * Identical to las_adapt()'s body AFTER its mandatory PreVerify -- see section B. */
 static void mc_witness_add(las_sig *out, const las_sig *presig, const las_sk *y) {
   unsigned int j;
@@ -526,9 +526,9 @@ int main(void) {
   printf("==========================================================================\n");
   printf(" LAS parameter set: n=%d ell=%d kappa=%d gamma=%d  (N=%d, Q=%d)\n",
          LAS_N, LAS_ELL, LAS_KAPPA, LAS_GAMMA, N, Q);
-  printf("   M = n + ell = %d   (dim of sk=r, witness r', mask y_mask, responses z_hat/z)\n", LAS_M);
-  printf("   paper notation: pp=(A,H)  pk=t  sk=r  statement Y=t'  witness r' (=y_witness)\n");
-  printf("   signing mask y_mask -> commitment w = A*y_mask  (hashed into c; NOT transmitted)\n");
+  printf("   M = n + ell = %d   (dim of sk=r, witness r', mask y, responses z_hat/z)\n", LAS_M);
+  printf("   paper notation: pp=(A,H)  pk=t  sk=r  statement Y=t'  witness r'\n");
+  printf("   signing mask y -> commitment w = A*y  (hashed into c; NOT transmitted)\n");
   printf("==========================================================================\n");
   printf(" Reproducibility: compiler=%s\n", __VERSION__);
   printf("                  built=%s %s   git=%s (%s)\n", __DATE__, __TIME__,
@@ -543,10 +543,10 @@ int main(void) {
   printf(" BASE  (simplified Dilithium-style signature; NO adaptor statement t'):\n");
   printf("   Sign      c = H(pk, w,      M)        Verify    c == H(pk, w',      M)\n");
   printf(" LAS ADAPTOR (same scheme; statement/lock Y=t' folded into the hash):\n");
-  printf("   PreSign   c = H(pk, w + t', M),  z_hat = y_mask + c*r  (reject |z_hat|inf > gamma-kappa-1)\n");
+  printf("   PreSign   c = H(pk, w + t', M),  z_hat = y + c*r  (reject |z_hat|inf > gamma-kappa-1)\n");
   printf("   PreVerify c == H(pk, w' + t', M)\n");
   printf("   Adapt     z = z_hat + r'   (final response z;          reject |z|inf > gamma-kappa)\n");
-  printf("   Ext / Extract   s = z - z_hat   (recovers the witness r')\n");
+  printf("   Ext       s = z - z_hat   (recovers the witness r')\n");
   printf("   Adapted sig clears ordinary Verify without an explicit +t' because\n");
   printf("     A(z_hat + r') - c*t = (A*z_hat - c*t) + A*r' = w' + t'   (t' = A*r').\n");
   printf("   pi (paper-level off-chain proof of well-formedness) is NOT implemented/measured here.\n\n");
@@ -565,7 +565,7 @@ int main(void) {
   printf("   PreSign        %8.2f +/- %6.2f\n", ps_m, ps_s);
   printf("   PreVerify      %8.2f +/- %6.2f\n", pv_m, pv_s);
   printf("   Adapt          %8.2f +/- %6.2f\n", ad_m, ad_s);
-  printf("   Ext / Extract  %8.2f +/- %6.2f\n", ex_m, ex_s);
+  printf("   Ext            %8.2f +/- %6.2f\n", ex_m, ex_s);
 
   printf("\n Adaptor overhead (adaptor op vs the base op it mirrors):\n");
   printf("   PreSign       vs Sign     %8.2f vs %8.2f   (%+.1f%%)\n",
@@ -574,7 +574,7 @@ int main(void) {
          pv_m, vf_m, 100.0*(pv_m - vf_m)/vf_m);
   printf("   Adapt         vs Verify   %8.2f vs %8.2f   (%+.1f%%)\n",
          ad_m, vf_m, 100.0*(ad_m - vf_m)/vf_m);
-  printf("   Ext / Extract (separate)  %8.2f            (no base analogue)\n", ex_m);
+  printf("   Ext (separate)            %8.2f            (no base analogue)\n", ex_m);
 
   printf("\n");
   printf("##########################################################################\n");
@@ -608,7 +608,7 @@ int main(void) {
   printf("   secret key    sk = r              %6zu\n", sz_sk);
   printf("   statement     Y = t'             %6zu   (%.1f%% of the signature; t' has pk size)\n",
          sz_pk, 100.0*(double)sz_pk/(double)sz_sig);
-  printf("   witness       r' = y_witness     %6zu   (same packed layout as sk = r)\n", sz_sk);
+  printf("   witness       r'                 %6zu   (same packed layout as sk = r)\n", sz_sk);
   printf("   challenge     c                  %6zu\n", sz_c);
   printf("   response      z (final)          %6zu   (%.1f%% of the signature)\n",
          sz_z, 100.0*(double)sz_z/(double)sz_sig);
@@ -616,12 +616,12 @@ int main(void) {
   printf("   signature         (c, z)         %6zu\n", sz_sig);
   printf("   pre-signature     (c, z_hat)     %6zu   (same size as the signature)\n", sz_sig);
   printf("   final adapted sig (c, z)         %6zu   (an ordinary signature)\n", sz_sig);
-  printf("   commitment    w = A*y_mask       internal computed commitment; hashed into c; not transmitted\n");
+  printf("   commitment    w = A*y            internal computed commitment; hashed into c; not transmitted\n");
   printf("   -- protocol-component catalogue (context; what each object is / why counted or not) --\n");
   printf("   pp=(A,H)  A' seed                %6zu   (public params; only this 32-byte seed is transmitted)\n", sz_seed);
   printf("   pp=(A,H)  expanded A'            %6zu   (n*ell polys; DERIVED from the seed, NOT transmitted)\n", sz_Aexp);
-  printf("   y_mask (signing mask, S_gamma)  %6zu   (n+ell polys; INTERNAL, hashed into c via w, NOT transmitted)\n", sz_ymask);
-  printf("   w = A*y_mask (commitment)       %6zu   (n polys; INTERNAL, hashed into c, NOT transmitted)\n", sz_pk);
+  printf("   y (signing mask, S_gamma)       %6zu   (n+ell polys; INTERNAL, hashed into c via w, NOT transmitted)\n", sz_ymask);
+  printf("   w = A*y (commitment)            %6zu   (n polys; INTERNAL, hashed into c, NOT transmitted)\n", sz_pk);
   printf("   pi (NIZK well-formedness proof)    n/a   (paper-level off-chain proof; NOT implemented / NOT measured)\n");
   printf("   tx metadata (addrs/amounts/nonces) excl   (application/ledger layer; EXCLUDED from this accounting)\n");
   printf("   atomic-swap payload (byte-level only):\n");
@@ -633,7 +633,7 @@ int main(void) {
   printf("--- D. COMPONENT MICROBENCHMARKS (microseconds, mean +/- SD) ---\n");
   printf("   Cost-attribution ESTIMATES timing LOCAL COPIES of the inner steps\n");
   printf("   (behaviourally identical to las.c) -- NOT the protocol entry points above.\n");
-  printf("   A-product / commitment w = A*y_mask                  %8.3f +/- %6.3f\n", am_m, am_s);
+  printf("   A-product / commitment w = A*y                       %8.3f +/- %6.3f\n", am_m, am_s);
   printf("   challenge hash  c = H(pk, w(+t'), M)                 %8.3f +/- %6.3f\n", ch_m, ch_s);
   printf("   c*r  (one response polynomial; c is sparse)          %8.3f +/- %6.3f\n", mu_m, mu_s);
   printf("   c*r  (all LAS_M response polynomials)                %8.3f +/- %6.3f\n", ma_m, ma_s);

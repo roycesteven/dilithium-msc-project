@@ -125,14 +125,14 @@ echo "Application benchmark (L3-like):"
 build_run test/bench_app3      test/bench_app3      application_benchmark.log
 
 # Classical adaptor baseline (B2.ii). Needs the one-time vendored clone
-# third_party/secp256k1-zkp (git-ignored; see README_LAS.md). Skipped gracefully
+# third_party/secp256k1-zkp (git-ignored; see README.md). Skipped gracefully
 # under `set -e` when that clone is absent, so the rest of the suite still runs.
 echo "Classical adaptor baseline (secp256k1-zkp ecdsa_adaptor):"
 if [ -d "$ROOT/third_party/secp256k1-zkp/src" ]; then
   build_run test/bench_classical test/bench_classical classical.log
 else
   echo "  SKIP classical.log -- third_party/secp256k1-zkp not present"
-  echo "       (clone it per README_LAS.md, then re-run to capture this baseline)"
+  echo "       (clone it per README.md, then re-run to capture this baseline)"
 fi
 
 cd "$ROOT"
@@ -206,11 +206,12 @@ python3 scripts/plot_las_paper_figures.py \
   echo "- parameter_sets_paper.tex                  Table 1 -- parameter settings"
   echo "- per_operation_timing_paper.pdf/.png       Figure 1 -- per-operation computation timing"
   echo "- communication_components_paper.pdf/.png   Figure 2 -- communication / serialized sizes"
-  echo "- adaptor_overhead_paper.pdf/.png           Figure 3 -- adaptor overhead vs ordinary operation"
   echo "- KEY_FINDINGS.md                           2-3 sentence summary"
   echo "- paper_figure_manifest.csv                 provenance of each output"
   echo
-  echo "Optional appendix: ../appendix_package/rejection_sampling_paper.pdf/.png"
+  echo "Appendix (../appendix_package/):"
+  echo "- adaptor_overhead_paper.pdf/.png           multi-setting overhead sweep (scaling context, NOT main)"
+  echo "- rejection_sampling_paper.pdf/.png         rejection acceptance (explains timing variance)"
 } > "$RUN_DIR/paper_package/README.md"
 
 # --- MANIFEST.md (organised; states the main package explicitly) ---------------
@@ -226,9 +227,9 @@ python3 scripts/plot_las_paper_figures.py \
   echo "- paper_package/parameter_sets_paper.tex                  (Table 1: parameter settings)"
   echo "- paper_package/per_operation_timing_paper.pdf/.png       (Figure 1: per-operation computation)"
   echo "- paper_package/communication_components_paper.pdf/.png   (Figure 2: communication / storage sizes)"
-  echo "- paper_package/adaptor_overhead_paper.pdf/.png           (Figure 3: adaptor overhead vs ordinary op)"
   echo "- paper_package/KEY_FINDINGS.md, paper_package/paper_figure_manifest.csv"
-  echo "Optional appendix:"
+  echo "Appendix (appendix_package/):"
+  echo "- appendix_package/adaptor_overhead_paper.pdf/.png        (multi-setting overhead sweep; scaling context, NOT main)"
   echo "- appendix_package/rejection_sampling_paper.pdf/.png      (explains timing variance; NOT main)"
   echo
   echo "## logs/ (raw benchmark/test stdout -- do not edit by hand)"

@@ -290,7 +290,7 @@ make test/bench_app3      && ./test/bench_app3      # application payload sizes
 make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin
 cd ../evm && forge test --gas-report
 ```
-*(The classical baseline needs a one-time clone — see `README_LAS.md`.)*
+*(The classical baseline needs a one-time clone — see `README.md`.)*
 Good things to film: `test_amhl3` scrolling its wormhole/norm-growth asserts; the
 `test_serde3` "all 4672 byte-flips rejected" line; the `bench_classical` 2×2; the
 `forge --gas-report` table.

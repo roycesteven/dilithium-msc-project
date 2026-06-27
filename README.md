@@ -42,32 +42,42 @@ There is **one** supported pipeline. From the repository root:
 bash scripts/run_benchmark_suite.sh
 ```
 
-Each invocation builds and runs the benchmarks/tests, then calls
-`scripts/plot_las_benchmarks.py`, and writes **everything for that run** into a single
-**self-contained, timestamped** folder:
+Each invocation builds and runs the benchmarks/tests, then runs the **two plotting
+stages** — `scripts/plot_las_benchmarks.py` (logs → CSV tables + all figures) followed by
+`scripts/plot_las_paper_figures.py` (the curated Stage-1 *paper package*) — and writes
+**everything for that run** into a single **self-contained, timestamped** folder whose
+outputs are organised into subfolders:
 
 ```text
 evidence/runs/YYYYMMDD_HHMMSS/
   metadata.txt                 # timestamp, git commit/branch/status, compiler, OS/WSL, CPU, command list
   MANIFEST.md                  # human index of this folder
-  functional_tests.log         # test_las3
-  contract.log                 # test_contract3
-  serialization_tests.log      # test_serde3
-  kat.log                      # test_kat3
-  atomic_swap.log              # test_swap3
-  pcn.log                      # test_pcn3
-  fair_paper.log fair_l2.log fair_l3.log fair_l5.log   # PRIMARY fair benchmark
-  application_benchmark.log    # bench_app3 (L3-like)
-  *.csv                        # parsed tables (see §3.2.1)
-  *.png  *.pdf                 # report-quality figures (see §3.2.1)
-  report_figure_manifest.csv   # which outputs are main / appendix / table-only
+  logs/                        # raw benchmark/test stdout (never hand-edited)
+    functional_tests.log contract.log serialization_tests.log kat.log
+    atomic_swap.log pcn.log
+    fair_paper.log fair_l2.log fair_l3.log fair_l5.log   # PRIMARY fair benchmark
+    application_benchmark.log                              # bench_app3 (L3-like)
+    classical.log                                         # only if secp256k1-zkp is present
+  tables/                      # CSV tables parsed from the logs (+ report_figure_manifest.csv)
+  paper_package/               # MAIN Stage-1 package to show the supervisor:
+    parameter_sets_paper.tex                  #   Table 1  (parameter settings)
+    per_operation_timing_paper.pdf/.png       #   Figure 1 (computation: ordinary vs LAS)
+    communication_components_paper.pdf/.png   #   Figure 2 (communication component sizes)
+    KEY_FINDINGS.md  paper_figure_manifest.csv  README.md
+  appendix_package/            # supporting figures (NOT main, NOT a security comparison):
+    adaptor_overhead_paper.pdf/.png           #   multi-setting overhead sweep (scaling context)
+    rejection_sampling_paper.pdf/.png         #   acceptance per attempt (~1/e)
+  debug_figures/               # cumulative-timing, component-attribution, *_report duplicates, parameter PNGs
+  application_package/          # Stage-2 atomic-swap / AMHL multi-hop figures
 ```
 
 - **Old runs are never overwritten or deleted.** `evidence/latest` is repointed at the
   newest run (symlink, or a copy where symlinks are unavailable).
-- Logs, CSVs, plots, metadata and the manifest are **all** stored directly inside the
-  run folder — there are no `logs/`, `tables/` or `figures/` subfolders, and nothing is
-  written to repo-level `tables/benchmark`, `figures/benchmark`, or `evidence/final-runs`.
+- Everything for a run lives inside that one run folder, organised into the subfolders
+  above; nothing is written to repo-level `tables/benchmark`, `figures/benchmark`, or
+  `evidence/final-runs`. `paper_package/` is the curated Stage-1 set to show the
+  supervisor; `appendix_package/`, `debug_figures/`, `application_package/`, `tables/`
+  and `logs/` are appendix / diagnostic / evidence.
 - **Application-benchmark plotting is included** whenever `application_benchmark.log` is
   present; if it is missing or unparseable the suite still produces the fair-benchmark
   CSVs/figures and prints a clear warning.
@@ -80,10 +90,22 @@ The two earlier scripts `scripts/run_fair_benchmarks.sh` and
 
 ### 2.1 Re-plot an existing run (no rebuild)
 
+Re-plotting reads the run's `logs/` and regenerates the CSV tables and figures (no
+benchmark is re-run). Stage 1 produces the CSV tables; stage 2 produces the curated paper
+package from those tables:
+
 ```sh
-python3 scripts/plot_las_benchmarks.py --input-dir evidence/latest --output-dir evidence/latest
-#   (or point --input-dir at any evidence/runs/<timestamp>/)
+# stage 1: logs -> CSV tables (+ all figures, written into the chosen dir)
+python3 scripts/plot_las_benchmarks.py \
+    --input-dir evidence/latest/logs --output-dir evidence/latest/tables
+# stage 2: CSV tables -> curated paper package + appendix
+python3 scripts/plot_las_paper_figures.py --input-dir evidence/latest/tables \
+    --output-dir evidence/latest/paper_package --appendix-dir evidence/latest/appendix_package
 ```
+
+(`run_benchmark_suite.sh` does this organisation automatically; the manual commands above
+write a flat figure set into each chosen output dir. Point `--input-dir` at any
+`evidence/runs/<timestamp>/logs`.)
 
 ### 2.2 Extra targets not in the core suite
 
@@ -129,7 +151,7 @@ the same parameters and on the same primitives:
   simplified Dilithium-style signature, `Sign` hashing `c = H(pk, w, M)` and `Verify`
   recomputing `c = H(pk, w', M)`, with **no adaptor statement `Y`**;
 - **adaptor path** — `ref/las.c` (PreSign/PreVerify/Adapt/Extract): the same scheme with
-  the statement/lock `Y` folded into the hash (`c = H(pk, w + Y, M)`).
+  the statement/lock `Y` folded into the hash (`c = H(pk, w + t', M)`, `t' := Y`).
 
 `basesig.c` is deliberately kept out of `las.{c,h}` (the LAS protocol is untouched); it
 shares only `las.h`'s parameter macros and key/signature struct layout, so both schemes
@@ -165,53 +187,61 @@ percent of its base analogue (the `Adaptor overhead` pairings); under `COMMUNICA
 the response `z` is 98.6–99.3% of the signature.
 
 The output uses paper notation throughout: `pp=(A,H)`, `pk=t`, `sk=r`, statement `Y=t'`,
-witness `r' (=y_witness)`, signing mask `y_mask`, commitment `w=A·y_mask` (computed and
-hashed into `c`, **not transmitted**), pre-signature response `z_hat`, final response `z`,
-`Ext / Extract` `s = z − z_hat`. The base path and LAS path are reported as two separate
-protocols and are never summed together. `π` (the paper's off-chain proof of
+witness `r'` (the paper's Algorithm-2 symbol; in the statement–witness pair `(Y, y)` it is
+the `y`), masking randomness `y`, commitment `w=A·y` (computed and hashed into `c`,
+**not transmitted**), pre-signature response `ẑ` (ASCII `z_hat` in code/CSV), final
+response `z`, and `Ext` recovering `s = z − ẑ`. The base path and LAS path are reported as
+two separate protocols and are never summed together. `π` (the paper's off-chain proof of
 well-formedness) is **not** implemented or measured here.
 
 #### 3.2.1 Report-ready figures and tables
 
-`scripts/plot_las_benchmarks.py` (invoked by the suite runner) parses the run folder's
-`fair_*.log` and, if present, `application_benchmark.log`, cross-validates the invariants
-(`signature = c + z`; `pre-signature = final adapted signature = signature`;
+The plotting is **two stages**. `scripts/plot_las_benchmarks.py` parses the run's
+`logs/fair_*.log` and, if present, `logs/application_benchmark.log`, cross-validates the
+invariants (`signature = c + z`; `pre-signature = adapted signature = signature`;
 `off-chain = Y + 2·pre-signature`; `settlement = 2·signature`; `M = n + ℓ`; the printed
-`z`% matches `z/signature`; and the application off-chain/settlement totals) and **fails
-loudly** if a fair value is missing or inconsistent. It deliberately favours **quality
-over quantity**: a small set of clean, report-quality figures, with the crowded
-percentage/catalogue/rejection charts kept as **CSV tables only**. Everything is written
-directly into the same run folder.
+`z`% matches `z/signature`; and the application totals) and **fails loudly** if a fair
+value is missing or inconsistent. It writes the CSV tables into `tables/` and the full set
+of figures into `debug_figures/` and `application_package/`. Then
+`scripts/plot_las_paper_figures.py` reads only those CSV tables and writes the small,
+curated **paper package** (the research-question comparison: ordinary signature vs LAS
+adaptor), favouring **quality over quantity**.
 
-Main-report figures (PNG + PDF):
+Main paper figures (`paper_package/`, PNG + PDF; the set to show the supervisor):
 
-| Figure | Supports the report claim |
+| Output | Supports the report claim |
 |---|---|
-| `timing_timeline_base_vs_las` | Base and LAS protocol cost timelines across paper/L2/L3/L5 — two **separate** protocols shown side by side, **not** summed. |
-| `protocol_step_timeline` | Cumulative cost per **named** protocol step (Sign/PreSign → Verify/PreVerify → Adapt → Ext·Extract), one panel per level. Shows the full LAS adaptor cycle is only ≈ +27% to +33% over base Sign+Verify and is dominated by the shared rejection-sampling Sign/PreSign step. |
-| `timing_overhead_clean` | Adaptor overhead is small: PreSign≈Sign, PreVerify≈Verify, Adapt≈Verify (error bars = SD, % above bars; Ext/Extract shown separately). Two panels (split y-scales). Headline L3. |
-| `computation_component_absolute` | Where LAS compute time goes (horizontal, sorted). Titled **“diagnostic component attribution, not full protocol percentage.”** Headline L3. |
-| `communication_summary_clean` | Signature/pre-signature/off-chain/settlement byte sizes with exact byte labels; `z`/`z_hat` dominates the signature. Byte-level only, **not** EVM gas. Headline L3. |
-| `application_atomic_swap_payload_breakdown` | Atomic-swap payload story: off-chain (`Y + 2·pre-sig`) vs settlement (`2·sig`). **L3-like** (`bench_app3` only). |
-| `application_multihop_payload_vs_k` | Multi-hop settlement payload grows linearly in path length K. **L3-like**; only generated when the multi-hop K-series exists. |
+| `parameter_sets_paper.tex` | Table 1 — parameter settings (n, ℓ, M, κ, γ, N, Q); engineering settings, **not** NIST levels. |
+| `per_operation_timing_paper` | Figure 1 — per-operation **computation**: ordinary signature (KeyGen/Sign/Verify) vs LAS adaptor (PreSign/PreVerify/Adapt/Ext), single headline setting, mean ± SD. |
+| `communication_components_paper` | Figure 2 — **communication** component sizes (pk, sk, Y, witness, c, z/ẑ, and the three equal-size signatures); LAS adds the statement Y, the signature does not grow. |
 
-Appendix figure: `application_multihop_presign_time_vs_k` (pre-sign time per route vs K, L3-like).
+Appendix figures (`appendix_package/`): `adaptor_overhead_paper` (multi-setting overhead
+sweep — scaling context, **not** a security-parameter comparison) and
+`rejection_sampling_paper` (acceptance ≈ 1/e).
 
-Tables only (no figure by default): `primary_timing.csv`, `adaptor_overhead.csv`,
-`rejection_sampling.csv` (avg/accept%/min/max/p50/p95), `communication_components.csv`
-(detailed c/z %), `computation_components.csv`, `las_object_catalogue.csv`,
-`application_atomic_swap.csv`, `application_multihop_amhl.csv`,
-`application_payload_breakdown.csv`. `report_figure_manifest.csv` records, for every
-output, whether it is main / appendix / table-only, the claim it supports, and a caution
-note. Colours are fixed per series (Base Sign light blue / LAS PreSign dark blue; Base
-Verify light orange / LAS PreVerify dark orange; Adapt purple; Ext/Extract green; `c` pale
-red, `z` dark red; `Y/t'` teal; witness `r'` green; commitment `w` grey).
+Diagnostic / supporting figures (`debug_figures/`): cumulative timelines
+(`timing_timeline_base_vs_las`, `protocol_step_timeline`), overhead pairs
+(`timing_overhead_clean`), component attribution (`computation_component_absolute`,
+`component_scaling_vs_level`, `verify_ext_attribution_vs_level`), the payload summary
+(`communication_summary_clean`), and the `*_report` LaTeX-clean duplicates. Stage-2
+application figures live in `application_package/`
+(`application_atomic_swap_payload_breakdown`, `application_multihop_payload_vs_k`,
+`application_multihop_presign_time_vs_k`, `application_multihop_norm_vs_k`).
+
+Tables (`tables/`): `primary_timing.csv`, `adaptor_overhead.csv`, `rejection_sampling.csv`
+(avg/accept%/min/max/p50/p95), `communication_components.csv`, `computation_components.csv`,
+`las_object_catalogue.csv`, `parameter_sets.csv`, the `application_*.csv`, and
+`report_figure_manifest.csv` (every output's role: main / appendix / table-only);
+`paper_package/paper_figure_manifest.csv` does the same for the paper package. Colours are
+fixed per series (Base Sign light blue / LAS PreSign dark blue; Base Verify light orange /
+LAS PreVerify dark orange; Adapt purple; Ext green; `c` pale red, `z` dark red; `Y/t'`
+teal; witness `r'` green; commitment `w` grey).
 
 **Regeneration policy.** Logs, CSVs and figures only need regenerating when the benchmark
 **stdout changes**. The `bench_levels` labels/notation changed in this round, so any older
 `fair_*.log` are stale and **must be regenerated** by re-running
-`scripts/run_benchmark_suite.sh` (which re-plots automatically). No log or number is ever
-edited by hand.
+`scripts/run_benchmark_suite.sh` (which rebuilds, re-runs, and re-plots both stages). No
+log or number is ever edited by hand.
 
 ### 3.3 Application — atomic swap and payment channels
 
@@ -270,17 +300,19 @@ relative to that run folder.
 
 | Report table / result | File in the run folder |
 |---|---|
-| Functional correctness (mode 3) | `functional_tests.log` |
-| Correctness contract (8-point) | `contract.log` |
-| Serialization / tamper / malformed | `serialization_tests.log` |
-| Known-answer test (deterministic) | `kat.log` |
-| Atomic-swap narration | `atomic_swap.log` |
-| Scriptless-ledger demos | `pcn.log` |
-| Adaptor overhead (paper / L2 / L3 / L5) | `fair_paper.log`, `fair_l2.log`, `fair_l3.log`, `fair_l5.log` |
-| Primary timing / overhead / rejection / communication / components | `primary_timing.csv`, `adaptor_overhead.csv`, `rejection_sampling.csv`, `communication_components.csv`, `computation_components.csv`, `las_object_catalogue.csv` |
-| Application payloads + multi-hop (L3-like) | `application_benchmark.log`, `application_atomic_swap.csv`, `application_payload_breakdown.csv`, `application_multihop_amhl.csv` |
-| Report-quality figures (PNG+PDF) | `timing_timeline_base_vs_las`, `timing_overhead_clean`, `computation_component_absolute`, `communication_summary_clean`, `application_atomic_swap_payload_breakdown`, `application_multihop_payload_vs_k` |
-| Figure routing (main / appendix / table-only) | `report_figure_manifest.csv` |
+| Functional correctness (mode 3) | `logs/functional_tests.log` |
+| Correctness contract (8-point) | `logs/contract.log` |
+| Serialization / tamper / malformed | `logs/serialization_tests.log` |
+| Known-answer test (deterministic) | `logs/kat.log` |
+| Atomic-swap narration | `logs/atomic_swap.log` |
+| Scriptless-ledger demos | `logs/pcn.log` |
+| Adaptor overhead (paper / L2 / L3 / L5) | `logs/fair_paper.log`, `logs/fair_l2.log`, `logs/fair_l3.log`, `logs/fair_l5.log` |
+| Primary timing / overhead / rejection / communication / components | `tables/primary_timing.csv`, `tables/adaptor_overhead.csv`, `tables/rejection_sampling.csv`, `tables/communication_components.csv`, `tables/computation_components.csv`, `tables/las_object_catalogue.csv` |
+| Application payloads + multi-hop (L3-like) | `logs/application_benchmark.log`, `tables/application_atomic_swap.csv`, `tables/application_payload_breakdown.csv`, `tables/application_multihop_amhl.csv` |
+| MAIN paper figures (Table 1 + Fig 1 + Fig 2) | `paper_package/parameter_sets_paper.tex`, `paper_package/per_operation_timing_paper`, `paper_package/communication_components_paper` |
+| Appendix figures | `appendix_package/adaptor_overhead_paper`, `appendix_package/rejection_sampling_paper` |
+| Diagnostic / Stage-2 figures | `debug_figures/*`, `application_package/*` |
+| Figure routing (main / appendix / table-only) | `tables/report_figure_manifest.csv`, `paper_package/paper_figure_manifest.csv` |
 | Provenance / index | `metadata.txt`, `MANIFEST.md` |
 
 Extra (not in the core suite — see §2.2, tee manually if needed): functional tests at
@@ -307,9 +339,11 @@ ref/amhl.{c,h}       multi-hop locks
 ref/chain.{c,h}      toy ledger for the swap / payment-channel demos
 ref/test/            tests and benchmarks (bench_levels.c = combined fair driver; bench_app.c = application)
 ref/{poly,ntt,reduce,fips202,...}.c   reused Dilithium primitives (unmodified)
-scripts/run_benchmark_suite.sh   the one supported evidence pipeline (build + run + plot)
-scripts/plot_las_benchmarks.py   parse logs -> CSVs + report-quality figures + manifest
-evidence/runs/<timestamp>/        one self-contained folder per run (logs + CSVs + figures + metadata)
+scripts/run_benchmark_suite.sh    the one supported evidence pipeline (build + run + plot, both stages)
+scripts/plot_las_benchmarks.py    stage 1: parse logs -> CSV tables + all figures + manifest
+scripts/plot_las_paper_figures.py stage 2: CSV tables -> curated paper package (Table 1, Fig 1, Fig 2) + appendix
+evidence/runs/<timestamp>/        one self-contained folder per run, organised into subfolders:
+                                  logs/ tables/ paper_package/ appendix_package/ debug_figures/ application_package/
 evidence/latest                   pointer to the newest run (older runs are kept)
 ```
 

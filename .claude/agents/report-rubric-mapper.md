@@ -51,7 +51,7 @@ Core project context:
 
 Scope:
 - report/REPORT_DRAFT.md
-- README_LAS.md
+- README.md
 - docs/STATUS.md
 - docs/LAS.md
 - docs/FUNCTION_MAP.md
