@@ -1,18 +1,12 @@
 \begin{thebibliography}{10}
 
-\bibitem{poqeth2025}
-Anonymous.
-\newblock poqeth: Towards post-quantum ethereum (placeholder title).
-\newblock Cryptology ePrint Archive, Report 2025/091, 2025.
-\newblock \url{https://eprint.iacr.org/2025/091}.
-
-\bibitem{aumayr2021}
-Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Krist\'of
-  Hostakov\'a, Matteo Maffei, Pedro Moreno-Sanchez, and Siavash Riahi.
+\bibitem{aumayr2021generalized}
+Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Kristina
+  Host{\'a}kov{\'a}, Matteo Maffei, Pedro Moreno-Sanchez, and Siavash Riahi.
 \newblock Generalized channels from limited blockchain scripts and adaptor
   signatures.
-\newblock In {\em Advances in Cryptology -- ASIACRYPT 2021}, volume 13091 of
-  {\em Lecture Notes in Computer Science}, pages 635--664. Springer, 2021.
+\newblock In {\em International Conference on the Theory and Application of
+  Cryptology and Information Security}, pages 635--664. Springer, 2021.
 
 \bibitem{secp256k1zkp}
 {Blockstream Research}.
@@ -21,46 +15,54 @@ Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Krist\'of
 \newblock \url{https://github.com/BlockstreamResearch/secp256k1-zkp}, commit
   95b9835.
 
-\bibitem{survey2022}
-Maxime Buser et~al.
+\bibitem{buser2023survey}
+Maxime Buser, Rafael Dowsley, Muhammed Esgin, Cl{\'e}mentine Gritti, Shabnam
+  Kasra~Kermanshahi, Veronika Kuchta, Jason Legrow, Joseph Liu, Rapha{\"e}l
+  Phan, Amin Sakzad, et~al.
 \newblock A survey on exotic signatures for post-quantum blockchain: Challenges
   and research directions.
-\newblock {\em ACM Computing Surveys}, 2022.
-\newblock Cryptology ePrint Archive, Report 2022/1151.
+\newblock {\em ACM Computing Surveys}, 55(12):1--32, 2023.
 
-\bibitem{ducas2018}
-L\'eo Ducas, Eike Kiltz, Tancr\`ede Lepoint, Vadim Lyubashevsky, Peter Schwabe,
-  Gregor Seiler, and Damien Stehl\'e.
-\newblock {CRYSTALS-Dilithium}: A lattice-based digital signature scheme.
-\newblock {\em IACR Transactions on Cryptographic Hardware and Embedded
-  Systems}, 2018(1):238--268, 2018.
+\bibitem{ducas2018crystals}
+L{\'e}o Ducas, Eike Kiltz, Tancrede Lepoint, Vadim Lyubashevsky, Peter Schwabe,
+  Gregor Seiler, and Damien Stehl{\'e}.
+\newblock Crystals-dilithium: A lattice-based digital signature scheme.
+\newblock {\em IACR transactions on cryptographic hardware and embedded
+  systems}, pages 238--268, 2018.
 
-\bibitem{esgin2020}
-Muhammed~F. Esgin, O\u{g}uzhan Ersoy, and Zekeriya Erkin.
+\bibitem{esgin2020post}
+Muhammed~F Esgin, O{\u{g}}uzhan Ersoy, and Zekeriya Erkin.
 \newblock Post-quantum adaptor signatures and payment channel networks.
-\newblock In {\em Computer Security -- ESORICS 2020}, volume 12309 of {\em
-  Lecture Notes in Computer Science}, pages 378--397. Springer, 2020.
-\newblock Cryptology ePrint Archive, Report 2020/845.
+\newblock In {\em European Symposium on Research in Computer Security}, pages
+  378--397. Springer, 2020.
 
-\bibitem{lyubashevsky2012}
+\bibitem{kysil2025poqeth}
+Ruslan Kysil, Istv{\'a}n~Andr{\'a}s Seres, P{\'e}ter Kutas, and N{\'a}ndor
+  Kelecs{\'e}nyi.
+\newblock poqeth: Efficient, post-quantum signature verification on ethereum.
+\newblock In {\em Proceedings of the 20th ACM Asia Conference on Computer and
+  Communications Security}, pages 327--343, 2025.
+
+\bibitem{lyubashevsky2012lattice}
 Vadim Lyubashevsky.
 \newblock Lattice signatures without trapdoors.
-\newblock In {\em Advances in Cryptology -- EUROCRYPT 2012}, volume 7237 of
-  {\em Lecture Notes in Computer Science}, pages 738--755. Springer, 2012.
+\newblock In {\em Annual International Conference on the Theory and
+  Applications of Cryptographic Techniques}, pages 738--755. Springer, 2012.
 
-\bibitem{malavolta2019}
+\bibitem{malavolta2019anonymous}
 Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
   Matteo Maffei.
 \newblock Anonymous multi-hop locks for blockchain scalability and
   interoperability.
-\newblock In {\em 26th Annual Network and Distributed System Security Symposium
-  (NDSS 2019)}. The Internet Society, 2019.
+\newblock In {\em 26th Annual Network and Distributed System Security
+  Symposium, NDSS 2019}, 2019.
 
-\bibitem{nist2024}
-{National Institute of Standards and Technology}.
-\newblock Module-lattice-based digital signature standard.
-\newblock FIPS Publication 204, 2024.
-\newblock U.S. Department of Commerce.
+\bibitem{1274601}
+National~Institute of~Standards, Technology (NIST), Thinh Dang, Jacob
+  Lichtinger, Yi-Kai Liu, Carl Miller, Dustin Moody, Rene Peralta, Ray Perlner,
+  and Angela Robinson.
+\newblock Module-lattice-based digital signature standard, 2024-08-13 04:08:00
+  2024.
 
 \bibitem{poelstra2017}
 Andrew Poelstra.
@@ -68,10 +70,10 @@ Andrew Poelstra.
 \newblock Presentation, Milan Bitcoin meetup / Blockstream, 2017.
 \newblock \url{https://github.com/apoelstra/scriptless-scripts}.
 
-\bibitem{shor1997}
-Peter~W. Shor.
+\bibitem{shor1999polynomial}
+Peter~W Shor.
 \newblock Polynomial-time algorithms for prime factorization and discrete
   logarithms on a quantum computer.
-\newblock {\em SIAM Journal on Computing}, 26(5):1484--1509, 1997.
+\newblock {\em SIAM review}, 41(2):303--332, 1999.
 
 \end{thebibliography}

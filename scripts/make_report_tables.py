@@ -77,8 +77,15 @@ def parse_classical(logs_dir):
     t = p.read_text(errors="replace")
 
     def g(label):
-        m = re.search(r"%s[^0-9]*([0-9]+(?:\.[0-9]+)?)\s*us" % re.escape(label), t)
-        return float(m.group(1)) if m else None
+        # New harness prints "<mean> +/- <sd> us"; old printed "<mean> us".
+        # Returns (mean, sd); sd is None for the old single-batch format.
+        m = re.search(
+            r"%s[^0-9]*([0-9]+(?:\.[0-9]+)?)\s*(?:\+/-\s*([0-9]+(?:\.[0-9]+)?)\s*)?us"
+            % re.escape(label), t)
+        if not m:
+            return (None, None)
+        return (float(m.group(1)),
+                float(m.group(2)) if m.group(2) is not None else None)
 
     def gi(rx):
         m = re.search(rx, t)
@@ -295,17 +302,21 @@ def t_classical(timing, comm, classical, out_dir):
     l2 = timing["L2"]
     cc = comm["L2"]
 
-    def r2(x):
-        return "%.0f" % x if x is not None else "—"
+    def ms(pair):
+        # pair = (mean, sd); render "mean ± sd", or "mean" when sd is unavailable.
+        if pair is None or pair[0] is None:
+            return "—"
+        mean, sd = pair
+        return "%.0f ± %.0f" % (mean, sd) if sd is not None else "%.0f" % mean
     cols = ["", "ECDSA adaptor (classical)", "LAS adaptor (post-quantum)"]
     rows = [
-        ["KeyGen", r2(classical["KeyGen"]), "%.0f" % l2["KeyGen"][0]],
-        ["Sign", r2(classical["Sign"]), "%.0f" % l2["Sign"][0]],
-        ["Verify", r2(classical["Verify"]), "%.0f" % l2["Verify"][0]],
-        ["PreSign", r2(classical["PreSign"]), "%.0f" % l2["PreSign"][0]],
-        ["PreVerify", r2(classical["PreVerify"]), "%.0f" % l2["PreVerify"][0]],
-        ["Adapt", r2(classical["Adapt"]), "%.0f" % l2["Adapt"][0]],
-        ["Extract", r2(classical["Ext"]), "%.0f" % l2["Ext"][0]],
+        ["KeyGen", ms(classical["KeyGen"]), ms(l2["KeyGen"])],
+        ["Sign", ms(classical["Sign"]), ms(l2["Sign"])],
+        ["Verify", ms(classical["Verify"]), ms(l2["Verify"])],
+        ["PreSign", ms(classical["PreSign"]), ms(l2["PreSign"])],
+        ["PreVerify", ms(classical["PreVerify"]), ms(l2["PreVerify"])],
+        ["Adapt", ms(classical["Adapt"]), ms(l2["Adapt"])],
+        ["Extract", ms(classical["Ext"]), ms(l2["Ext"])],
         ["public key / statement (B)", str(classical["pk"]), str(cc["pk = t"])],
         ["secret key / witness (B)", str(classical["sk"]), str(cc["sk = r"])],
         ["signature (B)", str(classical["sig"]), str(cc["signature (c,z)"])],

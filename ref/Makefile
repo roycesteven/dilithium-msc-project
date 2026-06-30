@@ -229,7 +229,7 @@ test/bench_classical: test/bench_classical.c
 	$(CC) -O3 -w -I$(SECP) -I$(SECP)/src -c $(SECP)/src/precomputed_ecmult_gen.c \
 	  -o $(SECP)/precomputed_ecmult_gen.o
 	$(CC) $(CFLAGS) -I$(SECP)/include -o $@ $< $(SECP)/secp256k1.o \
-	  $(SECP)/precomputed_ecmult.o $(SECP)/precomputed_ecmult_gen.o
+	  $(SECP)/precomputed_ecmult.o $(SECP)/precomputed_ecmult_gen.o -lm
 
 test/test_vectors2: test/test_vectors.c $(KECCAK_SOURCES) \
   $(KECCAK_HEADERS)

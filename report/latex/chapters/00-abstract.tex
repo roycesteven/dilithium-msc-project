@@ -11,8 +11,8 @@ adaptor signature, by reusing the CRYSTALS-Dilithium reference primitives, and
 demonstrates it end-to-end in a post-quantum atomic swap.
 
 The artefact is built \emph{additively} on Dilithium. The entire lattice core ---
-polynomial arithmetic, the number-theoretic transform, and SHAKE-based sampling ---
-is reused unchanged, verified by a file-level diff against a pristine baseline; not a
+polynomial arithmetic, the number-theoretic transform, and sampling based on SHAKE (an
+extendable-output hash function) --- is reused unchanged, verified by a file-level diff against a pristine baseline; not a
 single upstream function was modified. The adaptor layer (PreSign, PreVerify, Adapt,
 Extract), a bit-packed wire encoding with a validating decoder, and the atomic-swap
 demonstration are added as new code. The implementation passes functional tests over
@@ -23,7 +23,8 @@ known-answer tests.
 The primary, fair comparison is LAS against its own simplified Dilithium-style base,
 using the same parameters and primitives, which isolates the cost of the adaptor layer;
 the optimised CRYSTALS-Dilithium reference is reported only as context, and a classical
-ECDSA adaptor as a functionality-matched ``price of post-quantum'' baseline. Every
+Elliptic Curve Digital Signature Algorithm (ECDSA) adaptor as a functionality-matched
+``price of post-quantum'' baseline. Every
 timing is a mean over ten runs with its standard deviation. The data show that the
 adaptor layer is almost free in computation --- PreSign, PreVerify, and Adapt each add
 only single-digit overhead (at most about eight percent) over the basic operation they

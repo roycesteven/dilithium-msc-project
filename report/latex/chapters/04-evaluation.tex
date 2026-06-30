@@ -14,9 +14,9 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
 \begin{enumerate}
   \item \emph{Literature and scheme selection --- met.} The adaptor signature was
         selected as a representative exotic scheme with high blockchain value, and
-        LAS \cite{esgin2020} as the design with the clearest path from a standardised
+        LAS \cite{esgin2020post} as the design with the clearest path from a standardised
         lattice signature, following the survey's framing of the gap
-        \cite{survey2022} and the supervisor's steer toward the simplest viable
+        \cite{buser2023survey} and the supervisor's steer toward the simplest viable
         construction.
   \item \emph{Additive implementation --- met.} The lattice core is reused
         byte-for-byte (\cref{tab:reuse}); zero upstream functions were modified, which
@@ -26,10 +26,14 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         known-answer tests all pass (\cref{sec:res-correctness}), establishing the
         adaptor contract, wire-encoding integrity, and reproducibility.
   \item \emph{Fair benchmarking --- met.} The primary comparison holds algorithm,
-        parameters, and primitives fixed between LAS and its own simplified base, so it
-        isolates the adaptor overhead (\cref{tab:overhead}); timings are reported as
-        mean $\pm$ standard deviation over repeated runs; computation and communication
-        are separated and broken down by component. The optimised CRYSTALS-Dilithium
+        parameters, and primitives fixed between LAS and its own simplified base, so the
+        primary comparison isolates the adaptor overhead --- the base-signature path
+        against the LAS adaptor path, every operation timed independently. The adaptor
+        overhead is reported per operation as the headline (\cref{tab:overhead-l3}), with
+        the absolute timings and a parameter-sensitivity check across four settings shown
+        as supporting context (\cref{fig:timing,fig:overhead}, exact
+        mean\,$\pm$\,standard-deviation figures in \cref{tab:timing}); computation and
+        communication are separated and broken down by component. The optimised CRYSTALS-Dilithium
         reference is included only as context (not algorithm-matched), and a classical
         ECDSA adaptor as a functionality-matched ``price of post-quantum'' baseline,
         each with the standard five metrics.
@@ -43,7 +47,7 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
 \section{Reflection on the approach}
 \label{sec:eval-reflection}
 
-Three reflections stand out. First, reuse was the right strategy: building additively
+Four reflections stand out. First, reuse was the right strategy: building additively
 on a standardised reference made the implementation tractable in the available time
 and produced an unusually strong trust story, since the security-critical arithmetic
 is exactly the audited upstream code. Second, the main engineering subtlety was the

@@ -30,7 +30,7 @@ you changed it. Every claim is grounded in the code as it stands today.
 
 | Paper notation | C identifier | Defined in | Value / meaning |
 |---|---|---|---|
-| Ring `R_q = Z_q[X]/(X^N+1)` | `poly` (struct of `int32_t coeffs[N]`) | `ref/poly.h` | degree-255 polynomial mod Q |
+| Ring `R_q = Z_q[X]/(X^d+1)` | `poly` (struct of `int32_t coeffs[N]`) | `ref/poly.h` | degree-255 polynomial mod Q |
 | Modulus `q` | `Q` | `ref/params.h` | 8380417 (≈2^23; paper uses 2^24) |
 | Ring degree `d` | `N` | `ref/params.h` | 256 |
 | Module dimension `n` | `LAS_N` | `ref/las.h` | 4 |

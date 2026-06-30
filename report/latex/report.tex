@@ -22,6 +22,8 @@
 \usepackage{microtype}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}        % \toprule \midrule \bottomrule
+\usepackage{array}           % ragged-right fixed-width columns (see \newcolumntype L below)
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned wrapping column
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tikz}

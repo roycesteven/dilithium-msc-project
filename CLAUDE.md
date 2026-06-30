@@ -1,5 +1,30 @@
 # Project context — LAS on Dilithium for blockchain
 
+## ⚠️ FOCUS — the primary comparison (READ FIRST; this has been gotten wrong repeatedly)
+
+**The Stage-1 focus / primary comparison is BASIC SIGNATURE vs LAS ADAPTOR — the cost of
+adding the adaptor layer to the base signature.** Everything in the results/evaluation
+must lead with this. Precisely (`las-context-consolidated.md` §13.5, §7(e), §14.3):
+
+- **Base-signature path:** Sign / Verify with `c = H(pk, w, M)` (no statement `Y`).
+- **LAS adaptor path:** PreSign / PreVerify / Adapt / Extract with `c = H(pk, w+Y, M)`.
+- Headline result = the **adaptor overhead**, reported **per operation** at the target
+  setting **Simplified Dilithium-III**: PreSign vs Sign `+6.7%`, PreVerify vs Verify
+  `+3.1%`, Adapt vs Verify `+8.1%`; Extract has no basic analogue. The two paths share
+  algorithm/parameters/primitives, so the difference is purely the adaptor cost.
+
+**NOT the focus — do not drift here:** the four parameter sets (paper / D2 / D3 / D5) are
+ONLY a *secondary fairness / parameter-sensitivity* axis (§13.4). Do **not** frame the
+results around "across security parameter", "as the scheme scales", or make the parameter
+sweep the headline. The across-parameter overhead chart is supporting/appendix material,
+**not** a primary body figure.
+
+**Timing rule:** per-operation timing is the PRIMARY timing result (§14.3) — never lead
+with cumulative / end-to-end time.
+
+**Presentation rule (Royce):** no table↔chart redundancy (chart in body, exact-number
+table in appendix); no abbreviations of scheme/level names in tables/figures.
+
 ## Working agreement — token-saving mode
 
 Use token-saving mode by default.
@@ -90,8 +115,10 @@ Do not keep an 8+ hour session alive unless there is a clear reason.
 
 ## LAS paper source-of-truth rule
 
-Before editing LAS labels, benchmark plots, report text, API documentation,
-README explanations, or comments explaining the protocol, read:
+Before editing LAS labels, benchmark plots, report text, **report equations or
+symbol/notation tables**, API documentation, README explanations, or comments
+explaining the protocol, read **FIRST** (this is the crucial-information authority for
+notation — do not decide symbols from memory):
 
 `docs/paper/LAS_2020_845_NOTATION.md`
 
@@ -100,6 +127,21 @@ conflicts with `2020-845.pdf`, the PDF wins. If a detail is not present in the
 guide, check `2020-845.pdf` before editing. Do not invent paper notation, do not
 rename variables casually, and mark uncertain details as TODO rather than
 guessing.
+
+**Report mathematical notation is governed by §3/§6/§7 of that guide, and the PAPER
+(not the code) is the notation authority — never adopt a code symbol for report maths.**
+Settled forms that must stay consistent across `report/latex/` (never introduce a variant,
+never change one occurrence in isolation — fix every occurrence together):
+- ring degree: the paper's **`d`** (this build runs at `d = 256`, the reused Dilithium
+  NTT's ring degree). Use `d` in the report; do **not** substitute the code's `N`.
+- rejection/masking bound: **`γ = κ·d·(n+ℓ)`** (paper form — `d`, not `N`; `(n+ℓ)` in
+  formulas). `M = n+ℓ` may appear only as a table-column shorthand, not in equations.
+- challenge weight **`κ` is per parameter set** (60 / 39 / 49 / 60 for paper/D2/D3/D5),
+  *not* a fixed constant — never hard-code `κ=60` as global.
+
+If a report symbol looks inconsistent, reconcile it to the paper across *every* occurrence
+(body equations + `tab:params` + `tab:notation` + captions + figure labels), not just the
+one in front of you. **Never justify report notation by what the C code names a variable.**
 
 ## Guardrails (standing — do NOT do any of these without an explicit instruction)
 - **Do not create, delete, or switch git branches** unless explicitly requested.
@@ -291,74 +333,4 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
 - Full design + math + results: `docs/LAS.md` · theory↔code: `docs/THEORY_IMPL_BRIDGE.md`.
 - Reproducibility: `README.md` · function classification: `docs/FUNCTION_MAP.md`.
 
-# Report 
-2.1 Report
-Reports are expected to be around 8,000 words long. Submissions significantly outside the range of 7,000-9,000 will be penalised. References, appendices,
-and figure/diagram/table captions are not included in the word count.
-In the new report format, there is no separate “Background” section. Instead, the “Introduction” should present the subject area clearly and include
-a concise literature review. The focus should be on depth rather than breadth, highlighting key works necessary to understand the problem and justify
-your approach. An extensive literature review is thus not required.
-
-2.2 Video
-The video should be 6–8 minutes long, structured with a clear beginning, middle, and end.
-The video should complement the report, adding additional insight that was not possible in text alone. This might be, for example, animations or demos
-of the software in action, interactive visualisations to highlight key trends, or real-time simulations that help the audience better understand complex
-concepts and workflows.
-For the format, a simple voice-over on a PowerPoint-style presentation is acceptable, but more creative, polished productions will score higher in the
-“Use of Medium” category. A talking-head overlay (you speaking in the corner) is strongly encouraged.
-
-# Assessment Criteria
-3 Assessment Criteria
-3.1 Report
-Please note, the below criteria are not intended to be strict section heading requirements—the exception being that every project should have separate
-Abstract and Conclusion sections.
-3.1.1 Abstract (5%)
-This section is expected to clearly present a concise summary of the project’s purpose, methods, and key results.
-• Does the abstract give an appropriate executive summary of the work?
-3.1.2 Introductory Material (20%)
-You should clearly describe the project setting, scoping the subject area with proper citations and figures, and stating the objectives.
-• Does the work effectively establish the context (why this project matters), and clearly explain the subject area (what this project is about), with
-proper citations/figures?
-• Are the project objectives clearly stated, coherent and appropriate?
-3.1.3 Methodology (20%)
-You should clearly explain (using figures, diagrams, and tables where appropriate) how the project goals are achieved by describing the methods used.
-You must include a justification and reasoning behind selecting these methods, demonstrating their suitability for the project, and consideration of
-alternative approaches.
-• Is it clear what methods were used to achieve the project goals?
-• Is there a well-reasoned justification for why these methods were chosen and compared/contrasted with alternative approaches?
-3.1.4 Evaluation and/or Reflection (20%)
-You should present the evaluation, testing, or critical reflection (using figures, diagrams, and tables, where appropriate). You should also provide a
-justification for the evaluation methods chosen and demonstrate alignment with the project goals.
-• Has appropriate evaluation, testing, or critical reflection, relevant to the project’s subject area been considered?
-• Is there clear justification and alignment of the evaluation methods with the project goals?
-3.1.5 Conclusion (10%)
-This section should present clear, well-justified conclusions supported by the project’s outcomes and aligned with its original objectives. It should also
-include thoughtful analysis of the project approach, offering well-reasoned suggestions for future work.
-• Are the project conclusions clearly stated, drawing on appropriate evidence from the report body, and overall aligned with the objectives as proposed
-in the introduction?
-• Is there a thoughtful analysis on the project process with well-justified suggestions for future work?
-3.1.6 Format and Structure (5%)
-This criterion evaluates the organisation and clarity of the report. Your report should have a logical structure with clearly defined sections, properly
-numbered figures, tables, and equations, and correctly formatted references. The writing should ideally be clear and well-expressed.
-• Is the report well-structured and professionally presented?
-• Are references complete, correctly formatted, and consistent with academic standards?
-3.1.7 Project Achievement (20%)
-This criterion assesses the overall achievement of the project as can be determined from the report. It evaluates two key aspects: ’the complexity, scope
-and challenges’ and ’the execution quality’, meaning how well the artefact is built, its reliability, and technical accuracy.
-• How challenging/complex is the proposed artefact in terms of design and functionality, and how wide is the scope?
-• How effectively is the artefact implemented, in terms of build quality, reliability, and technical accuracy?
-3.2 Video
-3.2.1 Use of the Medium (40%)
-This criterion evaluates how effectively the video format communicates the project through visuals, audio, and editing, ensuring clarity and engagement.
-Creativity is encouraged if it enhances the message without excessive production effort.
-• How well does the video use visuals and audio to clearly and professionally present the project?
-• How much effort and professionalism are evident in the creation of the video?
-3.2.2 Complementing the Report (40%)
-This assesses whether the video presents aspects of the project that were completed during the project, but not fully covered in the written report,
-offering clarification that may be difficult to convey through text or figures alone.
-• Does the video reveal additional aspects of the project not included in the report?
-• How effectively do these additions demonstrate the completeness of the project and its alignment with the original goals?
-3.2.3 Presentation (20%)
-This criterion assesses how effectively the video communicates the project within the expected duration (6-8 minutes), balancing clarity and depth with
-conciseness. It also evaluates the structure, pacing, and alignment of spoken content with visuals to ensure a smooth and engaging presentation.
-• Is the video clear, well-paced, and logically structured, staying within the required duration?
+## Assessment Criteria and Rubric: see `MSc_Report_and_Video_Rubric.md`

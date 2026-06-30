@@ -16,6 +16,7 @@
  * A statement/witness pair is literally just another key pair.
  *
  *   A = [ I_n | A' ] in R_q^{n x (n+l)},  R_q = Z_q[X]/(X^N + 1)
+ *   (paper<->code: paper ring degree d = code N = 256; paper module rank n = code LAS_N)
  *
  * Sign:      y<-S_g; w=Ay; c=H(pk, w,   M); z =y+c*r; |z|inf<=g-k
  * PreSign:   y<-S_g; w=Ay; c=H(pk, w+Y, M); z^=y+c*r; |z^|inf<=g-k-1   (Y folded in!)

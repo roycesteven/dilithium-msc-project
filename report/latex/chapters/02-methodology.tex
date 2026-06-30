@@ -4,14 +4,16 @@
 This chapter explains how the project work was done: the construction implemented,
 the reuse-based implementation strategy, the testing regime, and --- importantly for
 a fair evaluation --- the benchmarking methodology and the parameter choices that
-make the comparisons defensible.
+make the comparisons defensible. The atomic-swap demonstration and its simulated-ledger
+model are methodologically light and are described together with their results in
+\cref{sec:res-app}.
 
 \section{The LAS construction}
 \label{sec:construction}
 
 LAS is a lattice adaptor signature whose base is a simplified, Dilithium-style
-Fiat--Shamir-with-aborts signature \cite{esgin2020,ducas2018}. All objects live in
-the ring $\Rq = \mathbb{Z}_q[X]/(X^N+1)$. The public matrix has the form
+Fiat--Shamir-with-aborts signature \cite{esgin2020post,ducas2018crystals}. All objects live in
+the ring $\Rq = \mathbb{Z}_q[X]/(X^d+1)$. The public matrix has the form
 $A = [\,I_n \mid A'\,] \in \Rq^{\,n\times(n+\ell)}$. A key pair is a short secret
 $r$ and its image $t = A\cdot r$; the hard relation $(Y,y)$ reuses exactly the same
 structure, so a statement is ``just another public key'' and recovering its witness
@@ -25,7 +27,7 @@ extends.
 The base signature samples a masked commitment $w$, forms a challenge
 $c = H(\mathit{pk}, w, M)$, computes a response, and rejects when
 $\inftynorm{\vecz} > \gamma-\kappa$ (\cref{eq:signbound}). The adaptor extension
-\cite{esgin2020} adds four operations relative to a statement $Y$:
+\cite{esgin2020post} adds four operations relative to a statement $Y$:
 \begin{itemize}
   \item \textsc{PreSign} folds the statement into the hash,
         $c = H(\mathit{pk}, w + Y, M)$, and rejects at the \emph{tighter} bound
@@ -80,7 +82,7 @@ revealed.
     \node[ann, below=of ex] (yo) {$y$ recovered\\(now public)};
     \draw[->, dashed] (ex) -- (yo);
   \end{tikzpicture}
-  \caption{The LAS adaptor data flow. The statement $Y$ is folded into the challenge
+  \caption[The LAS adaptor data flow]{The LAS adaptor data flow. The statement $Y$ is folded into the challenge
   hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the
   pre-signature into a basic signature; and publishing that signature lets anyone
   holding the pre-signature run Extract to recover $y$. This last step is what makes an
@@ -97,17 +99,18 @@ implementation is therefore built additively on the CRYSTALS-Dilithium C referen
 
 \begin{table}[t]
   \centering
-  \caption{Source files of the implementation, classified by how the reference is
-  used. The lattice core is reused unchanged; the only modified file is the build
-  script; the scheme, serialization, application, and evaluation are new.}
+  \caption[Source files: reused, modified, and added]{Source files of the implementation, classified by how the reference is
+  used. The lattice core is reused unchanged; the only modified file is the
+  \texttt{Makefile}; the scheme, serialization, application, and evaluation are new.}
   \label{tab:reuse}
+  \small
   \begin{tabular}{@{}lll@{}}
     \toprule
     Category & Files & Role \\
     \midrule
     Reused unchanged & \texttt{poly/polyvec/ntt/reduce/rounding}, & the entire \\
                      & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
-    Modified         & build script & compile new targets \\
+    Modified         & \texttt{Makefile} & compile new targets \\
     Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
                      & \texttt{amhl}, \texttt{chain}, tests, benchmarks & \\
     \bottomrule
@@ -121,10 +124,10 @@ reduces the surface for implementation error and makes the boundary between reus
 new code unambiguous.
 
 \paragraph{Data types and the matrix product.}
-LAS is a self-contained module (\texttt{las.\{c,h\}}) over the reference's degree-$N$
-polynomial type. A key pair is a ternary secret $r$ (eight polynomials) and its image
-$t=A\,r$ (four polynomials); a (pre-)signature is a challenge $c$ and a response
-$\vecz$ of eight polynomials; a statement/witness $(Y,y)$ has exactly the key-pair
+LAS is a self-contained module (\texttt{las.\{c,h\}}) over the reference's degree-$d$
+polynomial type. A key pair is a ternary secret $r$ of $n+\ell$ polynomials and its image
+$t=A\,r$ of $n$ polynomials; a (pre-)signature is a challenge $c$ and a response
+$\vecz$ of $n+\ell$ polynomials; a statement/witness $(Y,y)$ has exactly the key-pair
 shape. The public matrix has the form $A=[\,I_n\mid A'\,]$, so the product
 $A\,v = v_{\text{top}} + A' v_{\text{bot}}$ adds the identity block directly and
 multiplies only $A'$ in the NTT domain. This both saves work and matches exactly how
@@ -134,14 +137,15 @@ the reference computes $A s_1$ in key generation.
 The random oracle $H$ is built from SHAKE256: it absorbs a canonical encoding of the
 public key, then the commitment ($w$ for Sign, $w+Y$ for PreSign), then the message,
 and squeezes a seed. The challenge sampler is the reference's \texttt{SampleInBall}
-with weight $\kappa=60$, which guarantees $\lVert c\rVert_1=\kappa$ and
+with weight $\kappa$ (\cref{tab:params}; e.g.\ 60 at the LAS-2020/845 reference set, 49 at the target
+Simplified Dilithium-III), which guarantees $\lVert c\rVert_1=\kappa$ and
 $\inftynorm{c}=1$. Two samplers are added: a ternary sampler for secrets and witnesses
 (two bits per coefficient), and a uniform sampler over $[-\gamma,\gamma]$ for the
 mask (an 18-bit rejection sampler). The infinity-norm rejection checks reuse the
 reference's \texttt{poly\_chknorm} directly.
 
 \paragraph{Simplifications relative to the full Dilithium scheme.}
-Following the LAS construction \cite{esgin2020}, the base signature omits the
+Following the LAS construction \cite{esgin2020post}, the base signature omits the
 optimisations of the full Dilithium scheme --- the hint vector, Power2Round, and
 high/low-bit decomposition --- and hashes the full commitment $w$ rather than its high
 bits. This keeps the algebra transparent at the cost of larger keys and signatures
@@ -192,7 +196,8 @@ Correctness and robustness were established with four test types.
   \item \textbf{A tamper test} flips every one of the 4672 bytes of a valid packed
         signature, one at a time, and asserts that all 4672 flips break verification;
         it also checks that the validating decoder rejects malformed bytes.
-  \item \textbf{Known-answer tests} fix all inputs, run the deterministic API, fold
+  \item \textbf{Known-answer tests} fix all inputs, run the deterministic application
+        programming interface (API), fold
         the packed bytes of every object into a single SHAKE256 digest, and compare it
         against a pinned 32-byte value. Any unintended change to key generation,
         signing, the adaptor algebra, or the serialization flips the digest. The
@@ -216,9 +221,21 @@ single-threaded, compiled at \texttt{-O3}. Results are reported as mean $\pm$ sa
 standard deviation so that machine and scheduling noise are visible. All measurements
 were taken on one machine: an AMD Ryzen~7 7745HX (8 cores, 16 threads) with
 about 7.4\,GB of RAM visible to the Linux environment, running Ubuntu 24.04.3 LTS
-(kernel 6.6, under WSL2 on Windows), with GCC 13.3.0 and GNU~Make 4.3. The reference
+(long-term support; kernel~6.6) under the Windows Subsystem for Linux (WSL2) on
+Windows, with the GNU Compiler Collection (GCC)~13.3.0 and GNU~Make~4.3. The reference
 implementation and the classical baseline library are used at fixed versions, and each
 reported table lists the exact command that produces it (\cref{app:repro}).
+
+\paragraph{Per-operation reporting, not cumulative.}
+Every operation is timed and reported \emph{independently} --- KeyGen, Sign, Verify,
+PreSign, PreVerify, Adapt, and Extract --- rather than as a single cumulative
+end-to-end time. The reason is that the operations are split across parties and
+machines: in a swap, one party signs or pre-signs, another verifies and later adapts,
+and a third may extract, so a combined figure would average over costs that are never
+actually paid together by one party. Per-operation timing also exposes the adaptor
+overhead operation by operation, which a cumulative number would hide. This is the
+primary timing result (\cref{tab:timing}); an end-to-end figure adds nothing the
+per-operation breakdown does not already give.
 
 \paragraph{Primary (fair) comparison: LAS vs.\ its own simplified base.}
 LAS is defined over a simplified Dilithium-style base signature (Fiat--Shamir with
@@ -255,29 +272,56 @@ claimed, as security proofs are beyond the scope of this work.
 
 \begin{table}[t]
   \centering
-  \caption{Parameter sets used in the evaluation. The \emph{LAS-2020/845 reference}
+  \caption[Parameter sets used in the evaluation]{Parameter sets used in the evaluation. The \emph{LAS-2020/845 reference}
   set is the original paper's parameter set; the \emph{Simplified Dilithium-II/III/V}
   sets reuse the dimensions of Dilithium modes~2/3/5 (so the public-key, secret, and
   challenge dimensions line up with NIST levels~2/3/5) and are engineering benchmark
   settings, \emph{not} formal NIST/ML-DSA security-equivalence claims. All lattice sets
-  share the ring degree $N=256$ and modulus $q=8\,380\,417\approx 2^{23}$ inherited from
+  share the ring degree $d=256$ and modulus $q=8\,380\,417\approx 2^{23}$ inherited from
   the reused Dilithium NTT; \emph{Simplified Dilithium-III} is the project's target set.
   The classical secp256k1 ECDSA adaptor is a functionality-matched baseline at
   $\approx$128-bit classical security. \Cref{tab:notation} defines each symbol.}
   \label{tab:params}
-  \includegraphics[width=\linewidth]{figures/tab_params}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\linewidth}rrrrrrr@{}}
+    \toprule
+    Setting & $n$ & $\ell$ & $M$ & $\kappa$ & $\gamma$ & $d$ & $q$ \\
+    \midrule
+    LAS-2020/845 reference            & 4 & 4 & 8  & 60 & 122\,880 & 256 & 8\,380\,417 \\
+    Simplified Dilithium-II           & 4 & 4 & 8  & 39 & 79\,872  & 256 & 8\,380\,417 \\
+    Simplified Dilithium-III (target) & 6 & 5 & 11 & 49 & 137\,984 & 256 & 8\,380\,417 \\
+    Simplified Dilithium-V            & 8 & 7 & 15 & 60 & 230\,400 & 256 & 8\,380\,417 \\
+    \midrule
+    Classical (secp256k1 ECDSA adaptor)
+      & \multicolumn{7}{c}{$\approx$128-bit classical (see \cref{tab:classical})} \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{table}[t]
   \centering
-  \caption{Security and scheme parameters: the symbol, its meaning, and the value(s)
+  \caption[Security and scheme parameter notation]{Security and scheme parameters: the symbol, its meaning, and the value(s)
   it takes across the parameter sets, \emph{listed in the row order of}
   \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
-  paper's ring-degree symbol $d$ is written $N$ here, because the reused Dilithium NTT
-  fixes $N=256$. The figure and table captions in \cref{ch:results} refer back to these
-  names and values.}
+  notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and this
+  build runs at $d=256$, the ring degree of the reused Dilithium NTT. The figure and table
+  captions in \cref{ch:results} refer back to these names and values.}
   \label{tab:notation}
-  \includegraphics[width=\linewidth]{figures/tab_notation}
+  \small
+  \begin{tabular}{@{}l L{0.45\linewidth} L{0.31\linewidth}@{}}
+    \toprule
+    Symbol & Meaning & Value(s): LAS-2020/845 reference, Simplified Dilithium-II/III/V \\
+    \midrule
+    $n$        & module rank: rows of $A$, length of public key $t$                 & 4, 4, 6, 8 \\
+    $\ell$     & extra columns of $A'$ (secret-vector extension)                    & 4, 4, 5, 7 \\
+    $M=n+\ell$ & response dimension (number of polynomials in $z,\hat z,y$)         & 8, 8, 11, 15 \\
+    $\kappa$   & challenge Hamming weight (number of $\pm1$ in $c$; Dilithium $\tau$) & 60, 39, 49, 60 \\
+    $\gamma$   & rejection / masking bound, $\gamma=\kappa\,d\,(n+\ell)$            & 122\,880,\ 79\,872,\ 137\,984,\ 230\,400 \\
+    $d$        & ring degree ($X^{d}+1$)                                            & 256 (all sets) \\
+    $q$        & modulus from the reused NTT, $q\approx 2^{23}$                     & 8\,380\,417 (all sets) \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \paragraph{Component-level size analysis.}

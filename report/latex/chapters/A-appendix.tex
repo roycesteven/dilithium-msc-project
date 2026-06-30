@@ -17,9 +17,9 @@ system C compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-O3}.
 \begin{lstlisting}[language=bash,caption={Fair benchmark and tests (first-stage
 evaluation).},label={lst:benchfair}]
 cd ref
-# fair, parameter-matched comparison (>=5 runs, mean +/- SD, component sizes)
-make test/bench_fair2 && ./test/bench_fair2   # opt. reference = Dilithium-2 (dim-matched)
-make test/bench_fair3 && ./test/bench_fair3   # opt. reference = Dilithium-3 (NIST L3)
+# fair, parameter-matched comparison (>=5 runs, mean +/- standard deviation, component sizes)
+make test/bench_fair2 && ./test/bench_fair2   # optimised reference = Dilithium-2 (dimension-matched)
+make test/bench_fair3 && ./test/bench_fair3   # optimised reference = Dilithium-3 (NIST level 3)
 # per-op timings + directly measured rejection rate
 make test/bench_las3 && ./test/bench_las3
 # correctness, serialization/tamper, known-answer tests
@@ -36,6 +36,156 @@ git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
     third_party/secp256k1-zkp        # tested at commit 95b9835
 cd ref && make test/bench_classical && ./test/bench_classical
 \end{lstlisting}
+
+\section{Full benchmark data tables}
+\label{app:tables}
+
+The figures in \cref{ch:results} are the primary presentation of the benchmark results;
+this section gives the exact numbers behind them, produced by the commands above
+(\cref{lst:benchfair}). \Cref{tab:timing} lists every per-operation timing with its
+standard deviation (the data plotted in \cref{fig:timing}), and \cref{tab:overhead-l3}
+derives the per-operation adaptor overhead at the target setting from it --- the exact
+numbers behind \cref{fig:timing}; \cref{tab:components} gives the component byte sizes at
+every parameter set (the target setting is plotted in \cref{fig:components}); and
+\cref{tab:complete-l3} lists every communication object at the target setting with its
+paper notation.
+
+\Cref{fig:overhead} is the parameter-sensitivity check referred to in
+\cref{sec:res-compute}: it repeats the primary base-versus-adaptor comparison at all four
+parameter sets and confirms that the adaptor premium stays in the single digits as the
+dimensions are scaled up, so the headline result is not specific to the target setting.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/fig_overhead}
+  \caption[Adaptor overhead across the parameter sets (sensitivity check)]{Parameter
+  sensitivity of the adaptor overhead: each LAS adaptor operation as a percentage over the
+  basic operation it mirrors, at the four parameter sets of \cref{tab:params}. PreSign is
+  paired with Sign; PreVerify and Adapt with Verify; Extract has no basic analogue and is
+  omitted. The premium stays in the single digits everywhere, so adding adaptor
+  functionality does not become more expensive as the scheme is scaled up. This is a
+  secondary robustness check; the primary comparison is the per-operation overhead at the
+  target setting, \cref{tab:overhead-l3}.}
+  \label{fig:overhead}
+\end{figure}
+
+\begin{table}[h]
+  \centering
+  \caption[Per-operation timing across the parameter sets]{Per-operation timing,
+  reported independently ($\mu$s per operation; mean $\pm$ sample standard deviation
+  over 10 runs $\times$ 1000 iterations; \texttt{bench\_levels}, machine of record in
+  \cref{sec:benchmethod}). KeyGen, Sign, and Verify \emph{are} the basic signature and
+  are reused unchanged by LAS; PreSign, PreVerify, Adapt, and Extract are the four
+  adaptor operations. Public-parameter Setup, a one-time global cost, runs in
+  57--200\,$\mu$s and is omitted. Parameter sets and symbols: \cref{tab:params,tab:notation}.}
+  \label{tab:timing}
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Operation
+      & \shortstack[r]{LAS-2020/845\\ reference\\ $(4,4,60)$}
+      & \shortstack[r]{Simplified\\ Dilithium-II\\ $(4,4,39)$}
+      & \shortstack[r]{Simplified\\ Dilithium-III\\ $(6,5,49)$}
+      & \shortstack[r]{Simplified\\ Dilithium-V\\ $(8,7,60)$} \\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{Basic signature (reused unchanged by LAS)}} \\
+    KeyGen & 74 $\pm$ 1   & 73 $\pm$ 2   & 114 $\pm$ 5   & 163 $\pm$ 1  \\
+    Sign   & 748 $\pm$ 25 & 841 $\pm$ 21 & 1270 $\pm$ 28 & 1570 $\pm$ 46 \\
+    Verify & 179 $\pm$ 2  & 178 $\pm$ 1  & 280 $\pm$ 7   & 385 $\pm$ 2  \\
+    \midrule
+    \multicolumn{5}{@{}l}{\textit{LAS adaptor operations}} \\
+    PreSign   & 782 $\pm$ 18 & 869 $\pm$ 23 & 1355 $\pm$ 62 & 1616 $\pm$ 29 \\
+    PreVerify & 186 $\pm$ 2  & 183 $\pm$ 1  & 288 $\pm$ 2   & 406 $\pm$ 12 \\
+    Adapt     & 191 $\pm$ 1  & 190 $\pm$ 1  & 302 $\pm$ 5   & 412 $\pm$ 1  \\
+    Extract   & 61 $\pm$ 0.3 & 62 $\pm$ 1   & 101 $\pm$ 3   & 147 $\pm$ 1  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption[Adaptor overhead at the target setting]{The per-operation adaptor overhead at the
+  target setting \emph{Simplified Dilithium-III} --- the exact numbers behind
+  \cref{fig:timing}. Each LAS adaptor operation is paired with the basic operation it
+  mirrors, and ``Overhead'' is the extra cost as a percentage of that basic operation.
+  Timings are $\mu$s per operation (mean $\pm$ sample standard deviation over 10 runs
+  $\times$ 1000 iterations; machine of record in \cref{sec:benchmethod}). KeyGen, Sign, and
+  Verify are reused unchanged by LAS, so their basic and adaptor costs are cycle-identical;
+  Extract has no basic analogue. Absolute timings at every parameter set are in
+  \cref{tab:timing}.}
+  \label{tab:overhead-l3}
+  \small
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Operation (basic / adaptor) & Basic ($\mu$s) & LAS adaptor ($\mu$s) & Overhead \\
+    \midrule
+    KeyGen             & 114 $\pm$ 5   & 114 $\pm$ 5 (shared) & --- \\
+    Sign / PreSign     & 1270 $\pm$ 28 & 1355 $\pm$ 62        & $+6.7\%$ \\
+    Verify / PreVerify & 280 $\pm$ 7   & 288 $\pm$ 2          & $+3.1\%$ \\
+    Verify / Adapt     & 280 $\pm$ 7   & 302 $\pm$ 5          & $+8.1\%$ \\
+    Extract            & ---           & 101 $\pm$ 3          & (LAS only) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption[LAS objects by component (packed bytes)]{LAS objects by component (packed bytes; \texttt{bench\_levels}). The
+  LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The
+  challenge $c$ is fixed; the response $z$ grows with $n+\ell$ and dominates the
+  signature at every setting.}
+  \label{tab:components}
+  \small
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Component
+      & \shortstack[r]{Simplified\\ Dilithium-II\\ $(4,4)$}
+      & \shortstack[r]{Simplified\\ Dilithium-III\\ $(6,5)$}
+      & \shortstack[r]{Simplified\\ Dilithium-V\\ $(8,7)$} \\
+    \midrule
+    $c$ (challenge)   & 64   & 64   & 64   \\
+    $z$ (response)    & 4608 & 6688 & 9120 \\
+    Signature $(c,z)$ & 4672 & 6752 & 9184 \\
+    \midrule
+    $z$ as \% of signature & 98.6\% & 99.1\% & 99.3\% \\
+    \midrule
+    Public key $pk$          & 2944 & 4416 & 5888 \\
+    Secret key $sk$          & 512  & 704  & 960  \\
+    Statement $Y$ (LAS only) & 2944 & 4416 & 5888 \\
+    Witness $y$ (LAS only)   & 512  & 704  & 960  \\
+    Pre-signature (LAS only) & 4672 & 6752 & 9184 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[h]
+  \centering
+  \caption[Complete LAS object catalogue (target setting)]{Every communication object at
+  the \emph{Simplified Dilithium-III} (target) setting ($n{=}6$, $\ell{=}5$, $M{=}11$,
+  $\kappa{=}49$, $\gamma{=}137\,984$, $d{=}256$, $q{=}8\,380\,417$), in packed bytes, with
+  its paper notation. ``In the basic signature?'' marks which objects LAS shares with the
+  base scheme and which it adds. The adapted signature is itself a valid basic signature.
+  Per-operation timings for this setting are the body's primary table,
+  \cref{tab:overhead-l3}.}
+  \label{tab:complete-l3}
+  \small
+  \begin{tabular}{@{}llrl@{}}
+    \toprule
+    Object & Notation & Bytes & In the basic signature? \\
+    \midrule
+    Public key        & $pk=t$         & 4416 & yes (shared) \\
+    Secret key        & $sk=r$         & 704  & yes (shared) \\
+    Challenge         & $c$            & 64   & yes \\
+    Response          & $z\,/\,\hat z$ & 6688 & yes \\
+    Signature         & $(c,z)$        & 6752 & yes (basic signature) \\
+    Statement         & $Y=t'$         & 4416 & LAS only (public) \\
+    Witness           & $y=r'$         & 704  & LAS only (private) \\
+    Pre-signature     & $(c,\hat z)$   & 6752 & LAS only \\
+    Adapted signature & $(c,z)$        & 6752 & LAS (verifies as basic sig) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{Auditing the reuse claim}
 \label{app:diff}
