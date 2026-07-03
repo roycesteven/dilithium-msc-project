@@ -36,7 +36,10 @@
 )]
 
 use crate::helpers::{center_mod, full_reduce32};
-use crate::las::{LasPk, LasSig, LasSk, LAS_GAMMA, LAS_KAPPA, LAS_M, LAS_N};
+use crate::las::{las_verify, LasPk, LasPp, LasSig, LasSk, LAS_GAMMA, LAS_KAPPA, LAS_M, LAS_N};
+use crate::types::{R, R0};
+use crate::Q;
+use core::array::from_fn;
 
 const N: usize = 256;
 
@@ -79,6 +82,18 @@ fn bw_put(buf: &mut [u8], bitpos: &mut usize, val: u32, bits: usize) {
         }
         *bitpos += 1;
     }
+}
+
+/// LSB-first bit reader (mirrors br_get).
+fn br_get(buf: &[u8], bitpos: &mut usize, bits: usize) -> u32 {
+    let mut v = 0u32;
+    for i in 0..bits {
+        if (buf[*bitpos >> 3] >> (*bitpos & 7)) & 1 == 1 {
+            v |= 1u32 << i;
+        }
+        *bitpos += 1;
+    }
+    v
 }
 
 /// Centred representative in (-Q/2, Q/2] (identical to serialize.c centred()).
@@ -137,4 +152,82 @@ pub fn las_pack_sig(sig: &LasSig) -> Option<[u8; LAS_SIG_BYTES]> {
         }
     }
     Some(out)
+}
+
+/* ==================== validating decoders (mirror serialize.c) ==================== */
+
+/// Unpack a public key / statement; None on any coefficient >= Q (defensive).
+pub fn las_unpack_pk(input: &[u8; LAS_PK_BYTES]) -> Option<LasPk> {
+    let mut bp = 0usize;
+    let mut t: [R; LAS_N] = [R0; LAS_N];
+    for i in 0..LAS_N {
+        for k in 0..N {
+            let v = br_get(input, &mut bp, LAS_PK_COEFF_BITS);
+            if v >= Q as u32 {
+                return None; // defensive: reject >= Q
+            }
+            t[i].0[k] = v as i32;
+        }
+    }
+    Some(LasPk { t })
+}
+
+/// Unpack a secret key / ternary witness; None on the invalid 2-bit code 3.
+pub fn las_unpack_sk(input: &[u8; LAS_SK_BYTES]) -> Option<LasSk> {
+    let mut bp = 0usize;
+    let mut s: [R; LAS_M] = [R0; LAS_M];
+    for i in 0..LAS_M {
+        for k in 0..N {
+            let v = br_get(input, &mut bp, LAS_SK_COEFF_BITS);
+            if v > 2 {
+                return None; // code 3 is invalid
+            }
+            s[i].0[k] = v as i32 - 1;
+        }
+    }
+    Some(LasSk { s })
+}
+
+/// Unpack a (pre-)signature; None on non-ternary c code or out-of-band z.
+pub fn las_unpack_sig(input: &[u8; LAS_SIG_BYTES]) -> Option<LasSig> {
+    let mut bp = 0usize;
+    let mut c = R0;
+    for k in 0..N {
+        let v = br_get(input, &mut bp, LAS_C_COEFF_BITS);
+        if v > 2 {
+            return None;
+        }
+        c.0[k] = v as i32 - 1;
+    }
+    let mut z: [R; LAS_M] = [R0; LAS_M];
+    for i in 0..LAS_M {
+        for k in 0..N {
+            let v = br_get(input, &mut bp, LAS_Z_COEFF_BITS);
+            if v > LAS_Z_MAX as u32 {
+                return None; // out of the encoded band
+            }
+            z[i].0[k] = v as i32 - LAS_Z_OFFSET;
+        }
+    }
+    Some(LasSig { c, z })
+}
+
+/// On-chain-style verifier entry point (mirrors C `las_verify_packed`): decode
+/// pk and signature FROM BYTES (with validation) and run ordinary Verify.
+/// Returns true iff the bytes decode to valid objects AND the signature verifies.
+pub fn las_verify_packed(
+    pk_b: &[u8; LAS_PK_BYTES],
+    sig_b: &[u8; LAS_SIG_BYTES],
+    m: &[u8],
+    pp: &LasPp,
+) -> bool {
+    let pk = match las_unpack_pk(pk_b) {
+        Some(pk) => pk,
+        None => return false, // malformed pk
+    };
+    let sig = match las_unpack_sig(sig_b) {
+        Some(sig) => sig,
+        None => return false, // malformed sig
+    };
+    las_verify(&sig, m, &pk, pp) // ordinary Verify
 }

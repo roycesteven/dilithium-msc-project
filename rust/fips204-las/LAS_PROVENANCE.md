@@ -17,11 +17,15 @@ functions modified**; LAS is layered as additive modules that *call* the
 crate's primitives as-is.
 
 | Change | Kind |
-|---|---|
-| `src/las.rs` | **new** — LAS deterministic path (port of `ref/las.c`) |
-| `src/las_serialize.rs` | **new** — bit-packing (port of `ref/serialize.c`, pack side) |
+| --- | --- |
+| `src/las.rs` | **new** — LAS scheme (port of `ref/las.c`: deterministic path + randomised `las_keygen`/`las_sign`/`las_presign` wrappers + `LAS_ATTEMPTS` counter) |
+| `src/las_basesig.rs` | **new** — independent Algorithm-1 base signature (port of `ref/basesig.c`; local `b_*` helper copies + `BASE_ATTEMPTS`) |
+| `src/las_serialize.rs` | **new** — bit-packing + validating decoders + `las_verify_packed` (port of `ref/serialize.c`) |
 | `tests/las_kat.rs` | **new** — KAT (port of `ref/test/test_kat.c`, same pinned digest) |
-| `src/lib.rs` | **additive edit only** — two `pub mod` registration lines (analogue of the C Makefile's additive targets) |
+| `tests/las_stage1.rs` | **new** — cross-module interlock + serde round-trip/tamper tests |
+| `examples/bench_levels.rs` | **new** — Algorithm 1 vs Algorithm 2 benchmark (mirror of `ref/test/bench_levels.c` primary section) |
+| `bench_levels_rust.log` | **generated** — raw output of the benchmark run (2026-07-03) |
+| `src/lib.rs` | **additive edit only** — three `pub mod` registration lines (analogue of the C Makefile's additive targets) |
 
 Primitives reused as-is from upstream: `ntt::ntt`, `ntt::inv_ntt`,
 `helpers::mont_reduce`, `helpers::partial_reduce32`, `helpers::full_reduce32`,
@@ -34,12 +38,14 @@ Simplified Dilithium-III engineering set `n=6, ell=5, kappa=49` — the set the
 C KAT binary pins (`make test/test_kat3`, `-DLAS_N=6 -DLAS_ELL=5
 -DLAS_KAPPA=49`). Packed sizes: pk 4416 B, sk 704 B, sig 6752 B.
 
-## Reproduce the cross-check
+## Reproduce the cross-check and the Stage-1 benchmark
 
 ```sh
 cd rust/fips204-las
-cargo test --test las_kat -- --nocapture
+cargo test --test las_kat -- --nocapture      # digest 641a176c…5a19 == C pinned value
+cargo test --lib --tests                       # upstream 34/34 + interlock + serde
+cargo run --release --example bench_levels     # Algorithm 1 vs Algorithm 2 timings
 ```
 
-Expected: digest `641a176c…5a19` — byte-identical to the C
-`ref/test/test_kat.c` pinned value (C side: `make test/test_kat3 && ./test/test_kat3`).
+C side of the KAT: `make test/test_kat3 && ./test/test_kat3`. Benchmark results
+and interpretation: `docs/REPRODUCE_LAS_RUST.md` Step 8.

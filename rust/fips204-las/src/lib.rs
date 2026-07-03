@@ -107,9 +107,12 @@ mod types;
 // additive targets. ----
 
 /// LAS — Lattice-based Adaptor Signature (eprint 2020/845) layered additively
-/// on this crate's primitives; Rust port of the C `ref/las.c` deterministic
-/// path, KAT-locked against the C pinned digest (see `tests/las_kat.rs`).
+/// on this crate's primitives; Rust port of the C `ref/las.c`, KAT-locked
+/// against the C pinned digest (see `tests/las_kat.rs`).
 pub mod las;
+/// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the
+/// fair-benchmark baseline (Rust port of C `ref/basesig.c`).
+pub mod las_basesig;
 /// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
 pub mod las_serialize;
 

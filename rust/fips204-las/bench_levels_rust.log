@@ -1,0 +1,24 @@
+   Compiling fips204 v0.4.6 (/home/melly/dilithium-msc-project/rust/fips204-las)
+    Finished `release` profile [optimized] target(s) in 5.87s
+     Running `target/release/examples/bench_levels`
+=== LAS Stage-1 benchmark (Rust port) ===
+ordinary lattice-based signature (Algorithm 1, las_basesig.rs)
+vs LAS adaptor signature (Algorithm 2, las.rs)
+parameter set: Simplified Dilithium-III engineering setting (n=6, ell=5, kappa=49, gamma=137984)
+packed sizes: public key 4416 B | secret key / witness 704 B | signature 6752 B (ordinary = pre-signature = adapted)
+protocol: 5 repetitions, 500 iterations/sign-class op, 1000 iterations/verify-class op, mean +/- SD; success-path contract gated
+build: cargo --release (upstream profile: opt-level="s", lto)
+
+operation                                 mean (us)    SD (us)
+Algorithm 1  KeyGen                           123.6        7.4
+Algorithm 1  Sign                            1292.0       53.1
+Algorithm 1  Verify                           258.2       15.4
+Algorithm 2  PreSign                         1342.7       61.9
+Algorithm 2  PreVerify                        255.0        6.7
+Algorithm 2  Adapt (incl. PreVerify)          259.2        5.8
+Algorithm 2  Extract                           88.7        1.9
+
+adaptor overhead (per operation): PreSign vs Sign +3.9% | PreVerify vs Verify -1.2% | Adapt vs Verify +0.4%
+rejection sampling (measured via attempt counters): base 2.68 attempts/signature (acceptance 37.4%) | adaptor 2.77 attempts/pre-signature (acceptance 36.2%)
+per-attempt diagnostic (rejection-normalised): Sign 482.6 +/- 18.0 us | PreSign 485.5 +/- 20.4 us | overhead +0.6%
+contract (asserted before timing): ordinary verifies; pre-signature FAILS the ordinary verifier; adapted passes the independent base verifier; Ext recovers the witness exactly

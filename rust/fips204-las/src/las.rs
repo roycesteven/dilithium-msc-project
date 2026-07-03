@@ -58,7 +58,9 @@
 )]
 
 use core::array::from_fn;
+use core::sync::atomic::{AtomicU64, Ordering};
 
+use rand_core::CryptoRngCore;
 use sha3::digest::{ExtendableOutput, Update, XofReader};
 use sha3::{Shake128, Shake256};
 
@@ -90,6 +92,14 @@ pub const LAS_BOUND_PRESIGN: i32 = LAS_GAMMA - LAS_KAPPA;
 
 const N: usize = 256;
 const SHAKE256_RATE: usize = 136;
+
+/// Rejection-sampling attempt counter (measurement only; mirrors the C
+/// `las_attempts`).  Incremented once per rejection-loop iteration in
+/// `sign_core`/`presign_core`; never read by the scheme itself.  Benchmarks
+/// reset it and read it to report the restart rate DIRECTLY rather than
+/// estimating it from a timing ratio.  Relaxed ordering: single-threaded
+/// benchmark instrumentation, not synchronisation.
+pub static LAS_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 
 /* ---- Types (vectors are plain arrays of the crate's degree-256 polys).
  * A' is stored in the NTT domain (type T), exactly like the C `las_pp.mat`. ---- */
@@ -401,6 +411,7 @@ pub fn las_keygen_seed(pp: &LasPp, seed: &[u8; LAS_SEEDBYTES]) -> (LasPk, LasSk)
 fn sign_core(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp, seed: &[u8; 64]) -> LasSig {
     let mut nonce: u16 = 0;
     loop {
+        LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
         let mut y: [R; LAS_M] = [R0; LAS_M];
         for j in 0..LAS_M {
             y[j] = sample_sgamma(seed, nonce);
@@ -426,6 +437,27 @@ fn sign_core(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp, seed: &[u8; 64]) -> L
 /// Deterministic Sign: mask randomness derived from (sk, M). Mirrors las_sign_det.
 pub fn las_sign_det(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp) -> LasSig {
     let seed = det_seed(0, sk, None, m); // tag 0 = sign (no statement)
+    sign_core(m, pk, sk, pp, &seed)
+}
+
+/// Randomised KeyGen: fresh 32-byte seed from the caller's RNG (mirrors
+/// C `las_keygen` = `randombytes` + `las_keygen_seed`; RNG injected, Rust idiom).
+pub fn las_keygen(pp: &LasPp, rng: &mut impl CryptoRngCore) -> (LasPk, LasSk) {
+    let mut seed = [0u8; LAS_SEEDBYTES];
+    rng.fill_bytes(&mut seed);
+    las_keygen_seed(pp, &seed)
+}
+
+/// Randomised Sign: fresh 64-byte mask seed per call (mirrors C `las_sign`).
+pub fn las_sign(
+    m: &[u8],
+    pk: &LasPk,
+    sk: &LasSk,
+    pp: &LasPp,
+    rng: &mut impl CryptoRngCore,
+) -> LasSig {
+    let mut seed = [0u8; 64];
+    rng.fill_bytes(&mut seed);
     sign_core(m, pk, sk, pp, &seed)
 }
 
@@ -458,6 +490,7 @@ fn presign_core(
 ) -> LasSig {
     let mut nonce: u16 = 0;
     loop {
+        LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
         let mut y: [R; LAS_M] = [R0; LAS_M];
         for j in 0..LAS_M {
             y[j] = sample_sgamma(seed, nonce);
@@ -497,6 +530,21 @@ pub fn las_presign_det(
     pp: &LasPp,
 ) -> LasSig {
     let seed = det_seed(1, sk, Some(y_stmt), m); // tag 1 = presign (binds Y)
+    presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed)
+}
+
+/// Randomised PreSign: fresh 64-byte mask seed per call, single-hop bound
+/// gamma-kappa-1 (mirrors C `las_presign`).
+pub fn las_presign(
+    m: &[u8],
+    y_stmt: &LasPk,
+    pk: &LasPk,
+    sk: &LasSk,
+    pp: &LasPp,
+    rng: &mut impl CryptoRngCore,
+) -> LasSig {
+    let mut seed = [0u8; 64];
+    rng.fill_bytes(&mut seed);
     presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed)
 }
 
