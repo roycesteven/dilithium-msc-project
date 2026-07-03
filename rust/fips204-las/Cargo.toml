@@ -45,6 +45,12 @@ serde_json = {version = "1.0.127", features = []}
 name = "benchmark"
 harness = false
 
+# LAS additive bench target (dilithium-msc-project): Algorithm 1 vs Algorithm 2
+# Criterion benchmark. Registration only; upstream targets are unchanged.
+[[bench]]
+name = "las_bench"
+harness = false
+
 
 [profile.dev]
 debug = true

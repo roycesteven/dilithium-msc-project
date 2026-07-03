@@ -201,7 +201,54 @@ without a formal proof.
 
 ## Step 8 — The Algorithm 1 vs Algorithm 2 benchmark in Rust
 
-Implemented as `examples/bench_levels.rs` (auto-discovered example target — no
+Two complementary benchmark targets, one methodology. The full guide —
+interpretation rules, baseline diffing, troubleshooting — is
+**`rust/fips204-las/BENCHMARKING.md`**; this step summarises it.
+
+### Step 8a — Criterion.rs micro-benchmark (the standard statistical tool)
+
+`benches/las_bench.rs`, registered with an additive `[[bench]]` block in
+`Cargo.toml`. Criterion.rs is the standard statistical benchmark harness of
+the Rust cryptography ecosystem — **the upstream fips204 crate benchmarks
+with the very same `criterion = "0.4.0"`** — and provides warm-up, automatic
+iteration tuning, 100 samples per operation, Tukey outlier classification,
+bootstrap 95% confidence intervals, and significance-tested baseline diffing
+(`--save-baseline` / `--baseline`). Each of the seven operations is an
+independent benchmark (per-operation = the primary result, Meeting-4 §14.3),
+on one state gated by the same success-path contract as the driver below.
+
+```sh
+cd rust/fips204-las
+cargo bench --bench las_bench 2>&1 | tee bench_las_criterion.log
+```
+
+**Measured (2026-07-03, WSL2 / AMD Ryzen 7 7745HX, `rustc 1.96.0`,
+`[profile.bench]` = `opt-level 3` + `lto`; raw log:
+`rust/fips204-las/bench_las_criterion.log`).** Values are the bootstrap 95%
+confidence interval of the mean, `[low · point estimate · high]`:
+
+| Operation | Time (µs) [low · point · high] |
+| --- | --- |
+| Algorithm 1 — KeyGen | 111.01 · 111.57 · 112.20 |
+| Algorithm 1 — Sign | 1 088.5 · 1 113.5 · 1 137.3 |
+| Algorithm 1 — Verify | 201.95 · 202.33 · 202.80 |
+| Algorithm 2 — PreSign | 1 097.3 · 1 127.6 · 1 160.9 |
+| Algorithm 2 — PreVerify | 203.19 · 204.22 · 205.30 |
+| Algorithm 2 — Adapt (including its internal PreVerify) | 210.29 · 212.67 · 215.43 |
+| Algorithm 2 — Extract | 69.22 · 70.25 · 71.48 |
+
+Point-estimate overheads: PreSign vs Sign **+1.3%** (confidence intervals
+overlap — statistically indistinguishable), PreVerify vs Verify **+0.9%**,
+Adapt vs Verify **+5.1%**; Extract has no Algorithm-1 analogue. Note:
+criterion 0.4 generates no HTML report by default (`html_reports` feature is
+off and the upstream manifest is left untouched) — the terminal output, the
+saved log and `target/criterion/*/new/estimates.json` are the artefacts.
+
+### Step 8b — Protocol driver (overhead summary + rejection counters)
+
+What Criterion by design does not report — the Algorithm-1-vs-Algorithm-2
+overhead percentages and the directly measured rejection restarts — comes
+from `examples/bench_levels.rs` (auto-discovered example target — no
 manifest edit needed), mirroring the PRIMARY section of the C driver
 `ref/test/bench_levels.c`:
 
@@ -262,7 +309,8 @@ cargo run --release --example bench_levels | tee bench_levels_rust.log
 cd rust/fips204-las
 cargo test --test las_kat -- --nocapture      # digest must be 641a176c…5a19
 cargo test --lib --tests                       # upstream 34/34 + interlock + serde
-cargo run --release --example bench_levels     # Algorithm 1 vs Algorithm 2
+cargo bench --bench las_bench                  # Criterion micro-benchmark (BENCHMARKING.md)
+cargo run --release --example bench_levels     # overhead summary + rejection counters
 ```
 
 Stop here. Atomic swap, PCN/AMHL, `presign_k`, the classical-adaptor baseline and

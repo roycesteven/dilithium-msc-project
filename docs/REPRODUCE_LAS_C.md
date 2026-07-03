@@ -290,6 +290,14 @@ bash scripts/run_benchmark_suite.sh     # → evidence/runs/YYYYMMDD_HHMMSS/, ev
 5. **The four-set sweep is a secondary fairness/scaling axis only** — supporting
    or appendix material, never the headline framing.
 
+**Methodology parity with the Rust port:** the Rust benchmarks measure the same
+operations with the same contract-gated, per-operation methodology (plus a
+Criterion.rs statistical layer); the element-by-element mapping between
+`bench_levels.c`, the Rust protocol driver and the Rust Criterion benchmark is
+the table in `rust/fips204-las/BENCHMARKING.md` ("Methodology parity with the
+C benchmark"). Cross-language claims compare overhead *ratios* only, never raw
+microseconds.
+
 ## Reproduction checklist
 
 ```sh

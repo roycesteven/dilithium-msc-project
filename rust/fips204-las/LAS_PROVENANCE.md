@@ -10,7 +10,7 @@
   vendored at repo commit `2374d22`).
 - **License:** MIT OR Apache-2.0 (unchanged).
 
-## What was added (and the ONLY upstream edit)
+## What was added (and the only upstream edits — both purely additive)
 
 Mirrors the C methodology exactly (see `docs/FUNCTION_MAP.md`): **zero upstream
 functions modified**; LAS is layered as additive modules that *call* the
@@ -23,9 +23,13 @@ crate's primitives as-is.
 | `src/las_serialize.rs` | **new** — bit-packing + validating decoders + `las_verify_packed` (port of `ref/serialize.c`) |
 | `tests/las_kat.rs` | **new** — KAT (port of `ref/test/test_kat.c`, same pinned digest) |
 | `tests/las_stage1.rs` | **new** — cross-module interlock + serde round-trip/tamper tests |
-| `examples/bench_levels.rs` | **new** — Algorithm 1 vs Algorithm 2 benchmark (mirror of `ref/test/bench_levels.c` primary section) |
-| `bench_levels_rust.log` | **generated** — raw output of the benchmark run (2026-07-03) |
+| `benches/las_bench.rs` | **new** — Criterion.rs statistical micro-benchmark (same harness + version as upstream's own `benches/benchmark.rs`) |
+| `examples/bench_levels.rs` | **new** — protocol driver: overhead summary + rejection counters (mirror of `ref/test/bench_levels.c` primary section) |
+| `BENCHMARKING.md` | **new** — how to run/read/reproduce both benchmarks; methodology + parity table with the C driver |
+| `bench_las_criterion.log` | **generated** — raw output of the Criterion run (2026-07-03) |
+| `bench_levels_rust.log` | **generated** — raw output of the protocol-driver run (2026-07-03) |
 | `src/lib.rs` | **additive edit only** — three `pub mod` registration lines (analogue of the C Makefile's additive targets) |
+| `Cargo.toml` | **additive edit only** — one `[[bench]] name = "las_bench"` registration block; no upstream line touched |
 
 Primitives reused as-is from upstream: `ntt::ntt`, `ntt::inv_ntt`,
 `helpers::mont_reduce`, `helpers::partial_reduce32`, `helpers::full_reduce32`,
@@ -44,8 +48,10 @@ C KAT binary pins (`make test/test_kat3`, `-DLAS_N=6 -DLAS_ELL=5
 cd rust/fips204-las
 cargo test --test las_kat -- --nocapture      # digest 641a176c…5a19 == C pinned value
 cargo test --lib --tests                       # upstream 34/34 + interlock + serde
-cargo run --release --example bench_levels     # Algorithm 1 vs Algorithm 2 timings
+cargo bench --bench las_bench                  # Criterion micro-benchmark (BENCHMARKING.md)
+cargo run --release --example bench_levels     # overhead summary + rejection counters
 ```
 
 C side of the KAT: `make test/test_kat3 && ./test/test_kat3`. Benchmark results
-and interpretation: `docs/REPRODUCE_LAS_RUST.md` Step 8.
+and interpretation: `BENCHMARKING.md` (this directory) and
+`docs/REPRODUCE_LAS_RUST.md` Step 8.
