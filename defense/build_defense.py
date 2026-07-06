@@ -325,7 +325,7 @@ simple(s, 7.05, 5.36, 2.6, 0.8, "0", 50, ACCENT, font=HEAD, bold=True, anchor=MS
 tb,tf = textbox(s, 8.05, 5.36, 4.45, 0.85, anchor=MSO_ANCHOR.MIDDLE)
 p=para(tf,first=True,space_after=0,line=1.05)
 _run(p,"upstream Dilithium functions modified.\n",13.5,TEXT,font=BODY,bold=True)
-p2=para(tf,space_after=0,line=1.0); _run(p2,"Verified in docs/FUNCTION_MAP.md — the report's reuse table.",11,MUTED,font=BODY)
+p2=para(tf,space_after=0,line=1.0); _run(p2,"Verified in docs/02-methodology/FUNCTION_MAP.md — the report's reuse table.",11,MUTED,font=BODY)
 notes(s, "The foundational decision. The key design fact of the thesis is that an exotic scheme is a basic "
          "scheme plus a handful of functions. So I reuse Dilithium's mode-independent internals and write "
          "only the adaptor layer. The headline is zero upstream functions modified — the entire "
@@ -404,7 +404,7 @@ for i,(name,step,fn,col) in enumerate(rows_data):
     simple(s, tx+8.7, yy, 3.2, rowh-0.08, fn+"()", 13, ACCENT, font=MONO, anchor=MSO_ANCHOR.MIDDLE)
 notes(s, "This is the evidence slide for fidelity. Each of the seven algorithms in the paper's Algorithm 2 "
          "maps to exactly one function in ref/las.c, and the full equation-by-equation correspondence is in "
-         "docs/THEORY_IMPL_BRIDGE.md. Cyan rows are the base signature; amber rows are the four adaptor "
+         "docs/02-methodology/THEORY_IMPL_BRIDGE.md. Cyan rows are the base signature; amber rows are the four adaptor "
          "functions that constitute the exotic extension.")
 
 # ----------------------------------------------------------------- 7 | DECISION 3 simplified scheme

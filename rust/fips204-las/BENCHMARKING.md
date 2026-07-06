@@ -5,13 +5,14 @@ the ordinary lattice-based signature (Algorithm 1, `src/las_basesig.rs`)
 versus the LAS adaptor signature (Algorithm 2, `src/las.rs`), both at the
 Simplified Dilithium-III setting `(n=6, ℓ=5, κ=49)`.
 
-## TL;DR — three commands
+## TL;DR — four commands
 
 ```sh
 cd rust/fips204-las
 cargo test --lib --tests                      # 1. gate: never benchmark unverified code
 cargo bench --bench las_bench                 # 2. standard statistical micro-benchmark (Criterion.rs)
 cargo run --release --example bench_levels    # 3. protocol driver: overhead % + rejection counters
+cargo run --release --example size_report     # 4. communication cost: component-level packed sizes
 ```
 
 Where the results appear:
@@ -19,42 +20,45 @@ Where the results appear:
 | Output | Location |
 | --- | --- |
 | Criterion terminal summary (confidence intervals, outliers) | printed during step 2 |
+| Criterion HTML report (distribution plots, per-benchmark pages, run history) | `target/criterion/report/index.html` |
 | Saved raw log of the committed Criterion run | `bench_las_criterion.log` (this directory) |
 | Machine-readable estimates (for baseline diffing) | `target/criterion/<group>/<benchmark>/new/estimates.json` |
 | Protocol-driver table + overhead summary | printed during step 3; committed run: `bench_levels_rust.log` |
+| Component-size table (communication cost) | printed during step 4; committed run: `size_report_rust.log` |
 
-Note: Criterion 0.4 (the version the upstream crate pins, held back for its
-MSRV 1.70 policy) ships with HTML report generation **disabled by default**
-(`html_reports` feature). We deliberately leave the upstream manifest
-untouched, so there is no `target/criterion/report/index.html` — the terminal
-output, the saved log and the baseline workflow below are the deliverables.
+Criterion version note: upstream pins `criterion = "0.4.0"` (held back for its
+MSRV 1.70 policy); this fork bumps that dev-dependency to **0.8.2** — the one
+upstream manifest line changed (dev-only, documented in `LAS_PROVENANCE.md`).
+0.8.2 generates the HTML report above out of the box.
 
-## The two benchmark tools, and why both exist
+## The three evidence tools, and why each exists
 
 | Tool | File | What it answers | What it cannot do |
 | --- | --- | --- | --- |
-| Criterion.rs micro-benchmark | `benches/las_bench.rs` | Statistically defensible per-operation time: warm-up, automatic iteration tuning, 100 samples, outlier classification, bootstrap 95% confidence interval, significance-tested baseline diffing | Does not compute the Algorithm-1-vs-Algorithm-2 overhead summary, and cannot read the rejection-restart counters |
+| Criterion.rs micro-benchmark | `benches/las_bench.rs` | Statistically defensible per-operation time: warm-up, 300 samples per operation over a 60 s window, outlier classification, bootstrap 95% confidence interval, significance-tested baseline diffing | Does not compute the Algorithm-1-vs-Algorithm-2 overhead summary, and cannot read the rejection-restart counters |
 | Protocol driver | `examples/bench_levels.rs` | The overhead summary (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify), measured attempts/signature from `BASE_ATTEMPTS`/`LAS_ATTEMPTS`, and the per-attempt (rejection-normalised) diagnostic | No confidence intervals or outlier analysis — it reports mean ± SD over 5 repetitions |
+| Size report | `examples/size_report.rs` | Communication cost: measured component-level packed sizes (pk, sk, statement Y, witness, challenge c, response z, signature / pre-signature / adapted signature), hard-asserted equal to the C evidence row | Nothing statistical — sizes are deterministic, which is exactly why Criterion is not involved |
 
 They are complementary: **quote per-operation times from Criterion; quote the
-overhead percentages and rejection rates from the protocol driver.** Both time
-the same functions from the two separate modules on a state gated by the same
-success-path contract.
+overhead percentages and rejection rates from the protocol driver; quote
+communication cost from the size report.** All three run on a state gated by
+the same success-path contract.
 
 ## Why Criterion.rs — mapped to the supervisor's benchmark requirements
 
 Criterion.rs is the de-facto standard statistical benchmark harness of the
 Rust ecosystem, and specifically of Rust cryptography. The decisive fact:
 **the upstream `fips204` crate itself benchmarks with Criterion**
-(`benches/benchmark.rs`, the same `criterion = "0.4.0"` dev-dependency), so
-the LAS measurements use exactly the methodology of the base crate's author.
+(`benches/benchmark.rs`, the shared dev-dependency — bumped `0.4.0 → 0.8.2`
+here, dev-only), so the LAS measurements use exactly the methodology of the
+base crate's author.
 
 Requirement-by-requirement (`las-context-consolidated.md`):
 
 | Supervisor requirement | How this setup meets it |
 | --- | --- |
-| §7 [Meeting 2]: ≥ 1000 iterations per operation, median + standard deviation, same machine and build flags | Criterion auto-tunes iterations: this run used 5 050 (Sign, PreSign) up to 76 000 (Extract) iterations per operation; it reports mean, median and SD; one machine, one `[profile.bench]` |
-| §13.3 [Meeting 3]: ≥ 5 repetitions, mean with variance/SD, never single shots | 100 samples per operation, Tukey outlier classification, bootstrap 95% confidence interval of the mean |
+| §7 [Meeting 2]: ≥ 1000 iterations per operation, median + standard deviation, same machine and build flags | Criterion auto-tunes iterations: the committed run used 135 000 (PreSign) up to 2 200 000 (Extract) iterations per operation; it reports mean, median and SD; one machine, one `[profile.bench]` |
+| §13.3 [Meeting 3]: ≥ 5 repetitions, mean with variance/SD, never single shots | 300 samples per operation over a 60 s window, Tukey outlier classification, bootstrap 95% confidence interval of the mean |
 | §14.3 [Meeting 4]: per-operation timing is the PRIMARY result | Each of KeyGen, Sign, Verify, PreSign, PreVerify, Adapt, Extract is an independent benchmark |
 | §14.5 [Meeting 4]: state machine, compiler, flags, iteration and run counts | Recorded below and in the committed log; build profile pinned in `Cargo.toml [profile.bench]` |
 
@@ -70,8 +74,10 @@ the statistical harness.
 
 ## Prerequisites
 
-- Rust toolchain ≥ 1.70; the committed run used `rustc 1.96.0`. No other
-  system dependency.
+- Rust toolchain: the **library** keeps upstream's MSRV 1.70, but building the
+  benches needs a recent stable toolchain (criterion 0.8.2; the committed run
+  used `rustc 1.96.0`). No other system dependency — the HTML report uses the
+  pure-Rust `plotters` backend, gnuplot is **not** required.
 - A quiet machine: close heavy background processes; on laptops, plug in
   (frequency scaling inflates variance). See Troubleshooting for WSL2.
 
@@ -95,7 +101,11 @@ cargo bench --bench las_bench 2>&1 | tee bench_las_criterion.log
 ```
 
 This builds with the crate's `[profile.bench]` (`opt-level = 3`, `lto`,
-`codegen-units = 1`) and runs seven benchmarks in two groups:
+`codegen-units = 1`) and runs seven benchmarks in two groups, each with the
+custom config in `criterion_config()`: **300 samples over a 60 s measurement
+window per benchmark** (full run ≈ 8 minutes) — sized so the sign-class
+attempt distribution converges and the PreSign-vs-Sign difference resolves
+above measurement noise:
 
 - **Algorithm 1 — ordinary lattice-based signature:** KeyGen, Sign, Verify
   (from the independent `las_basesig` module);
@@ -114,17 +124,17 @@ Real excerpt from the committed run:
 
 ```text
 Algorithm 2 - LAS adaptor signature/PreSign
-                        time:   [1.0973 ms 1.1276 ms 1.1609 ms]
-Found 1 outliers among 100 measurements (1.00%)
+                        time:   [447.67 µs 450.14 µs 452.60 µs]
+Found 14 outliers among 300 measurements (4.67%)
 ```
 
 - `time: [low estimate high]` is the **bootstrap 95% confidence interval of
   the mean time per call**; quote the middle value as the point estimate.
-- The outlier line is Criterion's Tukey classification of the 100 samples —
+- The outlier line is Criterion's Tukey classification of the 300 samples —
   see "How to read the numbers" for why sign-class outliers are expected.
-- The warning `Unable to complete 100 samples in 5.0s` (appears for Sign and
-  PreSign) is harmless: Criterion kept 100 samples and simply extended the
-  measurement window (~5.8 s).
+- For the sign-class benchmarks Criterion may stretch past the 60 s target to
+  keep all 300 samples (the committed run collected Sign over ≈ 79 s) —
+  harmless, the sample count is preserved.
 
 ### Step 4 — Run the protocol driver for overheads and rejection counters
 
@@ -136,30 +146,91 @@ This prints the per-operation table (5 repetitions, mean ± SD), the
 Algorithm-1-vs-Algorithm-2 overhead percentages, the measured
 attempts/signature on both paths, and the per-attempt diagnostic.
 
+### Step 5 — Run the size report for communication cost
+
+```sh
+cargo run --release --example size_report | tee size_report_rust.log
+```
+
+Deterministic (no statistics needed): it packs live, contract-gated objects
+with `las_serialize.rs` and prints the component-level byte table — see
+"Communication cost" below.
+
 ## Measured results (committed run)
 
-Measured 2026-07-03 on WSL2 / AMD Ryzen 7 7745HX, `rustc 1.96.0`,
+Measured 2026-07-05 on WSL2 / AMD Ryzen 7 7745HX, `rustc 1.96.0`,
+criterion 0.8.2, 300 samples over a 60 s window per operation,
 `[profile.bench]` (`opt-level = 3`, `lto`, `codegen-units = 1`); raw log:
-`bench_las_criterion.log`. Values are the bootstrap 95% confidence interval
-of the mean, `[low · point estimate · high]`:
+`bench_las_criterion.log`; results also saved as baseline `criterion082`.
+Times in µs; the mean column is the bootstrap 95% confidence interval
+`[low · point estimate · high]`:
 
-| Operation | Time (µs) [low · point · high] | Iterations |
+| Operation | Mean (µs) [low · point · high] | Median (µs) | Iterations |
+| --- | --- | --- | --- |
+| Algorithm 1 — KeyGen | 39.03 · 39.13 · 39.25 | 39.18 | 1 500 000 |
+| Algorithm 1 — Sign | 448.63 · 451.07 · 453.46 | 448.26 | 181 000 |
+| Algorithm 1 — Verify | 79.67 · 79.89 · 80.15 | 79.98 | 768 000 |
+| Algorithm 2 — PreSign | 447.67 · 450.14 · 452.60 | 449.91 | 135 000 |
+| Algorithm 2 — PreVerify | 80.29 · 80.51 · 80.74 | 80.28 | 768 000 |
+| Algorithm 2 — Adapt (including its internal PreVerify) | 82.04 · 82.21 · 82.39 | 82.62 | 768 000 |
+| Algorithm 2 — Extract | 27.22 · 27.40 · 27.61 | 26.89 | 2 200 000 |
+
+Adaptor overhead (sign-class quoted from means, verify-class from medians —
+see the rules below):
+
+- **PreSign vs Sign: statistically indistinguishable** (−0.2% on means,
+  +0.4% on medians; the two confidence intervals almost coincide);
+- **PreVerify vs Verify: +0.4%** (medians; on means +0.8% with disjoint
+  confidence intervals);
+- **Adapt vs Verify: +3.3%** (medians; on means +2.9% with disjoint
+  confidence intervals);
+- **Extract ≈ 27 µs** — no Algorithm-1 analogue.
+
+The physically expected ordering **Verify < PreVerify < Adapt** is resolved
+by the data (Adapt = PreVerify + witness addition + norm check). This agrees
+with the protocol driver (+3.9% / −1.2% / +0.4%, `bench_levels_rust.log`,
+run 2026-07-03) and with the C headline (+6.7% / +3.1% / +8.1%,
+`evidence/latest/`): **the adaptor layer costs at most a few percent per
+operation.**
+
+Note on absolute times: the protocol-driver log was captured on 2026-07-03 in
+a slower machine state (WSL2/laptop frequency scaling; ≈ 2.5× slower uniformly
+across all operations). This is exactly why the rule below says compare
+overhead **ratios**, never raw microseconds, across runs, machines or
+languages.
+
+## Communication cost — component sizes (measured, committed run)
+
+From `size_report_rust.log` (`cargo run --release --example size_report`),
+Simplified Dilithium-III setting, wire format `las_serialize.rs` — every value
+hard-asserted equal to the C evidence row
+(`evidence/latest/tables/communication_components.csv`, level L3):
+
+| Component | Bytes | % of signature |
 | --- | --- | --- |
-| Algorithm 1 — KeyGen | 111.01 · 111.57 · 112.20 | 45 000 |
-| Algorithm 1 — Sign | 1 088.5 · 1 113.5 · 1 137.3 | 5 050 |
-| Algorithm 1 — Verify | 201.95 · 202.33 · 202.80 | 25 000 |
-| Algorithm 2 — PreSign | 1 097.3 · 1 127.6 · 1 160.9 | 5 050 |
-| Algorithm 2 — PreVerify | 203.19 · 204.22 · 205.30 | 25 000 |
-| Algorithm 2 — Adapt (including its internal PreVerify) | 210.29 · 212.67 · 215.43 | 25 000 |
-| Algorithm 2 — Extract | 69.22 · 70.25 · 71.48 | 76 000 |
+| public key pk = t | 4416 | 65.40 |
+| secret key sk = r | 704 | 10.43 |
+| statement Y = t′ (adaptor lock) | 4416 | 65.40 |
+| witness r′ | 704 | 10.43 |
+| challenge c | 64 | 0.95 |
+| response z (= ẑ in the pre-signature) | 6688 | 99.05 |
+| signature (c, z) | 6752 | 100.00 |
+| pre-signature (c, ẑ) | 6752 | 100.00 |
+| adapted signature (c, z) | 6752 | 100.00 |
 
-Point-estimate overheads: PreSign vs Sign **+1.3%** (the two confidence
-intervals overlap — statistically indistinguishable), PreVerify vs Verify
-**+0.9%**, Adapt vs Verify **+5.1%**; Extract (≈ 70 µs) has no Algorithm-1
-analogue. This agrees with the protocol driver's run (+3.9% / −1.2% / +0.4%,
-`bench_levels_rust.log`) and with the C headline (+6.7% / +3.1% / +8.1%,
-`evidence/latest/`): **the adaptor layer costs at most single-digit percent
-per operation**, and the verify-class differences sit inside the noise.
+The findings the supervisor asks to state explicitly (§13.2, §14.4):
+
+- **the response z drives the size** (99.05% of the signature); the challenge
+  is negligible (64 B);
+- **signature, pre-signature and adapted signature are byte-identical in
+  size**: Adapt only adds the ternary witness (`‖y‖∞ ≤ 1`) to ẑ, so `‖z‖∞`
+  grows by at most 1 and stays inside the same 19-bit packed field;
+- the only *extra* object the adaptor protocol communicates is the statement
+  `Y` (4416 B = one public key).
+
+Sizes are deterministic, so this is a measurement program, not a Criterion
+benchmark; the Rust table covers the Simplified Dilithium-III setting only
+(the Rust port hard-codes it) — the four-set sweep remains C-side evidence.
 
 ## How to read the numbers — the four rules
 
@@ -185,6 +256,47 @@ per operation**, and the verify-class differences sit inside the noise.
    (`evidence/latest/`, produced by `scripts/run_benchmark_suite.sh`). The
    Rust measurements are the independent cross-language confirmation.
 
+## Run validity — the rejection gate
+
+Every timing run of the sign-class operations now **validates itself**: the
+Criterion benchmark and the protocol driver count Sign/PreSign calls, read the
+`BASE_ATTEMPTS`/`LAS_ATTEMPTS` counters (outside the timed region; the only
+in-loop cost is one `Cell` increment, sub-ns against a ~450 µs call), and
+**hard-assert** that the restart rate measured *in that very run* matches the
+exact theoretical expectation. A run whose rejection sampling misbehaves fails
+loudly instead of producing a plausible-looking but invalid log.
+
+The expectation is exact, not the ≈ e approximation
+(`las_expected_attempts` in `src/las.rs`, derivation verified against eprint
+2020/845): the mask coefficient is uniform on `[-γ, γ]` (2γ+1 values, Table 1),
+the secret-dependent shift obeys `‖cr‖∞ ≤ κ` (Fact 1), so each of the
+`(n+ℓ)·d` coefficients accepts independently with probability exactly
+`(2·bound−1)/(2γ+1)`, giving
+
+- Algorithm 1 Sign (accept `‖z‖∞ ≤ γ−κ`, Alg. 1 step 11): **2.71875**
+  attempts/call (acceptance 36.78%),
+- Algorithm 2 PreSign (accept `‖ẑ‖∞ ≤ γ−κ−1`, Alg. 2 step 6): **2.77483**
+  attempts/call (acceptance 36.04%)
+
+at this build's simplified Dilithium-III set (n=6, ℓ=5, κ=49, γ=137 984). This
+is the exact form of the paper's §3.2 design target ("the average number of
+restarts in Sign and PreSign is about e < 3").
+
+The tolerance is statistical, not arbitrary: attempts/call over `calls`
+i.i.d. geometric draws has SD `E·√(1−1/E) ≈ 2.16`, and the gate allows
+`±5·SD/√calls` — about **±1%** at the Criterion run's ≥ 100 k calls (tight:
+even the nearest realistic defect, the PreSign bound loosened by one, shifts
+the expectation by ~2% ≈ 9σ and is caught) and about **±8%** at the driver's
+2 500 calls (coarse gross-breakage check). Expected log line:
+
+```text
+rejection gate [Algorithm 2 PreSign]: 135300 calls, measured 2.7761 attempts/call (acceptance 36.02%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.0294 => OK
+```
+
+Note the two theory values differ **by design** (the `−1` tighter PreSign
+bound); the gate therefore also re-confirms, on every run, that the two paths
+really run at their distinct paper bounds.
+
 ## Comparing two runs (Criterion baselines)
 
 Criterion can diff runs with a significance test — use this before/after any
@@ -199,6 +311,10 @@ cargo bench --bench las_bench -- --baseline before
 The second run prints the per-benchmark change and a verdict
 (`No change in performance detected.` / `Performance has regressed.`).
 
+The committed run saved its results as the named baseline **`criterion082`**,
+so any future change can be significance-tested against it directly:
+`cargo bench --bench las_bench -- --baseline criterion082`.
+
 ## Methodology parity with the C benchmark
 
 The Rust benchmarks deliberately mirror the C driver so both languages
@@ -210,9 +326,12 @@ measure the same thing the same way:
 | Success-path contract asserted before timing | yes | yes | yes |
 | Pre-signature must FAIL ordinary Verify | asserted | asserted | asserted |
 | Sign-class statistic includes rejection restarts | yes (mean) | yes (mean) | yes (mean, with bootstrap confidence interval) |
-| Rejection rate measured directly | `base_attempts` / `las_attempts` counters | `BASE_ATTEMPTS` / `LAS_ATTEMPTS` counters | not applicable — use the driver |
+| Rejection rate measured directly | `base_attempts` / `las_attempts` counters | `BASE_ATTEMPTS` / `LAS_ATTEMPTS` counters | `BASE_ATTEMPTS` / `LAS_ATTEMPTS` read per run |
+| Run-validity rejection gate (measured vs exact theory, 5σ) | yes (same gate + line format, ±8% at 2 500 timed calls) | yes (coarse, ±8% at 2 500 calls) | yes (tight, ~±1% at ≥ 100 k calls) |
+| Fixed pp seed (`00..1f`) + fixed 33-byte message | yes (same bytes as the Rust drivers) | yes | yes |
 | Per-attempt (rejection-normalised) diagnostic | yes | yes | not applicable |
-| Repetition scheme | 10 runs × 1000 iterations, mean ± SD | 5 repetitions × 500/1000 iterations, mean ± SD | 100 samples, warm-up, outlier classification, 95% confidence interval |
+| Repetition scheme | 5 repetitions × 500 (sign-class) / 1000 (verify-class) iterations, mean ± SD — **identical to the Rust driver** (was 10 × 1000 before 2026-07-06; evidence regenerated under the mirrored scheme) | 5 repetitions × 500/1000 iterations, mean ± SD | 300 samples over 60 s per operation, warm-up, outlier classification, 95% confidence interval |
+| Communication-cost evidence | component sizes printed by `bench_levels.c` → `evidence/latest/tables/communication_components.csv` | — | — (deterministic: `examples/size_report.rs` → `size_report_rust.log`, hard-asserted equal to the C CSV row) |
 | Evidence artefact | `evidence/runs/…` via `run_benchmark_suite.sh` | `bench_levels_rust.log` | `bench_las_criterion.log` + `target/criterion/` |
 
 What Criterion adds on the Rust side (warm-up, outlier classification,
@@ -220,21 +339,32 @@ bootstrap confidence intervals, significance-tested baseline diffing) is a
 strictly stronger statistical layer on top of the same protocol methodology —
 it does not change *what* is measured.
 
+One residual, honestly-documented difference: the **randomness source** for
+KeyGen and the signing masks. The C scheme code draws it from the system RNG
+inside `las.c`/`basesig.c`; the Rust drivers pass a fixed-seed ChaCha8. Both
+sample the identical distributions (and the same pp/message bytes), so the
+workloads are statistically equivalent — and the rejection gate verifies the
+restart statistics of every run on both sides. Making the C side literally
+seedable would require modifying scheme code, which the provenance rules
+forbid for benchmarking convenience.
+
 ## Troubleshooting (WSL2 / laptops)
 
 - **High variance / wide confidence intervals:** close background processes,
   plug the laptop in, re-run. Criterion's warm-up absorbs cold caches but not
   a busy CPU.
-- **`Unable to complete 100 samples in 5.0s` warning:** harmless — Criterion
-  extends the measurement window and keeps 100 samples; results remain valid.
+- **Sign-class benchmarks run past the 60 s target:** harmless — Criterion
+  extends the window to keep all 300 samples; results remain valid.
 - **Comparing two of your own runs:** use the baseline workflow above;
   Criterion applies the significance test for you.
-- **Numbers differ from the committed logs:** expected across machines. Check
-  that the *overhead ratios* and the ≈ e attempts/signature (from the driver)
-  match, not the microseconds.
+- **Numbers differ from the committed logs:** expected across machines *and
+  across power states* — the two committed Rust logs themselves differ ≈ 2.5×
+  in absolute time between 2026-07-03 and 2026-07-05, while the overhead
+  ratios agree. Check the *ratios* and the ≈ e attempts/signature (from the
+  driver), never the microseconds.
 
 ## Scope
 
 This document stops at the Algorithm 1 vs Algorithm 2 comparison. Atomic
 swap, PCN/AMHL, `presign_k`, the classical-adaptor baseline and EVM gas are
-later-stage work, out of scope here (see `docs/REPRODUCE_LAS_RUST.md`).
+later-stage work, out of scope here (see `docs/A-appendix/REPRODUCE_LAS_RUST.md`).

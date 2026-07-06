@@ -16,7 +16,7 @@ Core project rule:
 - Do not make unsupported security claims or invent parameter mappings.
 
 Scope:
-- `docs/THEORY_IMPL_BRIDGE.md`
+- `docs/02-methodology/THEORY_IMPL_BRIDGE.md`
 - `docs/LAS.md`
 - `README.md`
 - `ref/las.h`

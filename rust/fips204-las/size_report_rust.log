@@ -1,0 +1,46 @@
+   Compiling libc v0.2.186
+   Compiling find-msvc-tools v0.1.9
+   Compiling shlex v2.0.1
+   Compiling anstyle v1.0.14
+   Compiling clap_lex v1.1.0
+   Compiling itertools v0.13.0
+   Compiling clap_builder v4.6.0
+   Compiling cc v1.2.65
+   Compiling alloca v0.4.0
+   Compiling criterion-plot v0.8.2
+   Compiling getrandom v0.2.17
+   Compiling page_size v0.6.0
+   Compiling rand_core v0.6.4
+   Compiling clap v4.6.1
+   Compiling rand_chacha v0.3.1
+   Compiling fips204 v0.4.6 (/home/melly/dilithium-msc-project/rust/fips204-las)
+   Compiling criterion v0.8.2
+   Compiling rand v0.8.6
+    Finished `release` profile [optimized] target(s) in 17.47s
+     Running `target/release/examples/size_report`
+Communication cost — component-level packed sizes (measured)
+Setting: Simplified Dilithium-III (n=6, ell=5, kappa=49), ring degree d=256
+Wire format: las_serialize.rs (byte-for-byte identical to C ref/serialize.c;
+             cross-checked against the C pinned KAT digest 641a176c…5a19)
+
+component                                    bytes   % of signature
+public key pk = t                             4416           65.40%
+secret key sk = r                              704           10.43%
+statement Y = t' (adaptor lock)               4416           65.40%
+witness r'                                     704           10.43%
+challenge c                                     64            0.95%
+response z                                    6688           99.05%
+response z_hat (in pre-signature)             6688           99.05%
+signature (c, z)                              6752          100.00%
+pre-signature (c, z_hat)                      6752          100.00%
+adapted signature (c, z)                      6752          100.00%
+
+Finding: the response z drives the size (6688 of 6752 B = 99.05%);
+the challenge c is negligible (64 B = 0.95%).
+Signature, pre-signature and adapted signature are byte-identical in size:
+Adapt only adds the ternary witness (|y|_inf <= 1) to z_hat, so |z|_inf grows
+by at most 1 and stays inside the same 19-bit packed field.
+The only extra object the adaptor protocol communicates is the statement Y
+(4416 B = one public key).
+
+ALL SIZE CHECKS PASSED (constants, C evidence row L3, sig==presig==adapted)

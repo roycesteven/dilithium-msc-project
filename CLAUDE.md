@@ -42,10 +42,10 @@ Read these only when needed:
 * `las-context-consolidated.md` — when the task needs supervisor objectives, meeting decisions, or project scope confirmation.
 * `docs/STATUS.md` — when the task needs the current deliverable/test checklist.
 * `docs/LAS.md` — when changing or checking design, benchmark interpretation, report-source text, or implementation claims.
-* `docs/THEORY_IMPL_BRIDGE.md` — when checking paper-equation to C-function mapping.
+* `docs/02-methodology/THEORY_IMPL_BRIDGE.md` — when checking paper-equation to C-function mapping.
 * `docs/paper/LAS_2020_845_NOTATION.md` — when editing LAS labels, benchmark plots, report text, API/README explanations, or protocol comments (see the source-of-truth rule below).
 * `README.md` — when checking build/reproducibility instructions.
-* `docs/FUNCTION_MAP.md` — when checking reused/modified/new function classification.
+* `docs/02-methodology/FUNCTION_MAP.md` — when checking reused/modified/new function classification.
 
 If the user names specific files, inspect only those files first. Read additional files only if they are directly included, referenced, or necessary to answer the task accurately.
 
@@ -211,7 +211,7 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   optimised=~3210B (different scheme — not directly comparable).
 - ✅ **Full design write-up** — `docs/LAS.md` (report source material, includes
   literature/methodology section §1.1 for assessment rubric).
-- ✅ **Theory↔implementation bridge** — `docs/THEORY_IMPL_BRIDGE.md` (every paper
+- ✅ **Theory↔implementation bridge** — `docs/02-methodology/THEORY_IMPL_BRIDGE.md` (every paper
   equation mapped to C function/line).
 - ✅ **Code pushed to GitHub** — on branch `main`, up to date with `origin/main`.
   PR #1 merged. No unpushed commits.
@@ -221,7 +221,7 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   macro `LAS_BOUND_PRESIGN_K`), `chain_fund_swap_k`. Demo hard-asserts wormhole
   resistance, witness-norm growth `‖s_j‖∞≤j`, exact cascade recovery, and a
   timeout/refund path. `test_pcn.c` retained as the same-Y baseline.
-  See `docs/LAS.md §7.5` and `docs/THEORY_IMPL_BRIDGE.md §12.5`.
+  See `docs/LAS.md §7.5` and `docs/02-methodology/THEORY_IMPL_BRIDGE.md §12.5`.
   **Meeting-2 note:** AMHL was re-classified as *optional/bonus* — it happens to
   be done already, but it must not displace Stage-1/2 + benchmark work.
 - ✅ **Serialization + byte-level verifier** — `ref/serialize.{c,h}` +
@@ -244,7 +244,7 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   2×2 "price of post-quantum" table + analysis in `docs/LAS.md §8.3`.
 - ✅ **Reproducibility entry point + function map (Meeting-2 B5 deliverables)** —
   `README.md` (build/run/reproduce; upstream commit hash `2374d22` +
-  toolchain recorded, B5.1) and `docs/FUNCTION_MAP.md` (every Dilithium function
+  toolchain recorded, B5.1) and `docs/02-methodology/FUNCTION_MAP.md` (every Dilithium function
   classified call-as-is / modify / new; headline: **zero upstream functions
   modified**, B5.4 — also the report's "reused vs modified vs added" table, B4).
 
@@ -321,7 +321,7 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
 - **Hard out-of-scope (supervisor):** Ethereum-consensus multisigs, blind/group
   signatures, heavy ZKP/MPC — one related-work paragraph max.
 - **TODO: report draft** — supervisor-confirmed skeleton (B4): high-level design →
-  function map (✅ `docs/FUNCTION_MAP.md`) → key decisions → benchmark results
+  function map (✅ `docs/02-methodology/FUNCTION_MAP.md`) → key decisions → benchmark results
   (both baselines) → critical analysis; code snippets only in appendix.
   ~8000 words from `docs/LAS.md`.
 
@@ -330,7 +330,7 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
 - **Live status / test checklist:** `docs/STATUS.md`.
 - LAS paper: eprint 2020/845 (Esgin, Ersoy, Erkin).
 - poqeth (integration template): eprint 2025/091.
-- Full design + math + results: `docs/LAS.md` · theory↔code: `docs/THEORY_IMPL_BRIDGE.md`.
-- Reproducibility: `README.md` · function classification: `docs/FUNCTION_MAP.md`.
+- Full design + math + results: `docs/LAS.md` · theory↔code: `docs/02-methodology/THEORY_IMPL_BRIDGE.md`.
+- Reproducibility: `README.md` · function classification: `docs/02-methodology/FUNCTION_MAP.md`.
 
 ## Assessment Criteria and Rubric: see `MSc_Report_and_Video_Rubric.md`

@@ -101,6 +101,31 @@ const SHAKE256_RATE: usize = 136;
 /// benchmark instrumentation, not synchronisation.
 pub static LAS_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 
+/// EXACT expected attempts/call of the rejection loop running at `bound`
+/// (`LAS_BOUND_SIGN` or `LAS_BOUND_PRESIGN`), for validating a measured
+/// attempt counter against theory. Derivation, verified against eprint
+/// 2020/845 (Esgin-Ersoy-Erkin):
+///
+/// The mask y is drawn from S_gamma^(n+ell), i.e. every coefficient uniform
+/// on [-GAMMA, GAMMA] — 2*GAMMA+1 values (Table 1: S_c = {f : |f|inf <= c}).
+/// The secret-dependent shift obeys |c*r|inf <= KAPPA (the paper's Fact 1),
+/// and the chknorm acceptance window |z_i| <= bound-1 (2*bound-1 values,
+/// matching Alg. 1 step 11 "reject |z|inf > gamma-kappa" resp. Alg. 2 step 6
+/// "reject |z^|inf > gamma-kappa-1") therefore always lies inside the shifted
+/// mask support whenever bound <= GAMMA-KAPPA+1: each coefficient accepts
+/// independently with probability exactly (2*bound-1)/(2*GAMMA+1), regardless
+/// of the secret. One attempt accepts iff all (n+ell)*d coefficients do, and
+/// the attempt count is geometric, so
+///   E[attempts] = ((2*bound-1)/(2*GAMMA+1))^-((n+ell)*d).
+/// With gamma = kappa*d*(n+ell) this is ~ e — the exact form of the paper's
+/// design target "the average number of restarts in Sign and PreSign is
+/// about e < 3" (Section 3.2). At this build's D3 engineering set it gives
+/// Sign 2.7188 and PreSign 2.7748 attempts/call.
+pub fn las_expected_attempts(bound: i32) -> f64 {
+    let p_coeff = f64::from(2 * bound - 1) / f64::from(2 * LAS_GAMMA + 1);
+    p_coeff.powi(-((LAS_M * N) as i32))
+}
+
 /* ---- Types (vectors are plain arrays of the crate's degree-256 polys).
  * A' is stored in the NTT domain (type T), exactly like the C `las_pp.mat`. ---- */
 

@@ -30,8 +30,8 @@ use std::sync::atomic::Ordering;
 use std::time::Instant;
 
 use fips204::las::{
-    las_adapt, las_ext, las_keygen, las_presign, las_preverify, las_setup, LAS_ATTEMPTS,
-    LAS_ELL, LAS_GAMMA, LAS_KAPPA, LAS_N,
+    las_adapt, las_expected_attempts, las_ext, las_keygen, las_presign, las_preverify, las_setup,
+    LAS_ATTEMPTS, LAS_BOUND_PRESIGN, LAS_BOUND_SIGN, LAS_ELL, LAS_GAMMA, LAS_KAPPA, LAS_N,
 };
 use fips204::las_basesig::{base_keygen, base_sign, base_verify, BASE_ATTEMPTS};
 use fips204::las_serialize::{LAS_PK_BYTES, LAS_SIG_BYTES, LAS_SK_BYTES};
@@ -60,6 +60,33 @@ fn mean_sd(xs: &[f64]) -> (f64, f64) {
     let mean = xs.iter().sum::<f64>() / n;
     let var = xs.iter().map(|x| (x - mean) * (x - mean)).sum::<f64>() / n;
     (mean, var.sqrt())
+}
+
+/// Run-validity gate — same 5-sigma check as benches/las_bench.rs: the restart
+/// rate measured in THIS run must match the exact expectation derived from the
+/// paper's rejection bounds (eprint 2020/845 Alg. 1 step 11 / Alg. 2 step 6;
+/// see `las_expected_attempts`). Attempts/call over `calls` i.i.d. geometric
+/// draws has SD = E*sqrt(1-1/E), so the band is 5*SD/sqrt(calls) — at this
+/// driver's 2500 calls that is ~+-8%: a coarse gate against gross breakage
+/// (the Criterion run's >=100k calls give the tight ~+-1% version).
+fn rejection_gate(label: &str, attempts: u64, calls: u64, theory: f64) {
+    assert!(calls > 0, "rejection gate: no calls counted for {label}");
+    let measured = attempts as f64 / calls as f64;
+    let sigma = theory * (1.0 - 1.0 / theory).sqrt();
+    let tol = 5.0 * sigma / (calls as f64).sqrt();
+    println!(
+        "rejection gate [{label}]: {calls} calls, measured {measured:.4} attempts/call \
+         (acceptance {:.2}%) vs theory {theory:.4} ({:.2}%), 5-sigma tolerance +-{tol:.4} => {}",
+        100.0 / measured,
+        100.0 / theory,
+        if (measured - theory).abs() <= tol { "OK" } else { "FAIL" },
+    );
+    assert!(
+        (measured - theory).abs() <= tol,
+        "rejection gate [{label}]: measured {measured:.4} attempts/call deviates from the \
+         theoretical {theory:.4} by more than the 5-sigma tolerance +-{tol:.4}; \
+         the rejection loop is not behaving as designed — this run is NOT valid evidence"
+    );
 }
 
 fn main() {
@@ -200,6 +227,13 @@ fn main() {
         base_ops as f64 / base_att as f64 * 100.0,
         las_att as f64 / las_ops as f64,
         las_ops as f64 / las_att as f64 * 100.0,
+    );
+    rejection_gate("Algorithm 1 Sign", base_att, base_ops, las_expected_attempts(LAS_BOUND_SIGN));
+    rejection_gate(
+        "Algorithm 2 PreSign",
+        las_att,
+        las_ops,
+        las_expected_attempts(LAS_BOUND_PRESIGN),
     );
     // Rejection-normalised diagnostic: per-ATTEMPT cost removes the residual
     // restart-count luck between the two paths, isolating the pure adaptor

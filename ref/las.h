@@ -96,6 +96,25 @@ typedef struct { poly c; poly z[LAS_M]; } las_sig;  /* (pre-)signature (c, z)  *
  * Single-threaded use only (the benchmarks are single-threaded). */
 extern unsigned long las_attempts;
 
+/* EXACT expected attempts/call of the rejection loop running at `bound`
+ * (LAS_BOUND_SIGN or LAS_BOUND_PRESIGN), for validating a measured attempt
+ * counter against theory -- the benchmarks' run-validity rejection gate
+ * (mirrors the Rust port's las_expected_attempts; instrumentation only,
+ * never used by the scheme).  Derivation, verified against eprint 2020/845:
+ * the mask coefficient is uniform on [-gamma, gamma] (2*gamma+1 values;
+ * Table 1, S_c = {f : |f|inf <= c}) and the secret-dependent shift obeys
+ * |c*r|inf <= kappa (Fact 1), so for any bound <= gamma-kappa+1 the chknorm
+ * acceptance window |z_i| <= bound-1 (2*bound-1 values; Alg. 1 step 11
+ * "reject |z|inf > gamma-kappa" resp. Alg. 2 step 6 "reject |z^|inf >
+ * gamma-kappa-1") always lies inside the shifted mask support: each of the
+ * (n+ell)*d coefficients accepts independently with probability exactly
+ * (2*bound-1)/(2*gamma+1), the attempt count is geometric, and
+ *     E[attempts] = ((2*bound-1)/(2*gamma+1))^-((n+ell)*d)
+ * -- the exact form of the paper's Section 3.2 design target "the average
+ * number of restarts in Sign and PreSign is about e < 3".  At the D3
+ * engineering set (6,5,49): Sign 2.71875, PreSign 2.77483 attempts/call. */
+double las_expected_attempts(int32_t bound);
+
 /* Public parameters pp = A (expanded from a public seed). */
 void las_setup(las_pp *pp, const uint8_t seed[LAS_SEEDBYTES]);
 

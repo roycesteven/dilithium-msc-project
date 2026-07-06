@@ -146,10 +146,10 @@ LAS-family scheme). Full deliverable/test matrix: **`docs/STATUS.md`**.
 1. Dilithium reference builds & runs on own machine — commit hash + toolchain recorded in `README.md`. ✅
 2. Literature check on LAS follow-ups (LAS + survey 2022/1151) — captured in `docs/LAS.md §1.1`. ✅
 3. Language decision — C. ✅
-4. **Function map** (call-as-is / modify / new; 0 upstream functions modified) — `docs/FUNCTION_MAP.md`. ✅
+4. **Function map** (call-as-is / modify / new; 0 upstream functions modified) — `docs/02-methodology/FUNCTION_MAP.md`. ✅
 
 **Meeting-3 deliverables [M3, 2026-06-18 asks] — Stage-1 defensibility (see §13):**
-1. Two-branch code-diff view (`dilithium-baseline` vs `main`) + `docs/CODE_DIFF_VIEW.md`. ✅
+1. Two-branch code-diff view (`dilithium-baseline` vs `main`) + `docs/02-methodology/CODE_DIFF_VIEW.md`. ✅
 2. Fair same-security-level benchmark — overridable `LAS_N/LAS_ELL/LAS_KAPPA`, `ref/test/bench_levels.c` at paper/D2/D3/D5; primary comparison = base path vs adaptor path. ✅
 3. ≥5-run mean ± SD on the same machine (10×1000). ✅
 4. Component-level size breakdown (c / z / pk / Y / witness / pre-sig; `z` ≈ 98–99%). ✅
@@ -182,8 +182,8 @@ application layer.**
 Dilithium code and the `main` branch with the LAS work, so the examiner (and Wang)
 can see at a glance which files were **reused unchanged, modified, or newly added**
 (a PR / branch-compare view). This is the visible-contribution artefact.
-*Done:* `dilithium-baseline` vs `main`; `docs/CODE_DIFF_VIEW.md`;
-`docs/FUNCTION_MAP.md` gives the per-function classification.
+*Done:* `dilithium-baseline` vs `main`; `docs/02-methodology/CODE_DIFF_VIEW.md`;
+`docs/02-methodology/FUNCTION_MAP.md` gives the per-function classification.
 
 **13.2 Component-level size analysis.** Do not merely report that a LAS key or
 signature is "larger". Break each object into its components — challenge `c`,
@@ -300,7 +300,7 @@ Don't make the reader infer the conclusion from many figures.
 the clean Dilithium baseline against the LAS `main` branch and **invite Wang to
 review**, so he can inspect which files were reused / modified / added and verify the
 implementation matches the intended algorithm. The supporting artefacts already exist
-(`dilithium-baseline` branch, `docs/CODE_DIFF_VIEW.md`, `docs/FUNCTION_MAP.md`) — but
+(`dilithium-baseline` branch, `docs/02-methodology/CODE_DIFF_VIEW.md`, `docs/02-methodology/FUNCTION_MAP.md`) — but
 the **PR itself was not yet opened/shared** as of M4, and Royce said the repo was "not
 fully updated yet." This is a named next-meeting deliverable.
 

@@ -46,3 +46,89 @@ Open risks:
 Next action:
 - Rebuild report.pdf (make in report/latex) and eyeball Fig 3.1 + tab:notation render.
 ---
+Checkpoint 2026-07-06 — run-validity rejection gates + C↔Rust methodology mirror
+
+Branch: main (working tree UNCOMMITTED — commit only when Royce asks)
+
+Objective: every benchmark run must prove its acceptance rate matches theory
+(else invalid per Royce/Wang), and bench_levels.c must mirror the Rust driver 100%.
+
+Done:
+- `las_expected_attempts(bound)` added to ref/las.{c,h} AND rust src/las.rs —
+  exact E[attempts] = ((2·bound−1)/(2γ+1))^(−(n+ℓ)d), verified against the
+  RENDERED 2020-845.pdf (Table 1 S_c, Alg.1 s11, Alg.2 s6, Fact 1, §3.2 ≈e).
+  D3: Sign 2.71875, PreSign 2.77483 (differ by design, −1 bound).
+- 5σ rejection gate (prints "rejection gate [...] => OK", aborts on FAIL) in
+  benches/las_bench.rs, examples/bench_levels.rs, ref/test/bench_levels.c
+  (new variadic MEASURE(niter,...) + MEASURE_SIGN(counter,...); per-attempt
+  diagnostic now printed in C too).
+- bench_levels.c mirrors the Rust driver: 5 reps × 500 sign / 1000 verify
+  (was 10×1000), fixed ppseed 00..1f + fixed 33-byte MSG (same bytes as Rust
+  → identical pp); randombytes include removed. Parser anchors of
+  scripts/plot_las_benchmarks.py all preserved (gate labels chosen to avoid
+  "Base Sign"/"LAS PreSign" substrings).
+- Checks: gcc -fsyntax-only clean ×4 param sets (-Wall -Wextra); cargo check clean.
+- Docs synced: BENCHMARKING.md (Run-validity section, parity table, RNG-source
+  note), REPRODUCE_LAS_C.md Step 11, FUNCTION_MAP.md §3.1, LAS.md §8 Method,
+  LAS_PROVENANCE.md. Memory: benchmark-rejection-gate.md added; working
+  agreement + rust-port memory refreshed.
+- Earlier in session: criterion 0.8.2 run (300/60, baseline criterion082,
+  2026-07-05) analysed; examples/size_report.rs + size_report_rust.log;
+  variance-provenance test (sign-class variance = i.i.d. restarts, slope≈−0.8
+  autocorr≈0; verify-class = drift).
+
+Evidence used: target/criterion estimates.json+sample.json (Jul-4 base /
+Jul-5 criterion082), bench_levels_rust.log (Jul-3), communication_components.csv L3.
+
+Open risks:
+- ALL committed logs predate the gates: bench_las_criterion.log,
+  bench_levels_rust.log, evidence/latest C tables need regeneration by Royce
+  (guardrail: Claude never runs benches, reads outputs only).
+- docs/REPRODUCE_LAS_RUST.md Step 8a still shows the old Jul-3 criterion-0.4
+  numbers (replacement edit was rejected) — redo after the next criterion run.
+- report/latex methodology wording may still assume the old 10×1000 scheme —
+  check after evidence regeneration.
+
+Next action (new chat):
+1. Royce runs: cd rust/fips204-las && cargo bench --bench las_bench --
+   --baseline criterion082 2>&1 | tee bench_las_criterion.log; then
+   cargo run --release --example bench_levels 2>&1 | tee bench_levels_rust.log;
+   then bash scripts/run_benchmark_suite.sh (C evidence).
+2. Claude reads the logs: all gates "=> OK"; criterion diff vs criterion082
+   should say "No change in performance detected" (instrumentation is inert);
+   then sync numbers into REPRODUCE_LAS_RUST.md Step 8a + BENCHMARKING.md
+   measured section (+ LAS.md/report if C numbers moved), update memory, and
+   make ONE commit when Royce says so.
+---
+
+Checkpoint 2026-07-06 (b) — docs/ restructured by report chapter
+
+Objective: (1) new consolidated C+Rust implementation & benchmark-methodology
+doc; (2) docs/ physically organised per report.tex chapter, big files split.
+
+Done:
+- NEW docs/02-methodology/C_RUST_IMPLEMENTATION_AND_BENCHMARK_METHODOLOGY.md
+  (chapter-2 entry point: both implementations, KAT lock, Alg1-vs-Alg2
+  methodology incl. rejection gate; measured snapshot provenance-cited).
+- Chapter folders docs/{01-introduction,02-methodology,03-results,
+  04-evaluation,A-appendix}; single-topic docs moved via git mv (history kept).
+- LAS.md (1164 lines) split VERBATIM at ## boundaries into 10 part files
+  (diff-verified lossless; § numbering preserved); docs/LAS.md is now the
+  hub/index (path + "LAS.md §N" convention preserved; §11 refs kept there).
+- Repo-wide reference sweep: CLAUDE.md, README.md, las-context-consolidated.md,
+  docs cross-refs, rust/fips204-las docs, .claude agents/skills,
+  ref/scripts/docs_guard.sh, defense/build_defense.py, session memory —
+  all old docs/ paths rewritten; verified zero stale references.
+  PROGRESS.md history + evidence/ captures intentionally untouched.
+- docs/DOCS_BY_CHAPTER.md: per-chapter map + topic-ownership (anti-redundancy)
+  rules + split/merge decisions. STATUS.md, paper/, references/ stay put as
+  cross-cutting authorities.
+
+Open risks:
+- Nothing committed yet (this restructure + the earlier gate work are one
+  working tree). Untracked: LAS-* part files, DOCS_BY_CHAPTER.md, C_RUST_* doc.
+- Benchmark rerun by Royce still pending (see previous checkpoint).
+
+Next action: Royce reruns benches (previous checkpoint's commands), Claude
+reads logs, syncs numbers, then ONE commit of gates + restructure when asked.
+---

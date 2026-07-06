@@ -35,7 +35,11 @@
  *   change any protocol semantics:
  *       A. Rejection-sampling distribution for base_sign and las_presign, read
  *          DIRECTLY off the per-module attempt counters (base_attempts / las_attempts):
- *          average attempts/sig, acceptance %, min, max, p50, p95.
+ *          average attempts/sig, acceptance %, min, max, p50, p95.  Plus the
+ *          run-validity REJECTION GATE (mirrors the Rust drivers): the attempts/call
+ *          measured over the TIMED sign-class calls is hard-checked against the exact
+ *          expectation las_expected_attempts() within 5 sigma -- a run whose restart
+ *          rate deviates from theory aborts instead of producing invalid evidence.
  *       B. Adapt timing clarification: the real protocol cost ("Adapt checked total",
  *          i.e. las_adapt incl. its internal las_preverify -- this is the protocol
  *          Adapt timing above) plus a diagnostic-only lower bound ("witness-add only",
@@ -87,7 +91,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include "../randombytes.h"
 #include "../basesig.h"     /* BASE path: base_keygen/base_sign/base_verify + base_attempts */
 #include "../las.h"         /* ADAPTOR path: las_presign/preverify/adapt/ext + las_attempts  */
 #include "../params.h"      /* N, Q */
@@ -107,8 +110,16 @@
 #define LAS_GIT_BRANCH "n/a"
 #endif
 
-#define RUNS  10            /* timing repetitions (mean +/- sample SD)              */
-#define NITER 1000          /* inner iterations per timing repetition               */
+/* Repetition scheme MIRRORS the Rust driver (rust/fips204-las/examples/
+ * bench_levels.rs) exactly, so the two languages collect their evidence
+ * identically and the overhead ratios are directly comparable: 5 outer
+ * repetitions; 500 inner iterations per repetition for the sign-class
+ * operations (each call includes its rejection restarts) and 1000 for the
+ * verify-class ones.  The sign-class attempt totals over the TIMED calls feed
+ * the run-validity rejection gate (see rejection_gate below). */
+#define RUNS       5        /* outer repetitions -> mean +/- sample SD              */
+#define NITER_SIGN 500      /* inner iterations per repetition, sign-class          */
+#define NITER_FAST 1000     /* inner iterations per repetition, verify-class        */
 #define NSIG  2000          /* signing calls sampled for the attempt distribution   */
 
 static double now_us(void) {
@@ -128,16 +139,38 @@ static void stats(const double *x, int n, double *mean, double *sd) {
 }
 
 static double g_runs[RUNS];
-static double g_mean, g_sd;          /* set by MEASURE */
+static double g_mean, g_sd;          /* set by MEASURE / MEASURE_SIGN */
+static double g_att_runs[RUNS];      /* per-rep per-ATTEMPT us (set by MEASURE_SIGN) */
+static unsigned long g_att_total;    /* attempts over the RUNS x NITER_SIGN timed calls */
 static volatile long g_sink;
 
-/* Run `op` for RUNS x NITER; leave mean/SD (us) in g_mean/g_sd. */
-#define MEASURE(op) do {                                              \
+/* Run the op for RUNS x niter_; leave mean/SD (us) in g_mean/g_sd.
+ * Variadic so op bodies may contain unparenthesised commas. */
+#define MEASURE(niter_, ...) do {                                     \
     int br_, bi_;                                                     \
     for(br_ = 0; br_ < RUNS; ++br_) {                                 \
       double bt0_ = now_us();                                         \
-      for(bi_ = 0; bi_ < NITER; ++bi_) { op; }                       \
-      g_runs[br_] = (now_us() - bt0_) / NITER;                        \
+      for(bi_ = 0; bi_ < (niter_); ++bi_) { __VA_ARGS__; }            \
+      g_runs[br_] = (now_us() - bt0_) / (niter_);                     \
+    }                                                                \
+    stats(g_runs, RUNS, &g_mean, &g_sd);                             \
+  } while(0)
+
+/* Sign-class variant (mirrors the Rust driver): additionally records, per
+ * repetition, the attempt-counter delta -- giving the per-ATTEMPT us series in
+ * g_att_runs -- and accumulates the total attempts over the RUNS x NITER_SIGN
+ * TIMED calls in g_att_total, which feeds the run-validity rejection gate. */
+#define MEASURE_SIGN(counter_, ...) do {                              \
+    int br_, bi_;                                                     \
+    g_att_total = 0;                                                  \
+    for(br_ = 0; br_ < RUNS; ++br_) {                                 \
+      unsigned long ba_ = (counter_);                                 \
+      double bt0_ = now_us();                                         \
+      for(bi_ = 0; bi_ < NITER_SIGN; ++bi_) { __VA_ARGS__; }          \
+      g_runs[br_] = (now_us() - bt0_) / NITER_SIGN;                   \
+      ba_ = (counter_) - ba_;                                         \
+      g_att_runs[br_] = g_runs[br_] * NITER_SIGN / (double)ba_;       \
+      g_att_total += ba_;                                             \
     }                                                                \
     stats(g_runs, RUNS, &g_mean, &g_sd);                             \
   } while(0)
@@ -171,6 +204,32 @@ static unsigned long pct(const unsigned long *sorted, int n, double p) {
 
 static unsigned long att_base[NSIG];
 static unsigned long att_pre[NSIG];
+
+/* Run-validity gate -- same 5-sigma check and line format as the Rust drivers
+ * (benches/las_bench.rs, examples/bench_levels.rs): the restart rate measured
+ * over the TIMED sign-class calls of THIS run must match the exact expectation
+ * las_expected_attempts() derived from the paper's rejection bounds (eprint
+ * 2020/845 Alg. 1 step 11 / Alg. 2 step 6).  Attempts/call over `calls` i.i.d.
+ * geometric draws has SD = E*sqrt(1-1/E), so the band is 5*SD/sqrt(calls)
+ * (~+-8% at RUNS x NITER_SIGN = 2500 calls -- a coarse gross-breakage check;
+ * the Rust Criterion run's >=100k calls give the tight ~+-1% version).  On
+ * failure the run aborts: it is NOT valid evidence. */
+static void rejection_gate(const char *label, unsigned long attempts,
+                           unsigned long calls, double theory) {
+  double measured = (double)attempts / (double)calls;
+  double sigma = theory * sqrt(1.0 - 1.0/theory);
+  double tol = 5.0 * sigma / sqrt((double)calls);
+  int ok = fabs(measured - theory) <= tol;
+  printf("rejection gate [%s]: %lu calls, measured %.4f attempts/call "
+         "(acceptance %.2f%%) vs theory %.4f (%.2f%%), 5-sigma tolerance +-%.4f => %s\n",
+         label, calls, measured, 100.0/measured, theory, 100.0/theory, tol,
+         ok ? "OK" : "FAIL");
+  if(!ok) {
+    printf("FATAL: rejection gate [%s]: the rejection loop is not behaving as "
+           "designed -- this run is NOT valid evidence\n", label);
+    exit(1);
+  }
+}
 
 /* ============================ component copies =============================
  * Local copies of las.c's inner steps, behaviourally identical, duplicated here
@@ -369,8 +428,15 @@ static void mc_sample_ternary(poly *r, const uint8_t *seed, size_t seedlen, uint
 
 int main(void) {
   uint8_t ppseed[LAS_SEEDBYTES];
-  uint8_t m[59];
-  size_t  mlen = sizeof m;
+  /* Fixed 33-byte message and fixed pp seed 00..1f -- the SAME bytes as the
+   * Rust drivers -- so both languages benchmark identical public parameters
+   * and message.  KeyGen/mask randomness still comes from the system RNG
+   * inside las.c/basesig.c (the Rust side draws it from a fixed-seed ChaCha8
+   * instead); the rejection gate validates the resulting restart statistics
+   * of every run either way. */
+  static const uint8_t msg[] = "bench message, thirty-three bytes";
+  const uint8_t *m = msg;
+  size_t  mlen = sizeof msg - 1;
   las_pp  pp, pp2;                                /* pp = canonical; pp2 = Setup scratch */
   las_pk  pk, Y, pk2;                             /* pk2 = KeyGen scratch                */
   las_sk  sk, yy, sk2, yext;                      /* sk2 = KeyGen scratch                */
@@ -382,6 +448,10 @@ int main(void) {
   /* PRIMARY protocol timings (mean, sd) */
   double su_m, su_s, kg_m, kg_s, sg_m, sg_s, vf_m, vf_s;
   double ps_m, ps_s, pv_m, pv_s, ad_m, ad_s, ex_m, ex_s;
+  /* per-attempt (rejection-normalised) series + attempt totals over the TIMED
+   * sign-class calls (set via MEASURE_SIGN; feeds the rejection gate) */
+  double sg_att_m, sg_att_s, ps_att_m, ps_att_s;
+  unsigned long sg_att_tot, ps_att_tot;
 
   /* DIAGNOSTIC timings (mean, sd): witness-add only + component microbenchmarks */
   double wo_m, wo_s;
@@ -409,8 +479,7 @@ int main(void) {
   size_t sz_Aexp = (size_t)((size_t)LAS_N * LAS_ELL * N * pk_bits + 7) / 8; /* expanded A' */
   size_t sz_ymask= (size_t)((size_t)LAS_M * N * y_bits + 7) / 8; /* signing mask (internal) */
 
-  randombytes(m, mlen);
-  randombytes(ppseed, LAS_SEEDBYTES);
+  for(j = 0; j < LAS_SEEDBYTES; ++j) ppseed[j] = (uint8_t)j;
 
   /* ---- ONE setup + ONE consistent state per run (used by EVERY measurement) ----
    * Public parameters, a key pair, a statement/witness (Y = A*yy is literally another
@@ -450,16 +519,23 @@ int main(void) {
   /* ============================ PRIMARY TIMINGS ============================
    * Protocol-level operations.  Producing operations write to SCRATCH (pp2/pk2/sk2/
    * tmp/yext) so the canonical state is never mutated; verifies read canonical objects. */
-  MEASURE(las_setup(&pp2, ppseed));                          su_m = g_mean; su_s = g_sd;
-  MEASURE(base_keygen(&pk2, &sk2, &pp));                     kg_m = g_mean; kg_s = g_sd;
-  /* BASE path (basesig.c). */
-  MEASURE(base_sign(&tmp, m, mlen, &pk, &sk, &pp));          sg_m = g_mean; sg_s = g_sd;
-  MEASURE(g_sink += base_verify(&sig, m, mlen, &pk, &pp));   vf_m = g_mean; vf_s = g_sd;
+  MEASURE(NITER_FAST, las_setup(&pp2, ppseed));              su_m = g_mean; su_s = g_sd;
+  MEASURE(NITER_FAST, base_keygen(&pk2, &sk2, &pp));         kg_m = g_mean; kg_s = g_sd;
+  /* BASE path (basesig.c).  Sign-class: MEASURE_SIGN also captures the
+   * per-attempt series and the attempt total over the timed calls. */
+  MEASURE_SIGN(base_attempts, base_sign(&tmp, m, mlen, &pk, &sk, &pp));
+  sg_m = g_mean; sg_s = g_sd;
+  stats(g_att_runs, RUNS, &sg_att_m, &sg_att_s);
+  sg_att_tot = g_att_total;
+  MEASURE(NITER_FAST, g_sink += base_verify(&sig, m, mlen, &pk, &pp)); vf_m = g_mean; vf_s = g_sd;
   /* LAS ADAPTOR path (las.c). */
-  MEASURE(las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp));     ps_m = g_mean; ps_s = g_sd;
-  MEASURE(g_sink += las_preverify(&presig, m, mlen, &Y, &pk, &pp)); pv_m = g_mean; pv_s = g_sd;
-  MEASURE(g_sink += las_adapt(&tmp, &presig, m, mlen, &Y, &yy, &pk, &pp)); ad_m = g_mean; ad_s = g_sd;
-  MEASURE(g_sink += las_ext(&yext, &adapted, &presig, &Y, &pp)); ex_m = g_mean; ex_s = g_sd;
+  MEASURE_SIGN(las_attempts, las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp));
+  ps_m = g_mean; ps_s = g_sd;
+  stats(g_att_runs, RUNS, &ps_att_m, &ps_att_s);
+  ps_att_tot = g_att_total;
+  MEASURE(NITER_FAST, g_sink += las_preverify(&presig, m, mlen, &Y, &pk, &pp)); pv_m = g_mean; pv_s = g_sd;
+  MEASURE(NITER_FAST, g_sink += las_adapt(&tmp, &presig, m, mlen, &Y, &yy, &pk, &pp)); ad_m = g_mean; ad_s = g_sd;
+  MEASURE(NITER_FAST, g_sink += las_ext(&yext, &adapted, &presig, &Y, &pp)); ex_m = g_mean; ex_s = g_sd;
 
   /* ===================== DIAGNOSTIC A: rejection distribution =====================
    * Per-call attempt counts read DIRECTLY off base_attempts / las_attempts (deltas).
@@ -488,38 +564,38 @@ int main(void) {
   /* ===================== DIAGNOSTIC B/D: witness-add + components =================
    * witness-add only (z = z_hat + y) is the lower-bound used in both section B and the
    * component list (section D); the protocol Adapt timing above is "Adapt checked total". */
-  MEASURE({ mc_witness_add(&tmp, &presig, &yy); g_sink += tmp.z[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_witness_add(&tmp, &presig, &yy); g_sink += tmp.z[0].coeffs[0]; });
   wo_m = g_mean; wo_s = g_sd;
 
   mc_Amul(w, &pp, sk.s);                          /* prime a commitment for the hash */
-  MEASURE({ mc_Amul(w, &pp, sk.s);                       g_sink += w[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_Amul(w, &pp, sk.s);                       g_sink += w[0].coeffs[0]; });
   am_m = g_mean; am_s = g_sd;
-  MEASURE({ mc_hash_challenge(&cc, &pk, w, m, mlen);     g_sink += cc.coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_hash_challenge(&cc, &pk, w, m, mlen);     g_sink += cc.coeffs[0]; });
   ch_m = g_mean; ch_s = g_sd;
-  MEASURE({ mc_polymul(&cr, &cc, &sk.s[0]);              g_sink += cr.coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_polymul(&cr, &cc, &sk.s[0]);              g_sink += cr.coeffs[0]; });
   mu_m = g_mean; mu_s = g_sd;
-  MEASURE({ for(j = 0; j < LAS_M; ++j) { mc_polymul(&cr, &cc, &sk.s[j]); g_sink += cr.coeffs[0]; } });
+  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { mc_polymul(&cr, &cc, &sk.s[j]); g_sink += cr.coeffs[0]; } });
   ma_m = g_mean; ma_s = g_sd;
-  MEASURE(g_sink += mc_chknorm_vec(presig.z, LAS_BOUND_PRESIGN));
+  MEASURE(NITER_FAST, g_sink += mc_chknorm_vec(presig.z, LAS_BOUND_PRESIGN));
   nk_m = g_mean; nk_s = g_sd;
-  MEASURE({ mc_add_wY(wY, w, &Y);                        g_sink += wY[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_add_wY(wY, w, &Y);                        g_sink += wY[0].coeffs[0]; });
   wy_m = g_mean; wy_s = g_sd;
 
   /* ---- additional component attribution (Verify-side / KeyGen / Ext) ----
    * c*t over the LAS_N public-key polys: the per-poly challenge product that
    * Verify and PreVerify pay (the verify-side analogue of c*r). */
-  MEASURE({ for(j = 0; j < LAS_N; ++j) { mc_polymul(&cr, &cc, &pk.t[j]); g_sink += cr.coeffs[0]; } });
+  MEASURE(NITER_FAST, { for(j = 0; j < LAS_N; ++j) { mc_polymul(&cr, &cc, &pk.t[j]); g_sink += cr.coeffs[0]; } });
   ct_m = g_mean; ct_s = g_sd;
   /* KeyGen / Gen "sample r": LAS_M ternary polys (statement Y generation = KeyGen).
    * The other half of KeyGen, A*r, is the A-product line above. */
-  MEASURE({ for(j = 0; j < LAS_M; ++j) { mc_sample_ternary(&sk2.s[j], ppseed, LAS_SEEDBYTES, (uint16_t)j); g_sink += sk2.s[0].coeffs[0]; } });
+  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { mc_sample_ternary(&sk2.s[j], ppseed, LAS_SEEDBYTES, (uint16_t)j); g_sink += sk2.s[0].coeffs[0]; } });
   kr_m = g_mean; kr_s = g_sd;
   /* Ext breakdown: s = z - z^ (n+ell polys); A*s; then t' == A*s check (n polys). */
-  MEASURE({ for(j = 0; j < LAS_M; ++j) { poly_sub(&yext.s[j], &adapted.z[j], &presig.z[j]); poly_reduce(&yext.s[j]); } g_sink += yext.s[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { poly_sub(&yext.s[j], &adapted.z[j], &presig.z[j]); poly_reduce(&yext.s[j]); } g_sink += yext.s[0].coeffs[0]; });
   es_m = g_mean; es_s = g_sd;
-  MEASURE({ mc_Amul(w, &pp, yext.s);                     g_sink += w[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_Amul(w, &pp, yext.s);                     g_sink += w[0].coeffs[0]; });
   ea_m = g_mean; ea_s = g_sd;
-  MEASURE({ int eq = 1; for(j = 0; j < LAS_N; ++j) eq &= mc_poly_equal(&w[j], &Y.t[j]); g_sink += eq; });
+  MEASURE(NITER_FAST, { int eq = 1; for(j = 0; j < LAS_N; ++j) eq &= mc_poly_equal(&w[j], &Y.t[j]); g_sink += eq; });
   ec_m = g_mean; ec_s = g_sd;
 
   /* ================================ report ================================= */
@@ -535,7 +611,10 @@ int main(void) {
          LAS_GIT_COMMIT, LAS_GIT_BRANCH);
   printf("                  (CPU / OS-WSL / run-date captured per run by\n");
   printf("                   scripts/run_fair_benchmarks.sh into metadata.txt)\n");
-  printf(" %d runs x %d iters/op; mean +/- sample SD; single thread, -O3.\n", RUNS, NITER);
+  printf(" %d repetitions x %d (sign-class) / %d (verify-class) iters/op; mean +/- sample SD;\n",
+         RUNS, NITER_SIGN, NITER_FAST);
+  printf(" single thread, -O3.  Repetition scheme, fixed pp seed and fixed 33-byte message\n");
+  printf(" mirror the Rust driver (rust/fips204-las/examples/bench_levels.rs) exactly.\n");
   printf(" One setup and one consistent state per run; primary protocol timings first,\n");
   printf(" then diagnostics from the SAME state (cost-attribution / communication aids).\n\n");
 
@@ -593,7 +672,18 @@ int main(void) {
          att_pre[0], att_pre[NSIG-1], pct(att_pre, NSIG, 50.0), pct(att_pre, NSIG, 95.0));
   printf("   avg = mean attempts/sig; accept%% = 1/avg; both schemes reject under\n");
   printf("   Fiat-Shamir-with-aborts at the bound gamma-kappa (Base Sign) /\n");
-  printf("   gamma-kappa-1 (LAS PreSign).\n\n");
+  printf("   gamma-kappa-1 (LAS PreSign).\n");
+  printf("   Run-validity gates below cover the %d x %d TIMED sign-class calls from the\n",
+         RUNS, NITER_SIGN);
+  printf("   primary table (same 5-sigma check and line format as the Rust drivers):\n");
+  rejection_gate("Algorithm 1 Sign", sg_att_tot, (unsigned long)RUNS * NITER_SIGN,
+                 las_expected_attempts(LAS_BOUND_SIGN));
+  rejection_gate("Algorithm 2 PreSign", ps_att_tot, (unsigned long)RUNS * NITER_SIGN,
+                 las_expected_attempts(LAS_BOUND_PRESIGN));
+  printf("per-attempt diagnostic (rejection-normalised): Sign %.1f +/- %.1f us | "
+         "PreSign %.1f +/- %.1f us | overhead %+.1f%%\n\n",
+         sg_att_m, sg_att_s, ps_att_m, ps_att_s,
+         100.0*(ps_att_m - sg_att_m)/sg_att_m);
 
   printf("--- B. ADAPT TIMING CLARIFICATION (microseconds, mean +/- SD) ---\n");
   printf("   Adapt checked total      %8.3f +/- %6.3f   (PROTOCOL: las_adapt above, incl. internal PreVerify)\n",

@@ -11,6 +11,22 @@
  * las_presign_k.  Never read by the scheme itself. */
 unsigned long las_attempts = 0;
 
+/* Exact expected attempts/call for the rejection loop at `bound` (see las.h
+ * for the derivation).  Instrumentation only -- never called by the scheme.
+ * p^((n+ell)*d) via square-and-multiply instead of libm pow(), so las.c keeps
+ * zero dependencies beyond the reused Dilithium primitives. */
+double las_expected_attempts(int32_t bound) {
+  double p = (2.0*(double)bound - 1.0) / (2.0*(double)LAS_GAMMA + 1.0);
+  double acc = 1.0;
+  unsigned int e = (unsigned int)LAS_M * N;      /* (n+ell)*d coefficients */
+  while(e) {
+    if(e & 1u) acc *= p;
+    p *= p;
+    e >>= 1u;
+  }
+  return 1.0 / acc;
+}
+
 /* ============================ helpers ============================ */
 
 /* Pack one polynomial into 4 bytes/coeff (canonical [0,Q)) for hashing. */

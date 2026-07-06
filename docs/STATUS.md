@@ -8,10 +8,10 @@ command that reproduces each claim. Maps every item to the Meeting-2 objectives
 Legend: ✅ done & verified · 🟡 partial / proxy · ⬜ not done (future work).
 
 **New to the project / explaining it to someone?** Read, in order:
-`docs/LAS_WALKTHROUGH.md` (what & why, no maths) →
-`docs/PROJECT_HISTORY_EXPLAINED.md` (the step-by-step build order: which C files and
+`docs/01-introduction/LAS_WALKTHROUGH.md` (what & why, no maths) →
+`docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md` (the step-by-step build order: which C files and
 functions were written first, and why) →
-`docs/GAS_LIMIT_INVESTIGATION.md` (the on-chain gas experiment in plain English).
+`docs/03-results/GAS_LIMIT_INVESTIGATION.md` (the on-chain gas experiment in plain English).
 
 ---
 
@@ -30,14 +30,14 @@ functions were written first, and why) →
 | D9 | Benchmark 2 — LAS vs optimised Dilithium-3 (context; superseded as headline by D20) | ✅ | ✅ | ✅ | `make test/bench_compare3 && ./test/bench_compare3` |
 | D10 | Benchmark 3 — application cost (swap payload + AMHL-vs-K) | ✅ | ✅ | ✅ | `make test/bench_app3 && ./test/bench_app3` |
 | D11 | Benchmark 4 — **classical adaptor baseline** (ECDSA, same machine) | ✅ | ✅ | ✅ | clone secp256k1-zkp (README.md §4.1), `make test/bench_classical && ./test/bench_classical` |
-| D12 | Function map (reused/modified/added; 0 upstream modified) | ✅ | n/a | ✅ | `docs/FUNCTION_MAP.md` |
+| D12 | Function map (reused/modified/added; 0 upstream modified) | ✅ | n/a | ✅ | `docs/02-methodology/FUNCTION_MAP.md` |
 | D13 | Reproducibility README + recorded provenance/toolchain | ✅ | n/a | ✅ | `README.md` |
 | D14 | Report draft (~8k words, B4 skeleton) | 🟡 | n/a | 🟡 | `report/REPORT_DRAFT.md` (v0.1 — superseded by LaTeX scaffold D22) |
 | D15 | On-chain gas: real Solidity swap (classical vs LAS sig) **+ measured native-verify cost-probe** | ✅ | ✅ | ✅ | `cd ref && make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin; cd ../evm && forge test --gas-report && forge test --match-contract LASVerifyCost -vv` |
 | D20 | **Primary fair benchmark** (corrected 2026-06-22; base path modularised to `basesig.c` 2026-06-23): separate base path (`basesig.c`) vs LAS adaptor path (`las.c`) — adaptor overhead (PreSign/Sign, PreVerify/Verify, Adapt/Verify, Ext separate) + cross-verify contract; official Dilithium = CONTEXT only ("not algorithm-matched"); ≥5 runs mean±SD; component sizes | ✅ | ✅ | ✅ | `make test/bench_levels_paper test/bench_levels2 test/bench_levels3 test/bench_levels5 && ./test/bench_levels_paper …`; `docs/LAS.md §8.1` |
 | D23 | **Correctness-contract harness** (itemised 8-point PASS): PreSign→PreVerify, tripwire, Adapt→Verify, Ext exact, tampered msg/sig, malformed bytes, deterministic | ✅ | ✅ | ✅ | `make test/test_contract3 && ./test/test_contract3` |
 | D24 | **Base-signature correctness test** (`basesig.c`, **CHECK**-gated, 1000 iters × paper/2/3/5): honest verify, tamper/wrong-key rejection, cross-module equivalence with `las.c`, cross-path interlock (tripwire + adapted-verifies-under-base + exact Ext), + 4 negative tests (wrong statement, wrong witness, tampered pre-signature, tampered adapted signature) | 🟡 ready (build via `make`) | ⬜ run by Royce | ✅ | `make test/test_basesig_paper test/test_basesig2 test/test_basesig3 test/test_basesig5 && ./test/test_basesig_paper` |
-| D21 | **Two-branch code-diff view** (Meeting-3): `dilithium-baseline` (pristine) vs `main`; 0 upstream sources changed | ✅ | n/a | ✅ | `git diff --name-status dilithium-baseline main -- ref/`; `docs/CODE_DIFF_VIEW.md` |
+| D21 | **Two-branch code-diff view** (Meeting-3): `dilithium-baseline` (pristine) vs `main`; 0 upstream sources changed | ✅ | n/a | ✅ | `git diff --name-status dilithium-baseline main -- ref/`; `docs/02-methodology/CODE_DIFF_VIEW.md` |
 | D22 | **LaTeX report scaffold** (Meeting-3): muthesis.cls, by chapter, official title, real benchmark tables, builds to PDF | 🟡 | n/a | ✅ | `cd report/latex && make` (TODOs: student id, figure, machine-of-record) |
 | D16 | Parameter migration to paper's q≈2²⁴ | ⬜ | ⬜ | documented as future work | — |
 | D17 | On-chain LAS *verification* (precompile or zk proof) | ⬜ | ⬜ | n/a (future work) | — *swap + gas floor already done (D15)* |
@@ -78,7 +78,7 @@ captions). Now done:
   PDF build is Royce's).
 - **Still open (Meeting-4 named deliverable):** open the clean-Dilithium → LAS **PR**
   and invite Wang — supporting artefacts already exist (`dilithium-baseline` branch,
-  `docs/CODE_DIFF_VIEW.md`, `docs/FUNCTION_MAP.md`).
+  `docs/02-methodology/CODE_DIFF_VIEW.md`, `docs/02-methodology/FUNCTION_MAP.md`).
 
 ---
 
@@ -161,7 +161,7 @@ after the `LASVerifyCost` experiment — the poqeth boundary is cost, not the ce
 |---|---|---|
 | Abstract (5%) | `report/REPORT_DRAFT.md` Abstract | executive summary w/ key results |
 | Introductory material (20%) | report §1 + `docs/LAS.md §1, 1.1` | quantum threat, 2×2 framing, related work (LAS / survey / poqeth), objectives O1–O5 |
-| Methodology (20%) | report §2–3 + `docs/LAS.md §2–5`, `THEORY_IMPL_BRIDGE.md`, `FUNCTION_MAP.md` | variant-B design, simplified-scheme & param justification, alternatives rejected, reused-vs-added table |
+| Methodology (20%) | report §2–3 + `docs/LAS.md §2–5`, `docs/02-methodology/THEORY_IMPL_BRIDGE.md`, `docs/02-methodology/FUNCTION_MAP.md` | variant-B design, simplified-scheme & param justification, alternatives rejected, reused-vs-added table |
 | Evaluation (20%) | report §4 + `docs/LAS.md §8–8.3` | **two baselines**, 2×2 matrix, direct rejection measurement, AMHL-vs-K, correctness 100% |
 | Conclusion (10%) | report §6 | conclusions vs objectives + ordered future work |
 | Format/structure (5%) | report headings, numbered tables/figs, refs | — (needs figure redraw + reference formatting pass) |
@@ -185,8 +185,8 @@ beat [60s]; (6) limitations + future work [30s]. Talking-head in corner.
 ## 6. Immediate next actions (in order)
 
 1. **Open the clean-Dilithium → LAS PR and invite Wang** (Meeting-4 named
-   deliverable): artefacts ready (`dilithium-baseline` branch, `docs/CODE_DIFF_VIEW.md`,
-   `docs/FUNCTION_MAP.md`).
+   deliverable): artefacts ready (`dilithium-baseline` branch, `docs/02-methodology/CODE_DIFF_VIEW.md`,
+   `docs/02-methodology/FUNCTION_MAP.md`).
 2. **Report polish** (`report/latex/`): the Stage-1 presentation tables, parameter
    notation, and basic-vs-LAS comparisons are in (Meeting-4); next is a word-count pass
    to 7–9k, embedding the regenerated `evidence/latest/paper_package` figures with the

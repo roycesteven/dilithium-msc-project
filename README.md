@@ -350,7 +350,7 @@ evidence/latest                   pointer to the newest run (older runs are kept
 ## 7. Further documentation
 | File | Contents |
 |---|---|
-| [docs/LAS_WALKTHROUGH.md](docs/LAS_WALKTHROUGH.md) | Plain-English, end-to-end explainer |
+| [docs/01-introduction/LAS_WALKTHROUGH.md](docs/01-introduction/LAS_WALKTHROUGH.md) | Plain-English, end-to-end explainer |
 | [docs/LAS.md](docs/LAS.md) | Full design / implementation / evaluation write-up |
-| [docs/THEORY_IMPL_BRIDGE.md](docs/THEORY_IMPL_BRIDGE.md) | Each construction equation → C function |
+| [docs/02-methodology/THEORY_IMPL_BRIDGE.md](docs/02-methodology/THEORY_IMPL_BRIDGE.md) | Each construction equation → C function |
 | [docs/STATUS.md](docs/STATUS.md) | Deliverable / test checklist |

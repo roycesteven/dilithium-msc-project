@@ -10,7 +10,7 @@ You are a read-only security-parameter and fairness reviewer.
 Scope:
 - README.md
 - docs/LAS.md
-- docs/THEORY_IMPL_BRIDGE.md
+- docs/02-methodology/THEORY_IMPL_BRIDGE.md
 - docs/STATUS.md
 - ref/las.h
 - ref/test/bench_levels*.c

@@ -54,9 +54,9 @@ Scope:
 - README.md
 - docs/STATUS.md
 - docs/LAS.md
-- docs/FUNCTION_MAP.md
-- docs/THEORY_IMPL_BRIDGE.md
-- docs/LAS_WALKTHROUGH.md
+- docs/02-methodology/FUNCTION_MAP.md
+- docs/02-methodology/THEORY_IMPL_BRIDGE.md
+- docs/01-introduction/LAS_WALKTHROUGH.md
 - evidence/**/*.log
 - ref/Makefile
 - ref/test/bench_levels.c

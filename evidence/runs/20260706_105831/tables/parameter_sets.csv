@@ -1,0 +1,5 @@
+level,display,meaning,n,ell,M,kappa,gamma,N,Q
+paper,LAS-2020/845 reference,"LAS-2020/845 reference parameter set; built on the Dilithium modulus Q=8380417, not the exact paper modulus.",4,4,8,60,122880,256,8380417
+L2,Simplified Dilithium-II,Simplified Dilithium-II parameter setting (LAS/Base) from the Dilithium mode-2 dimensions (not a formal NIST security claim).,4,4,8,39,79872,256,8380417
+L3,Simplified Dilithium-III (target),Simplified Dilithium-III parameter setting (LAS/Base) from the Dilithium mode-3 dimensions (target; not a formal NIST security claim).,6,5,11,49,137984,256,8380417
+L5,Simplified Dilithium-V,Simplified Dilithium-V parameter setting (LAS/Base) from the Dilithium mode-5 dimensions (not a formal NIST security claim).,8,7,15,60,230400,256,8380417

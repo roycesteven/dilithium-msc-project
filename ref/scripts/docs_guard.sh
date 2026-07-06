@@ -59,7 +59,7 @@ echo "Required documentation review:"
 [ "$need_progress" -eq 1 ] && echo "- PROGRESS.md: add/update checkpoint summary."
 [ "$need_status" -eq 1 ] && echo "- docs/STATUS.md: update deliverable/test/benchmark status if results changed."
 [ "$need_readme" -eq 1 ] && echo "- README.md: update build/run/reproduce commands if commands changed."
-[ "$need_history" -eq 1 ] && echo "- docs/PROJECT_HISTORY_EXPLAINED.md: update only if a major file/module/function was added."
+[ "$need_history" -eq 1 ] && echo "- docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md: update only if a major file/module/function was added."
 [ "$need_evidence" -eq 1 ] && echo "- evidence/: save raw benchmark/test output; do not overwrite old logs."
 [ "$need_report" -eq 1 ] && echo "- report/: update benchmark/result tables when values are final."
 

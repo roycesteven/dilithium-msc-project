@@ -16,7 +16,7 @@ Core project rule:
 Scope:
 - Repository structure
 - README.md
-- docs/FUNCTION_MAP.md
+- docs/02-methodology/FUNCTION_MAP.md
 - docs/STATUS.md
 - ref/Makefile
 - ref/las.*

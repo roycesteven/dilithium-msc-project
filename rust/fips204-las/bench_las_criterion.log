@@ -1,140 +1,88 @@
-   Compiling proc-macro2 v1.0.106
-   Compiling unicode-ident v1.0.24
-   Compiling quote v1.0.46
-   Compiling cfg-if v1.0.4
-   Compiling zerocopy v0.8.52
-   Compiling libc v0.2.186
-   Compiling version_check v0.9.5
-   Compiling autocfg v1.5.1
-   Compiling serde_core v1.0.228
-   Compiling typenum v1.20.1
-   Compiling crossbeam-utils v0.8.21
-   Compiling memchr v2.8.2
-   Compiling zmij v1.0.21
-   Compiling serde v1.0.228
-   Compiling rayon-core v1.13.0
-   Compiling serde_json v1.0.150
-   Compiling either v1.16.0
-   Compiling hashbrown v0.12.3
-   Compiling generic-array v0.14.7
-   Compiling os_str_bytes v6.6.1
-   Compiling num-traits v0.2.19
-   Compiling indexmap v1.9.3
-   Compiling itoa v1.0.18
-   Compiling ciborium-io v0.2.2
-   Compiling regex-syntax v0.8.11
-   Compiling plotters-backend v0.3.7
-   Compiling aho-corasick v1.1.4
-   Compiling clap_lex v0.2.4
-   Compiling itertools v0.10.5
-   Compiling textwrap v0.16.2
-   Compiling plotters-svg v0.3.7
-   Compiling same-file v1.0.6
-   Compiling bitflags v1.3.2
-   Compiling cast v0.3.0
-   Compiling keccak v0.1.6
-   Compiling cpufeatures v0.2.17
-   Compiling crossbeam-epoch v0.9.18
-   Compiling walkdir v2.5.0
-   Compiling lazy_static v1.5.0
-   Compiling anes v0.1.6
-   Compiling oorandom v11.1.5
-   Compiling syn v2.0.118
-   Compiling hex v0.4.3
-   Compiling clap v3.2.25
-   Compiling crossbeam-deque v0.8.6
-   Compiling block-buffer v0.10.4
-   Compiling crypto-common v0.1.7
-   Compiling digest v0.10.7
-   Compiling sha2 v0.10.9
-   Compiling sha3 v0.10.9
-   Compiling plotters v0.3.7
-   Compiling getrandom v0.2.17
-   Compiling atty v0.2.14
-   Compiling rand_core v0.6.4
-   Compiling rayon v1.12.0
-   Compiling criterion-plot v0.5.0
-   Compiling regex-automata v0.4.14
-   Compiling zerocopy-derive v0.8.52
-   Compiling serde_derive v1.0.228
-   Compiling zeroize_derive v1.5.0
-   Compiling regex v1.12.4
-   Compiling zeroize v1.9.0
-   Compiling fips204 v0.4.6 (/home/melly/dilithium-msc-project/rust/fips204-las)
-   Compiling tinytemplate v1.2.1
-   Compiling half v2.7.1
-   Compiling ppv-lite86 v0.2.21
-   Compiling ciborium-ll v0.2.2
-   Compiling rand_chacha v0.3.1
-   Compiling ciborium v0.2.2
-   Compiling rand v0.8.6
-   Compiling criterion v0.4.0
-    Finished `bench` profile [optimized + debuginfo] target(s) in 1m 54s
-     Running benches/las_bench.rs (target/release/deps/las_bench-18c8bc701db520b3)
+    Finished `bench` profile [optimized + debuginfo] target(s) in 0.04s
+     Running benches/las_bench.rs (target/release/deps/las_bench-07ba379aac4912af)
 Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen
 Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Warming up for 3.0000 s
-Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Collecting 100 samples in estimated 5.0569 s (45k iterations)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Collecting 300 samples in estimated 61.449 s (1.7M iterations)
 Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Analyzing
 Algorithm 1 - ordinary lattice-based signature/KeyGen
-                        time:   [111.01 µs 111.57 µs 112.20 µs]
-Found 10 outliers among 100 measurements (10.00%)
-  5 (5.00%) high mild
-  5 (5.00%) high severe
+                        time:   [36.647 µs 36.679 µs 36.718 µs]
+                        change: [−7.2085% −6.8742% −6.5513%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 27 outliers among 300 measurements (9.00%)
+  16 (5.33%) high mild
+  11 (3.67%) high severe
 Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign
 Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Warming up for 3.0000 s
-
-Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 5.8s, enable flat sampling, or reduce sample count to 60.
-Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Collecting 100 samples in estimated 5.7825 s (5050 iterations)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Collecting 300 samples in estimated 75.375 s (181k iterations)
 Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Analyzing
 Algorithm 1 - ordinary lattice-based signature/Sign
-                        time:   [1.0885 ms 1.1135 ms 1.1373 ms]
-Found 5 outliers among 100 measurements (5.00%)
-  3 (3.00%) low mild
-  2 (2.00%) high mild
+                        time:   [416.85 µs 418.53 µs 420.31 µs]
+                        change: [−6.7763% −5.9367% −4.9614%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 17 outliers among 300 measurements (5.67%)
+  1 (0.33%) low severe
+  4 (1.33%) low mild
+  6 (2.00%) high mild
+  6 (2.00%) high severe
 Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify
 Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Warming up for 3.0000 s
-Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Collecting 100 samples in estimated 5.1389 s (25k iterations)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Collecting 300 samples in estimated 61.652 s (813k iterations)
 Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Analyzing
 Algorithm 1 - ordinary lattice-based signature/Verify
-                        time:   [201.95 µs 202.33 µs 202.80 µs]
-Found 11 outliers among 100 measurements (11.00%)
-  8 (8.00%) high mild
-  3 (3.00%) high severe
+                        time:   [75.897 µs 75.975 µs 76.068 µs]
+                        change: [−5.4943% −5.1573% −4.8680%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 14 outliers among 300 measurements (4.67%)
+  9 (3.00%) high mild
+  5 (1.67%) high severe
 
+rejection gate [Algorithm 1 Sign]: 188791 calls, measured 2.7357 attempts/call (acceptance 36.55%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.0249 => OK
 Benchmarking Algorithm 2 - LAS adaptor signature/PreSign
 Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Warming up for 3.0000 s
-
-Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 5.7s, enable flat sampling, or reduce sample count to 60.
-Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Collecting 100 samples in estimated 5.7274 s (5050 iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Collecting 300 samples in estimated 77.311 s (181k iterations)
 Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Analyzing
 Algorithm 2 - LAS adaptor signature/PreSign
-                        time:   [1.0973 ms 1.1276 ms 1.1609 ms]
-Found 1 outliers among 100 measurements (1.00%)
-  1 (1.00%) high mild
+                        time:   [421.73 µs 423.15 µs 424.62 µs]
+                        change: [−6.7520% −5.9064% −5.0683%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 20 outliers among 300 measurements (6.67%)
+  4 (1.33%) low severe
+  7 (2.33%) low mild
+  6 (2.00%) high mild
+  3 (1.00%) high severe
 Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify
 Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Warming up for 3.0000 s
-Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Collecting 100 samples in estimated 5.2540 s (25k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Collecting 300 samples in estimated 62.384 s (813k iterations)
 Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Analyzing
 Algorithm 2 - LAS adaptor signature/PreVerify
-                        time:   [203.19 µs 204.22 µs 205.30 µs]
-Found 4 outliers among 100 measurements (4.00%)
-  4 (4.00%) high mild
+                        time:   [76.590 µs 76.637 µs 76.690 µs]
+                        change: [−5.0237% −4.8454% −4.6737%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 22 outliers among 300 measurements (7.33%)
+  1 (0.33%) low mild
+  13 (4.33%) high mild
+  8 (2.67%) high severe
 Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify)
 Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Warming up for 3.0000 s
-Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Collecting 100 samples in estimated 5.3042 s (25k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Collecting 300 samples in estimated 63.447 s (813k iterations)
 Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Analyzing
 Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify)
-                        time:   [210.29 µs 212.67 µs 215.43 µs]
-Found 3 outliers among 100 measurements (3.00%)
-  1 (1.00%) high mild
-  2 (2.00%) high severe
+                        time:   [78.059 µs 78.139 µs 78.232 µs]
+                        change: [−6.4230% −6.0165% −5.6448%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 28 outliers among 300 measurements (9.33%)
+  20 (6.67%) high mild
+  8 (2.67%) high severe
 Benchmarking Algorithm 2 - LAS adaptor signature/Extract
 Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Warming up for 3.0000 s
-Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Collecting 100 samples in estimated 5.2626 s (76k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Collecting 300 samples in estimated 60.209 s (2.3M iterations)
 Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Analyzing
 Algorithm 2 - LAS adaptor signature/Extract
-                        time:   [69.218 µs 70.246 µs 71.478 µs]
-Found 6 outliers among 100 measurements (6.00%)
-  2 (2.00%) high mild
-  4 (4.00%) high severe
+                        time:   [25.650 µs 25.678 µs 25.708 µs]
+                        change: [−7.1540% −6.4508% −5.8258%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 11 outliers among 300 measurements (3.67%)
+  9 (3.00%) high mild
+  2 (0.67%) high severe
 
+rejection gate [Algorithm 2 PreSign]: 188791 calls, measured 2.7669 attempts/call (acceptance 36.14%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.0255 => OK

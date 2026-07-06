@@ -54,13 +54,13 @@ This skill may update only these files when needed:
 PROGRESS.md
 README.md
 docs/STATUS.md
-docs/PROJECT_HISTORY_EXPLAINED.md
+docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md
 docs/LAS.md
-docs/THEORY_IMPL_BRIDGE.md
-docs/FUNCTION_MAP.md
-docs/CODE_DIFF_VIEW.md
-docs/LAS_WALKTHROUGH.md
-docs/GAS_LIMIT_INVESTIGATION.md
+docs/02-methodology/THEORY_IMPL_BRIDGE.md
+docs/02-methodology/FUNCTION_MAP.md
+docs/02-methodology/CODE_DIFF_VIEW.md
+docs/01-introduction/LAS_WALKTHROUGH.md
+docs/03-results/GAS_LIMIT_INVESTIGATION.md
 ```
 
 This skill may read evidence logs, source files, tests, benchmark files, and report files to determine what documentation needs updating, but it must not edit them unless they are listed above.
@@ -128,7 +128,7 @@ Do not invent test results. Only use visible command output, committed logs, or 
 
 ---
 
-### `docs/PROJECT_HISTORY_EXPLAINED.md`
+### `docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md`
 
 Purpose:
 
@@ -181,7 +181,7 @@ Do not update for:
 
 ---
 
-### `docs/THEORY_IMPL_BRIDGE.md`
+### `docs/02-methodology/THEORY_IMPL_BRIDGE.md`
 
 Purpose:
 
@@ -210,7 +210,7 @@ Do not update for:
 
 ---
 
-### `docs/FUNCTION_MAP.md`
+### `docs/02-methodology/FUNCTION_MAP.md`
 
 Purpose:
 
@@ -239,7 +239,7 @@ Do not update for:
 
 ---
 
-### `docs/CODE_DIFF_VIEW.md`
+### `docs/02-methodology/CODE_DIFF_VIEW.md`
 
 Purpose:
 
@@ -268,11 +268,11 @@ Do not update for:
 ```
 
 GitHub Pull Request remains the canonical **live exact diff** for supervisor review.
-`docs/CODE_DIFF_VIEW.md` is the explanatory summary, not a progress tracker.
+`docs/02-methodology/CODE_DIFF_VIEW.md` is the explanatory summary, not a progress tracker.
 
 ---
 
-### `docs/LAS_WALKTHROUGH.md`
+### `docs/01-introduction/LAS_WALKTHROUGH.md`
 
 Purpose:
 
@@ -300,7 +300,7 @@ Do not update for:
 
 ---
 
-### `docs/GAS_LIMIT_INVESTIGATION.md`
+### `docs/03-results/GAS_LIMIT_INVESTIGATION.md`
 
 Purpose:
 
@@ -380,7 +380,7 @@ Rules:
 
 ```text
 - Use GitHub PR for exact line-level code review.
-- Use docs/CODE_DIFF_VIEW.md only for human-readable reused/modified/added summary.
+- Use docs/02-methodology/CODE_DIFF_VIEW.md only for human-readable reused/modified/added summary.
 - Do not merge to main before supervisor verification.
 ```
 
@@ -460,12 +460,12 @@ Do not edit report.
 Update:
 
 ```text
-docs/PROJECT_HISTORY_EXPLAINED.md
+docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md
 docs/STATUS.md if deliverable status changed
-docs/CODE_DIFF_VIEW.md if file categories changed
-docs/FUNCTION_MAP.md if function classification changed
+docs/02-methodology/CODE_DIFF_VIEW.md if file categories changed
+docs/02-methodology/FUNCTION_MAP.md if function classification changed
 docs/LAS.md if technical explanation changed
-docs/THEORY_IMPL_BRIDGE.md if paper-to-code mapping changed
+docs/02-methodology/THEORY_IMPL_BRIDGE.md if paper-to-code mapping changed
 PROGRESS.md summary
 ```
 
@@ -479,8 +479,8 @@ Update:
 
 ```text
 docs/LAS.md
-docs/THEORY_IMPL_BRIDGE.md if paper-to-code mapping changed
-docs/FUNCTION_MAP.md if function classification changed
+docs/02-methodology/THEORY_IMPL_BRIDGE.md if paper-to-code mapping changed
+docs/02-methodology/FUNCTION_MAP.md if function classification changed
 PROGRESS.md summary
 ```
 
@@ -493,8 +493,8 @@ Do not edit report.
 Update:
 
 ```text
-docs/FUNCTION_MAP.md
-docs/CODE_DIFF_VIEW.md if file categories changed
+docs/02-methodology/FUNCTION_MAP.md
+docs/02-methodology/CODE_DIFF_VIEW.md if file categories changed
 PROGRESS.md summary
 ```
 
@@ -507,11 +507,11 @@ Do not edit report.
 Update:
 
 ```text
-docs/CODE_DIFF_VIEW.md
+docs/02-methodology/CODE_DIFF_VIEW.md
 PROGRESS.md summary
 ```
 
-Examples requiring `docs/CODE_DIFF_VIEW.md` update:
+Examples requiring `docs/02-methodology/CODE_DIFF_VIEW.md` update:
 
 ```text
 - branch name changed from main to las-work-cleanup
@@ -545,7 +545,7 @@ Do not edit report.
 Update:
 
 ```text
-docs/LAS_WALKTHROUGH.md
+docs/01-introduction/LAS_WALKTHROUGH.md
 PROGRESS.md summary
 ```
 
@@ -558,7 +558,7 @@ Do not edit report.
 Update:
 
 ```text
-docs/GAS_LIMIT_INVESTIGATION.md
+docs/03-results/GAS_LIMIT_INVESTIGATION.md
 docs/LAS.md if the main technical/evaluation interpretation changed
 docs/STATUS.md if gas benchmark/evidence status changed
 README.md if reproduce commands changed
@@ -616,7 +616,7 @@ Manual checks still needed:
 - Do not push automatically.
 - Only stage, commit, or push if the user explicitly asks.
 - Do not claim tests or benchmarks passed unless visible in current context, committed logs, or user-provided output.
-- Do not use `docs/CODE_DIFF_VIEW.md` as a progress tracker.
+- Do not use `docs/02-methodology/CODE_DIFF_VIEW.md` as a progress tracker.
 - If unsure, update only `PROGRESS.md` and list manual checks.
 
 ---
