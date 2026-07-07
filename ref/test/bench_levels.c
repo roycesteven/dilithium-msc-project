@@ -252,12 +252,13 @@ static void mc_pack_poly_canon(uint8_t out[N*4], const poly *a) {
   }
 }
 
-/* out = a*b mod (X^N+1, Q), centred, via NTT (one challenge*response product). */
-static void mc_polymul(poly *out, const poly *a, const poly *b) {
-  poly ah = *a, bh = *b;
-  poly_ntt(&ah);
-  poly_ntt(&bh);
-  poly_pointwise_montgomery(out, &ah, &bh);
+/* Second half of the NTT product (operands already transformed) -- matches
+ * las.c polymul_prehat.  The protocol hoists the transforms: NTT(s) once per
+ * Sign/PreSign call, NTT(c) once per attempt / per verify, NTT(t_j) per verify
+ * (the upstream ref/sign.c structure); the component lines below time those
+ * pieces in the same shape. */
+static void mc_polymul_prehat(poly *out, const poly *ahat, const poly *bhat) {
+  poly_pointwise_montgomery(out, ahat, bhat);
   poly_invntt_tomont(out);
   poly_reduce(out);
 }
@@ -442,6 +443,7 @@ int main(void) {
   las_sk  sk, yy, sk2, yext;                      /* sk2 = KeyGen scratch                */
   las_sig sig, presig, adapted, tmp;
   poly    w[LAS_N], wY[LAS_N], cc, cr;
+  poly    chat_mc, that_mc, shat_mc[LAS_M];       /* pre-NTT'd operands (section D)      */
   unsigned int j;
   int     i;
 
@@ -457,6 +459,7 @@ int main(void) {
   double wo_m, wo_s;
   double am_m, am_s, ch_m, ch_s, mu_m, mu_s, ma_m, ma_s, nk_m, nk_s, wy_m, wy_s;
   double ct_m, ct_s;                       /* c*t over LAS_N pk polys (Verify side) */
+  double ntc_m, ntc_s, nts_m, nts_s;        /* NTT(c) per attempt; NTT(s) per call  */
   double kr_m, kr_s;                        /* KeyGen / Gen: sample r (ternary)     */
   double es_m, es_s, ea_m, ea_s, ec_m, ec_s; /* Ext breakdown: s=z-z^, A*s, check  */
   int32_t maxz = 0, maxzhat = 0;            /* achieved norm vs the reject bound    */
@@ -572,9 +575,18 @@ int main(void) {
   am_m = g_mean; am_s = g_sd;
   MEASURE(NITER_FAST, { mc_hash_challenge(&cc, &pk, w, m, mlen);     g_sink += cc.coeffs[0]; });
   ch_m = g_mean; ch_s = g_sd;
-  MEASURE(NITER_FAST, { mc_polymul(&cr, &cc, &sk.s[0]);              g_sink += cr.coeffs[0]; });
+  /* pre-NTT'd operands, matching the protocol's hoisting (las.c sign_core) */
+  for(j = 0; j < LAS_M; ++j) { shat_mc[j] = sk.s[j]; poly_ntt(&shat_mc[j]); }
+  chat_mc = cc; poly_ntt(&chat_mc);
+  MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc);            g_sink += that_mc.coeffs[0]; });
+  ntc_m = g_mean; ntc_s = g_sd;
+  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { shat_mc[j] = sk.s[j]; poly_ntt(&shat_mc[j]); } g_sink += shat_mc[0].coeffs[0]; });
+  nts_m = g_mean; nts_s = g_sd;
+  MEASURE(NITER_FAST, { mc_polymul_prehat(&cr, &chat_mc, &shat_mc[0]); g_sink += cr.coeffs[0]; });
   mu_m = g_mean; mu_s = g_sd;
-  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { mc_polymul(&cr, &cc, &sk.s[j]); g_sink += cr.coeffs[0]; } });
+  /* per-attempt c*r step exactly as the protocol pays it: NTT(c) once, then
+   * pointwise+invNTT per response poly (NTT(s) is per-call, timed above) */
+  MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc); for(j = 0; j < LAS_M; ++j) { mc_polymul_prehat(&cr, &that_mc, &shat_mc[j]); g_sink += cr.coeffs[0]; } });
   ma_m = g_mean; ma_s = g_sd;
   MEASURE(NITER_FAST, g_sink += mc_chknorm_vec(presig.z, LAS_BOUND_PRESIGN));
   nk_m = g_mean; nk_s = g_sd;
@@ -582,9 +594,9 @@ int main(void) {
   wy_m = g_mean; wy_s = g_sd;
 
   /* ---- additional component attribution (Verify-side / KeyGen / Ext) ----
-   * c*t over the LAS_N public-key polys: the per-poly challenge product that
-   * Verify and PreVerify pay (the verify-side analogue of c*r). */
-  MEASURE(NITER_FAST, { for(j = 0; j < LAS_N; ++j) { mc_polymul(&cr, &cc, &pk.t[j]); g_sink += cr.coeffs[0]; } });
+   * c*t exactly as Verify/PreVerify pay it: NTT(c) once per call, then
+   * NTT(t_j) + pointwise+invNTT per public-key poly (las.c las_verify). */
+  MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc); for(j = 0; j < LAS_N; ++j) { poly tj = pk.t[j]; poly_ntt(&tj); mc_polymul_prehat(&cr, &that_mc, &tj); g_sink += cr.coeffs[0]; } });
   ct_m = g_mean; ct_s = g_sd;
   /* KeyGen / Gen "sample r": LAS_M ternary polys (statement Y generation = KeyGen).
    * The other half of KeyGen, A*r, is the A-product line above. */
@@ -725,12 +737,14 @@ int main(void) {
   printf("   (behaviourally identical to las.c) -- NOT the protocol entry points above.\n");
   printf("   A-product / commitment w = A*y                       %8.3f +/- %6.3f\n", am_m, am_s);
   printf("   challenge hash  c = H(pk, w(+t'), M)                 %8.3f +/- %6.3f\n", ch_m, ch_s);
-  printf("   c*r  (one response polynomial; c is sparse)          %8.3f +/- %6.3f\n", mu_m, mu_s);
-  printf("   c*r  (all LAS_M response polynomials)                %8.3f +/- %6.3f\n", ma_m, ma_s);
+  printf("   NTT(s)  (n+ell polys; ONCE PER CALL, hoisted)        %8.3f +/- %6.3f\n", nts_m, nts_s);
+  printf("   NTT(c)  (one poly; once per attempt / per verify)    %8.3f +/- %6.3f\n", ntc_m, ntc_s);
+  printf("   c*r  (one poly; pointwise+invNTT, operands pre-NTT'd) %7.3f +/- %6.3f\n", mu_m, mu_s);
+  printf("   c*r  per attempt (NTT(c) + n+ell pointwise+invNTT)   %8.3f +/- %6.3f\n", ma_m, ma_s);
   printf("   norm check  |z|inf over n+ell polys                  %8.3f +/- %6.3f\n", nk_m, nk_s);
   printf("   w + t'   (n polys)                                   %8.3f +/- %6.3f\n", wy_m, wy_s);
   printf("   z_hat + witness r'   (n+ell polys)                   %8.3f +/- %6.3f\n", wo_m, wo_s);
-  printf("   c*t  (all LAS_N public-key polys; Verify/PreVerify)  %8.3f +/- %6.3f\n", ct_m, ct_s);
+  printf("   c*t  per verify (NTT(c) + n x (NTT(t)+pw+invNTT))    %8.3f +/- %6.3f\n", ct_m, ct_s);
   printf("   KeyGen/Gen: sample r (n+ell ternary polys)           %8.3f +/- %6.3f\n", kr_m, kr_s);
   printf("     (KeyGen = sample r + A*r; A*r is the A-product line above; statement Y gen = KeyGen)\n");
   printf("   Ext: s = z - z_hat   (n+ell polys)                   %8.3f +/- %6.3f\n", es_m, es_s);
@@ -738,7 +752,9 @@ int main(void) {
   printf("   Ext: t' == A*s check   (n polys)                     %8.3f +/- %6.3f\n", ec_m, ec_s);
   printf("   note: a full Sign/PreSign attempt applies c*r across LAS_M = n+ell = %d\n", LAS_M);
   printf("         response polynomials; Verify-style challenge multiplication applies\n");
-  printf("         c*t across LAS_N = n = %d public-key polynomials.\n", LAS_N);
+  printf("         c*t across LAS_N = n = %d public-key polynomials.  NTT hoisting\n", LAS_N);
+  printf("         follows upstream ref/sign.c: NTT(s) is paid once per CALL (amortised\n");
+  printf("         over ~e rejection attempts), NTT(c) once per attempt / per verify.\n");
 
   printf("\n--- E. NORM-MARGIN DIAGNOSTICS (achieved infinity-norm vs the reject bound;\n");
   printf("       max over the %d sampled accepted signatures from section A) ---\n", NSIG);

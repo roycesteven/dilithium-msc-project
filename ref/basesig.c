@@ -56,12 +56,12 @@ static int b_chknorm_vec(const poly z[LAS_M], int32_t B) {
   return 0;
 }
 
-/* out = a*b mod (X^N+1, Q), centred, via NTT. */
-static void b_polymul(poly *out, const poly *a, const poly *b) {
-  poly ah = *a, bh = *b;
-  poly_ntt(&ah);
-  poly_ntt(&bh);
-  poly_pointwise_montgomery(out, &ah, &bh);
+/* Second half of the NTT product out = a*b mod (X^N+1, Q), centred: operands
+ * already NTT'd.  Callers hoist the transforms exactly as las.c does (which in
+ * turn mirrors ref/sign.c: invariant operand once per call, challenge once per
+ * attempt / per verify). */
+static void b_polymul_prehat(poly *out, const poly *ahat, const poly *bhat) {
+  poly_pointwise_montgomery(out, ahat, bhat);
   poly_invntt_tomont(out);
   poly_reduce(out);
 }
@@ -229,17 +229,23 @@ void base_sign(las_sig *sig, const uint8_t *m, size_t mlen,
   uint8_t seed[64];
   uint16_t nonce = 0;
   unsigned int j;
-  poly y[LAS_M], w[LAS_N], cr, c;
+  poly y[LAS_M], w[LAS_N], shat[LAS_M], chat, cr, c;
 
   randombytes(seed, 64);
+  for(j = 0; j < LAS_M; ++j) {                /* NTT(s) once per call */
+    shat[j] = sk->s[j];
+    poly_ntt(&shat[j]);
+  }
   for(;;) {
     ++base_attempts;                          /* instrumentation only */
     for(j = 0; j < LAS_M; ++j)
       b_sample_Sgamma(&y[j], seed, 64, nonce++);
     b_Amul(w, pp, y);                          /* w = A y           */
     b_hash_challenge(&c, pk, w, m, mlen);      /* c = H(pk, w, M)   -- NO statement Y */
+    chat = c;                                  /* NTT(c) once per attempt */
+    poly_ntt(&chat);
     for(j = 0; j < LAS_M; ++j) {               /* z = y + c r       */
-      b_polymul(&cr, &c, &sk->s[j]);
+      b_polymul_prehat(&cr, &chat, &shat[j]);
       poly_add(&sig->z[j], &y[j], &cr);
       poly_reduce(&sig->z[j]);
     }
@@ -252,15 +258,19 @@ void base_sign(las_sig *sig, const uint8_t *m, size_t mlen,
 
 int base_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
                 const las_pk *pk, const las_pp *pp) {
-  poly w[LAS_N], ct, c2;
+  poly w[LAS_N], chat, that, ct, c2;
   unsigned int j;
 
   if(b_chknorm_vec(sig->z, LAS_BOUND_SIGN))
     return -1;
 
   b_Amul(w, pp, sig->z);                       /* A z               */
+  chat = sig->c;                                /* NTT(c) once per call */
+  poly_ntt(&chat);
   for(j = 0; j < LAS_N; ++j) {                  /* w' = A z - c t    */
-    b_polymul(&ct, &sig->c, &pk->t[j]);
+    that = pk->t[j];
+    poly_ntt(&that);
+    b_polymul_prehat(&ct, &chat, &that);
     poly_sub(&w[j], &w[j], &ct);
     poly_reduce(&w[j]);
     poly_caddq(&w[j]);

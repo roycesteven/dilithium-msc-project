@@ -62,12 +62,15 @@ static int chknorm_vec(const poly z[LAS_M], int32_t B) {
   return 0;
 }
 
-/* Full schoolbook-free product via NTT: out = a*b mod (X^N+1, Q), centred. */
-static void polymul(poly *out, const poly *a, const poly *b) {
-  poly ah = *a, bh = *b;
-  poly_ntt(&ah);
-  poly_ntt(&bh);
-  poly_pointwise_montgomery(out, &ah, &bh);
+/* Second half of the NTT product out = a*b mod (X^N+1, Q), centred: both
+ * operands are ALREADY in the NTT domain.  Callers hoist the transforms the
+ * same way upstream does -- the invariant operand (secret r, public t) is
+ * NTT'd once per call (ref/sign.c:128-130 polyvecl_ntt(&s1) etc. before the
+ * rej loop; ml_dsa.rs pre-computes s_1_hat_mont in the key struct) and the
+ * challenge once per attempt / per verify (ref/sign.c:154, :333 poly_ntt(&cp))
+ * -- instead of re-transforming both operands inside every product. */
+static void polymul_prehat(poly *out, const poly *ahat, const poly *bhat) {
+  poly_pointwise_montgomery(out, ahat, bhat);
   poly_invntt_tomont(out);
   poly_reduce(out);
 }
@@ -276,13 +279,23 @@ static void det_seed(uint8_t out[64], uint8_t tag, const las_sk *sk,
   shake256_squeeze(out, 64, &state);
 }
 
-/* Shared Sign body, parameterised by the 64-byte mask seed (random or derived). */
+/* Shared Sign body, parameterised by the 64-byte mask seed (random or derived).
+ * NTT hoisting mirrors ref/sign.c crypto_sign_signature_internal: the secret is
+ * invariant across rejection attempts, so NTT(s_j) is paid once per call
+ * (sign.c:128 polyvecl_ntt(&s1) before the rej loop), and the challenge is
+ * shared by all n+ell products, so NTT(c) is paid once per attempt
+ * (sign.c:154 poly_ntt(&cp)). */
 static void sign_core(las_sig *sig, const uint8_t *m, size_t mlen,
                       const las_pk *pk, const las_sk *sk, const las_pp *pp,
                       const uint8_t seed[64]) {
   uint16_t nonce = 0;
   unsigned int j;
-  poly y[LAS_M], w[LAS_N], cr, c;
+  poly y[LAS_M], w[LAS_N], shat[LAS_M], chat, cr, c;
+
+  for(j = 0; j < LAS_M; ++j) {                /* NTT(s) once per call */
+    shat[j] = sk->s[j];
+    poly_ntt(&shat[j]);
+  }
 
   for(;;) {
     ++las_attempts;                           /* instrumentation only */
@@ -290,8 +303,10 @@ static void sign_core(las_sig *sig, const uint8_t *m, size_t mlen,
       sample_Sgamma(&y[j], seed, 64, nonce++);
     las_Amul(w, pp, y);                       /* w = A y           */
     hash_challenge(&c, pk, w, m, mlen);        /* c = H(pk, w, M)   */
+    chat = c;                                  /* NTT(c) once per attempt */
+    poly_ntt(&chat);
     for(j = 0; j < LAS_M; ++j) {               /* z = y + c r       */
-      polymul(&cr, &c, &sk->s[j]);
+      polymul_prehat(&cr, &chat, &shat[j]);
       poly_add(&sig->z[j], &y[j], &cr);
       poly_reduce(&sig->z[j]);
     }
@@ -318,15 +333,19 @@ void las_sign_det(las_sig *sig, const uint8_t *m, size_t mlen,
 
 int las_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
                const las_pk *pk, const las_pp *pp) {
-  poly w[LAS_N], ct, c2;
+  poly w[LAS_N], chat, that, ct, c2;
   unsigned int j;
 
   if(chknorm_vec(sig->z, LAS_BOUND_SIGN))
     return -1;
 
   las_Amul(w, pp, sig->z);                     /* A z               */
+  chat = sig->c;                                /* NTT(c) once per call */
+  poly_ntt(&chat);                              /* (mirrors ref/sign.c:333) */
   for(j = 0; j < LAS_N; ++j) {                  /* w' = A z - c t    */
-    polymul(&ct, &sig->c, &pk->t[j]);
+    that = pk->t[j];
+    poly_ntt(&that);
+    polymul_prehat(&ct, &chat, &that);
     poly_sub(&w[j], &w[j], &ct);
     poly_reduce(&w[j]);
     poly_caddq(&w[j]);
@@ -336,13 +355,19 @@ int las_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
 }
 
 /* Shared PreSign body: like sign_core but hashes (w+Y) and rejects at `bound`
- * (g-k-1 single-hop, or g-k-K for AMHL).  Parameterised by the mask seed. */
+ * (g-k-1 single-hop, or g-k-K for AMHL).  Parameterised by the mask seed.
+ * Same NTT hoisting as sign_core (see the comment there). */
 static void presign_core(las_sig *presig, const uint8_t *m, size_t mlen,
                          const las_pk *Y, const las_pk *pk, const las_sk *sk,
                          const las_pp *pp, int32_t bound, const uint8_t seed[64]) {
   uint16_t nonce = 0;
   unsigned int j;
-  poly y[LAS_M], w[LAS_N], wY[LAS_N], cr, c;
+  poly y[LAS_M], w[LAS_N], wY[LAS_N], shat[LAS_M], chat, cr, c;
+
+  for(j = 0; j < LAS_M; ++j) {                  /* NTT(s) once per call */
+    shat[j] = sk->s[j];
+    poly_ntt(&shat[j]);
+  }
 
   for(;;) {
     ++las_attempts;                             /* instrumentation only */
@@ -355,8 +380,10 @@ static void presign_core(las_sig *presig, const uint8_t *m, size_t mlen,
       poly_caddq(&wY[j]);
     }
     hash_challenge(&c, pk, wY, m, mlen);          /* c = H(pk, w+Y, M)       */
+    chat = c;                                     /* NTT(c) once per attempt */
+    poly_ntt(&chat);
     for(j = 0; j < LAS_M; ++j) {                  /* z^ = y + c r            */
-      polymul(&cr, &c, &sk->s[j]);
+      polymul_prehat(&cr, &chat, &shat[j]);
       poly_add(&presig->z[j], &y[j], &cr);
       poly_reduce(&presig->z[j]);
     }
@@ -383,15 +410,19 @@ void las_presign_det(las_sig *presig, const uint8_t *m, size_t mlen,
 
 int las_preverify(const las_sig *presig, const uint8_t *m, size_t mlen,
                   const las_pk *Y, const las_pk *pk, const las_pp *pp) {
-  poly w[LAS_N], wY[LAS_N], ct, c2;
+  poly w[LAS_N], wY[LAS_N], chat, that, ct, c2;
   unsigned int j;
 
   if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN))
     return -1;
 
   las_Amul(w, pp, presig->z);                    /* A z^                    */
+  chat = presig->c;                               /* NTT(c) once per call    */
+  poly_ntt(&chat);
   for(j = 0; j < LAS_N; ++j) {                    /* w' = A z^ - c t         */
-    polymul(&ct, &presig->c, &pk->t[j]);
+    that = pk->t[j];
+    poly_ntt(&that);
+    polymul_prehat(&ct, &chat, &that);
     poly_sub(&w[j], &w[j], &ct);
     poly_reduce(&w[j]);
     poly_caddq(&w[j]);
@@ -418,15 +449,19 @@ void las_presign_k(las_sig *presig, const uint8_t *m, size_t mlen,
 int las_preverify_k(const las_sig *presig, const uint8_t *m, size_t mlen,
                     const las_pk *Y, const las_pk *pk, const las_pp *pp,
                     unsigned int nhops) {
-  poly w[LAS_N], wY[LAS_N], ct, c2;
+  poly w[LAS_N], wY[LAS_N], chat, that, ct, c2;
   unsigned int j;
 
   if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops)))
     return -1;
 
   las_Amul(w, pp, presig->z);                    /* A z^                    */
+  chat = presig->c;                               /* NTT(c) once per call    */
+  poly_ntt(&chat);
   for(j = 0; j < LAS_N; ++j) {                    /* w' = A z^ - c t         */
-    polymul(&ct, &presig->c, &pk->t[j]);
+    that = pk->t[j];
+    poly_ntt(&that);
+    polymul_prehat(&ct, &chat, &that);
     poly_sub(&w[j], &w[j], &ct);
     poly_reduce(&w[j]);
     poly_caddq(&w[j]);

@@ -34,6 +34,7 @@ all: \
   test/bench_levels2 \
   test/bench_levels3 \
   test/bench_levels5 \
+  test/bench_criterion3 \
   test/test_basesig_paper \
   test/test_basesig2 \
   test/test_basesig3 \
@@ -142,6 +143,17 @@ test/bench_levels3: $(LEVELS_DEPS)
 	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 test/bench_levels5: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
+	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
+
+# C mirror of the Rust Criterion.rs statistical benchmark (see
+# rust/fips204-las/benches/las_bench.rs and test/bench_criterion.c's header):
+# same warm-up / 300-sample linear-ramp / 60 s methodology, same rejection
+# gates, same operation set.  Built only at the Simplified Dilithium-III set,
+# pairing the Rust port's fixed (6,5,49) parameters.
+CRITERION_DEPS = test/bench_criterion.c basesig.c basesig.h las.c las.h randombytes.c \
+  $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+test/bench_criterion3: $(CRITERION_DEPS)
+	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
 	  -o $@ $< basesig.c las.c randombytes.c $(KECCAK_SOURCES) -lm
 
 # CHECK-gated randomised correctness test for the separate base signature (basesig.c)
@@ -301,6 +313,7 @@ clean:
 	rm -f test/bench_levels2
 	rm -f test/bench_levels3
 	rm -f test/bench_levels5
+	rm -f test/bench_criterion3
 	rm -f test/test_basesig_paper
 	rm -f test/test_basesig2
 	rm -f test/test_basesig3
