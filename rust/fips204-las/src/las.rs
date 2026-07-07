@@ -63,6 +63,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use rand_core::CryptoRngCore;
 use sha3::digest::{ExtendableOutput, Update, XofReader};
 use sha3::{Shake128, Shake256};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::helpers::{center_mod, full_reduce32, mont_reduce, partial_reduce32, to_mont};
 use crate::ntt::{inv_ntt, ntt};
@@ -122,8 +123,20 @@ pub static LAS_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 /// about e < 3" (Section 3.2). At this build's D3 engineering set it gives
 /// Sign 2.7188 and PreSign 2.7748 attempts/call.
 pub fn las_expected_attempts(bound: i32) -> f64 {
-    let p_coeff = f64::from(2 * bound - 1) / f64::from(2 * LAS_GAMMA + 1);
-    p_coeff.powi(-((LAS_M * N) as i32))
+    // p^((n+ell)*d) via square-and-multiply, then reciprocal — mirrors the C
+    // `las_expected_attempts` exactly (no libm `powf`/`powi`, so this stays
+    // usable in the crate's `#![no_std]` build; `f64::powi` is std-only).
+    let mut p = f64::from(2 * bound - 1) / f64::from(2 * LAS_GAMMA + 1);
+    let mut acc = 1.0_f64;
+    let mut e = (LAS_M * N) as u32; // (n+ell)*d coefficients
+    while e != 0 {
+        if e & 1 == 1 {
+            acc *= p;
+        }
+        p *= p;
+        e >>= 1;
+    }
+    1.0 / acc
 }
 
 /* ---- Types (vectors are plain arrays of the crate's degree-256 polys).
@@ -143,7 +156,10 @@ pub struct LasPk {
 }
 
 /// Secret key / witness: r in S_1 (ternary, stored as exact -1/0/1).
-#[derive(Clone, PartialEq)]
+/// Zeroized on drop, mirroring the upstream crate's secret-material policy
+/// (types.rs `PrivateKey` derives `Zeroize`/`ZeroizeOnDrop`); the same type
+/// carries the adaptor witness, so extracted witnesses are wiped too.
+#[derive(Clone, PartialEq, Zeroize, ZeroizeOnDrop)]
 pub struct LasSk {
     pub(crate) s: [R; LAS_M],
 }
@@ -180,24 +196,44 @@ fn chknorm_vec(z: &[R; LAS_M], bound: i32) -> bool {
         .any(|&x| x.abs() >= bound)
 }
 
-/// out = a*b mod (X^256+1, Q), exact CENTRED representative.
-/// Mirrors ref/las.c polymul (NTT -> pointwise -> invNTT -> reduce); the final
-/// center_mod pins the unique centred representative, which for the uses below
-/// (c*r with |c*r|inf <= kappa; c*t later canonicalised) matches the C values.
-fn polymul_centered(a: &R, b: &R) -> R {
+/// Challenge-side ("a") NTT operand: NTT + partial reduce, computed ONCE and
+/// reused across all products that share the challenge — mirrors ml_dsa.rs
+/// sign_internal step 17 (`c_hat ← NTT(c)`, then reused for c*s_1, c*s_2,
+/// c*t_0) and ref/las.c's `chat`.  Representative-neutral: identical values to
+/// the a-side half of the former per-call `polymul_centered`.
+fn ntt_a(a: &R) -> T {
     let mut ah = ntt(&[a.clone()]);
-    let mut bh = ntt(&[b.clone()]);
-    // Keep values small before to_mont / pointwise (representative-neutral).
     for x in ah[0].0.iter_mut() {
         *x = partial_reduce32(*x);
     }
+    let [ah] = ah;
+    ah
+}
+
+/// Invariant-side ("b") NTT operand in Montgomery form: NTT + partial reduce +
+/// to_mont, computed ONCE per call for operands that do not change across
+/// rejection attempts (secret r) or products (public t) — mirrors the
+/// `s_1_hat_mont`/`t1_d2_hat_mont` pre-computes in ml_dsa.rs/types.rs and
+/// ref/las.c's `shat`/`that`.  Identical values to the b-side half of the
+/// former per-call `polymul_centered`.
+fn ntt_b_mont(b: &R) -> T {
+    let mut bh = ntt(&[b.clone()]);
     for x in bh[0].0.iter_mut() {
         *x = partial_reduce32(*x);
     }
     let bm = to_mont(&bh);
+    let [bm] = bm;
+    bm
+}
+
+/// Second half of the exact centred product out = a*b mod (X^256+1, Q): both
+/// operands already transformed (`ntt_a` / `ntt_b_mont`).  The final
+/// center_mod pins the unique centred representative, which for the uses below
+/// (c*r with |c*r|inf <= kappa; c*t later canonicalised) matches the C values.
+fn polymul_prehat(ah: &T, bm: &T) -> R {
     let mut ch = T0;
     for n in 0..N {
-        ch.0[n] = mont_reduce(i64::from(ah[0].0[n]) * i64::from(bm[0].0[n]));
+        ch.0[n] = mont_reduce(i64::from(ah.0[n]) * i64::from(bm.0[n]));
     }
     let prod = inv_ntt(&[ch]);
     R(from_fn(|n| center_mod(prod[0].0[n])))
@@ -404,6 +440,7 @@ fn det_seed(tag: u8, sk: &LasSk, y_stmt: Option<&LasPk>, m: &[u8]) -> [u8; 64] {
         }
     }
     h.update(m);
+    skb.zeroize(); // raw sk bytes: wipe (upstream secret-material policy)
 
     let mut out = [0u8; 64];
     h.finalize_xof().read(&mut out);
@@ -433,8 +470,12 @@ pub fn las_keygen_seed(pp: &LasPp, seed: &[u8; LAS_SEEDBYTES]) -> (LasPk, LasSk)
 }
 
 /// Shared Sign body, parameterised by the 64-byte mask seed. Mirrors sign_core.
+/// NTT hoisting mirrors ref/las.c (which mirrors ref/sign.c / ml_dsa.rs):
+/// NTT(s_j) once per call (invariant across rejection attempts), NTT(c) once
+/// per attempt (shared by all n+ell products).
 fn sign_core(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp, seed: &[u8; 64]) -> LasSig {
     let mut nonce: u16 = 0;
+    let s_hat_mont: [T; LAS_M] = from_fn(|j| ntt_b_mont(&sk.s[j])); // NTT(s) once per call
     loop {
         LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
         let mut y: [R; LAS_M] = [R0; LAS_M];
@@ -444,10 +485,11 @@ fn sign_core(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp, seed: &[u8; 64]) -> L
         }
         let w = amul(pp, &y); //  w = A y
         let c = hash_challenge(pk, &w, m); //  c = H(pk, w, M)
+        let c_hat = ntt_a(&c); // NTT(c) once per attempt
 
         let mut z: [R; LAS_M] = [R0; LAS_M];
         for j in 0..LAS_M {
-            let cr = polymul_centered(&c, &sk.s[j]); // exact, |.|inf <= kappa
+            let cr = polymul_prehat(&c_hat, &s_hat_mont[j]); // exact, |.|inf <= kappa
             for n in 0..N {
                 z[j].0[n] = y[j].0[n] + cr.0[n]; // z = y + c r (exact, C reduce = identity)
             }
@@ -461,8 +503,10 @@ fn sign_core(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp, seed: &[u8; 64]) -> L
 
 /// Deterministic Sign: mask randomness derived from (sk, M). Mirrors las_sign_det.
 pub fn las_sign_det(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp) -> LasSig {
-    let seed = det_seed(0, sk, None, m); // tag 0 = sign (no statement)
-    sign_core(m, pk, sk, pp, &seed)
+    let mut seed = det_seed(0, sk, None, m); // tag 0 = sign (no statement)
+    let sig = sign_core(m, pk, sk, pp, &seed);
+    seed.zeroize(); // sk-derived mask seed: wipe
+    sig
 }
 
 /// Randomised KeyGen: fresh 32-byte seed from the caller's RNG (mirrors
@@ -470,7 +514,9 @@ pub fn las_sign_det(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp) -> LasSig {
 pub fn las_keygen(pp: &LasPp, rng: &mut impl CryptoRngCore) -> (LasPk, LasSk) {
     let mut seed = [0u8; LAS_SEEDBYTES];
     rng.fill_bytes(&mut seed);
-    las_keygen_seed(pp, &seed)
+    let out = las_keygen_seed(pp, &seed);
+    seed.zeroize(); // sk is derivable from this seed: wipe
+    out
 }
 
 /// Randomised Sign: fresh 64-byte mask seed per call (mirrors C `las_sign`).
@@ -483,7 +529,9 @@ pub fn las_sign(
 ) -> LasSig {
     let mut seed = [0u8; 64];
     rng.fill_bytes(&mut seed);
-    sign_core(m, pk, sk, pp, &seed)
+    let sig = sign_core(m, pk, sk, pp, &seed);
+    seed.zeroize(); // mask seed: knowing it + sig reveals c*r, hence r
+    sig
 }
 
 /// Ordinary Verify. Returns true iff the signature is valid. Mirrors las_verify.
@@ -492,8 +540,9 @@ pub fn las_verify(sig: &LasSig, m: &[u8], pk: &LasPk, pp: &LasPp) -> bool {
         return false;
     }
     let mut w = amul(pp, &sig.z); // A z
+    let c_hat = ntt_a(&sig.c); // NTT(c) once per call
     for j in 0..LAS_N {
-        let ct = polymul_centered(&sig.c, &pk.t[j]);
+        let ct = polymul_prehat(&c_hat, &ntt_b_mont(&pk.t[j]));
         for n in 0..N {
             // w' = A z - c t, canonicalised (C: poly_sub; poly_reduce; poly_caddq)
             w[j].0[n] = full_reduce32(w[j].0[n] - ct.0[n]);
@@ -514,6 +563,7 @@ fn presign_core(
     seed: &[u8; 64],
 ) -> LasSig {
     let mut nonce: u16 = 0;
+    let s_hat_mont: [T; LAS_M] = from_fn(|j| ntt_b_mont(&sk.s[j])); // NTT(s) once per call
     loop {
         LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
         let mut y: [R; LAS_M] = [R0; LAS_M];
@@ -530,10 +580,11 @@ fn presign_core(
             }
         }
         let c = hash_challenge(pk, &w_y, m); // c = H(pk, w+Y, M)
+        let c_hat = ntt_a(&c); // NTT(c) once per attempt
 
         let mut z: [R; LAS_M] = [R0; LAS_M];
         for j in 0..LAS_M {
-            let cr = polymul_centered(&c, &sk.s[j]);
+            let cr = polymul_prehat(&c_hat, &s_hat_mont[j]);
             for n in 0..N {
                 z[j].0[n] = y[j].0[n] + cr.0[n]; // z^ = y + c r
             }
@@ -554,8 +605,10 @@ pub fn las_presign_det(
     sk: &LasSk,
     pp: &LasPp,
 ) -> LasSig {
-    let seed = det_seed(1, sk, Some(y_stmt), m); // tag 1 = presign (binds Y)
-    presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed)
+    let mut seed = det_seed(1, sk, Some(y_stmt), m); // tag 1 = presign (binds Y)
+    let presig = presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed);
+    seed.zeroize(); // sk-derived mask seed: wipe
+    presig
 }
 
 /// Randomised PreSign: fresh 64-byte mask seed per call, single-hop bound
@@ -570,7 +623,9 @@ pub fn las_presign(
 ) -> LasSig {
     let mut seed = [0u8; 64];
     rng.fill_bytes(&mut seed);
-    presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed)
+    let presig = presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed);
+    seed.zeroize(); // mask seed: wipe
+    presig
 }
 
 /// PreVerify(Y, pk, sigma^, M). Returns true iff the pre-signature is valid.
@@ -585,8 +640,9 @@ pub fn las_preverify(
         return false;
     }
     let mut w = amul(pp, &presig.z); // A z^
+    let c_hat = ntt_a(&presig.c); // NTT(c) once per call
     for j in 0..LAS_N {
-        let ct = polymul_centered(&presig.c, &pk.t[j]);
+        let ct = polymul_prehat(&c_hat, &ntt_b_mont(&pk.t[j]));
         for n in 0..N {
             w[j].0[n] = full_reduce32(w[j].0[n] - ct.0[n]); // w' = A z^ - c t
         }

@@ -117,7 +117,8 @@ in a post-quantum blockchain atomic-swap application.
   \item Implement LAS additively on the Dilithium reference, reusing the lattice core
         unchanged and adding the adaptor operations and a byte-level wire encoding.
   \item Validate correctness and robustness through functional, serialization,
-        tamper, and known-answer tests.
+        tamper, and known-answer tests, including cross-validation by a second,
+        independent implementation checked against the same known-answer digest.
   \item Benchmark LAS fairly --- at explicitly stated parameters, with repeated runs
         and reported variance --- against a simplified Dilithium baseline at
         identical parameters, the NIST-optimised Dilithium, and a classical

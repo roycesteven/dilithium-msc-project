@@ -94,7 +94,7 @@ of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` t
 > **primary, fair** comparison is the **simplified Dilithium-style base signature path**
 > against the **LAS adaptor path**, using the *same parameters and same primitives*. The
 > base path is now a **separate, dedicated module** — `ref/basesig.c`
-> (`base_keygen`/`base_sign`/`base_verify`): `Sign` hashes `c = H(pk, w, M)` and `Verify`
+> (`base_sign_keypair`/`base_sign_signature`/`base_sign_verify`): `Sign` hashes `c = H(pk, w, M)` and `Verify`
 > recomputes `c = H(pk, w', M)` with **no statement `Y`** anywhere. The adaptor path is
 > `ref/las.c` (`PreSign`/`PreVerify`/`Adapt`/`Ext`), which folds `Y` into the hash
 > (`c = H(pk, w + Y, M)`). `basesig.c` is kept **out of `las.{c,h}`** on purpose so the
@@ -103,7 +103,7 @@ of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` t
 > (a dimension-level match — `n,ℓ,κ` — not a formal bit-security claim; security proofs are
 > out of scope) and makes their keys/signatures interchangeable. That interchangeability is verified at
 > runtime: a LAS pre-signature, once `Adapt`-ed, verifies under the **independent**
-> `base_verify` with no explicit `+Y`, because `A(ẑ+y) − c·t = (Aẑ − c·t) + A·y = w' + Y`.
+> `base_sign_verify` with no explicit `+Y`, because `A(ẑ+y) − c·t = (Aẑ − c·t) + A·y = w' + Y`.
 > The only thing that varies between the paths is the adaptor layer, so the fair result
 > is its **overhead**. Official PQ-CRYSTALS Dilithium is a *different* algorithm (hints,
 > Power2Round, decomposition, bit-packing) and appears **only as context, clearly

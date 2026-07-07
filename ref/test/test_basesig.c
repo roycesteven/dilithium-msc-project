@@ -12,30 +12,30 @@
  * Properties checked every iteration:
  *
  *   BASE signature (basesig.c), in isolation:
- *     [B1] base_sign -> base_verify ACCEPTS                 (honest signature verifies)
- *     [B2] tampered message      -> base_verify REJECTS
- *     [B3] tampered response z   -> base_verify REJECTS
- *     [B4] wrong public key      -> base_verify REJECTS
+ *     [B1] base_sign_signature -> base_sign_verify ACCEPTS                 (honest signature verifies)
+ *     [B2] tampered message      -> base_sign_verify REJECTS
+ *     [B3] tampered response z   -> base_sign_verify REJECTS
+ *     [B4] wrong public key      -> base_sign_verify REJECTS
  *
  *   CROSS-MODULE equivalence (basesig.c <-> las.c):
- *     [X1] a base_sign signature verifies under LAS's las_verify
- *     [X2] a las_sign  signature verifies under base_verify
+ *     [X1] a base_sign_signature signature verifies under LAS's las_verify
+ *     [X2] a las_sign  signature verifies under base_sign_verify
  *          (mutual verifiability is evidence that the two modules implement the
  *           SAME construction -- the same challenge hash, A-product, and norm bound)
  *
  *   CROSS-PATH interlock (base verifier vs LAS adaptor path):
  *     [I1] las_presign -> las_preverify ACCEPTS             (pre-signature well-formed)
- *     [I2] las_presign -> base_verify REJECTS               (statement-binding tripwire:
+ *     [I2] las_presign -> base_sign_verify REJECTS               (statement-binding tripwire:
  *                                                            base hash omits +Y)
- *     [I3] las_adapt   -> base_verify ACCEPTS               (adapted sig is an ordinary
+ *     [I3] las_adapt   -> base_sign_verify ACCEPTS               (adapted sig is an ordinary
  *                                                            base signature, no explicit +Y)
  *     [I4] las_ext recovers the witness EXACTLY             (y' == y and A*y' == Y)
  *
  *   NEGATIVE tests (wrong inputs / tampering must be rejected):
  *     [N1] PreVerify under the WRONG statement Y' REJECTS
- *     [N2] Adapt with the WRONG witness -> base_verify REJECTS and Ext FAILS
+ *     [N2] Adapt with the WRONG witness -> base_sign_verify REJECTS and Ext FAILS
  *     [N3] tampered pre-signature -> PreVerify REJECTS
- *     [N4] tampered adapted signature -> base_verify REJECTS
+ *     [N4] tampered adapted signature -> base_sign_verify REJECTS
  *
  * Build (Makefile sets -DLAS_N/-DLAS_ELL/-DLAS_KAPPA per parameter set):
  *     make test/test_basesig_paper   # (4,4,60)
@@ -88,45 +88,45 @@ int main(void) {
     las_setup(&pp, ppseed);                              /* pp = A                 */
     randombytes(m, MLEN);
 
-    base_keygen(&pk, &sk, &pp);                          /* base key pair          */
-    base_keygen(&Y,  &y,  &pp);                          /* statement/witness Y=Ay */
-    base_keygen(&Y2, &y2, &pp);                          /* a DIFFERENT statement   */
+    base_sign_keypair(&pk, &sk, &pp);                          /* base key pair          */
+    base_sign_keypair(&Y,  &y,  &pp);                          /* statement/witness Y=Ay */
+    base_sign_keypair(&Y2, &y2, &pp);                          /* a DIFFERENT statement   */
 
     /* ---- BASE signature in isolation ---- */
-    base_sign(&sig_b, m, MLEN, &pk, &sk, &pp);
-    CHECK(base_verify(&sig_b, m, MLEN, &pk, &pp) == 0, "[B1] honest base sig must verify");
+    base_sign_signature(&sig_b, m, MLEN, &pk, &sk, &pp);
+    CHECK(base_sign_verify(&sig_b, m, MLEN, &pk, &pp) == 0, "[B1] honest base sig must verify");
 
     /* [B2] tampered message must be rejected */
     {
       uint8_t mbad[MLEN];
       for(j = 0; j < MLEN; ++j) mbad[j] = m[j];
       mbad[0] ^= 0xFF;
-      CHECK(base_verify(&sig_b, mbad, MLEN, &pk, &pp) != 0, "[B2] tampered message must fail");
+      CHECK(base_sign_verify(&sig_b, mbad, MLEN, &pk, &pp) != 0, "[B2] tampered message must fail");
     }
 
     /* [B3] tampered response z must be rejected (changes w' => hash mismatch,
-     *      or trips the norm bound -- either way base_verify returns nonzero) */
+     *      or trips the norm bound -- either way base_sign_verify returns nonzero) */
     tmp = sig_b;
     tmp.z[0].coeffs[0] += 1;
-    CHECK(base_verify(&tmp, m, MLEN, &pk, &pp) != 0, "[B3] tampered z must fail");
+    CHECK(base_sign_verify(&tmp, m, MLEN, &pk, &pp) != 0, "[B3] tampered z must fail");
 
     /* [B4] verifying an honest signature under the WRONG public key fails
      *      (Y is an independent key pair, so Y.t != pk.t) */
-    CHECK(base_verify(&sig_b, m, MLEN, &Y, &pp) != 0, "[B4] wrong public key must fail");
+    CHECK(base_sign_verify(&sig_b, m, MLEN, &Y, &pp) != 0, "[B4] wrong public key must fail");
 
     /* ---- CROSS-MODULE equivalence basesig.c <-> las.c ---- */
     CHECK(las_verify(&sig_b, m, MLEN, &pk, &pp) == 0, "[X1] base sig must verify under las_verify");
     las_sign(&sig_l, m, MLEN, &pk, &sk, &pp);
     CHECK(las_verify(&sig_l, m, MLEN, &pk, &pp) == 0, "las sig must verify under las_verify");
-    CHECK(base_verify(&sig_l, m, MLEN, &pk, &pp) == 0, "[X2] las sig must verify under base_verify");
+    CHECK(base_sign_verify(&sig_l, m, MLEN, &pk, &pp) == 0, "[X2] las sig must verify under base_sign_verify");
 
     /* ---- CROSS-PATH interlock: independent base verifier vs LAS adaptor ---- */
     las_presign(&presig, m, MLEN, &Y, &pk, &sk, &pp);
     CHECK(las_preverify(&presig, m, MLEN, &Y, &pk, &pp) == 0, "[I1] honest pre-sig must pre-verify");
-    CHECK(base_verify(&presig, m, MLEN, &pk, &pp) != 0, "[I2] pre-sig must NOT pass base Verify (tripwire)");
+    CHECK(base_sign_verify(&presig, m, MLEN, &pk, &pp) != 0, "[I2] pre-sig must NOT pass base Verify (tripwire)");
 
     CHECK(las_adapt(&adapted, &presig, m, MLEN, &Y, &y, &pk, &pp) == 0, "adapt must succeed");
-    CHECK(base_verify(&adapted, m, MLEN, &pk, &pp) == 0, "[I3] adapted sig must verify under base_verify");
+    CHECK(base_sign_verify(&adapted, m, MLEN, &pk, &pp) == 0, "[I3] adapted sig must verify under base_sign_verify");
 
     CHECK(las_ext(&yext, &adapted, &presig, &Y, &pp) == 0, "[I4] Ext must succeed (A*y'==Y)");
     CHECK(witness_equal(&yext, &y), "[I4] Ext must recover the witness exactly (y'==y)");
@@ -141,7 +141,7 @@ int main(void) {
      *      signature, but it encodes A*y2 = Y2 != Y, so the independent base verifier
      *      rejects it and Ext cannot recover a witness for Y. */
     CHECK(las_adapt(&bad, &presig, m, MLEN, &Y, &y2, &pk, &pp) == 0, "adapt(wrong-witness) builds");
-    CHECK(base_verify(&bad, m, MLEN, &pk, &pp) != 0, "[N2] wrong-witness adapted must NOT verify");
+    CHECK(base_sign_verify(&bad, m, MLEN, &pk, &pp) != 0, "[N2] wrong-witness adapted must NOT verify");
     CHECK(las_ext(&yext, &bad, &presig, &Y, &pp) != 0, "[N2] Ext must fail on wrong-witness adapt");
 
     /* [N3] a tampered pre-signature must fail PreVerify. */
@@ -152,7 +152,7 @@ int main(void) {
     /* [N4] a tampered adapted signature must fail ordinary (base) Verify. */
     tmp = adapted;
     tmp.z[0].coeffs[0] += 1;
-    CHECK(base_verify(&tmp, m, MLEN, &pk, &pp) != 0, "[N4] tampered adapted signature must fail Verify");
+    CHECK(base_sign_verify(&tmp, m, MLEN, &pk, &pp) != 0, "[N4] tampered adapted signature must fail Verify");
   }
 
   printf("test_basesig: ALL CHECKS PASSED\n");

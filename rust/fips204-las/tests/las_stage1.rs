@@ -9,7 +9,7 @@ use fips204::las::{
     las_adapt, las_ext, las_keygen_seed, las_presign_det, las_preverify, las_setup, las_sign_det,
     las_verify,
 };
-use fips204::las_basesig::{base_keygen, base_sign, base_verify};
+use fips204::las_basesig::{base_sign_keypair, base_sign_signature, base_sign_verify};
 use fips204::las_serialize::{
     las_pack_pk, las_pack_sig, las_pack_sk, las_unpack_pk, las_unpack_sig, las_unpack_sk,
     las_verify_packed, LAS_SIG_BYTES,
@@ -31,11 +31,11 @@ fn cross_module_interlock() {
     let (y_stmt, y_wit) = las_keygen_seed(&pp, &yseed);
 
     // 1. base sign/verify round-trip + wrong-message rejection (Algorithm 1).
-    let (bpk, bsk) = base_keygen(&pp, &mut rng);
-    let bsig = base_sign(MSG, &bpk, &bsk, &pp, &mut rng);
-    assert!(base_verify(&bsig, MSG, &bpk, &pp), "base round-trip");
+    let (bpk, bsk) = base_sign_keypair(&pp, &mut rng);
+    let bsig = base_sign_signature(MSG, &bpk, &bsk, &pp, &mut rng);
+    assert!(base_sign_verify(&bsig, MSG, &bpk, &pp), "base round-trip");
     assert!(
-        !base_verify(&bsig, b"wrong message", &bpk, &pp),
+        !base_sign_verify(&bsig, b"wrong message", &bpk, &pp),
         "base must reject wrong message"
     );
 
@@ -43,7 +43,7 @@ fn cross_module_interlock() {
     //    each other's signatures (identical challenge hash, bit-for-bit).
     let lsig = las_sign_det(MSG, &pk, &sk, &pp);
     assert!(
-        base_verify(&lsig, MSG, &pk, &pp),
+        base_sign_verify(&lsig, MSG, &pk, &pp),
         "independent base verifier must accept a las.rs ordinary signature"
     );
     assert!(
@@ -57,11 +57,11 @@ fn cross_module_interlock() {
     assert!(las_preverify(&presig, MSG, &y_stmt, &pk, &pp), "preverify");
     let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
     assert!(
-        base_verify(&adapted, MSG, &pk, &pp),
+        base_sign_verify(&adapted, MSG, &pk, &pp),
         "adapted signature must pass the independent base verifier"
     );
     assert!(
-        !base_verify(&presig, MSG, &pk, &pp),
+        !base_sign_verify(&presig, MSG, &pk, &pp),
         "pre-signature must FAIL the base verifier (statement-binding tripwire)"
     );
     let yext = las_ext(&adapted, &presig, &y_stmt, &pp).expect("ext");

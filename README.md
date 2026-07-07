@@ -88,7 +88,43 @@ The two earlier scripts `scripts/run_fair_benchmarks.sh` and
 `scripts/run_final_evidence.sh` are **deprecated stubs** that print
 `Deprecated: use scripts/run_benchmark_suite.sh`.
 
-### 2.1 Re-plot an existing run (no rebuild)
+### 2.1 Rust evidence + automatic report sync
+
+The Rust port has its own one-command suite, mirroring the C one:
+
+```sh
+bash scripts/run_rust_bench_suite.sh
+```
+
+It runs the crate's test gate first (including the pinned cross-language KAT digest —
+benchmarks refuse to time unverified code), then the Criterion.rs benchmark, the
+protocol driver, and the size report, refreshing the committed logs in
+`rust/fips204-las/` (`bench_las_criterion.log`, `bench_levels_rust.log`,
+`size_report_rust.log`).
+
+**Both suites end with `scripts/sync_report.sh`**, so the LaTeX report always
+reflects the latest run with no hand-copying:
+
+1. the Stage-1 figures are copied from `evidence/latest` into
+   `report/latex/figures/` under the report's names (`fig_timing`,
+   `fig_components`, `fig_overhead`);
+2. `scripts/gen_report_data.py` regenerates `report/latex/generated/` —
+   `benchmacros.tex` (every measured number the chapters cite inline, as LaTeX
+   macros, plus run provenance) and the data tables (`tab_timing`,
+   `tab_overhead_target`, `tab_components`, `tab_complete_target`,
+   `tab_classical`, `tab_rust`) — from the run's CSV tables and logs **and** the
+   Rust logs, with cross-implementation gates (the Rust packed sizes must equal
+   the C row byte-for-byte; every overhead percentage must re-derive from the
+   timing means; the C and Rust drivers must have run the same repetition
+   scheme);
+3. `scripts/sync_report.sh --build` additionally rebuilds
+   `report/latex/report.pdf` (otherwise rebuild with `make -C report/latex`).
+
+Measured numbers are never typed into the report chapters by hand; they enter
+only through `report/latex/generated/`, which carries the evidence run id and
+git commit in its header comments.
+
+### 2.2 Re-plot an existing run (no rebuild)
 
 Re-plotting reads the run's `logs/` and regenerates the CSV tables and figures (no
 benchmark is re-run). Stage 1 produces the CSV tables; stage 2 produces the curated paper
@@ -147,7 +183,7 @@ each `test_basesig*` ends with `test_basesig: ALL CHECKS PASSED`;
 `bench_levels` measures the **adaptor overhead** by timing two **separate modules** at
 the same parameters and on the same primitives:
 
-- **base path** — `ref/basesig.c` (`base_keygen`/`base_sign`/`base_verify`): the
+- **base path** — `ref/basesig.c` (`base_sign_keypair`/`base_sign_signature`/`base_sign_verify`): the
   simplified Dilithium-style signature, `Sign` hashing `c = H(pk, w, M)` and `Verify`
   recomputing `c = H(pk, w', M)`, with **no adaptor statement `Y`**;
 - **adaptor path** — `ref/las.c` (PreSign/PreVerify/Adapt/Extract): the same scheme with
@@ -159,7 +195,7 @@ use the same parameter set (a dimension-level match — `n,ℓ,κ` — not a for
 claim). The benchmark pairs each adaptor operation with the base
 operation it mirrors (PreSign vs Sign, PreVerify vs Verify, Adapt vs Verify; Extract
 reported separately), checks the cross-path contract (a LAS-adapted signature verifies
-under the independent `base_verify`), and prints the component-level packed sizes.
+under the independent `base_sign_verify`), and prints the component-level packed sizes.
 
 `bench_levels` is the **single combined driver**: each run establishes **one** setup and
 **one** consistent state (one `las_setup`, one key pair, one statement/witness, one

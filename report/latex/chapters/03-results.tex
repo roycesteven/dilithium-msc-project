@@ -32,7 +32,7 @@ lists the checks and their outcomes.
     3 & Adapt yields a signature that basic Verify accepts & pass \\
     4 & Extract recovers the witness \emph{exactly} ($y'=y$) & pass \\
     5a & a tampered message fails Verify & pass \\
-    5b & every single bit-flip of the packed signature is rejected & pass \\
+    5b & every one of the \tamperFlips{} single-byte flips of the packed signature is rejected & pass \\
     6 & malformed packed bytes are rejected ($pk\!\ge\!Q$, ternary code-3, $z$ out of band) & pass \\
     7 & the deterministic API is byte-identical on re-run & pass \\
     \bottomrule
@@ -88,7 +88,8 @@ comparison repeated across all four parameter sets is a scaling check, deferred 
   Extract has no basic analogue and is shown LAS-only. The absolute $\mu$s scale also shows
   the shape: every operation is sub-two-milliseconds and the rejection-sampling operations
   (Sign, PreSign) dominate, while the verify-class operations and Extract are far cheaper.
-  Error bars are the sample standard deviation over 10 runs $\times$ 1000 iterations on the
+  Error bars are the sample standard deviation over \benchReps{} repetitions of
+  \benchItersSign{} (sign-class) / \benchItersVerify{} (verify-class) iterations on the
   machine of record (\cref{sec:benchmethod}); the same comparison across all four parameter
   sets is the scaling check in \cref{fig:overhead} (appendix).}
   \label{fig:timing}
@@ -98,13 +99,13 @@ The adaptor layer is therefore almost free in computation, and the numbers are s
 \emph{for structural reasons} (overhead at the target setting against the paired basic
 operation):
 \begin{itemize}
-  \item \textbf{PreSign $\approx$ Sign} ($+6.7\%$): PreSign runs the same masked-commit,
+  \item \textbf{PreSign $\approx$ Sign} ($+\ovPreSign\%$): PreSign runs the same masked-commit,
         hash, respond, reject loop as Sign; it only adds the statement $Y$ into the
         Fiat--Shamir commitment and rejects at a slightly tighter bound. Neither
         changes the asymptotic work.
-  \item \textbf{PreVerify $\approx$ Verify} ($+3.1\%$): PreVerify recomputes the same
+  \item \textbf{PreVerify $\approx$ Verify} ($+\ovPreVerify\%$): PreVerify recomputes the same
         commitment shape as Verify, differing only by the $+Y$ addition before hashing.
-  \item \textbf{Adapt $\approx$ Verify} ($+8.1\%$): Adapt first runs a PreVerify and
+  \item \textbf{Adapt $\approx$ Verify} ($+\ovAdapt\%$): Adapt first runs a PreVerify and
         then adds the witness vector, so it costs about one verification plus a few
         polynomial additions.
   \item \textbf{Extract is cheapest and has no basic analogue}: it only subtracts
@@ -121,12 +122,67 @@ adaptor premium stays in the single digits at every one (\cref{fig:overhead}, ap
 
 Signing and pre-signing are dearer than verification because they use rejection
 sampling. The acceptance rate was measured directly, by counting rejection-loop
-attempts rather than estimating from a timing ratio: at every setting approximately
-37\% of attempts are accepted, so a signature takes about 2.7 attempts on average. This matches the closed-form prediction: one attempt is accepted only if
+attempts rather than estimating from a timing ratio: at the target setting
+\rejAccBase\% of Sign attempts and \rejAccLas\% of PreSign attempts are accepted, so a
+signature takes about \rejAttBase{} attempts on average (\rejAttLas{} for a
+pre-signature), and the other settings behave alike. This matches the closed-form
+prediction: one attempt is accepted only if
 all $(n+\ell)\cdot d$ response coefficients fall within the bound, giving a per-attempt
-acceptance of $(1-\kappa/\gamma)^{(n+\ell)d}\approx e^{-1}\approx 36.8\%$. Rejection
+acceptance of $(1-\kappa/\gamma)^{(n+\ell)d}\approx e^{-1}\approx 36.8\%$. Every
+benchmark run asserts the measured attempt count against this prediction (within five
+standard deviations) before any timing is reported, so a broken sampler cannot
+silently produce plausible-looking numbers. Rejection
 sampling is intrinsic to the Fiat--Shamir-with-aborts family, not a defect of this
 implementation.
+
+\section{Cross-implementation check: C reference versus Rust port}
+\label{sec:res-rust}
+
+The scheme exists twice, in C and in Rust (\cref{sec:rustport}), and the two
+implementations agree at every level at which they can be compared. At the byte level
+the agreement is exact: both produce the same packed sizes at the target setting
+(public key \pkBytesTarget{} bytes, signature \sigBytesTarget{} bytes, checked
+programmatically on every Rust run) and the same pinned known-answer digest
+(\texttt{\katDigestHead\ldots\katDigestTail}), a single SHAKE256 hash folded over
+every object of four fully deterministic test vectors. Since the digest covers key
+generation, signing, the four adaptor operations, and the serialization, a divergence
+anywhere in either implementation's sampling, algebra, or encoding would flip it; its
+equality is therefore a strong, cheap argument that the two codebases compute the
+same scheme.
+
+\begin{table}[t]
+  \centering
+  \caption[Per-operation timing: C reference vs Rust port]{Per-operation timing of the
+  two implementations at the target setting, \emph{Simplified Dilithium-III}
+  ($\mu$s per operation). The C and Rust columns come from the two protocol drivers,
+  which deliberately mirror each other (same repetition scheme of \benchReps{}
+  repetitions $\times$ \benchItersSign{}/\benchItersVerify{} iterations, fixed
+  public-parameter seed, fixed message, same success-path gating), so they are directly
+  comparable. The final column is the independent Criterion.rs statistical harness
+  (\critSamples{} samples per operation, bootstrap 95\% confidence interval of the
+  mean); its hot-loop protocol yields lower absolute times, and it is included to show
+  that the \emph{relative} conclusions do not depend on the hand-rolled driver.}
+  \label{tab:rust}
+  \small
+  \input{generated/tab_rust}
+\end{table}
+
+Timing agreement is necessarily looser, since the two builds go through different
+compilers (GCC versus rustc/LLVM), but it is close: \cref{tab:rust} shows every
+operation agreeing within about \rustCMaxDev\% (the largest gap is
+\rustCMaxDevOp), with the Rust port slightly faster on the verify-class operations
+and slightly slower on key generation. More importantly, every \emph{conclusion}
+reproduces. The Rust port measures the adaptor overhead at
+$+\rustOvPreSign\%$ (PreSign vs Sign), $+\rustOvPreVerify\%$ (PreVerify vs Verify),
+and $+\rustOvAdapt\%$ (Adapt vs Verify) --- single digits, like the C values of
+$+\ovPreSign\%$, $+\ovPreVerify\%$, and $+\ovAdapt\%$ --- and its directly counted
+rejection rates (\rustAttBase{} attempts per signature, \rustAttLas{} per
+pre-signature) pass the same five-standard-deviation gate against the closed-form
+prediction. The Criterion harness, with a wholly independent measurement protocol,
+gives lower absolute times but the same ordering and the same
+sign-class-versus-verify-class shape. The headline results of this chapter are
+therefore properties of the algorithm, not artefacts of one codebase, one compiler,
+or one timing harness.
 
 \section{Communication cost and component breakdown}
 \label{sec:res-comm}
@@ -154,8 +210,8 @@ setting in \cref{tab:complete-l3} (appendix).
 Two points follow, and together they give the sharp conclusion of the evaluation
 (\cref{fig:components}):
 \begin{itemize}
-  \item \textbf{The response $z$ is essentially the entire signature} --- 98.6\% at
-        Simplified Dilithium-II, rising to 99.3\% at Simplified Dilithium-V. The
+  \item \textbf{The response $z$ is essentially the entire signature} --- \zPctTwo\% at
+        Simplified Dilithium-II, rising to \zPctFive\% at Simplified Dilithium-V. The
         challenge $c$ is a fixed 64 bytes and
         is irrelevant to size. Any optimisation of LAS signatures is an optimisation
         of $z$.
@@ -166,11 +222,11 @@ Two points follow, and together they give the sharp conclusion of the evaluation
 
 \noindent\textbf{The sharp conclusion: the cost of LAS is not adaptor computation but
 communication --- specifically the response vector $z$ and the statement $Y$.} The
-preceding section showed the adaptor operations add at most about eight percent of
+computation results showed the adaptor operations add at most $+\ovMaxAll\%$ of
 compute over the basic scheme; this section shows the objects that move on the wire are
 one to a few kilobytes, dominated by $z$. For a blockchain setting, where every byte is
 stored and replicated, this is the property that matters, and it is a far more useful
-statement than ``the signature is 4672 bytes''.
+statement than ``the signature is \sigBytesTarget{} bytes''.
 
 The response is stored at its full width: each coefficient occupies 18--19 bits
 (\cref{tab:components}) rather than being range-reduced or entropy-coded. This is the
@@ -212,38 +268,27 @@ schemes at their adaptor operations.
   an engineering match to the $\approx$128-bit (NIST level~2) target, \emph{not} a formal
   security-equivalence claim (\cref{tab:params}); the stronger LAS settings are reserved for
   the parameter-sensitivity study (\cref{sec:res-compute}) and would overstate the
-  post-quantum cost here. Timings $\mu$s/op (mean $\pm$ SD over 10 runs $\times$ 1000 iterations,
-  same machine); sizes in bytes. KeyGen also produces the statement/witness, which take the
-  public-key/secret-key size.}
+  post-quantum cost here. Timings $\mu$s/op (classical: mean $\pm$ SD over \clReps{} runs
+  $\times$ \clIters{} iterations; LAS: \benchReps{} repetitions $\times$
+  \benchItersSign{}/\benchItersVerify{} iterations; same machine); sizes in bytes. KeyGen
+  also produces the statement/witness, which take the public-key/secret-key size. The
+  classical pre-signature is a syntactically distinct object (an ECDSA signature plus a
+  discrete-logarithm-equality proof), whereas the LAS pre-signature shares the signature
+  format.}
   \label{tab:classical}
   \small
-  \begin{tabular}{@{}lrr@{}}
-    \toprule
-    & ECDSA adaptor (classical) & LAS adaptor (post-quantum) \\
-    \midrule
-    \multicolumn{3}{@{}l}{\textit{Computation ($\mu$s/op)}} \\
-    KeyGen    & $31.9 \pm 1.1$  & $73.4 \pm 1.8$   \\
-    Sign      & $42.5 \pm 0.6$  & $841.3 \pm 20.8$ \\
-    Verify    & $63.7 \pm 1.0$  & $178.2 \pm 1.4$  \\
-    PreSign   & $193.3 \pm 1.8$ & $868.7 \pm 23.3$ \\
-    PreVerify & $247.2 \pm 0.9$ & $183.3 \pm 0.9$  \\
-    Adapt     & $3.3 \pm 0.0$   & $190.2 \pm 0.7$  \\
-    Extract   & $34.2 \pm 0.1$  & $62.0 \pm 0.5$   \\
-    \midrule
-    \multicolumn{3}{@{}l}{\textit{Communication (bytes)}} \\
-    Public key / statement & 33 & 2944 \\
-    Secret key / witness   & 32 & 512  \\
-    Signature              & 64 & 4672 \\
-    \bottomrule
-  \end{tabular}
+  \input{generated/tab_classical}
 \end{table}
 
 This baseline compares two adaptor-signature schemes with the same high-level
 functionality but different security assumptions: classical discrete-log security
 versus post-quantum lattice security. Two findings stand out. First, the post-quantum
-price is paid almost entirely in \emph{size}: LAS's public key and signature are
-roughly 70 to 90 times larger than the classical adaptor's, whereas the operation times
-differ by at most about twenty times and stay sub-millisecond. Second, the two schemes
+price is paid almost entirely in \emph{size}: LAS's signature and public key are
+roughly $\clRatioSig\times$ and $\clRatioPk\times$ larger than the classical
+adaptor's, whereas in computation every LAS operation stays well under a millisecond
+--- even the largest per-operation factor (\clRatioTimeMaxOp, about
+$\clRatioTimeMax\times$, against a classical operation that is nearly free) costs
+under a tenth of a millisecond in absolute terms. Second, the two schemes
 pay their
 \emph{adaptor} overhead in opposite ways. The classical ECDSA adaptor must attach a
 discrete-logarithm-equality proof, so its PreSign and PreVerify are several times its
@@ -287,8 +332,10 @@ the first-stage signature results above.
 
 Several factors qualify the results, and are stated here so the reader can judge how
 far to trust them. First, all timings are machine-dependent; this is mitigated by
-reporting the standard deviation, fixing one machine and compiler, and emphasising
-ratios over absolute values. Second, the LAS parameter set's concrete security level
+reporting the standard deviation, fixing one machine and compiler, emphasising
+ratios over absolute values, and by the cross-implementation check
+(\cref{sec:res-rust}), which reproduces every relative conclusion under a different
+compiler and an independent timing harness. Second, the LAS parameter set's concrete security level
 is not formally established, because security proofs are out of the project's scope;
 every cross-scheme size and speed claim is therefore qualified by the explicit
 parameters in \cref{tab:params}, and the fair comparison deliberately holds parameters

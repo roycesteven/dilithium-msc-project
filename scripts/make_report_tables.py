@@ -256,13 +256,14 @@ def t_components(comm, out_dir):
               section_rows=(3,))   # highlight the "z as % of signature" summary row
 
 
-def t_complete_l3(timing, comm, out_dir):
+def t_complete_l3(timing, comm, over, out_dir):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     _style(plt.rcParams)
     lvl = HEADLINE
     c = comm[lvl]
+    o = over[lvl]
     comm_cols = ["Object", "Notation", "Bytes", "In the basic signature?"]
     comm_rows = [
         ["public key", "pk = t", str(c["pk = t"]), "yes (shared)"],
@@ -279,9 +280,12 @@ def t_complete_l3(timing, comm, out_dir):
     comp_cols = ["Operation", "basic (µs)", "LAS adaptor (µs)", "overhead"]
     comp_rows = [
         ["KeyGen", _ms(timing, lvl, "KeyGen"), _ms(timing, lvl, "KeyGen") + " (shared)", "—"],
-        ["Sign / PreSign", _ms(timing, lvl, "Sign"), _ms(timing, lvl, "PreSign"), "+6.7%"],
-        ["Verify / PreVerify", _ms(timing, lvl, "Verify"), _ms(timing, lvl, "PreVerify"), "+3.1%"],
-        ["Verify / Adapt", _ms(timing, lvl, "Verify"), _ms(timing, lvl, "Adapt"), "+8.1%"],
+        ["Sign / PreSign", _ms(timing, lvl, "Sign"), _ms(timing, lvl, "PreSign"),
+         "+%s%%" % o["PreSign vs Sign"]["overhead_pct"]],
+        ["Verify / PreVerify", _ms(timing, lvl, "Verify"), _ms(timing, lvl, "PreVerify"),
+         "+%s%%" % o["PreVerify vs Verify"]["overhead_pct"]],
+        ["Verify / Adapt", _ms(timing, lvl, "Verify"), _ms(timing, lvl, "Adapt"),
+         "+%s%%" % o["Adapt vs Verify"]["overhead_pct"]],
         ["Extract", "—", _ms(timing, lvl, "Ext"), "(LAS only)"],
     ]
     fig, (axc, axp) = plt.subplots(
@@ -355,7 +359,7 @@ def main(argv=None):
     t_overhead_l3(timing, over, odir)
     t_overhead_levels(timing, over, odir)
     t_components(comm, odir)
-    t_complete_l3(timing, comm, odir)
+    t_complete_l3(timing, comm, over, odir)
     t_classical(timing, comm, classical, odir)
 
     print("Tables dir : %s" % tdir)

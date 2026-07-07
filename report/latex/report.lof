@@ -2,9 +2,9 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow}}{15}{figure.2.1}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{24}{figure.3.1}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Serialized size of every LAS object}}{26}{figure.3.2}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{33}{figure.3.1}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Serialized size of every LAS object}}{34}{figure.3.2}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{37}{figure.A.1}%
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{42}{figure.A.1}%

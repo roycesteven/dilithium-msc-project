@@ -1,0 +1,4 @@
+payload,formula,total_bytes,part1_label,part1_bytes,part2_label,part2_bytes,part3_label,part3_bytes
+off-chain,Y + preA + preB,17920,Y,4416,preA,6752,preB,6752
+settlement,sigma_A + sigma_B,13504,sigma_A,6752,sigma_B,6752,,
+settlement_incl_Y,settlement + 2*Y,22336,settlement,13504,2*Y,8832,,

@@ -83,20 +83,20 @@ mode-specific `K`, `L`, `TAU`, `GAMMA1`, … — so it builds identically under
 | `las_adapt` | public | `σ=(c, ẑ+y)` — completes a pre-signature |
 | `las_ext` | public | `y=z−ẑ`; return iff `A·y==Y` |
 | `las_expected_attempts` | public (instrumentation only) | exact expected attempts/call of the rejection loop at a given bound (`((2·bound−1)/(2γ+1))^{−(n+ℓ)d}`, verified against 2020/845 Table 1 / Fact 1 / §3.2); consumed by the benchmarks' run-validity rejection gate, never by the scheme — mirrored in the Rust port |
-| `las_Amul`, `polymul`, `las_challenge`, `hash_challenge`, `sample_Sgamma`, `sample_ternary`, `pack_poly_canon`, `poly_equal`, `chknorm_vec`, `det_seed`, `sign_core`, `presign_core` | internal (static) | the `[I\|A']` product, NTT mult, `κ`-weight challenge, `H`, samplers, helpers, shared cores |
+| `las_Amul`, `polymul_prehat`, `las_challenge`, `hash_challenge`, `sample_Sgamma`, `sample_ternary`, `pack_poly_canon`, `poly_equal`, `chknorm_vec`, `det_seed`, `sign_core`, `presign_core` | internal (static) | the `[I\|A']` product, NTT-domain pointwise mult (forward NTTs hoisted per-call/per-attempt as in `ref/sign.c`), `κ`-weight challenge, `H`, samplers, helpers, shared cores |
 
 **`basesig.{c,h}` — the separate simplified-base signature (new; the fair-benchmark baseline).**
 A standalone simplified Dilithium-style signature kept deliberately **out of `las.{c,h}`**
-so the LAS protocol is never conflated or modified. Public: `base_keygen`, `base_sign`
-(`c = H(pk, w, M)`, no statement `Y`), `base_verify` (`c == H(pk, w', M)`). It depends on
+so the LAS protocol is never conflated or modified. Public: `base_sign_keypair`, `base_sign_signature`
+(`c = H(pk, w, M)`, no statement `Y`), `base_sign_verify` (`c == H(pk, w', M)`). It depends on
 `las.h` only for the shared parameter macros and the `las_pp/las_pk/las_sk/las_sig` struct
 layout, so both schemes use the same parameter set (a dimension-level match — `n,ℓ,κ` —
 not a formal bit-security claim; proofs are out of scope) and their keys/signatures are
 interchangeable — verified by `bench_levels`, where a LAS-`Adapt`-ed signature passes the
-independent `base_verify`. Its static helpers (`b_Amul`, `b_polymul`, `b_challenge`,
+independent `base_sign_verify`. Its static helpers (`b_Amul`, `b_polymul_prehat`, `b_challenge`,
 `b_hash_challenge`, `b_sample_Sgamma`, `b_sample_ternary`, `b_pack_poly_canon`,
 `b_poly_equal`, `b_chknorm_vec`) are behaviour-identical local copies of LAS's so the
-challenge hash matches bit-for-bit. **No upstream files modified.**
+challenge hash matches bit-for-bit (including the identical NTT hoisting). **No upstream files modified.**
 
 ### 3.2 `serialize.{c,h}` — byte-level encoding (on-chain interface)
 `las_pack_pk`/`las_unpack_pk`, `las_pack_sk`/`las_unpack_sk`,

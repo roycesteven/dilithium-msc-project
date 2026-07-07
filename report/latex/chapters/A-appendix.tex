@@ -11,17 +11,26 @@ repository.
 The evaluation is reproducible from the commands below. The upstream Dilithium
 reference is pinned at the repository's initial commit (\texttt{2374d22}); the
 classical baseline library is the BlockstreamResearch \texttt{secp256k1-zkp}
-\texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}. The toolchain is the
-system C compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-O3}.
+\texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}; the Rust port builds on a
+vendored copy of the \texttt{fips204} crate (commit \texttt{c948882}). The C
+toolchain is the system compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-O3};
+the Rust toolchain is stable \texttt{rustc} (the committed run used 1.96.0) in
+release profile.
 
 \begin{lstlisting}[language=bash,caption={Fair benchmark and tests (first-stage
-evaluation).},label={lst:benchfair}]
+evaluation). The suite script runs everything below, saves the logs and parsed
+tables as a timestamped evidence run, and regenerates every figure, table, and
+inline number of this report from that run.},label={lst:benchfair}]
+# the one supported evidence pipeline (all tests + all benchmarks + report sync)
+scripts/run_benchmark_suite.sh
+
+# or individually:
 cd ref
-# fair, parameter-matched comparison (>=5 runs, mean +/- standard deviation, component sizes)
-make test/bench_fair2 && ./test/bench_fair2   # optimised reference = Dilithium-2 (dimension-matched)
-make test/bench_fair3 && ./test/bench_fair3   # optimised reference = Dilithium-3 (NIST level 3)
-# per-op timings + directly measured rejection rate
-make test/bench_las3 && ./test/bench_las3
+# fair, parameter-matched base-vs-adaptor benchmark at each parameter set
+make test/bench_levels_paper && ./test/bench_levels_paper
+make test/bench_levels2      && ./test/bench_levels2
+make test/bench_levels3      && ./test/bench_levels3   # target setting
+make test/bench_levels5      && ./test/bench_levels5
 # correctness, serialization/tamper, known-answer tests
 make test/test_las3   && ./test/test_las3
 make test/test_serde3 && ./test/test_serde3
@@ -35,6 +44,25 @@ clone).},label={lst:classical}]
 git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
     third_party/secp256k1-zkp        # tested at commit 95b9835
 cd ref && make test/bench_classical && ./test/bench_classical
+\end{lstlisting}
+
+The Rust port is reproduced with the standard Cargo tooling; the test gate runs
+first because the benchmarks refuse to time unverified code, and the known-answer
+test asserts the same pinned digest as the C implementation
+(\texttt{\katDigestHead\ldots\katDigestTail}).
+
+\begin{lstlisting}[language=bash,caption={Rust port: test gate, statistical
+benchmark, protocol driver, and size report (one suite script, or the four steps
+individually).},label={lst:rust}]
+# the one supported Rust evidence pipeline (tests + benchmarks + report sync)
+scripts/run_rust_bench_suite.sh
+
+# or individually:
+cd rust/fips204-las
+cargo test --lib --tests                    # gate: includes the pinned KAT digest
+cargo bench --bench las_bench               # Criterion.rs statistical harness
+cargo run --release --example bench_levels  # protocol driver (mirrors the C driver)
+cargo run --release --example size_report   # packed component sizes
 \end{lstlisting}
 
 \section{Full benchmark data tables}
@@ -73,34 +101,16 @@ dimensions are scaled up, so the headline result is not specific to the target s
   \centering
   \caption[Per-operation timing across the parameter sets]{Per-operation timing,
   reported independently ($\mu$s per operation; mean $\pm$ sample standard deviation
-  over 10 runs $\times$ 1000 iterations; \texttt{bench\_levels}, machine of record in
+  over \benchReps{} repetitions $\times$ \benchItersSign{} sign-class /
+  \benchItersVerify{} verify-class iterations; \texttt{bench\_levels}, machine of record in
   \cref{sec:benchmethod}). KeyGen, Sign, and Verify \emph{are} the basic signature and
   are reused unchanged by LAS; PreSign, PreVerify, Adapt, and Extract are the four
   adaptor operations. Public-parameter Setup, a one-time global cost, runs in
-  57--200\,$\mu$s and is omitted. Parameter sets and symbols: \cref{tab:params,tab:notation}.}
+  \setupMin--\setupMax\,$\mu$s and is omitted. Parameter sets and symbols: \cref{tab:params,tab:notation}.}
   \label{tab:timing}
   \small
   \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{@{}lrrrr@{}}
-    \toprule
-    Operation
-      & \shortstack[r]{LAS-2020/845\\ reference\\ $(4,4,60)$}
-      & \shortstack[r]{Simplified\\ Dilithium-II\\ $(4,4,39)$}
-      & \shortstack[r]{Simplified\\ Dilithium-III\\ $(6,5,49)$}
-      & \shortstack[r]{Simplified\\ Dilithium-V\\ $(8,7,60)$} \\
-    \midrule
-    \multicolumn{5}{@{}l}{\textit{Basic signature (reused unchanged by LAS)}} \\
-    KeyGen & 74 $\pm$ 1   & 73 $\pm$ 2   & 114 $\pm$ 5   & 163 $\pm$ 1  \\
-    Sign   & 748 $\pm$ 25 & 841 $\pm$ 21 & 1270 $\pm$ 28 & 1570 $\pm$ 46 \\
-    Verify & 179 $\pm$ 2  & 178 $\pm$ 1  & 280 $\pm$ 7   & 385 $\pm$ 2  \\
-    \midrule
-    \multicolumn{5}{@{}l}{\textit{LAS adaptor operations}} \\
-    PreSign   & 782 $\pm$ 18 & 869 $\pm$ 23 & 1355 $\pm$ 62 & 1616 $\pm$ 29 \\
-    PreVerify & 186 $\pm$ 2  & 183 $\pm$ 1  & 288 $\pm$ 2   & 406 $\pm$ 12 \\
-    Adapt     & 191 $\pm$ 1  & 190 $\pm$ 1  & 302 $\pm$ 5   & 412 $\pm$ 1  \\
-    Extract   & 61 $\pm$ 0.3 & 62 $\pm$ 1   & 101 $\pm$ 3   & 147 $\pm$ 1  \\
-    \bottomrule
-  \end{tabular}
+  \input{generated/tab_timing}
 \end{table}
 
 \begin{table}[h]
@@ -109,24 +119,15 @@ dimensions are scaled up, so the headline result is not specific to the target s
   target setting \emph{Simplified Dilithium-III} --- the exact numbers behind
   \cref{fig:timing}. Each LAS adaptor operation is paired with the basic operation it
   mirrors, and ``Overhead'' is the extra cost as a percentage of that basic operation.
-  Timings are $\mu$s per operation (mean $\pm$ sample standard deviation over 10 runs
-  $\times$ 1000 iterations; machine of record in \cref{sec:benchmethod}). KeyGen, Sign, and
+  Timings are $\mu$s per operation (mean $\pm$ sample standard deviation over
+  \benchReps{} repetitions $\times$ \benchItersSign{}/\benchItersVerify{} iterations;
+  machine of record in \cref{sec:benchmethod}). KeyGen, Sign, and
   Verify are reused unchanged by LAS, so their basic and adaptor costs are cycle-identical;
   Extract has no basic analogue. Absolute timings at every parameter set are in
   \cref{tab:timing}.}
   \label{tab:overhead-l3}
   \small
-  \begin{tabular}{@{}lrrr@{}}
-    \toprule
-    Operation (basic / adaptor) & Basic ($\mu$s) & LAS adaptor ($\mu$s) & Overhead \\
-    \midrule
-    KeyGen             & 114 $\pm$ 5   & 114 $\pm$ 5 (shared) & --- \\
-    Sign / PreSign     & 1270 $\pm$ 28 & 1355 $\pm$ 62        & $+6.7\%$ \\
-    Verify / PreVerify & 280 $\pm$ 7   & 288 $\pm$ 2          & $+3.1\%$ \\
-    Verify / Adapt     & 280 $\pm$ 7   & 302 $\pm$ 5          & $+8.1\%$ \\
-    Extract            & ---           & 101 $\pm$ 3          & (LAS only) \\
-    \bottomrule
-  \end{tabular}
+  \input{generated/tab_overhead_target}
 \end{table}
 
 \begin{table}[h]
@@ -137,26 +138,7 @@ dimensions are scaled up, so the headline result is not specific to the target s
   signature at every setting.}
   \label{tab:components}
   \small
-  \begin{tabular}{@{}lrrr@{}}
-    \toprule
-    Component
-      & \shortstack[r]{Simplified\\ Dilithium-II\\ $(4,4)$}
-      & \shortstack[r]{Simplified\\ Dilithium-III\\ $(6,5)$}
-      & \shortstack[r]{Simplified\\ Dilithium-V\\ $(8,7)$} \\
-    \midrule
-    $c$ (challenge)   & 64   & 64   & 64   \\
-    $z$ (response)    & 4608 & 6688 & 9120 \\
-    Signature $(c,z)$ & 4672 & 6752 & 9184 \\
-    \midrule
-    $z$ as \% of signature & 98.6\% & 99.1\% & 99.3\% \\
-    \midrule
-    Public key $pk$          & 2944 & 4416 & 5888 \\
-    Secret key $sk$          & 512  & 704  & 960  \\
-    Statement $Y$ (LAS only) & 2944 & 4416 & 5888 \\
-    Witness $y$ (LAS only)   & 512  & 704  & 960  \\
-    Pre-signature (LAS only) & 4672 & 6752 & 9184 \\
-    \bottomrule
-  \end{tabular}
+  \input{generated/tab_components}
 \end{table}
 
 \begin{table}[h]
@@ -170,21 +152,7 @@ dimensions are scaled up, so the headline result is not specific to the target s
   \cref{tab:overhead-l3}.}
   \label{tab:complete-l3}
   \small
-  \begin{tabular}{@{}llrl@{}}
-    \toprule
-    Object & Notation & Bytes & In the basic signature? \\
-    \midrule
-    Public key        & $pk=t$         & 4416 & yes (shared) \\
-    Secret key        & $sk=r$         & 704  & yes (shared) \\
-    Challenge         & $c$            & 64   & yes \\
-    Response          & $z\,/\,\hat z$ & 6688 & yes \\
-    Signature         & $(c,z)$        & 6752 & yes (basic signature) \\
-    Statement         & $Y=t'$         & 4416 & LAS only (public) \\
-    Witness           & $y=r'$         & 704  & LAS only (private) \\
-    Pre-signature     & $(c,\hat z)$   & 6752 & LAS only \\
-    Adapted signature & $(c,z)$        & 6752 & LAS (verifies as basic sig) \\
-    \bottomrule
-  \end{tabular}
+  \input{generated/tab_complete_target}
 \end{table}
 
 \section{Auditing the reuse claim}

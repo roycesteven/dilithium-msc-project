@@ -17,20 +17,23 @@ single upstream function was modified. The adaptor layer (PreSign, PreVerify, Ad
 Extract), a bit-packed wire encoding with a validating decoder, and the atomic-swap
 demonstration are added as new code. The implementation passes functional tests over
 1000 iterations on three parameter sets, exact serialization round-trips, a tamper
-test in which all 4672 single-byte signature flips are rejected, and pinned
-known-answer tests.
+test in which all \tamperFlips{} single-byte signature flips are rejected, and pinned
+known-answer tests. An independent second implementation in Rust, built the same way
+on the Rust ML-DSA crate, reproduces the wire format and the pinned known-answer
+digest byte-for-byte and independently confirms the benchmark conclusions.
 
 The primary, fair comparison is LAS against its own simplified Dilithium-style base,
 using the same parameters and primitives, which isolates the cost of the adaptor layer;
 the optimised CRYSTALS-Dilithium reference is reported only as context, and a classical
 Elliptic Curve Digital Signature Algorithm (ECDSA) adaptor as a functionality-matched
 ``price of post-quantum'' baseline. Every
-timing is a mean over ten runs with its standard deviation. The data show that the
+timing is a mean over repeated independent runs and is reported with its standard
+deviation. The data show that the
 adaptor layer is almost free in computation --- PreSign, PreVerify, and Adapt each add
-only single-digit overhead (at most about eight percent) over the basic operation they
+only single-digit overhead (at most $+\ovMaxAll\%$) over the basic operation they
 mirror, at every parameter set, and Extract is the cheapest operation. The real cost is
 \emph{communication}: the
-signature is 98.6--99.3\% lattice response vector $z$, and an adaptor swap additionally
+signature is \zPctTwo--\zPctFive\% lattice response vector $z$, and an adaptor swap additionally
 transmits a public-key-sized statement. The atomic-swap demonstration settles both
 legs of a two-party, two-chain exchange and asserts that a pre-signature is unspendable
 until the witness is revealed.

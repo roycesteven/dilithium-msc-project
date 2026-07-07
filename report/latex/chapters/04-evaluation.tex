@@ -24,7 +24,11 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         application are new code.
   \item \emph{Validation --- met.} Functional, serialization, tamper, and
         known-answer tests all pass (\cref{sec:res-correctness}), establishing the
-        adaptor contract, wire-encoding integrity, and reproducibility.
+        adaptor contract, wire-encoding integrity, and reproducibility. Beyond the
+        single-codebase tests, an independent Rust implementation reproduces the wire
+        format and the pinned known-answer digest byte-for-byte
+        (\cref{sec:res-rust}), the strongest correctness evidence available short of
+        a formal proof.
   \item \emph{Fair benchmarking --- met.} The primary comparison holds algorithm,
         parameters, and primitives fixed between LAS and its own simplified base, so the
         primary comparison isolates the adaptor overhead --- the base-signature path
@@ -36,7 +40,11 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         communication are separated and broken down by component. The optimised CRYSTALS-Dilithium
         reference is included only as context (not algorithm-matched), and a classical
         ECDSA adaptor as a functionality-matched ``price of post-quantum'' baseline,
-        each with the standard five metrics.
+        each with the standard five metrics. The measurements themselves are defended
+        two ways: every run gates on a directly counted rejection rate matching its
+        closed-form prediction, and the Rust port re-measures the same operations
+        under a different compiler and an independent statistical harness, reproducing
+        every relative conclusion (\cref{tab:rust}).
   \item \emph{Atomic-swap demonstration --- met at the simulated-ledger level.} An
         end-to-end two-party, two-chain swap settles both legs and asserts
         unspendability before adaptation (\cref{sec:res-app}). A full deployment on a
@@ -47,7 +55,7 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
 \section{Reflection on the approach}
 \label{sec:eval-reflection}
 
-Four reflections stand out. First, reuse was the right strategy: building additively
+Five reflections stand out. First, reuse was the right strategy: building additively
 on a standardised reference made the implementation tractable in the available time
 and produced an unusually strong trust story, since the security-critical arithmetic
 is exactly the audited upstream code. Second, the main engineering subtlety was the
@@ -56,7 +64,13 @@ program but makes every adapted signature fail verification, so it had to be rea
 through rather than discovered by testing alone. Third, measuring the rejection rate
 directly, by counting attempts, corrected an earlier figure that had been estimated
 from a biased timing ratio --- a concrete lesson in preferring direct measurement to a
-proxy. Finally, confronting the fairness problem honestly, by stating every scheme's
+proxy; that lesson is now institutionalised as a gate every benchmark run must pass.
+Fourth, the second implementation repaid its cost: because the reuse strategy
+transfers across languages, the Rust port was comparatively cheap to build, yet it
+upgraded the correctness argument from ``one tested codebase'' to ``two independent
+codebases that agree byte-for-byte'' and exposed the timing conclusions to an
+independent harness. Finally, confronting the fairness problem honestly, by stating
+every scheme's
 parameters and comparing LAS to a parameter-matched base, strengthens the conclusions
 rather than weakening them: the size gap to optimised Dilithium is shown to be a
 packing gap, not a dimension gap.

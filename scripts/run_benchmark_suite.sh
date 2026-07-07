@@ -267,6 +267,12 @@ else
   echo "evidence/latest (copy of runs/$STAMP; symlinks unavailable)"
 fi
 
+# --- stage 4: sync the report to this run --------------------------------------
+# Figures + generated macros/tables in report/latex/ now reflect THIS run
+# (evidence is already saved above, so a sync failure loses nothing).
+"$ROOT/scripts/sync_report.sh"
+
 echo
 echo "Run complete. Organised evidence in: $RUN_DIR"
 echo "  -> show paper_package/ to Wang (Stage-1); see MANIFEST.md for the full layout."
+echo "  -> report/latex synced to this run; rebuild the PDF with: make -C report/latex"

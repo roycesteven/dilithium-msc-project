@@ -317,27 +317,39 @@ so any future change can be significance-tested against it directly:
 
 ## Methodology parity with the C benchmark
 
-The Rust benchmarks deliberately mirror the C driver so both languages
-measure the same thing the same way:
+Each Rust benchmark tool has a C counterpart that measures the same thing the
+same way. There are **two** C drivers, matching the two Rust tools:
 
-| Methodology element | C (`ref/test/bench_levels.c`) | Rust protocol driver (`examples/bench_levels.rs`) | Rust Criterion (`benches/las_bench.rs`) |
-| --- | --- | --- | --- |
-| Two independent modules (Algorithm 1 vs Algorithm 2) | `basesig.c` vs `las.c` | `las_basesig.rs` vs `las.rs` | same modules |
-| Success-path contract asserted before timing | yes | yes | yes |
-| Pre-signature must FAIL ordinary Verify | asserted | asserted | asserted |
-| Sign-class statistic includes rejection restarts | yes (mean) | yes (mean) | yes (mean, with bootstrap confidence interval) |
-| Rejection rate measured directly | `base_attempts` / `las_attempts` counters | `BASE_ATTEMPTS` / `LAS_ATTEMPTS` counters | `BASE_ATTEMPTS` / `LAS_ATTEMPTS` read per run |
-| Run-validity rejection gate (measured vs exact theory, 5σ) | yes (same gate + line format, ±8% at 2 500 timed calls) | yes (coarse, ±8% at 2 500 calls) | yes (tight, ~±1% at ≥ 100 k calls) |
-| Fixed pp seed (`00..1f`) + fixed 33-byte message | yes (same bytes as the Rust drivers) | yes | yes |
-| Per-attempt (rejection-normalised) diagnostic | yes | yes | not applicable |
-| Repetition scheme | 5 repetitions × 500 (sign-class) / 1000 (verify-class) iterations, mean ± SD — **identical to the Rust driver** (was 10 × 1000 before 2026-07-06; evidence regenerated under the mirrored scheme) | 5 repetitions × 500/1000 iterations, mean ± SD | 300 samples over 60 s per operation, warm-up, outlier classification, 95% confidence interval |
-| Communication-cost evidence | component sizes printed by `bench_levels.c` → `evidence/latest/tables/communication_components.csv` | — | — (deterministic: `examples/size_report.rs` → `size_report_rust.log`, hard-asserted equal to the C CSV row) |
-| Evidence artefact | `evidence/runs/…` via `run_benchmark_suite.sh` | `bench_levels_rust.log` | `bench_las_criterion.log` + `target/criterion/` |
+- `ref/test/bench_levels.c` ↔ `examples/bench_levels.rs` — the **protocol
+  driver** (overhead %, rejection counters, component sizes, cost-attribution
+  diagnostics), repeated-run mean ± SD;
+- `ref/test/bench_criterion.c` ↔ `benches/las_bench.rs` — the **statistical
+  micro-benchmark**, a **1:1 re-implementation of Criterion 0.8's method in C**:
+  same 3 s warm-up, same 300-sample linear iteration ramp over a 60 s window
+  (`SamplingMode::Linear`), same origin-regression slope + 100 000-resample
+  bootstrap 95% CI of the mean, same operation set and order. This is the
+  driver that closes the "C methodology ≠ Rust Criterion" gap: the C side no
+  longer relies on a different repeated-run scheme for its statistical numbers.
 
-What Criterion adds on the Rust side (warm-up, outlier classification,
-bootstrap confidence intervals, significance-tested baseline diffing) is a
-strictly stronger statistical layer on top of the same protocol methodology —
-it does not change *what* is measured.
+| Methodology element | C protocol driver (`bench_levels.c`) | C Criterion mirror (`bench_criterion.c`) | Rust protocol driver (`bench_levels.rs`) | Rust Criterion (`las_bench.rs`) |
+| --- | --- | --- | --- | --- |
+| Two independent modules (Algorithm 1 vs Algorithm 2) | `basesig.c` vs `las.c` | same | `las_basesig.rs` vs `las.rs` | same |
+| Success-path contract asserted before timing | yes | yes | yes | yes |
+| Pre-signature must FAIL ordinary Verify | asserted | asserted | asserted | asserted |
+| Sign-class statistic includes rejection restarts | yes (mean) | yes (mean + bootstrap CI) | yes (mean) | yes (mean + bootstrap CI) |
+| Rejection rate measured directly | `base_attempts` / `las_attempts` | same counters, over warm-up + all samples | `BASE_ATTEMPTS` / `LAS_ATTEMPTS` | same, read per run |
+| Run-validity rejection gate (measured vs exact theory, 5σ) | coarse (±8% at 2 500 calls) | **tight (~±1% at ≥ 100 k calls)** | coarse (±8% at 2 500 calls) | tight (~±1% at ≥ 100 k calls) |
+| Fixed pp seed (`00..1f`) + fixed 33-byte message | yes | yes | yes | yes |
+| Sampling / repetition scheme | 5 reps × 500/1000 iters, mean ± SD | **warm-up + 300-sample linear ramp over 60 s** (Criterion method) | 5 reps × 500/1000 iters, mean ± SD | 300 samples over 60 s, warm-up, outliers, 95% CI |
+| Point statistics reported | mean ± SD | mean ± SD, median, MAD, min/max, slope, bootstrap 95% CI | mean ± SD | mean, median, SD, bootstrap 95% CI |
+| Evidence artefact | `evidence/runs/…` via `run_benchmark_suite.sh` | same run dir (`bench_criterion3.log`) | `bench_levels_rust.log` | `bench_las_criterion.log` + `target/criterion/` |
+
+The only statistic Criterion's own Rust harness computes that the C mirror does
+not is the per-*non-mean* bootstrap CIs (median/SD/slope), which live in
+Criterion's HTML report and are not quoted in the report tables (those use
+mean ± SD for sign-class and median for verify-class — both produced by the C
+mirror). Everything that feeds a reported number is computed identically on
+both sides.
 
 One residual, honestly-documented difference: the **randomness source** for
 KeyGen and the signing masks. The C scheme code draws it from the system RNG

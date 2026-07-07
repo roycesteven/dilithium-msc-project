@@ -53,11 +53,22 @@ exactly how `crypto_sign_keypair` computes `A·s1`. Output is canonicalised to `
 because it is hashed.
 
 ### 5.4 Polynomial multiplication
-`polymul(out, a, b)` performs a full negacyclic product mod `(X^N+1, Q)`:
-`ntt(a); ntt(b); pointwise_montgomery; invntt_tomont; reduce`. This is the standard
-Dilithium idiom whose `invntt_tomont` reabsorbs the Montgomery factor, leaving the
-true product (reduced to a centred representative). Used for `c·r` (small, `≤κ`) and
-`c·t` (a full mod-`q` product).
+A negacyclic product mod `(X^N+1, Q)` is `ntt(a); ntt(b); pointwise_montgomery;
+invntt_tomont; reduce` — the standard Dilithium idiom whose `invntt_tomont`
+reabsorbs the Montgomery factor, leaving the true product (a centred
+representative). Used for `c·r` (small, `≤κ`) and `c·t` (a full mod-`q` product).
+
+The two forward NTTs are **hoisted** out of the hot paths exactly as upstream
+`ref/sign.c` does, so `polymul_prehat(out, ahat, bhat)` is only the
+`pointwise_montgomery; invntt_tomont; reduce` tail on operands that are already
+in the NTT domain. In `sign_core`/`presign_core` the secret `NTT(s_j)` is taken
+**once per call** (invariant across the rejection loop, as `sign.c:128`
+transforms `s1` before its `rej:` loop) and the challenge `NTT(c)` **once per
+attempt** (shared by all `n+ℓ` products, as `sign.c:154`); in
+`las_verify`/`las_preverify`, `NTT(c)` is once per call (`sign.c:333`) and
+`NTT(t_j)` once per public-key polynomial. This is a pure micro-optimisation:
+the accepted `(c, z)` is bit-identical to the un-hoisted form (the KAT digest is
+unchanged), it only removes redundant transforms.
 
 ### 5.5 The hash `H` and challenge
 `hash_challenge` absorbs a canonical 4-bytes/coefficient encoding of `pk = t`

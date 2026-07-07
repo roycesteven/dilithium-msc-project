@@ -131,8 +131,8 @@ injected by the caller) where C calls `randombytes` internally; the sampling and
 rejection logic is the shared core in both cases.
 
 **The independent Algorithm-1 baseline** is ported as `src/las_basesig.rs`
-(mirror of `ref/basesig.c`): `base_keygen(_seed)` / `base_sign` /
-`base_verify` + `BASE_ATTEMPTS`, with **local copies** of all helpers (`b_*`)
+(mirror of `ref/basesig.c`): `base_sign_keypair(_seed)` / `base_sign_signature` /
+`base_sign_verify` + `BASE_ATTEMPTS`, with **local copies** of all helpers (`b_*`)
 so the base path never calls `las.rs` code — the benchmark cannot time the
 adaptor module against itself, and keys/signatures stay interchangeable
 (an Adapted pre-signature passes this independent verifier).

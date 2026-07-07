@@ -59,7 +59,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "../basesig.h"     /* Algorithm 1: base_keygen/base_sign/base_verify   */
+#include "../basesig.h"     /* Algorithm 1: base_sign_keypair/base_sign_signature/base_sign_verify   */
 #include "../las.h"         /* Algorithm 2: las_presign/preverify/adapt/ext     */
 #include "../params.h"      /* N, Q */
 
@@ -242,18 +242,18 @@ int main(void) {
   /* ---- one consistent state, gated on the full success-path contract
    * (identical assertions to las_bench.rs) ---- */
   las_setup(&pp, ppseed);
-  base_keygen(&pk, &sk, &pp);
-  base_keygen(&Y, &yy, &pp);
-  base_sign(&sig, m, mlen, &pk, &sk, &pp);
+  base_sign_keypair(&pk, &sk, &pp);
+  base_sign_keypair(&Y, &yy, &pp);
+  base_sign_signature(&sig, m, mlen, &pk, &sk, &pp);
   las_presign(&presig, m, mlen, &Y, &pk, &sk, &pp);
   if(las_adapt(&adapted, &presig, m, mlen, &Y, &yy, &pk, &pp) != 0) {
     printf("FATAL: could not establish a valid adapted signature\n");
     return 1;
   }
-  if(base_verify(&sig, m, mlen, &pk, &pp) != 0 ||          /* ordinary sig verifies */
+  if(base_sign_verify(&sig, m, mlen, &pk, &pp) != 0 ||          /* ordinary sig verifies */
      las_preverify(&presig, m, mlen, &Y, &pk, &pp) != 0 || /* presig pre-verifies   */
-     base_verify(&presig, m, mlen, &pk, &pp) == 0 ||       /* presig FAILS Verify   */
-     base_verify(&adapted, m, mlen, &pk, &pp) != 0 ||      /* adapted verifies      */
+     base_sign_verify(&presig, m, mlen, &pk, &pp) == 0 ||       /* presig FAILS Verify   */
+     base_sign_verify(&adapted, m, mlen, &pk, &pp) != 0 ||      /* adapted verifies      */
      las_ext(&yext, &adapted, &presig, &Y, &pp) != 0 ||    /* Ext succeeds          */
      !sk_equal(&yext, &yy)) {                              /* exact witness recover */
     printf("FATAL: benchmark state inconsistent before timing\n");
@@ -276,16 +276,16 @@ int main(void) {
   printf("==========================================================================\n\n");
 
   /* ---- Algorithm 1: the ordinary signature (basesig.c) ---- */
-  CRIT_BENCH(r_kg, base_keygen(&pk2, &sk2, &pp));
+  CRIT_BENCH(r_kg, base_sign_keypair(&pk2, &sk2, &pp));
   crit_print("Algorithm 1 - ordinary lattice-based signature", "KeyGen", &r_kg);
 
   att0 = base_attempts;
-  CRIT_BENCH(r_sg, base_sign(&tmp, m, mlen, &pk, &sk, &pp));
+  CRIT_BENCH(r_sg, base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp));
   sg_attempts = base_attempts - att0;
   sg_calls = r_sg.warm_iters + r_sg.total_iters;
   crit_print("Algorithm 1 - ordinary lattice-based signature", "Sign", &r_sg);
 
-  CRIT_BENCH(r_vf, g_sink += base_verify(&sig, m, mlen, &pk, &pp));
+  CRIT_BENCH(r_vf, g_sink += base_sign_verify(&sig, m, mlen, &pk, &pp));
   crit_print("Algorithm 1 - ordinary lattice-based signature", "Verify", &r_vf);
 
   rejection_gate("Algorithm 1 Sign", sg_attempts, sg_calls,

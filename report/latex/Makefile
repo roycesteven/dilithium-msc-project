@@ -12,14 +12,14 @@ all: $(MAIN).pdf
 
 ifeq ($(shell command -v latexmk 2>/dev/null),)
 # ---- fallback: explicit pdflatex + bibtex sequence ----
-$(MAIN).pdf: $(MAIN).tex refs.bib chapters/*.tex muthesis.cls
+$(MAIN).pdf: $(MAIN).tex refs.bib chapters/*.tex generated/*.tex muthesis.cls
 	pdflatex -interaction=nonstopmode -halt-on-error $(MAIN).tex
 	-bibtex $(MAIN)
 	pdflatex -interaction=nonstopmode -halt-on-error $(MAIN).tex
 	pdflatex -interaction=nonstopmode -halt-on-error $(MAIN).tex
 else
 # ---- preferred: latexmk drives the whole build ----
-$(MAIN).pdf: $(MAIN).tex refs.bib chapters/*.tex muthesis.cls
+$(MAIN).pdf: $(MAIN).tex refs.bib chapters/*.tex generated/*.tex muthesis.cls
 	latexmk -pdf -interaction=nonstopmode -halt-on-error $(MAIN).tex
 endif
 

@@ -160,8 +160,8 @@ of its functions** (`docs/02-methodology/FUNCTION_MAP.md`). The new pieces:
 
 ```
    ┌──────────────────────────────────────────────────────────────────────┐
-   │  Dilithium reference primitives (REUSED AS-IS — 0 functions modified)  │
-   │  polynomial maths · NTT multiply · SHAKE/Keccak hashing · samplers      │
+   │  Dilithium reference primitives (REUSED AS-IS — 0 functions modified)│
+   │  polynomial maths · NTT multiply · SHAKE/Keccak hashing · samplers   │
    └───────────────▲──────────────────────────────────────────────────────┘
                    │ calls
    ┌───────────────┴────────────┐   the scheme: KeyGen / Sign / Verify +

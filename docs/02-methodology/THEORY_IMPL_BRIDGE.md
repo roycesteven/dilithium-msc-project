@@ -151,15 +151,16 @@ return σ = (c, z)
 ```
 
 ```c
-/* las.c — las_sign */
-randombytes(seed, 64);
+/* las.c — sign_core (shared by las_sign / las_sign_det) */
+for(j=0; j<LAS_M; ++j) { shat[j] = sk->s[j]; poly_ntt(&shat[j]); }  // NTT(s) once per CALL
 for(;;) {                                          // rejection loop
     for(j=0; j<LAS_M; ++j)
         sample_Sgamma(&y[j], seed, 64, nonce++);  // y ← S_γ^8
     las_Amul(w, pp, y);                            // w = A·y
     hash_challenge(&c, pk, w, m, mlen);            // c = H(pk, w, M)
+    chat = c; poly_ntt(&chat);                     // NTT(c) once per ATTEMPT
     for(j=0; j<LAS_M; ++j) {
-        polymul(&cr, &c, &sk->s[j]);               // c·r_j
+        polymul_prehat(&cr, &chat, &shat[j]);      // c·r_j (operands pre-NTT'd)
         poly_add(&sig->z[j], &y[j], &cr);          // z_j = y_j + c·r_j
         poly_reduce(&sig->z[j]);
     }
@@ -168,6 +169,18 @@ for(;;) {                                          // rejection loop
     return;
 }
 ```
+
+**NTT hoisting (mirrors upstream `ref/sign.c`).** The secret `r` is invariant
+across rejection attempts, so `NTT(s_j)` is computed **once per call** —
+exactly as `crypto_sign_signature_internal` does `polyvecl_ntt(&s1)` *before*
+its `rej:` loop ([sign.c:128](../../ref/sign.c#L128)). The challenge `c` is
+shared by all `n+ℓ` products `c·r_j`, so `NTT(c)` is computed **once per
+attempt** — as `sign.c:154` does `poly_ntt(&cp)`. `polymul_prehat` is then only
+the pointwise-multiply + inverse-NTT half of the product. The earlier
+`polymul(&cr, &c, &sk->s[j])` re-transformed *both* operands on every product
+(so `NTT(c)` ran `n+ℓ`× per attempt and `NTT(s_j)` `n+ℓ`× per attempt); the
+hoisted form is algebraically identical and is the same amortisation the
+reference Dilithium uses.
 
 **Rejection condition:** `LAS_BOUND_SIGN = γ−κ+1 = 122821`. `poly_chknorm(v, B)`
 rejects when `‖v‖∞ ≥ B`. So `chknorm_vec(z, 122821)` rejects when `‖z‖∞ ≥ 122821`,
@@ -216,8 +229,10 @@ return c == H(pk, w', M)
 /* las.c — las_verify */
 if(chknorm_vec(sig->z, LAS_BOUND_SIGN)) return -1;   // ‖z‖∞ > γ−κ
 las_Amul(w, pp, sig->z);                              // A·z
+chat = sig->c; poly_ntt(&chat);                       // NTT(c) once (cf. sign.c:333)
 for(j=0; j<LAS_N; ++j) {
-    polymul(&ct, &sig->c, &pk->t[j]);                 // c·t_j
+    that = pk->t[j]; poly_ntt(&that);                 // NTT(t_j)
+    polymul_prehat(&ct, &chat, &that);                // c·t_j (operands pre-NTT'd)
     poly_sub(&w[j], &w[j], &ct);                      // A·z − c·t
     poly_reduce(&w[j]);
     poly_caddq(&w[j]);                                // → [0, Q)
@@ -225,6 +240,11 @@ for(j=0; j<LAS_N; ++j) {
 hash_challenge(&c2, pk, w, m, mlen);                  // H(pk, w', M)
 return poly_equal(&c2, &sig->c) ? 0 : -1;            // c == c2 ?
 ```
+
+The same hoisting applies on the verify side: `NTT(c)` once per call (upstream
+`crypto_sign_verify_internal` does `poly_ntt(&cp)` once at
+[sign.c:333](../../ref/sign.c#L333)), then one `NTT(t_j)` per public-key
+polynomial. `PreVerify` is identical with the `w' + Y` offset.
 
 **Why Verify works (the algebra):**
 ```

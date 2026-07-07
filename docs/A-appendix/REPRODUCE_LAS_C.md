@@ -128,8 +128,10 @@ typedef struct { poly c; poly z[LAS_M]; } las_sig;       /* (pre-)signature (c, 
    `A′` is sampled **directly in the NTT domain** (Dilithium's trick): `las_setup`
    fills `pp->mat[i][j] = poly_uniform(seed, (i<<8)+j)` and `las_Amul` uses it
    straight in `poly_pointwise_montgomery`. Output is canonical `[0,Q)`.
-3. **`polymul`** — full NTT product for `c·r` and `c·t`
-   (`ntt → pointwise → invntt_tomont → reduce`).
+3. **`polymul_prehat`** — the pointwise-multiply + inverse-NTT tail of the
+   `c·r` / `c·t` product (`pointwise → invntt_tomont → reduce`); the two forward
+   NTTs are hoisted by the callers exactly as `ref/sign.c` does (`NTT(s)` once
+   per call, `NTT(c)` once per attempt / per verify, `NTT(t_j)` per verify).
 4. **`chknorm_vec`** — `poly_chknorm` across the `LAS_M`-vector.
 
 ## Step 5 — Implement the samplers and the challenge
@@ -163,12 +165,12 @@ Two implementations exist, on purpose:
   Verify: reject if ‖z‖∞ > γ−κ; w′ = A·z − c·t; accept iff c == H(pk, w′, M)
   ```
 
-- **In `basesig.c` (`base_keygen`/`base_sign`/`base_verify`):** an **independent
+- **In `basesig.c` (`base_sign_keypair`/`base_sign_signature`/`base_sign_verify`):** an **independent
   copy** of Algorithm 1 used as the fair-benchmark baseline. It shares only
   `las.h`'s parameter macros and struct layout; all logic is its own local copy,
   so the benchmark never times the adaptor module against itself and `las.c`
   stays byte-for-byte untouched. Interchangeability is the point: an Adapted LAS
-  pre-signature passes this *independent* `base_verify`.
+  pre-signature passes this *independent* `base_sign_verify`.
 
 Both paths keep a rejection-attempt counter (`las_attempts` / `base_attempts`) —
 measurement-only instrumentation so the restart rate is **measured directly**,

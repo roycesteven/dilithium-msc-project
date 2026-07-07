@@ -13,7 +13,7 @@
  *   same-security or NIST-equivalence claim (security proofs are out of scope).
  *
  *   The two paths live in two SEPARATE modules so neither contaminates the other:
- *       BASE path     -> basesig.c  (base_keygen / base_sign / base_verify; no Y)
+ *       BASE path     -> basesig.c  (base_sign_keypair / base_sign_signature / base_sign_verify; no Y)
  *       ADAPTOR path  -> las.c      (las_presign / las_preverify / las_adapt / las_ext)
  *   las.{c,h} are untouched by the base scheme; basesig shares only las.h's parameter
  *   macros and key/signature struct layout, so both run over matched parameters and
@@ -33,7 +33,7 @@
  *   DIAGNOSTIC sections (SECONDARY; printed after the primary timings, from the SAME
  *   state) are cost-attribution and communication aids for the report -- they do NOT
  *   change any protocol semantics:
- *       A. Rejection-sampling distribution for base_sign and las_presign, read
+ *       A. Rejection-sampling distribution for base_sign_signature and las_presign, read
  *          DIRECTLY off the per-module attempt counters (base_attempts / las_attempts):
  *          average attempts/sig, acceptance %, min, max, p50, p95.  Plus the
  *          run-validity REJECTION GATE (mirrors the Rust drivers): the attempts/call
@@ -91,7 +91,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include "../basesig.h"     /* BASE path: base_keygen/base_sign/base_verify + base_attempts */
+#include "../basesig.h"     /* BASE path: base_sign_keypair/base_sign_signature/base_sign_verify + base_attempts */
 #include "../las.h"         /* ADAPTOR path: las_presign/preverify/adapt/ext + las_attempts  */
 #include "../params.h"      /* N, Q */
 #include "../poly.h"        /* poly arithmetic for the component microbenchmarks    */
@@ -490,9 +490,9 @@ int main(void) {
    * derived from THAT key.  KeyGen and Setup are timed below into SCRATCH objects so
    * the canonical state stays intact for the sanity gate and the remaining timings. */
   las_setup(&pp, ppseed);                                    /* Setup (public params) */
-  base_keygen(&pk, &sk, &pp);                                /* BASE KeyGen           */
-  base_keygen(&Y,  &yy, &pp);                                /* statement/witness     */
-  base_sign(&sig, m, mlen, &pk, &sk, &pp);                   /* BASE sign (no Y)      */
+  base_sign_keypair(&pk, &sk, &pp);                                /* BASE KeyGen           */
+  base_sign_keypair(&Y,  &yy, &pp);                                /* statement/witness     */
+  base_sign_signature(&sig, m, mlen, &pk, &sk, &pp);                   /* BASE sign (no Y)      */
   las_presign(&presig, m, mlen, &Y, &pk, &sk, &pp);          /* LAS pre-sign (folds Y)*/
   if(las_adapt(&adapted, &presig, m, mlen, &Y, &yy, &pk, &pp) != 0) {
     printf("FATAL: could not establish a valid adapted signature\n");
@@ -501,18 +501,18 @@ int main(void) {
 
   /* Refuse to benchmark unless the FULL cross-path success contract holds, so no
    * failure or early-return path is ever timed.  The ordinary-signature checks use
-   * the SEPARATE base verifier (base_verify, from basesig.c), proving the two paths
+   * the SEPARATE base verifier (base_sign_verify, from basesig.c), proving the two paths
    * interlock:
-   *   - the base signature verifies under base_verify;
-   *   - the LAS pre-signature pre-verifies, but base_verify REJECTS it (its hash binds
+   *   - the base signature verifies under base_sign_verify;
+   *   - the LAS pre-signature pre-verifies, but base_sign_verify REJECTS it (its hash binds
    *     w+Y, the base verifier recomputes H(pk,w',M) without Y -- the tripwire);
-   *   - the LAS-adapted signature verifies under the INDEPENDENT base_verify with no
+   *   - the LAS-adapted signature verifies under the INDEPENDENT base_sign_verify with no
    *     explicit +Y (because A(z^+y)-ct = w'+Y); and
    *   - Ext recovers the witness EXACTLY. */
-  if(base_verify(&sig, m, mlen, &pk, &pp) != 0 ||              /* base sig verifies     */
+  if(base_sign_verify(&sig, m, mlen, &pk, &pp) != 0 ||              /* base sig verifies     */
      las_preverify(&presig, m, mlen, &Y, &pk, &pp) != 0 ||    /* presig pre-verifies   */
-     base_verify(&presig, m, mlen, &pk, &pp) == 0 ||          /* presig is NOT a base sig */
-     base_verify(&adapted, m, mlen, &pk, &pp) != 0 ||         /* adapted = base sig    */
+     base_sign_verify(&presig, m, mlen, &pk, &pp) == 0 ||          /* presig is NOT a base sig */
+     base_sign_verify(&adapted, m, mlen, &pk, &pp) != 0 ||         /* adapted = base sig    */
      las_ext(&yext, &adapted, &presig, &Y, &pp) != 0 ||       /* Ext succeeds          */
      !sk_equal(&yext, &yy)) {                                 /* exact witness recover */
     printf("FATAL: benchmark state inconsistent before timing\n");
@@ -523,14 +523,14 @@ int main(void) {
    * Protocol-level operations.  Producing operations write to SCRATCH (pp2/pk2/sk2/
    * tmp/yext) so the canonical state is never mutated; verifies read canonical objects. */
   MEASURE(NITER_FAST, las_setup(&pp2, ppseed));              su_m = g_mean; su_s = g_sd;
-  MEASURE(NITER_FAST, base_keygen(&pk2, &sk2, &pp));         kg_m = g_mean; kg_s = g_sd;
+  MEASURE(NITER_FAST, base_sign_keypair(&pk2, &sk2, &pp));         kg_m = g_mean; kg_s = g_sd;
   /* BASE path (basesig.c).  Sign-class: MEASURE_SIGN also captures the
    * per-attempt series and the attempt total over the timed calls. */
-  MEASURE_SIGN(base_attempts, base_sign(&tmp, m, mlen, &pk, &sk, &pp));
+  MEASURE_SIGN(base_attempts, base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp));
   sg_m = g_mean; sg_s = g_sd;
   stats(g_att_runs, RUNS, &sg_att_m, &sg_att_s);
   sg_att_tot = g_att_total;
-  MEASURE(NITER_FAST, g_sink += base_verify(&sig, m, mlen, &pk, &pp)); vf_m = g_mean; vf_s = g_sd;
+  MEASURE(NITER_FAST, g_sink += base_sign_verify(&sig, m, mlen, &pk, &pp)); vf_m = g_mean; vf_s = g_sd;
   /* LAS ADAPTOR path (las.c). */
   MEASURE_SIGN(las_attempts, las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp));
   ps_m = g_mean; ps_s = g_sd;
@@ -546,7 +546,7 @@ int main(void) {
   for(i = 0; i < NSIG; ++i) {
     unsigned long before = base_attempts;
     int32_t v;
-    base_sign(&tmp, m, mlen, &pk, &sk, &pp);
+    base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp);
     att_base[i] = base_attempts - before;
     tot_base   += att_base[i];
     v = mc_max_abs_vec(tmp.z); if(v > maxz) maxz = v;     /* achieved |z|inf */
