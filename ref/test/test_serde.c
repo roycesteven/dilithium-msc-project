@@ -73,9 +73,9 @@ int main(void) {
 
   for(i = 0; i < NITER; ++i) {
     randombytes(m, MLEN);
-    las_keygen(&pk, &sk, &pp);
-    las_keygen(&Y, &y, &pp);
-    las_sign(&sig, m, MLEN, &pk, &sk, &pp);
+    las_keypair(&pk, &sk, &pp);
+    las_keypair(&Y, &y, &pp);
+    las_signature(&sig, m, MLEN, &pk, &sk, &pp);
     las_presign(&presig, m, MLEN, &Y, &pk, &sk, &pp);
     CHECK(las_adapt(&adapted, &presig, m, MLEN, &Y, &y, &pk, &pp) == 0, "adapt");
 

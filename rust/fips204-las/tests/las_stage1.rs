@@ -6,7 +6,7 @@
 //! remains a C-side artefact).
 
 use fips204::las::{
-    las_adapt, las_ext, las_keygen_seed, las_presign_det, las_preverify, las_setup, las_sign_det,
+    las_adapt, las_ext, las_keypair_seed, las_presign_det, las_preverify, las_setup, las_signature_det,
     las_verify,
 };
 use fips204::las_basesig::{base_sign_keypair, base_sign_signature, base_sign_verify};
@@ -27,8 +27,8 @@ fn cross_module_interlock() {
 
     let kseed: [u8; 32] = core::array::from_fn(|i| (i + 1) as u8);
     let yseed: [u8; 32] = core::array::from_fn(|i| (i + 100) as u8);
-    let (pk, sk) = las_keygen_seed(&pp, &kseed);
-    let (y_stmt, y_wit) = las_keygen_seed(&pp, &yseed);
+    let (pk, sk) = las_keypair_seed(&pp, &kseed);
+    let (y_stmt, y_wit) = las_keypair_seed(&pp, &yseed);
 
     // 1. base sign/verify round-trip + wrong-message rejection (Algorithm 1).
     let (bpk, bsk) = base_sign_keypair(&pp, &mut rng);
@@ -41,7 +41,7 @@ fn cross_module_interlock() {
 
     // 2. cross-module equivalence: the two Algorithm-1 implementations accept
     //    each other's signatures (identical challenge hash, bit-for-bit).
-    let lsig = las_sign_det(MSG, &pk, &sk, &pp);
+    let lsig = las_signature_det(MSG, &pk, &sk, &pp);
     assert!(
         base_sign_verify(&lsig, MSG, &pk, &pp),
         "independent base verifier must accept a las.rs ordinary signature"
@@ -74,8 +74,8 @@ fn serde_round_trip_and_validation() {
     let pp = las_setup(&ppseed);
 
     let kseed: [u8; 32] = core::array::from_fn(|i| (i + 7) as u8);
-    let (pk, sk) = las_keygen_seed(&pp, &kseed);
-    let sig = las_sign_det(MSG, &pk, &sk, &pp);
+    let (pk, sk) = las_keypair_seed(&pp, &kseed);
+    let sig = las_signature_det(MSG, &pk, &sk, &pp);
 
     // round-trips
     let pk_b = las_pack_pk(&pk);

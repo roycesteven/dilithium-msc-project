@@ -72,7 +72,7 @@ static int scenario_amhl_route(const las_pp *pp) {
 
   printf("== Scenario 1: AMHL %d-hop routed payment (happy path) ==\n", HOPS);
 
-  for(h = 0; h <= HOPS; ++h) las_keygen(&pk[h], &sk[h], pp);
+  for(h = 0; h <= HOPS; ++h) las_keypair(&pk[h], &sk[h], pp);
   amhl_setup_gen(&st, HOPS, pp);          /* sender builds the cumulative locks  */
 
   /* Distinct per-hop statements + witness-norm growth (||s_j||inf <= j). */
@@ -156,7 +156,7 @@ static int scenario_amhl_refund(const las_pp *pp) {
   unsigned int h;
 
   printf("== Scenario 2: AMHL route times out (refund path) ==\n");
-  for(h = 0; h <= HOPS; ++h) las_keygen(&pk[h], &sk[h], pp);
+  for(h = 0; h <= HOPS; ++h) las_keypair(&pk[h], &sk[h], pp);
   amhl_setup_gen(&st, HOPS, pp);
 
   chain_init(&net, "AMHL-net", pp);

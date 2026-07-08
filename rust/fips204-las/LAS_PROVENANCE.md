@@ -20,7 +20,7 @@ the table.
 
 | Change | Kind |
 | --- | --- |
-| `src/las.rs` | **new** — LAS scheme (port of `ref/las.c`: deterministic path + randomised `las_keygen`/`las_sign`/`las_presign` wrappers + `LAS_ATTEMPTS` counter + `las_expected_attempts`, the exact restart-rate expectation used by the benchmark rejection gates — instrumentation only, not part of the C port) |
+| `src/las.rs` | **new** — LAS scheme (port of `ref/las.c`: deterministic path + randomised `las_keypair`/`las_signature`/`las_presign` wrappers + `LAS_ATTEMPTS` counter + `las_expected_attempts`, the exact restart-rate expectation used by the benchmark rejection gates — instrumentation only, not part of the C port) |
 | `src/las_basesig.rs` | **new** — independent Algorithm-1 base signature (port of `ref/basesig.c`; local `b_*` helper copies + `BASE_ATTEMPTS`) |
 | `src/las_serialize.rs` | **new** — bit-packing + validating decoders + `las_verify_packed` (port of `ref/serialize.c`) |
 | `tests/las_kat.rs` | **new** — KAT (port of `ref/test/test_kat.c`, same pinned digest) |

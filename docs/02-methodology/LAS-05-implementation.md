@@ -61,7 +61,7 @@ representative). Used for `c·r` (small, `≤κ`) and `c·t` (a full mod-`q` pro
 The two forward NTTs are **hoisted** out of the hot paths exactly as upstream
 `ref/sign.c` does, so `polymul_prehat(out, ahat, bhat)` is only the
 `pointwise_montgomery; invntt_tomont; reduce` tail on operands that are already
-in the NTT domain. In `sign_core`/`presign_core` the secret `NTT(s_j)` is taken
+in the NTT domain. In `las_signature_internal`/`las_presign_internal` the secret `NTT(s_j)` is taken
 **once per call** (invariant across the rejection loop, as `sign.c:128`
 transforms `s1` before its `rej:` loop) and the challenge `NTT(c)` **once per
 attempt** (shared by all `n+ℓ` products, as `sign.c:154`); in
@@ -94,7 +94,7 @@ comfortably below that, so the primitive is reused directly. We encode the stric
 "`> limit`" tests of the spec as `bound = limit + 1`.
 
 ### 5.8 The seven functions
-`las_keygen`, `las_sign`, `las_verify`, `las_presign`, `las_preverify`, `las_adapt`,
+`las_keypair`, `las_signature`, `las_verify`, `las_presign`, `las_preverify`, `las_adapt`,
 `las_ext` follow Section 4 verbatim. Subtraction of `c·t` happens in the normal
 domain; commitments are canonicalised with `reduce`+`caddq` before hashing so that
 `w'` at verify time is byte-identical to `w`/`w+Y` at sign time whenever they are
@@ -147,14 +147,14 @@ To make the implementation *reproducible* — a distinction-level engineering
 property, and a prerequisite for cross-checking an independent on-chain verifier —
 the randomness-consuming algorithms gain deterministic siblings:
 
-- `las_keygen_seed(pk, sk, pp, seed)` derives the secret directly from a 32-byte
+- `las_keypair_seed(pk, sk, pp, seed)` derives the secret directly from a 32-byte
   seed (KeyGen from explicit randomness);
-- `las_sign_det` and `las_presign_det` derive the per-signature mask seed as
+- `las_signature_det` and `las_presign_det` derive the per-signature mask seed as
   `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)` instead of drawing fresh randomness, so the
   output is a *pure function* of the inputs.
 
-Internally `las_sign`/`las_sign_det` share one `sign_core`, and
-`las_presign`/`las_presign_k`/`las_presign_det` share one `presign_core`, differing
+Internally `las_signature`/`las_signature_det` share one `las_signature_internal`, and
+`las_presign`/`las_presign_k`/`las_presign_det` share one `las_presign_internal`, differing
 only in (a) where the 64-byte mask seed comes from (fresh `randombytes` vs the
 derivation above) and (b) the rejection bound — so the deterministic and randomised
 paths are guaranteed identical in distribution and validity. Beyond reproducibility,

@@ -24,8 +24,8 @@ follows from that one change.
 
 ## KeyGen — identical to the base scheme, and it also makes statements
 
-> C: `las_keygen` ([las.c:249](../../../../ref/las.c#L249)) ·
-> Rust: `las_keygen` ([las.rs:514](../../../../rust/fips204-las/src/las.rs#L514))
+> C: `las_keypair` ([las.c:109](../../../../ref/las.c#L109)) ·
+> Rust: `las_keypair` ([las.rs:213](../../../../rust/fips204-las/src/las.rs#L213))
 
 Exactly the base KeyGen: `r ← S₁^{n+ℓ}`, `t = A·r`, `(pk, sk) = (t, r)`.
 
@@ -38,8 +38,8 @@ and a witness is another secret key. Nothing new to implement — the paper's
 
 ## Sign / Verify — reused verbatim
 
-> `las_sign` ([las.c:320](../../../../ref/las.c#L320)),
-> `las_verify` ([las.c:334](../../../../ref/las.c#L334))
+> `las_signature` ([las.c:214](../../../../ref/las.c#L214)),
+> `las_verify` ([las.c:303](../../../../ref/las.c#L303))
 
 These are the base signature's Sign/Verify (`c = H(pk, w, M)`), byte-for-byte.
 Proof that they really are the same scheme: an **adapted** LAS signature (below)
@@ -50,8 +50,8 @@ benchmark asserts on every run.
 
 ## PreSign — a pre-signature bound to a statement Y
 
-> C: `presign_core` via `las_presign` ([las.c:360](../../../../ref/las.c#L360)) ·
-> Rust: `presign_core` ([las.rs:556](../../../../rust/fips204-las/src/las.rs#L556))
+> C: `las_presign_internal` via `las_presign` ([las.c:327](../../../../ref/las.c#L327)) ·
+> Rust: `las_presign_internal` ([las.rs:376](../../../../rust/fips204-las/src/las.rs#L376))
 
 Identical to Sign except the **two highlighted lines**:
 
@@ -79,8 +79,8 @@ Identical to Sign except the **two highlighted lines**:
 
 ## PreVerify — check a pre-signature against Y
 
-> C: `las_preverify` ([las.c:411](../../../../ref/las.c#L411)) ·
-> Rust: `las_preverify` ([las.rs:632](../../../../rust/fips204-las/src/las.rs#L632))
+> C: `las_preverify_internal` via `las_preverify` ([las.c:433](../../../../ref/las.c#L433)) ·
+> Rust: `las_preverify_internal` ([las.rs:463](../../../../rust/fips204-las/src/las.rs#L463))
 
 ```
    1.  if ‖ẑ‖∞ > γ − κ − 1 :  reject
@@ -95,8 +95,8 @@ Same shape as base Verify, with the statement `Y` added back in at the hash
 
 ## Adapt — complete a pre-signature into a real signature
 
-> C: `las_adapt` ([las.c:478](../../../../ref/las.c#L478)) ·
-> Rust: `las_adapt` ([las.rs:661](../../../../rust/fips204-las/src/las.rs#L661))
+> C: `las_adapt` ([las.c:548](../../../../ref/las.c#L548)) ·
+> Rust: `las_adapt` ([las.rs:516](../../../../rust/fips204-las/src/las.rs#L516))
 
 ```
    1.  PreVerify(Y, pk, σ̂, M)   — abort if it fails
@@ -128,8 +128,8 @@ what prevents it.
 
 ## Ext — recover the witness from the two signatures
 
-> C: `las_ext` ([las.c:493](../../../../ref/las.c#L493)) ·
-> Rust: `las_ext` ([las.rs:685](../../../../rust/fips204-las/src/las.rs#L685))
+> C: `las_ext` ([las.c:585](../../../../ref/las.c#L585)) ·
+> Rust: `las_ext` ([las.rs:547](../../../../rust/fips204-las/src/las.rs#L547))
 
 ```
    1.  s = z − ẑ                (subtract the two responses)

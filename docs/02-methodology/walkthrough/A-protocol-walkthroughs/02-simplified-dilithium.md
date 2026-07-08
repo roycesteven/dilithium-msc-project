@@ -33,8 +33,8 @@ vector, not two.
 
 ## KeyGen — make a key pair
 
-> C: `base_sign_keypair` ([basesig.c:250](../../../../ref/basesig.c#L250)) ·
-> Rust: `base_sign_keypair_seed` ([las_basesig.rs:316](../../../../rust/fips204-las/src/las_basesig.rs#L316))
+> C: `base_sign_keypair` ([basesig.c:80](../../../../ref/basesig.c#L80)) ·
+> Rust: `base_sign_keypair_seed` ([las_basesig.rs:119](../../../../rust/fips204-las/src/las_basesig.rs#L119))
 
 ```
    1.  r ← ternary secret in S_1^{n+ℓ}     (every coefficient is −1, 0, or +1)
@@ -55,8 +55,8 @@ vector, not two.
 
 ## Sign — produce a signature σ = (c, z) on message M
 
-> C: `base_sign_signature` ([basesig.c:276](../../../../ref/basesig.c#L276)) ·
-> Rust: `base_sign_signature` ([las_basesig.rs:341](../../../../rust/fips204-las/src/las_basesig.rs#L341))
+> C: `base_sign_signature_internal` ([basesig.c:121](../../../../ref/basesig.c#L121)) ·
+> Rust: `base_sign_signature_internal` ([las_basesig.rs:153](../../../../rust/fips204-las/src/las_basesig.rs#L153))
 
 ```
    once per call:   ŝ = NTT(r)                          ← the secret is fixed, transform it once
@@ -96,8 +96,8 @@ Step by step, in our code:
 
 ## Verify — check a signature σ = (c, z)
 
-> C: `base_sign_verify` ([basesig.c:318](../../../../ref/basesig.c#L318)) ·
-> Rust: `base_sign_verify` ([las_basesig.rs:392](../../../../rust/fips204-las/src/las_basesig.rs#L392))
+> C: `base_sign_verify_internal` ([basesig.c:238](../../../../ref/basesig.c#L238)) ·
+> Rust: `base_sign_verify_internal` ([las_basesig.rs:226](../../../../rust/fips204-las/src/las_basesig.rs#L226))
 
 ```
    1.  if ‖z‖∞ > γ − κ :  reject

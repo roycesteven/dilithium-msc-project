@@ -8,7 +8,7 @@
 //! presign, adapt and packing.
 
 use fips204::las::{
-    las_adapt, las_ext, las_keygen_seed, las_presign_det, las_preverify, las_setup, las_sign_det,
+    las_adapt, las_ext, las_keypair_seed, las_presign_det, las_preverify, las_setup, las_signature_det,
     las_verify,
 };
 use fips204::las_serialize::{las_pack_pk, las_pack_sig, las_pack_sk};
@@ -37,9 +37,9 @@ fn las_kat_matches_c_pinned_digest() {
         let msg: [u8; MLEN] = core::array::from_fn(|i| (37 * v + i as u32) as u8);
 
         // deterministic keygen / statement / sign / presign / adapt
-        let (pk, sk) = las_keygen_seed(&pp, &kseed);
-        let (y_stmt, y_wit) = las_keygen_seed(&pp, &yseed);
-        let sig = las_sign_det(&msg, &pk, &sk, &pp);
+        let (pk, sk) = las_keypair_seed(&pp, &kseed);
+        let (y_stmt, y_wit) = las_keypair_seed(&pp, &yseed);
+        let sig = las_signature_det(&msg, &pk, &sk, &pp);
         let presig = las_presign_det(&msg, &y_stmt, &pk, &sk, &pp);
         let adapted = las_adapt(&presig, &msg, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
 
@@ -52,9 +52,9 @@ fn las_kat_matches_c_pinned_digest() {
         assert!(yext == y_wit, "ext recovers witness");
 
         // determinism: re-running the seeded/deterministic functions is identical
-        let (pk2, sk2) = las_keygen_seed(&pp, &kseed);
+        let (pk2, sk2) = las_keypair_seed(&pp, &kseed);
         assert!(pk == pk2 && sk == sk2, "keygen_seed deterministic");
-        let sig2 = las_sign_det(&msg, &pk, &sk, &pp);
+        let sig2 = las_signature_det(&msg, &pk, &sk, &pp);
         assert!(sig == sig2, "sign_det deterministic");
 
         // serialise and fold into the running KAT digest (same order as C)

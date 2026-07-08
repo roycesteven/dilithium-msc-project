@@ -156,7 +156,7 @@ target different distributions — `η`, `γ₁` bit-packed — and are not appl
 
 Two implementations exist, on purpose:
 
-- **In `las.c`:** `las_keygen(_seed)`, `las_sign` (`sign_core`), `las_verify` —
+- **In `las.c`:** `las_keypair(_seed)`, `las_signature` (`las_signature_internal`), `las_verify` —
   the scheme's own Sign/Verify, `c = H(pk, w, M)`:
 
   ```text
@@ -179,7 +179,7 @@ never estimated from timing ratios.
 ## Step 7 — Algorithm 2: the LAS adaptor signature
 
 The whole adaptor layer is one change plus three small functions
-(`presign_core`, `las_preverify`, `las_adapt`, `las_ext`):
+(`las_presign_internal`, `las_preverify`, `las_adapt`, `las_ext`):
 
 ```text
 PreSign  : y ← S_γ^{n+ℓ}; w = A·y; c = H(pk, w + Y, M); ẑ = y + c·r;
@@ -202,8 +202,8 @@ The statement/witness pair is literally another key pair (`Gen` = `KeyGen`).
 To make the implementation reproducible (and portable to other languages),
 add seeded/deterministic variants sharing the same cores:
 
-- `las_keygen_seed(pk, sk, pp, seed32)`
-- `las_sign_det` / `las_presign_det` — mask seed = `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)`
+- `las_keypair_seed(pk, sk, pp, seed32)`
+- `las_signature_det` / `las_presign_det` — mask seed = `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)`
   (tag 0 = sign, 1 = presign; `sk` absorbed 1 byte/coeff with
   `(uint8_t)(int8_t)` semantics; `Y` absorbed canonically).
 

@@ -31,7 +31,7 @@ void amhl_setup_gen(amhl_setup *st, unsigned int nhops, const las_pp *pp) {
 
   for(j = 1; j <= nhops; ++j) {
     /* Reuse KeyGen: l_j <- S_1 (ternary) and L_j = A*l_j in one call. */
-    las_keygen(&Lj, &st->incr[j - 1], pp);
+    las_keypair(&Lj, &st->incr[j - 1], pp);
 
     /* Cumulative witness  s_j = s_{j-1} + l_j  (kept small/centred). */
     for(i = 0; i < LAS_M; ++i) {

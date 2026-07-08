@@ -35,8 +35,8 @@ int main(void) {
     las_setup(&pp, ppseed);                          /* pp = A            */
     randombytes(m, MLEN);
 
-    las_keygen(&pk, &sk, &pp);                        /* 1. (pk, sk)       */
-    las_keygen(&Y, &y, &pp);                          /* 2. (Y, y)         */
+    las_keypair(&pk, &sk, &pp);                        /* 1. (pk, sk)       */
+    las_keypair(&Y, &y, &pp);                          /* 2. (Y, y)         */
 
     las_presign(&presig, m, MLEN, &Y, &pk, &sk, &pp); /* 3. sigma^         */
 
@@ -78,7 +78,7 @@ int main(void) {
     }
 
     /* sanity: ordinary Sign/Verify round-trip and a forgery check */
-    las_sign(&sig, m, MLEN, &pk, &sk, &pp);
+    las_signature(&sig, m, MLEN, &pk, &sk, &pp);
     if(las_verify(&sig, m, MLEN, &pk, &pp) != 0) {
       fprintf(stderr, "FAIL ordinary Sign/Verify round-trip\n");
       return 1;

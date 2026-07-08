@@ -575,7 +575,7 @@ int main(void) {
   am_m = g_mean; am_s = g_sd;
   MEASURE(NITER_FAST, { mc_hash_challenge(&cc, &pk, w, m, mlen);     g_sink += cc.coeffs[0]; });
   ch_m = g_mean; ch_s = g_sd;
-  /* pre-NTT'd operands, matching the protocol's hoisting (las.c sign_core) */
+  /* pre-NTT'd operands, matching the protocol's hoisting (las.c las_signature_internal) */
   for(j = 0; j < LAS_M; ++j) { shat_mc[j] = sk.s[j]; poly_ntt(&shat_mc[j]); }
   chat_mc = cc; poly_ntt(&chat_mc);
   MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc);            g_sink += that_mc.coeffs[0]; });

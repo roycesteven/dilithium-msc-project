@@ -19,7 +19,7 @@
  *
  *   CROSS-MODULE equivalence (basesig.c <-> las.c):
  *     [X1] a base_sign_signature signature verifies under LAS's las_verify
- *     [X2] a las_sign  signature verifies under base_sign_verify
+ *     [X2] a las_signature  signature verifies under base_sign_verify
  *          (mutual verifiability is evidence that the two modules implement the
  *           SAME construction -- the same challenge hash, A-product, and norm bound)
  *
@@ -116,7 +116,7 @@ int main(void) {
 
     /* ---- CROSS-MODULE equivalence basesig.c <-> las.c ---- */
     CHECK(las_verify(&sig_b, m, MLEN, &pk, &pp) == 0, "[X1] base sig must verify under las_verify");
-    las_sign(&sig_l, m, MLEN, &pk, &sk, &pp);
+    las_signature(&sig_l, m, MLEN, &pk, &sk, &pp);
     CHECK(las_verify(&sig_l, m, MLEN, &pk, &pp) == 0, "las sig must verify under las_verify");
     CHECK(base_sign_verify(&sig_l, m, MLEN, &pk, &pp) == 0, "[X2] las sig must verify under base_sign_verify");
 

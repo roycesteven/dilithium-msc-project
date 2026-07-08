@@ -49,9 +49,9 @@ int main(void) {
   /* ---- Setup ---- */
   randombytes(ppseed, LAS_SEEDBYTES);
   las_setup(&pp, ppseed);
-  las_keygen(&pkA, &skA, &pp);
-  las_keygen(&pkB, &skB, &pp);
-  las_keygen(&Y, &y, &pp);          /* Bob draws the statement/witness (Y, y) */
+  las_keypair(&pkA, &skA, &pp);
+  las_keypair(&pkB, &skB, &pp);
+  las_keypair(&Y, &y, &pp);          /* Bob draws the statement/witness (Y, y) */
   printf("Setup: A (chain A: Alice=%d Bob=%d) | (chain B: Alice=%d Bob=%d)\n",
          A_alice, A_bob, B_alice, B_bob);
   printf("Bob generates statement/witness (Y, y) = KeyGen; keeps y secret.\n\n");

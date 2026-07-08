@@ -70,10 +70,10 @@ then the scheme, then the adaptor layer:
    - `sample_Sgamma`, `sample_ternary` — draw the random masks and the ternary
      secret/witness.
 2. **The ordinary signature (built and tested *before* the adaptor part):**
-   - `las_setup`, `las_keygen` — public parameters and a key pair.
-   - `sign_core` → `las_sign`, and `las_verify`.
+   - `las_setup`, `las_keypair` — public parameters and a key pair.
+   - `las_signature_internal` → `las_signature`, and `las_verify`.
 3. **The adaptor layer (built last, *on top of* a working Verify):**
-   - `presign_core` → `las_presign`, `las_preverify`.
+   - `las_presign_internal` → `las_presign`, `las_preverify`.
    - `las_adapt` (turns a pre-signature into an ordinary signature), `las_ext`
      (recovers the secret witness — the trick that makes swaps atomic).
 
@@ -119,8 +119,8 @@ optional/bonus at Meeting 2 — done, but it must not displace the core.
 ### Step 5 — Bytes, baselines, reproducibility (`5dc1b63`)
 **New files:** `ref/serialize.c`+`.h`, `ref/test/bench_classical.c`,
 `ref/test/bench_app.c`, `ref/test/test_serde.c`, `ref/test/test_kat.c`.
-**Also extended `las.c`:** a **deterministic** API — `las_keygen_seed`,
-`las_sign_det`, `las_presign_det`, and the shared `det_seed`/`sign_core`/`presign_core`
+**Also extended `las.c`:** a **deterministic** API — `las_keypair_seed`,
+`las_signature_det`, `las_presign_det`, and the shared `det_seed`/`las_signature_internal`/`las_presign_internal`
 refactor — so runs are byte-for-byte reproducible.
 `serialize.h` adds `las_pack_*`/`las_unpack_*` and, crucially, **`las_verify_packed`**
 — verification straight from a byte string (the exact interface an on-chain verifier

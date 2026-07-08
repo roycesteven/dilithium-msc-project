@@ -75,20 +75,26 @@ mode-specific `K`, `L`, `TAU`, `GAMMA1`, … — so it builds identically under
 | Function | Kind | Role |
 |---|---|---|
 | `las_setup` | public | expand public parameters `A=[I\|A']` from a seed |
-| `las_keygen`, `las_keygen_seed` | public | `r←S₁`, `t=Ar`; seeded variant for KATs |
-| `las_sign`, `las_sign_det` | public | Fiat–Shamir-with-aborts signature; deterministic variant |
+| `las_keypair`, `las_keypair_seed` | public | `r←S₁`, `t=Ar`; seeded variant for KATs |
+| `las_signature`, `las_signature_det` | public | Fiat–Shamir-with-aborts signature; deterministic variant |
 | `las_verify` | public | ordinary verification (`Az−ct`, hash compare) |
+| `las_signature_internal`, `las_verify_internal`, `las_presign_internal`, `las_preverify_internal` | public (internal API) | seed-/bound-parameterised bodies shared by the random, deterministic and K-hop entry points — declared in `las.h` exactly as `sign.h` declares `crypto_sign_signature_internal`/`crypto_sign_verify_internal`; provenance chain `crypto_sign_*_internal → base_sign_*_internal → las_*_internal` |
 | `las_presign`, `las_presign_k`, `las_presign_det` | public | adaptor PreSign (`H(pk,w+Y,M)`, bound `γ−κ−1`; K-hop bound `γ−κ−K`; deterministic) |
 | `las_preverify`, `las_preverify_k` | public | adaptor PreVerify (single-hop / K-hop bound) |
 | `las_adapt` | public | `σ=(c, ẑ+y)` — completes a pre-signature |
 | `las_ext` | public | `y=z−ẑ`; return iff `A·y==Y` |
 | `las_expected_attempts` | public (instrumentation only) | exact expected attempts/call of the rejection loop at a given bound (`((2·bound−1)/(2γ+1))^{−(n+ℓ)d}`, verified against 2020/845 Table 1 / Fact 1 / §3.2); consumed by the benchmarks' run-validity rejection gate, never by the scheme — mirrored in the Rust port |
-| `las_Amul`, `polymul_prehat`, `las_challenge`, `hash_challenge`, `sample_Sgamma`, `sample_ternary`, `pack_poly_canon`, `poly_equal`, `chknorm_vec`, `det_seed`, `sign_core`, `presign_core` | internal (static) | the `[I\|A']` product, NTT-domain pointwise mult (forward NTTs hoisted per-call/per-attempt as in `ref/sign.c`), `κ`-weight challenge, `H`, samplers, helpers, shared cores |
+| `las_Amul`, `polymul_prehat`, `las_challenge`, `hash_challenge`, `sample_Sgamma`, `sample_ternary`, `pack_poly_canon`, `poly_equal`, `chknorm_vec`, `det_seed` | internal (static, defined at the bottom of `las.c` in the same order as `basesig.c`'s local copies) | the `[I\|A']` product, NTT-domain pointwise mult (forward NTTs hoisted per-call/per-attempt as in `ref/sign.c`), `κ`-weight challenge, `H`, samplers, helpers |
 
 **`basesig.{c,h}` — the separate simplified-base signature (new; the fair-benchmark baseline).**
 A standalone simplified Dilithium-style signature kept deliberately **out of `las.{c,h}`**
-so the LAS protocol is never conflated or modified. Public: `base_sign_keypair`, `base_sign_signature`
-(`c = H(pk, w, M)`, no statement `Y`), `base_sign_verify` (`c == H(pk, w', M)`). It depends on
+so the LAS protocol is never conflated or modified. Its API mirrors `sign.h` one-to-one
+(same seven slots, same order, same `int` returns) by the uniform prefix swap
+`crypto_sign* → base_sign*`: `base_sign_keypair`, `base_sign_signature_internal`,
+`base_sign_signature` (`c = H(pk, w, M)`, no statement `Y`), `base_sign`,
+`base_sign_verify_internal`, `base_sign_verify` (`c == H(pk, w', M)`), `base_sign_open`
+— plus the LAS twin chain `… → las_keypair / las_signature[_internal] /
+las_verify[_internal]`. It depends on
 `las.h` only for the shared parameter macros and the `las_pp/las_pk/las_sk/las_sig` struct
 layout, so both schemes use the same parameter set (a dimension-level match — `n,ℓ,κ` —
 not a formal bit-security claim; proofs are out of scope) and their keys/signatures are

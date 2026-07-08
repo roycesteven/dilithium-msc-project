@@ -116,10 +116,10 @@ One-to-one map with `ref/las.c` (deterministic path — the KAT scope):
 | C (`ref/las.c`) | Rust (`src/las.rs`) |
 | --- | --- |
 | `las_setup` | `las_setup` |
-| `las_keygen` / `las_keygen_seed` | `las_keygen` (RNG-injected) / `las_keygen_seed` |
-| `sign_core` / `las_sign` / `las_sign_det` | `sign_core` / `las_sign` (RNG-injected) / `las_sign_det` |
+| `las_keypair` / `las_keypair_seed` | `las_keypair` (RNG-injected) / `las_keypair_seed` |
+| `las_signature_internal` / `las_signature` / `las_signature_det` | `las_signature_internal` / `las_signature` (RNG-injected) / `las_signature_det` |
 | `las_verify` | `las_verify` |
-| `presign_core` / `las_presign` / `las_presign_det` | `presign_core` / `las_presign` (RNG-injected) / `las_presign_det` |
+| `las_presign_internal` / `las_presign` / `las_presign_det` | `las_presign_internal` / `las_presign` (RNG-injected) / `las_presign_det` |
 | `las_preverify` | `las_preverify` |
 | `las_adapt` | `las_adapt` (returns `Option`) |
 | `las_ext` | `las_ext` (returns `Option`) |

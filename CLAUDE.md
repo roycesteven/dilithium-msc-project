@@ -230,9 +230,9 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   non-ternary code, out-of-band z), and `las_verify_packed` = the byte interface
   an on-chain verifier consumes. Tamper test: all 4672 single-byte flips rejected.
   See `docs/LAS.md §5.10, §6.3`.
-- ✅ **Deterministic API + pinned KATs (C4)** — `las_keygen_seed` / `las_sign_det`
+- ✅ **Deterministic API + pinned KATs (C4)** — `las_keypair_seed` / `las_signature_det`
   / `las_presign_det` (mask seed = `SHAKE256(tag‖sk‖[Y]‖M)`; shared
-  `sign_core`/`presign_core` with the randomised paths) + `ref/test/test_kat.c`
+  `las_signature_internal`/`las_presign_internal` with the randomised paths) + `ref/test/test_kat.c`
   with a pinned SHAKE256 digest over 4 fully-deterministic vectors. Reproducible
   across runs/machines; cross-check anchor for any future on-chain verifier.
   See `docs/LAS.md §5.11, §6.4`.

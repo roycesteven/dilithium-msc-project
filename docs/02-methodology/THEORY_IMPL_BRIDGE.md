@@ -97,7 +97,7 @@ means the equality check `poly_equal(Ay, Y->t)` in `las_ext` is byte-exact.
 ### Paper: `r ← S_1^{n+ℓ}; t = A·r; return (pk=t, sk=r)`
 
 ```c
-/* las.c — las_keygen */
+/* las.c — las_keypair */
 randombytes(seed, LAS_SEEDBYTES);            // fresh randomness
 for(j = 0; j < LAS_M; ++j)
     sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);  // r ← S_1^8
@@ -151,7 +151,7 @@ return σ = (c, z)
 ```
 
 ```c
-/* las.c — sign_core (shared by las_sign / las_sign_det) */
+/* las.c — las_signature_internal (shared by las_signature / las_signature_det) */
 for(j=0; j<LAS_M; ++j) { shat[j] = sk->s[j]; poly_ntt(&shat[j]); }  // NTT(s) once per CALL
 for(;;) {                                          // rejection loop
     for(j=0; j<LAS_M; ++j)
@@ -205,11 +205,11 @@ hint-free design carries no acceptance penalty (the old ">80% with hints" framin
 was directionally wrong); Dilithium's own expected repetitions are a small
 single-digit count per its specification.
 
-**Deterministic variant (`las_sign_det`, `las.c`).** The randomised `las_sign`
-draws the 64-byte mask seed from `randombytes`; `las_sign_det` instead derives it
+**Deterministic variant (`las_signature_det`, `las.c`).** The randomised `las_signature`
+draws the 64-byte mask seed from `randombytes`; `las_signature_det` instead derives it
 as `SHAKE256(0x00 ‖ sk ‖ M)` (and `las_presign_det` as `SHAKE256(0x01 ‖ sk ‖ Y ‖ M)`),
-making (pre)signing a pure function of its inputs. Both call the same `sign_core`
-/ `presign_core` rejection loop, so distribution and validity are unchanged; the
+making (pre)signing a pure function of its inputs. Both call the same `las_signature_internal`
+/ `las_presign_internal` rejection loop, so distribution and validity are unchanged; the
 deterministic variants exist only for reproducible KATs (`test_kat.c`) and to
 remove the nonce-reuse failure mode. This is the standard Fiat–Shamir
 "derandomisation" (as in deterministic Dilithium), not a change to the scheme.
@@ -390,7 +390,7 @@ z − ẑ = (ẑ + y_wit) − ẑ = y_wit
 Then `A·y_wit = Y` by construction (Y is the statement). ✓
 
 **`poly_equal` is safe here** because both `Ay[j]` (output of `las_Amul`,
-always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `las_keygen` via
+always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `las_keypair` via
 `las_Amul`, also `[0,Q)`) use the same canonical representation.
 
 ---
@@ -422,12 +422,12 @@ parameter would be textually replaced by `6` and fail to compile.)
 #### Cumulative setup: `amhl_setup_gen`
 ```c
 /* amhl.c — amhl_setup_gen */
-las_keygen(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
+las_keypair(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
 // s_j = s_{j-1} + l_j           (amhl.c, kept small/centred)
 // Y_j = Y_{j-1} + L_j = A·s_j   (amhl.c, canonical [0,Q))
 ```
 The statements are built **additively** from the increment key pairs, so AMHL adds
-no new lattice arithmetic — it is pure reuse of `las_keygen` (= `A·(·)`) plus
+no new lattice arithmetic — it is pure reuse of `las_keypair` (= `A·(·)`) plus
 `poly_add`. `Y_0 = 0`, `s_0 = 0`.
 
 #### Adapt / Ext are unchanged

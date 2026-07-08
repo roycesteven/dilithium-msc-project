@@ -361,26 +361,31 @@ This is because ! if one can find r such ! that (t, r) ∈ RA for a random t, th
 
 
                                                7
-Algorithm 1 Lattice-Based Signature
+                                               
+Algorithm 1: Lattice-Based Signature
 
-1: procedure KeyGen(): . same as Gen 11:    if kzk∞ > γ − κ, then Restart
-         $                           12:    return σ = (c, z)
-2:    r ← Sn+`
-           1
-3:    t = Ar                         13: end procedure
-4:    return (pk, sk) = (t, r)
-5: end procedure                         14: procedure Verify(pk, σ, M ):
-                                         15:    Parse (c, z) := σ
-6: procedure Sign((pk, sk), M ):         16:    if kzk∞ > γ − κ, then return 0
-         $                               17:    w0 = Az − ct where t := pk
- 7:    y ← Sn+`
-             γ
-                                         18:    if c 6= H(pk, w0 , M ), then return 0
- 8:    w = Ay
-                                         19:    return 1
- 9:    c = H(pk, w, M )
-                                         20: end procedure
-10:    z = y + cr where r := sk
+1:  procedure KeyGen():    // same as Gen
+2:      r ←$ S₁^(n+ℓ)
+3:      t = A r
+4:      return (pk, sk) = (t, r)
+5:  end procedure
+
+6:  procedure Sign((pk, sk), M):
+7:      y ←$ Sγ^(n+ℓ)
+8:      w = A y
+9:      c = H(pk, w, M)
+10:     z = y + c r, where r := sk
+11:     if ||z||∞ > γ − κ, then Restart
+12:     return σ = (c, z)
+13: end procedure
+
+14: procedure Verify(pk, σ, M):
+15:     Parse (c, z) := σ
+16:     if ||z||∞ > γ − κ, then return 0
+17:     w′ = A z − c t, where t := pk
+18:     if c ≠ H(pk, w′, M), then return 0
+19:     return 1
+20: end procedure
 
 
 

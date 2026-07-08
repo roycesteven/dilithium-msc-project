@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
   for(i = 0; i < 32; ++i) msg[i] = (uint8_t)i;
 
   las_setup(&pp, ppseed);
-  las_keygen_seed(&pk, &sk, &pp, kseed);
-  las_keygen_seed(&Y, &yw, &pp, yseed);
+  las_keypair_seed(&pk, &sk, &pp, kseed);
+  las_keypair_seed(&Y, &yw, &pp, yseed);
   las_presign_det(&presig, msg, 32, &Y, &pk, &sk, &pp);
   if(las_adapt(&adapted, &presig, msg, 32, &Y, &yw, &pk, &pp)) { fprintf(stderr, "adapt failed\n"); return 1; }
   if(las_pack_sig(sig_b, &adapted)) { fprintf(stderr, "pack failed\n"); return 1; }

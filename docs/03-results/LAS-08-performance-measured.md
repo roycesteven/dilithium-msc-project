@@ -20,7 +20,7 @@ measured by `ref/test/bench_las3`. Absolute numbers are machine-dependent; the
 | Ext | 68 | one `A·s` + compare |
 
 **Rejection-sampling acceptance rate (measured *directly*, bench_las3).**
-`las_sign`/`las_presign`/`las_presign_k` increment a global `las_attempts`
+`las_signature`/`las_presign`/`las_presign_k` increment a global `las_attempts`
 counter once per rejection-loop iteration (instrumentation only — never read by
 the scheme), so the benchmark reports the **exact** average attempts per
 signature over 2000 calls rather than estimating it. Measured:
@@ -143,7 +143,7 @@ sampler bit-width adapts to `γ`.
 | KeyGen/stmt gen | — | 80±1 (shared) | | — |
 
 *The `Adapt` row is timed **checked — it includes the internal `las_preverify`** that a
-real `las_adapt` must run before adding the witness ([las.c:431](../ref/las.c#L431)), so
+real `las_adapt` must run before adding the witness ([las.c:562](../ref/las.c#L562)), so
 the figure is Adapt **plus** PreVerify, not a bare core. (The benchmark's own stdout
 label still prints `Adapt`; this caption is the precise reading.)*
 

@@ -22,7 +22,7 @@
 //! Run:  cargo run --release --example size_report
 
 use fips204::las::{
-    las_adapt, las_ext, las_keygen, las_presign, las_preverify, las_setup, LAS_M,
+    las_adapt, las_ext, las_keypair, las_presign, las_preverify, las_setup, LAS_M,
 };
 use fips204::las_basesig::{base_sign_signature, base_sign_verify};
 use fips204::las_serialize::{
@@ -46,8 +46,8 @@ fn main() {
     let pp = las_setup(&ppseed);
     let mut rng = ChaCha8Rng::seed_from_u64(0x4c41_5342_454e_4348);
 
-    let (pk, sk) = las_keygen(&pp, &mut rng);
-    let (y_stmt, y_wit) = las_keygen(&pp, &mut rng);
+    let (pk, sk) = las_keypair(&pp, &mut rng);
+    let (y_stmt, y_wit) = las_keypair(&pp, &mut rng);
     let sig = base_sign_signature(MSG, &pk, &sk, &pp, &mut rng);
     let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
     let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");

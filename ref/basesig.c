@@ -1,27 +1,39 @@
 /*
  * basesig.c -- simplified Dilithium-style BASE signature = Algorithm 1 of
  * eprint 2020/845, written as a STRUCTURAL MIRROR of the upstream ML-DSA
- * reference ref/sign.c so the diff shows exactly what Algorithm 1 removes.
+ * reference ref/sign.c: SAME function count, SAME order, SAME return
+ * convention (int, 0 = success), names obtained by the uniform prefix swap
+ * crypto_sign* -> base_sign*.  A side-by-side read therefore shows exactly
+ * what Algorithm 1 removes:
  *
- *   base_sign_keypair    <->  crypto_sign_keypair            (sign.c:23)
- *   base_sign_signature  <->  crypto_sign_signature_internal (sign.c:85)
- *   base_sign_verify     <->  crypto_sign_verify_internal    (sign.c:289)
+ *   base_sign_keypair             <->  crypto_sign_keypair            (sign.c:23)
+ *   base_sign_signature_internal  <->  crypto_sign_signature_internal (sign.c:85)
+ *   base_sign_signature           <->  crypto_sign_signature          (sign.c:206)
+ *   base_sign                     <->  crypto_sign                    (sign.c:256)
+ *   base_sign_verify_internal     <->  crypto_sign_verify_internal    (sign.c:289)
+ *   base_sign_verify              <->  crypto_sign_verify             (sign.c:375)
+ *   base_sign_open                <->  crypto_sign_open               (sign.c:413)
  *
- * Each scheme function below carries per-block annotations against the
- * corresponding sign.c lines:
+ * Each function carries per-block annotations against the corresponding
+ * sign.c lines:
  *   [REUSED]  the sign.c idiom/primitive is used unchanged;
  *   [CHANGED] adapted for Algorithm 1 (different dimensions/distribution/hash);
  *   [DELETED] an ML-DSA size-optimisation Algorithm 1 drops (paper s2.2/s3.2).
+ *
+ * The local static helpers are defined at the BOTTOM of the file (sign.c has
+ * no in-file helpers -- its equivalents live in poly.c/polyvec.c/packing.c),
+ * so the scheme functions above stay aligned with sign.c for the comparison.
  *
  * Standalone: depends on las.h for the shared parameters/types only.  las.c is
  * NOT linked by this file -- the static helpers are local copies, kept
  * behaviourally IDENTICAL to las.c's so that A*r and the challenge hash
  * H(pk,w,M) match las.c bit-for-bit and a LAS-adapted signature verifies here.
+ * ref/las.c is in turn a structural mirror of THIS file, so the chain
+ * sign.c <-> basesig.c <-> las.c reads pairwise side by side.
  */
-#include <stddef.h>
 #include <stdint.h>
 #include "params.h"
-#include "basesig.h"
+#include "basesig.h"    /* <-> sign.h; packing.h/polyvec.h/symmetric.h [DELETED] */
 #include "poly.h"
 #include "randombytes.h"
 #include "fips202.h"
@@ -30,9 +42,9 @@
  * No sign.c analogue -- instrumentation added for the benchmark. */
 unsigned long base_attempts = 0;
 
-/* ============================ helpers (local copies) ============================
- * Behaviourally identical to las.c's static helpers (duplicated on purpose so
- * basesig is a standalone translation unit).  Correspondence to sign.c/poly.c:
+/* ---- local helpers, DEFINED AT THE BOTTOM of this file.  Behaviourally
+ * identical to las.c's static helpers (duplicated on purpose so basesig is a
+ * standalone translation unit).  Correspondence to sign.c/poly.c:
  *   b_sample_ternary   <->  polyvecl/k_uniform_eta   (sign.c:44-45) -- CHANGED (S_1)
  *   b_sample_Sgamma    <->  polyvecl_uniform_gamma1  (sign.c:134)   -- CHANGED (S_gamma)
  *   b_challenge        <->  poly_challenge           (sign.c:153)   -- CHANGED (kappa)
@@ -40,6 +52,287 @@ unsigned long base_attempts = 0;
  *   b_polymul_prehat   <->  polyvecl_pointwise_poly_montgomery + invntt_tomont
  *   b_hash_challenge   <->  the mu||w1 SHAKE + poly_challenge (sign.c:148-153) -- hashes FULL w
  *   b_pack_poly_canon / b_chknorm_vec / b_poly_equal : small local utilities. */
+static void b_pack_poly_canon(uint8_t out[N*4], const poly *a);
+static int  b_poly_equal(const poly *a, const poly *b);
+static int  b_chknorm_vec(const poly z[LAS_M], int32_t B);
+static void b_polymul_prehat(poly *out, const poly *ahat, const poly *bhat);
+static void b_Amul(poly w[LAS_N], const las_pp *pp, const poly v[LAS_M]);
+static void b_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]);
+static void b_hash_challenge(poly *c, const las_pk *pk, const poly commit[LAS_N],
+                             const uint8_t *m, size_t mlen);
+static void b_sample_Sgamma(poly *y, const uint8_t *seed, size_t seedlen, uint16_t nonce);
+static void b_sample_ternary(poly *r, const uint8_t *seed, size_t seedlen, uint16_t nonce);
+
+/*************************************************
+* Name:        base_sign_keypair  <->  crypto_sign_keypair (sign.c:23)
+*
+* Description: Algorithm 1 KeyGen: r <- S_1^{n+l}; t = A r; (pk,sk) = (t,r).
+*              Block-by-block vs sign.c:
+*   [REUSED ] randombytes seed              (sign.c:32)
+*   [DELETED] polyvec_matrix_expand(mat,rho)(sign.c:41)  A=[I|A'] is fixed in pp
+*   [CHANGED] eta-sample s1,s2  ->  ternary r <- S_1^{n+l}   (sign.c:44-45)
+*   [CHANGED] t = A s1 + s2      ->  t = A r  (identity block replaces s2) (sign.c:47-55)
+*   [DELETED] caddq + power2round(t)->t1,t0  (sign.c:58-59)  no key compression
+*   [DELETED] pack_pk / H(pk)->tr / pack_sk  (sign.c:60-64)  struct output, no tr
+*
+* Returns 0 (success)
+**************************************************/
+int base_sign_keypair(las_pk *pk,          /* paper t: pk->t = t = A r (public key)       */
+                      las_sk *sk,          /* paper r: sk->s = r  (secret key, r <-$ S_1) */
+                      const las_pp *pp) {  /* paper A: pp = A = [I | A'] (public matrix)  */
+  /* [PAPER Alg.1] 1:  procedure KeyGen():    // same as Gen */
+  uint8_t seed[LAS_SEEDBYTES];   /* PRG seed used to sample r (no paper symbol)      */
+  unsigned int j;                /* index over the n+ℓ components (no paper symbol)  */
+
+  randombytes(seed, LAS_SEEDBYTES);                 /* [REUSED]  sign.c:32     */
+  /* [PAPER Alg.1] 2:      r ←$ S₁^(n+ℓ) */
+  for(j = 0; j < LAS_M; ++j)                        /* [CHANGED] ternary r     */
+    b_sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);
+  /* [PAPER Alg.1] 3:      t = A r */
+  b_Amul(pk->t, pp, sk->s);                         /* [CHANGED] t = A r       */
+  /* [PAPER Alg.1] 4:      return (pk, sk) = (t, r) */
+  return 0;
+  /* [PAPER Alg.1] 5:  end procedure */
+}
+
+/*************************************************
+* Name:        base_sign_signature_internal  <->  crypto_sign_signature_internal (sign.c:85)
+*
+* Description: Algorithm 1 Sign body, parameterised by the caller-supplied
+*              64-byte mask seed (sign.c's internal takes rnd the same way).
+*              Block-by-block vs sign.c:
+*   [DELETED] unpack_sk                      (sign.c:108)  sk is a struct
+*   [CHANGED] mu/rhoprime CRH chain -> caller-supplied mask seed (sign.c:110-124)
+*   [CHANGED] NTT(s1) once before loop -> NTT(r) once   (sign.c:128, hoisted)
+*   [DELETED] NTT(s2), NTT(t0)               (sign.c:129-130) no s2/t0
+*   [REUSED ] the `rej:` rejection loop      (sign.c:132)
+*   [CHANGED] uniform_gamma1(y) -> S_gamma(y)(sign.c:134)
+*   [CHANGED] w = A y (via b_Amul)           (sign.c:136-141)
+*   [DELETED] caddq + decompose(w)->w1,w0    (sign.c:144-145) hash full w
+*   [CHANGED] c = H(pk, w, M) (full w)       (sign.c:146-153)
+*   [REUSED ] NTT(c) once per attempt        (sign.c:154, hoisted)
+*   [CHANGED] z = y + c r; reject |z|inf>g-k (sign.c:157-162)
+*   [DELETED] low-bits check  ||w0-cs2||     (sign.c:164-171) second rejection
+*   [DELETED] hint  MakeHint(cs2,ct0)+OMEGA  (sign.c:173-183) hint vector
+*   [DELETED] pack_sig                       (sign.c:186)  struct output
+*
+* Returns 0 (success)
+**************************************************/
+int base_sign_signature_internal(las_sig *sig,       /* paper σ: output signature σ = (c, z)  */
+                                 const uint8_t *m,   /* paper M: message                      */
+                                 size_t mlen,        /* length of M (no paper symbol)         */
+                                 const las_pk *pk,   /* paper t: pk->t = t (public key)       */
+                                 const las_sk *sk,   /* paper r: sk->s = r (secret key)       */
+                                 const las_pp *pp,   /* paper A: pp = A = [I | A']            */
+                                 const uint8_t seed[64]) {  /* PRG mask seed (<-> rnd, sign.c:91) */
+  /* [PAPER Alg.1] 6:  procedure Sign((pk, sk), M): */
+  uint16_t nonce = 0;    /* PRG counter (no paper symbol)                   */
+  unsigned int j;        /* index over n+ℓ components (no paper symbol)     */
+  poly y[LAS_M];         /* paper y: mask, y <-$ Sγ^(n+ℓ)                   */
+  poly w[LAS_N];         /* paper w: commitment, w = A y                    */
+  poly rhat[LAS_M];      /* paper r in NTT domain: NTT(r) (hoisted)         */
+  poly chat;             /* paper c in NTT domain: NTT(c) (hoisted)         */
+  poly cr;               /* paper c·r: the product c r                      */
+  poly c;                /* paper c: challenge c = H(pk, w, M)              */
+
+  for(j = 0; j < LAS_M; ++j) {                      /* [CHANGED] NTT(r) once   */
+    rhat[j] = sk->s[j];                             /*           (sign.c:128)  */
+    poly_ntt(&rhat[j]);
+  }
+  for(;;) {                                         /* [REUSED]  rej: loop     */
+    ++base_attempts;                                /* instrumentation only    */
+    /* [PAPER Alg.1] 7:      y ←$ Sγ^(n+ℓ) */
+    for(j = 0; j < LAS_M; ++j)                      /* [CHANGED] y <- S_gamma  */
+      b_sample_Sgamma(&y[j], seed, 64, nonce++);
+    /* [PAPER Alg.1] 8:      w = A y */
+    b_Amul(w, pp, y);                               /* [CHANGED] w = A y       */
+    /* [PAPER Alg.1] 9:      c = H(pk, w, M) */
+    b_hash_challenge(&c, pk, w, m, mlen);           /* [CHANGED] c = H(pk,w,M) */
+    chat = c;                                       /* [REUSED]  NTT(c) once   */
+    poly_ntt(&chat);                                /*           (sign.c:154)  */
+    /* [PAPER Alg.1] 10:     z = y + c r, where r := sk */
+    for(j = 0; j < LAS_M; ++j) {                    /* [CHANGED] z = y + c r   */
+      b_polymul_prehat(&cr, &chat, &rhat[j]);
+      poly_add(&sig->z[j], &y[j], &cr);
+      poly_reduce(&sig->z[j]);
+    }
+    /* [PAPER Alg.1] 11:     if ||z||∞ > γ − κ, then Restart */
+    if(b_chknorm_vec(sig->z, LAS_BOUND_SIGN))       /* reject |z|inf > g-k     */
+      continue;                                     /*           (sign.c:161)  */
+    /* [PAPER Alg.1] 12:     return σ = (c, z) */
+    sig->c = c;
+    return 0;
+  }
+  /* [PAPER Alg.1] 13: end procedure */
+}
+
+/*************************************************
+* Name:        base_sign_signature  <->  crypto_sign_signature (sign.c:206)
+*
+* Description: Algorithm 1 Sign, random path: fresh mask seed, then the
+*              internal.  Block-by-block vs sign.c:
+*   [DELETED] ctx-string prefix pre=(0,ctxlen,ctx) (sign.c:218-225)  no ctx API
+*   [CHANGED] rnd <- randombytes/zeros (sign.c:227-232) -> fresh 64-byte mask seed
+*   [REUSED ] delegate to the seed-parameterised internal (sign.c:234)
+*
+* Returns 0 (success)
+**************************************************/
+int base_sign_signature(las_sig *sig,       /* paper σ: output signature σ = (c, z)  */
+                        const uint8_t *m,   /* paper M: message                      */
+                        size_t mlen,        /* length of M (no paper symbol)         */
+                        const las_pk *pk,   /* paper t: pk->t = t (public key)       */
+                        const las_sk *sk,   /* paper r: sk->s = r (secret key)       */
+                        const las_pp *pp) { /* paper A: pp = A = [I | A']            */
+  uint8_t seed[64];      /* PRG mask seed (no paper symbol)                 */
+
+  randombytes(seed, 64);                            /* [CHANGED] mask seed     */
+  return base_sign_signature_internal(sig, m, mlen, pk, sk, pp, seed);
+}
+
+/*************************************************
+* Name:        base_sign  <->  crypto_sign (sign.c:256)
+*
+* Description: Compute signed message.  Kept for one-to-one mirroring: the
+*              signature is a struct (no packed byte form), so the upstream
+*              prepend "sm = sig || m" degenerates to sm = m.
+*   [CHANGED] sm = sig || m -> sm = m        (sign.c:267-268) sig is a struct
+*   [REUSED ] delegate to base_sign_signature (sign.c:269)
+*   [CHANGED] *smlen = CRYPTO_BYTES + mlen -> mlen (sign.c:270) no byte prefix
+*
+* Returns 0 (success)
+**************************************************/
+int base_sign(las_sig *sig,          /* paper σ: output signature σ = (c, z)     */
+              uint8_t *sm,           /* output "signed message" (= copy of M)     */
+              size_t *smlen,         /* output length of sm (= mlen)              */
+              const uint8_t *m,      /* paper M: message                          */
+              size_t mlen,           /* length of M (no paper symbol)             */
+              const las_pk *pk,      /* paper t: pk->t = t (public key)           */
+              const las_sk *sk,      /* paper r: sk->s = r (secret key)           */
+              const las_pp *pp) {    /* paper A: pp = A = [I | A']                */
+  int ret;
+  size_t i;
+
+  for(i = 0; i < mlen; ++i)                         /* [CHANGED] sm = m        */
+    sm[mlen - 1 - i] = m[mlen - 1 - i];             /*  (no sig-bytes prefix)  */
+  ret = base_sign_signature(sig, sm, mlen, pk, sk, pp);
+  *smlen = mlen;                                    /* [CHANGED] no +CRYPTO_BYTES */
+  return ret;
+}
+
+/*************************************************
+* Name:        base_sign_verify_internal  <->  crypto_sign_verify_internal (sign.c:289)
+*
+* Description: Algorithm 1 Verify: w' = A z - c t; accept iff c == H(pk,w',M).
+*              Block-by-block vs sign.c:
+*   [DELETED] unpack_pk / unpack_sig         (sign.c:311-312) struct input
+*   [CHANGED] reject |z|inf > g-k            (sign.c:314)
+*   [CHANGED] mu = H(pk||M) (bind pk direct) (sign.c:318-324)
+*   [REUSED ] NTT(c) once, NTT(z) via b_Amul (sign.c:327-333)
+*   [CHANGED] w' = A z - c t (exact)         (sign.c:326-340)
+*   [DELETED] shiftl(t1) + c*t1*2^d          (sign.c:334-336) t not compressed
+*   [DELETED] caddq + use_hint(w1,h)         (sign.c:343-344) w' is exact
+*   [CHANGED] c2 = H(pk, w', M); accept c==c2(sign.c:345-355)
+*
+* Returns 0 if signature could be verified correctly and -1 otherwise
+**************************************************/
+int base_sign_verify_internal(const las_sig *sig,  /* paper σ: sig = (c, z), signature to verify */
+                              const uint8_t *m,    /* paper M: message                          */
+                              size_t mlen,         /* length of M (no paper symbol)             */
+                              const las_pk *pk,    /* paper t: pk->t = t (public key)           */
+                              const las_pp *pp) {  /* paper A: pp = A = [I | A']                */
+  /* [PAPER Alg.1] 14: procedure Verify(pk, σ, M): */
+  poly w[LAS_N];  /* paper w′: recomputed commitment, w′ = A z − c t          */
+  poly chat;      /* paper c in NTT domain: NTT(c) (hoisted)                  */
+  poly that;      /* paper t in NTT domain: NTT(t) (hoisted)                  */
+  poly ct;        /* paper c·t: the product c t                               */
+  poly c2;        /* paper H(pk, w′, M): recomputed challenge, compared to c  */
+  unsigned int j; /* index over n components (no paper symbol)                */
+
+  /* [PAPER Alg.1] 15:     Parse (c, z) := σ */
+  /* [PAPER Alg.1] 16:     if ||z||∞ > γ − κ, then return 0 */
+  if(b_chknorm_vec(sig->z, LAS_BOUND_SIGN))         /* [CHANGED] |z|inf > g-k  */
+    return -1;
+
+  /* [PAPER Alg.1] 17:     w′ = A z − c t, where t := pk */
+  b_Amul(w, pp, sig->z);                            /* [REUSED]  A z           */
+  chat = sig->c;                                    /* [REUSED]  NTT(c) once   */
+  poly_ntt(&chat);                                  /*           (sign.c:333)  */
+  for(j = 0; j < LAS_N; ++j) {                      /* [CHANGED] w' = A z - c t*/
+    that = pk->t[j];
+    poly_ntt(&that);
+    b_polymul_prehat(&ct, &chat, &that);
+    poly_sub(&w[j], &w[j], &ct);
+    poly_reduce(&w[j]);
+    poly_caddq(&w[j]);
+  }
+  /* [PAPER Alg.1] 18:     if c ≠ H(pk, w′, M), then return 0 */
+  /* [PAPER Alg.1] 19:     return 1 */
+  b_hash_challenge(&c2, pk, w, m, mlen);            /* [CHANGED] c2 = H(pk,w',M)*/
+  return b_poly_equal(&c2, &sig->c) ? 0 : -1;      /* accept iff c == c2       */
+  /* [PAPER Alg.1] 20: end procedure */
+}
+
+/*************************************************
+* Name:        base_sign_verify  <->  crypto_sign_verify (sign.c:375)
+*
+* Description: Algorithm 1 Verify, public entry point.
+*   [DELETED] ctx-string prefix pre=(0,ctxlen,ctx) (sign.c:386-392)  no ctx API
+*   [REUSED ] delegate to the internal verifier   (sign.c:394)
+*
+* Returns 0 if signature could be verified correctly and -1 otherwise
+**************************************************/
+int base_sign_verify(const las_sig *sig,  /* paper σ: sig = (c, z), signature to verify */
+                     const uint8_t *m,    /* paper M: message                          */
+                     size_t mlen,         /* length of M (no paper symbol)             */
+                     const las_pk *pk,    /* paper t: pk->t = t (public key)           */
+                     const las_pp *pp) {  /* paper A: pp = A = [I | A']                */
+  return base_sign_verify_internal(sig, m, mlen, pk, pp);
+}
+
+/*************************************************
+* Name:        base_sign_open  <->  crypto_sign_open (sign.c:413)
+*
+* Description: Verify signed message.  Kept for one-to-one mirroring: the
+*              signature travels as a struct beside sm, so sm holds only M.
+*   [DELETED] smlen < CRYPTO_BYTES check     (sign.c:423-424) no byte prefix
+*   [CHANGED] *mlen = smlen - CRYPTO_BYTES -> smlen (sign.c:426)
+*   [REUSED ] verify-then-copy-out / zero-on-failure (sign.c:427-442)
+*
+* Returns 0 if signed message could be verified correctly and -1 otherwise
+**************************************************/
+int base_sign_open(uint8_t *m,            /* output message (= copy of sm on success)  */
+                   size_t *mlen,          /* output length of m                        */
+                   const las_sig *sig,    /* paper σ: sig = (c, z), signature to verify */
+                   const uint8_t *sm,     /* input "signed message" (= M)              */
+                   size_t smlen,          /* length of sm                              */
+                   const las_pk *pk,      /* paper t: pk->t = t (public key)           */
+                   const las_pp *pp) {    /* paper A: pp = A = [I | A']                */
+  size_t i;
+
+  *mlen = smlen;                                    /* [CHANGED] no prefix strip */
+  if(base_sign_verify(sig, sm, *mlen, pk, pp))
+    goto badsig;
+  else {
+    /* All good, copy msg, return 0 */
+    for(i = 0; i < *mlen; ++i)
+      m[i] = sm[i];
+    return 0;
+  }
+
+badsig:
+  /* Signature verification failed */
+  *mlen = 0;
+  for(i = 0; i < smlen; ++i)
+    m[i] = 0;
+
+  return -1;
+}
+
+/* ============================ helpers (local copies) ============================
+ * Definitions of the statics forward-declared at the top.  sign.c has no
+ * in-file helpers -- its equivalents live in poly.c/polyvec.c/packing.c;
+ * keeping ours down here keeps the scheme functions above aligned with
+ * sign.c for a side-by-side read. */
 
 /* Pack one polynomial into 4 bytes/coeff (canonical [0,Q)) for hashing. */
 static void b_pack_poly_canon(uint8_t out[N*4], const poly *a) {
@@ -235,105 +528,4 @@ static void b_sample_ternary(poly *r, const uint8_t *seed, size_t seedlen, uint1
         r->coeffs[ctr++] = (int32_t)v - 1;
     }
   }
-}
-
-/* ============================ scheme (Algorithm 1) ============================ */
-
-/* base_sign_keypair  <->  crypto_sign_keypair (sign.c:23-67), Algorithm 1 KeyGen.
- * Block-by-block against sign.c:
- *   [REUSED ] randombytes seed              (sign.c:32)
- *   [DELETED] polyvec_matrix_expand(mat,rho)(sign.c:41)  A=[I|A'] is fixed in pp
- *   [CHANGED] eta-sample s1,s2  ->  ternary r <- S_1^{n+l}   (sign.c:44-45)
- *   [CHANGED] t = A s1 + s2      ->  t = A r  (identity block replaces s2) (sign.c:47-55)
- *   [DELETED] caddq + power2round(t)->t1,t0  (sign.c:58-59)  no key compression
- *   [DELETED] pack_pk / H(pk)->tr / pack_sk  (sign.c:60-64)  struct output, no tr */
-void base_sign_keypair(las_pk *pk, las_sk *sk, const las_pp *pp) {
-  uint8_t seed[LAS_SEEDBYTES];
-  unsigned int j;
-
-  randombytes(seed, LAS_SEEDBYTES);                 /* [REUSED]  sign.c:32     */
-  for(j = 0; j < LAS_M; ++j)                        /* [CHANGED] ternary r     */
-    b_sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);
-  b_Amul(pk->t, pp, sk->s);                         /* [CHANGED] t = A r       */
-}
-
-/* base_sign_signature  <->  crypto_sign_signature_internal (sign.c:85-189),
- * Algorithm 1 Sign.  Block-by-block against sign.c:
- *   [DELETED] unpack_sk                      (sign.c:108)  sk is a struct
- *   [CHANGED] mu/rhoprime CRH chain -> fresh 64-byte mask seed (sign.c:110-124)
- *   [CHANGED] NTT(s1) once before loop -> NTT(r) once   (sign.c:128, hoisted)
- *   [DELETED] NTT(s2), NTT(t0)               (sign.c:129-130) no s2/t0
- *   [REUSED ] the `rej:` rejection loop      (sign.c:132)
- *   [CHANGED] uniform_gamma1(y) -> S_gamma(y)(sign.c:134)
- *   [CHANGED] w = A y (via b_Amul)           (sign.c:136-141)
- *   [DELETED] caddq + decompose(w)->w1,w0    (sign.c:144-145) hash full w
- *   [CHANGED] c = H(pk, w, M) (full w)       (sign.c:146-153)
- *   [REUSED ] NTT(c) once per attempt        (sign.c:154, hoisted)
- *   [CHANGED] z = y + c r; reject |z|inf>g-k (sign.c:157-162)
- *   [DELETED] low-bits check  ||w0-cs2||     (sign.c:164-171) second rejection
- *   [DELETED] hint  MakeHint(cs2,ct0)+OMEGA  (sign.c:173-183) hint vector
- *   [DELETED] pack_sig                       (sign.c:186)  struct output */
-void base_sign_signature(las_sig *sig, const uint8_t *m, size_t mlen,
-                         const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
-  uint16_t nonce = 0;
-  unsigned int j;
-  poly y[LAS_M], w[LAS_N], rhat[LAS_M], chat, cr, c;
-
-  randombytes(seed, 64);                            /* [CHANGED] mask seed     */
-  for(j = 0; j < LAS_M; ++j) {                      /* [CHANGED] NTT(r) once   */
-    rhat[j] = sk->s[j];                             /*           (sign.c:128)  */
-    poly_ntt(&rhat[j]);
-  }
-  for(;;) {                                         /* [REUSED]  rej: loop     */
-    ++base_attempts;                                /* instrumentation only    */
-    for(j = 0; j < LAS_M; ++j)                      /* [CHANGED] y <- S_gamma  */
-      b_sample_Sgamma(&y[j], seed, 64, nonce++);
-    b_Amul(w, pp, y);                               /* [CHANGED] w = A y       */
-    b_hash_challenge(&c, pk, w, m, mlen);           /* [CHANGED] c = H(pk,w,M) */
-    chat = c;                                       /* [REUSED]  NTT(c) once   */
-    poly_ntt(&chat);                                /*           (sign.c:154)  */
-    for(j = 0; j < LAS_M; ++j) {                    /* [CHANGED] z = y + c r   */
-      b_polymul_prehat(&cr, &chat, &rhat[j]);
-      poly_add(&sig->z[j], &y[j], &cr);
-      poly_reduce(&sig->z[j]);
-    }
-    if(b_chknorm_vec(sig->z, LAS_BOUND_SIGN))       /* reject |z|inf > g-k     */
-      continue;                                     /*           (sign.c:161)  */
-    sig->c = c;
-    return;
-  }
-}
-
-/* base_sign_verify  <->  crypto_sign_verify_internal (sign.c:289-358),
- * Algorithm 1 Verify.  Block-by-block against sign.c:
- *   [DELETED] unpack_pk / unpack_sig         (sign.c:311-312) struct input
- *   [CHANGED] reject |z|inf > g-k            (sign.c:314)
- *   [CHANGED] mu = H(pk||M) (bind pk direct) (sign.c:318-324)
- *   [REUSED ] NTT(c) once, NTT(z) via b_Amul (sign.c:327-333)
- *   [CHANGED] w' = A z - c t (exact)         (sign.c:326-340)
- *   [DELETED] shiftl(t1) + c*t1*2^d          (sign.c:334-336) t not compressed
- *   [DELETED] caddq + use_hint(w1,h)         (sign.c:343-344) w' is exact
- *   [CHANGED] c2 = H(pk, w', M); accept c==c2(sign.c:345-355) */
-int base_sign_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
-                     const las_pk *pk, const las_pp *pp) {
-  poly w[LAS_N], chat, that, ct, c2;
-  unsigned int j;
-
-  if(b_chknorm_vec(sig->z, LAS_BOUND_SIGN))         /* [CHANGED] |z|inf > g-k  */
-    return -1;
-
-  b_Amul(w, pp, sig->z);                            /* [REUSED]  A z           */
-  chat = sig->c;                                    /* [REUSED]  NTT(c) once   */
-  poly_ntt(&chat);                                  /*           (sign.c:333)  */
-  for(j = 0; j < LAS_N; ++j) {                      /* [CHANGED] w' = A z - c t*/
-    that = pk->t[j];
-    poly_ntt(&that);
-    b_polymul_prehat(&ct, &chat, &that);
-    poly_sub(&w[j], &w[j], &ct);
-    poly_reduce(&w[j]);
-    poly_caddq(&w[j]);
-  }
-  b_hash_challenge(&c2, pk, w, m, mlen);            /* [CHANGED] c2 = H(pk,w',M)*/
-  return b_poly_equal(&c2, &sig->c) ? 0 : -1;      /* accept iff c == c2       */
 }

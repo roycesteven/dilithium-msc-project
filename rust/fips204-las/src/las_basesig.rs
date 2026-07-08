@@ -1,21 +1,33 @@
 //! The SEPARATE simplified Dilithium-style BASE signature = Algorithm 1 of
 //! eprint 2020/845, written as a STRUCTURAL MIRROR of the upstream ML-DSA
-//! reference `src/ml_dsa.rs` so the diff shows exactly what Algorithm 1 removes.
+//! reference `src/ml_dsa.rs` so the diff shows exactly what Algorithm 1
+//! removes.  SAME function order as ml_dsa.rs, names by the uniform prefix
+//! swap onto the C convention (this is the Rust twin of `ref/basesig.c`):
 //!
-//!   `base_sign_keypair`    <->  `key_gen` / `key_gen_internal` (ml_dsa.rs:26/57)
-//!   `base_sign_signature`  <->  `sign_internal`                (ml_dsa.rs:153)
-//!   `base_sign_verify`     <->  `verify_internal`              (ml_dsa.rs:351)
+//!   `base_sign_keypair`            <->  `key_gen`          (ml_dsa.rs:26)
+//!   `base_sign_keypair_seed`       <->  `key_gen_internal` (ml_dsa.rs:57)
+//!   `base_sign_signature_internal` <->  `sign_internal`    (ml_dsa.rs:153)
+//!   `base_sign_signature`           -   RNG wrapper (upstream's lives in
+//!                                       lib.rs `try_sign_with_rng`)
+//!   `base_sign_verify_internal`    <->  `verify_internal`  (ml_dsa.rs:351)
+//!   `base_sign_verify`              -   entry wrapper (upstream's lives in
+//!                                       lib.rs `verify`)
+//!   [DELETED]                      <->  `expand_private` / `expand_public` /
+//!                                       `private_to_public_key` (byte
+//!                                       encodings; struct keys here)
 //!
-//! The names are base-tagged (not the literal `key_gen`/`sign_internal`) so a
-//! `grep` never confuses the simplified base with the real ML-DSA; each function
-//! keeps ml_dsa.rs's step-numbered comment structure (`// 1:`, `// 11:`, ...) and
-//! every block is annotated REUSED / CHANGED / DELETED against the corresponding
-//! ml_dsa.rs line.  This is the Rust twin of `ref/basesig.c`.
+//! Each function keeps ml_dsa.rs's step-numbered comment structure (`// 1:`,
+//! `// 11:`, ...) and every block is annotated REUSED / CHANGED / DELETED
+//! against the corresponding ml_dsa.rs line.  The local helpers are defined
+//! at the BOTTOM of the file (ml_dsa.rs keeps its equivalents in hashing.rs /
+//! helpers.rs / ntt.rs), so the scheme functions read side by side.
 //!
 //! Algorithm 1 (paper p.7-8):
+//! ```text
 //!     KeyGen : r <- S_1^{n+l};  t = A r;  (pk, sk) = (t, r)
 //!     Sign   : y <- S_g; w = A y; c = H(pk, w, M); z = y + c r; reject |z|inf > g-k
 //!     Verify : w' = A z - c t;   accept iff  c == H(pk, w', M)
+//! ```
 //!
 //! What Algorithm 1 DELETES vs ML-DSA (all "for ease of presentation", paper
 //! s2.2/s3.2): Power2Round key compression, the high/low-bit split, the hint
@@ -29,7 +41,9 @@
 //! it, so `A*r` and the challenge hash match `las.rs` bit-for-bit and an Adapted
 //! LAS pre-signature verifies under `base_sign_verify` with no explicit `+Y`:
 //!
+//! ```text
 //!     A(z_hat + y) - c t = (A z_hat - c t) + A y = w' + Y      (since Y = A y).
+//! ```
 
 #![allow(warnings)]
 #![allow(clippy::all, clippy::pedantic, clippy::nursery)]
@@ -84,8 +98,188 @@ const SHAKE256_RATE: usize = 136;
 /// scheme itself; benchmarks reset and read it to report the restart rate.
 pub static BASE_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 
-/* ---- local helpers (behaviour-identical to las.rs's).  Correspondence to
- * ml_dsa.rs primitives:
+/// `base_sign_keypair` <-> `key_gen` (ml_dsa.rs:26): draw a seed, expand a key.
+/// The RNG is injected (Rust idiom), as ml_dsa.rs's `key_gen(rng)`.
+pub fn base_sign_keypair(
+    pp: &LasPp,                    // paper A: pp = A = [I | A'] (public matrix)
+    rng: &mut impl CryptoRngCore,  // CSPRNG for the seed (no paper symbol)
+) -> (LasPk, LasSk) {              // returns (paper t, paper r) = (pk, sk)
+    // 1: xi <- B^32                      (ml_dsa.rs:40)  [REUSED] random seed
+    let mut seed = [0u8; LAS_SEEDBYTES]; // PRG seed to sample r (no paper symbol)
+    rng.fill_bytes(&mut seed);
+    // 5: return KeyGen_internal(xi)      (ml_dsa.rs:44)
+    let out = base_sign_keypair_seed(pp, &seed); // out = (paper t, paper r)
+    seed.zeroize(); // sk is derivable from this seed: wipe
+    out
+}
+
+/// `base_sign_keypair_seed` <-> `key_gen_internal` (ml_dsa.rs:57), Algorithm 1 KeyGen.
+/// Block-by-block against ml_dsa.rs:
+///   [CHANGED] (rho,rho',K) <- H(xi..)  -> the seed samples r directly (:67-74)
+///   [CHANGED] (s1,s2) <- ExpandS(rho') -> r <- S_1^{n+l} ternary        (:79)
+///   [CHANGED] t = NTT-1(A o NTT(s1))+s2 -> t = A r (identity block = s2) (:84-92)
+///   [DELETED] (t1,t0) <- Power2Round(t)                                 (:92)
+///   [DELETED] pkEncode / tr=H(pk) / skEncode + precomputes           (:100-130)
+pub fn base_sign_keypair_seed(
+    pp: &LasPp,                  // paper A: pp = A = [I | A']
+    seed: &[u8; LAS_SEEDBYTES],  // PRG seed to sample r (no paper symbol)
+) -> (LasPk, LasSk) {
+    // [PAPER Alg.1] 1:  procedure KeyGen():    // same as Gen
+    // [PAPER Alg.1] 2:      r ←$ S₁^(n+ℓ)
+    let sk = LasSk {
+        s: from_fn(|j| b_sample_ternary(seed, j as u16)), // paper r: sk.s = r; [CHANGED] ternary r
+    };
+    // [PAPER Alg.1] 3:      t = A r
+    let pk = LasPk {
+        t: b_amul(pp, &sk.s), // paper t: pk.t = t = A r; [CHANGED] t = A r ; [DELETED] Power2Round
+    };
+    // [PAPER Alg.1] 4:      return (pk, sk) = (t, r)
+    // [PAPER Alg.1] 5:  end procedure
+    (pk, sk)
+}
+
+/// `base_sign_signature_internal` <-> `sign_internal` (ml_dsa.rs:153),
+/// Algorithm 1 Sign body, parameterised by the 64-byte mask seed (ml_dsa.rs's
+/// internal takes `rnd` the same way).  Block-by-block against ml_dsa.rs:
+///   [DELETED] skDecode                                        (:166)
+///   [CHANGED] mu=H(tr||M); rho'=H(K||rnd||mu) -> caller-supplied mask seed (:183-201)
+///   [REUSED ] kappa counter / the `loop`                       (:204-212)
+///   [CHANGED] y <- ExpandMask -> y <- S_gamma                  (:215)
+///   [CHANGED] w = NTT-1(A o NTT(y)) -> w = A y                 (:217-222)
+///   [DELETED] w_1 <- HighBits(w)                               (:224-226)
+///   [CHANGED] c_tilde <- H(mu||w1Encode) -> c = H(pk,w,M) full (:230-234)
+///   [CHANGED] c <- SampleInBall (tau) -> kappa challenge       (:237)
+///   [REUSED ] c_hat <- NTT(c) once per attempt                 (:240)
+///   [CHANGED] cs1 <- NTT-1(c_hat o s1_hat); z = y + cs1        (:243-265)
+///   [CHANGED] reject ||z||>=g1-b OR ||r0||>=g2-b -> reject |z|inf>g-k (:276-285)
+///   [DELETED] c_t0, MakeHint, ||ct0||, hint weight             (:287-319)
+///   [DELETED] sigEncode                                        (:334-336)
+pub(crate) fn base_sign_signature_internal(
+    m: &[u8],          // paper M: message
+    pk: &LasPk,        // paper t: pk.t = t (public key)
+    sk: &LasSk,        // paper r: sk.s = r (secret key)
+    pp: &LasPp,        // paper A: pp = A = [I | A']
+    seed: &[u8; 64],   // PRG mask seed (<-> rnd, ml_dsa.rs:163)
+) -> LasSig {          // paper σ: returns σ = (c, z)
+    // [PAPER Alg.1] 6:  procedure Sign((pk, sk), M):
+    let mut nonce: u16 = 0; // PRG counter (no paper symbol); [REUSED] the kappa counter
+    let s_hat_mont: [T; LAS_M] = from_fn(|j| b_ntt_b_mont(&sk.s[j])); // paper r in NTT domain: NTT(r) once per call
+    loop {
+        BASE_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
+        // [PAPER Alg.1] 7:      y ←$ Sγ^(n+ℓ)
+        // 11: y <- ExpandMask -> S_gamma
+        let mut y: [R; LAS_M] = [R0; LAS_M]; // paper y: mask, y <-$ Sγ^(n+ℓ)
+        for j in 0..LAS_M {
+            y[j] = b_sample_sgamma(seed, nonce);
+            nonce = nonce.wrapping_add(1);
+        }
+        // [PAPER Alg.1] 8:      w = A y
+        let w = b_amul(pp, &y); // paper w: commitment w = A y; 12: w = A y   ([DELETED] 13: HighBits)
+        // [PAPER Alg.1] 9:      c = H(pk, w, M)
+        let c = b_hash_challenge(pk, &w, m); // paper c: challenge; 15/16: c = H(pk, w, M) full w
+        let c_hat = b_ntt_a(&c); // paper c in NTT domain: NTT(c); 17: c_hat <- NTT(c), once per attempt
+
+        // [PAPER Alg.1] 10:     z = y + c r, where r := sk
+        // 18/20: z = y + c r
+        let mut z: [R; LAS_M] = [R0; LAS_M]; // paper z: response z = y + c r
+        for j in 0..LAS_M {
+            let cr = b_polymul_prehat(&c_hat, &s_hat_mont[j]); // paper c·r: the product c r
+            for n in 0..N {
+                z[j].0[n] = y[j].0[n] + cr.0[n];
+            }
+        }
+        // [PAPER Alg.1] 11:     if ||z||∞ > γ − κ, then Restart
+        // 23: reject |z|inf > g-k   ([DELETED] low-bits + hint checks)
+        if b_chknorm_vec(&z, LAS_BOUND_SIGN) {
+            continue;
+        }
+        // [PAPER Alg.1] 12:     return σ = (c, z)
+        return LasSig { c, z }; // [DELETED] sigEncode: struct output
+    }
+    // [PAPER Alg.1] 13: end procedure
+}
+
+/// `base_sign_signature` — Algorithm 1 Sign, random path: fresh 64-byte mask
+/// seed, then the internal.  Upstream's RNG wrapper is lib.rs
+/// `try_sign_with_rng` (rnd <- rng), kept here for the one-to-one C mirror
+/// (`ref/basesig.c base_sign_signature`).
+pub fn base_sign_signature(
+    m: &[u8],                      // paper M: message
+    pk: &LasPk,                    // paper t: pk.t = t (public key)
+    sk: &LasSk,                    // paper r: sk.s = r (secret key)
+    pp: &LasPp,                    // paper A: pp = A = [I | A']
+    rng: &mut impl CryptoRngCore,  // CSPRNG for the mask seed (no paper symbol)
+) -> LasSig {                      // paper σ: returns σ = (c, z)
+    let mut seed = [0u8; 64]; // PRG mask seed (no paper symbol); [CHANGED] fresh mask seed (no mu/rho' chain)
+    rng.fill_bytes(&mut seed);
+    let sig = base_sign_signature_internal(m, pk, sk, pp, &seed);
+    seed.zeroize(); // mask seed: wipe
+    sig
+}
+
+/// `base_sign_verify_internal` <-> `verify_internal` (ml_dsa.rs:351),
+/// Algorithm 1 Verify body.  Block-by-block against ml_dsa.rs:
+///   [DELETED] sigDecode / pkDecode                            (:365-368) struct
+///   [CHANGED] reject |z|inf > g-k                              (:378/434)
+///   [CHANGED] mu = H(tr||M) -> hash pk directly               (:386-397)
+///   [REUSED ] c_hat <- NTT(c) once; NTT(z) via b_amul         (:404-410)
+///   [CHANGED] w'approx = Az - c*t1*2^d -> w' = A z - c t exact (:404-417)
+///   [DELETED] w'_1 <- UseHint(h, w'approx)                     (:420-422)
+///   [CHANGED] c_tilde' = H(mu||w1Encode) -> c2 = H(pk,w',M)    (:427-431)
+///   [CHANGED] return ||z||<g1-b AND c_tilde==c_tilde' -> c==c2 (:433-436)
+pub(crate) fn base_sign_verify_internal(
+    sig: &LasSig,  // paper σ: sig = (c, z), signature to verify
+    m: &[u8],      // paper M: message
+    pk: &LasPk,    // paper t: pk.t = t (public key)
+    pp: &LasPp,    // paper A: pp = A = [I | A']
+) -> bool {
+    // [PAPER Alg.1] 14: procedure Verify(pk, σ, M):
+    // [PAPER Alg.1] 15:     Parse (c, z) := σ
+    // [PAPER Alg.1] 16:     if ||z||∞ > γ − κ, then return 0
+    if b_chknorm_vec(&sig.z, LAS_BOUND_SIGN) {
+        // [CHANGED] |z|inf > g-k
+        return false;
+    }
+    // [PAPER Alg.1] 17:     w′ = A z − c t, where t := pk
+    let mut w = b_amul(pp, &sig.z); // paper w′: w′ = A z − c t (starts as A z)
+    let c_hat = b_ntt_a(&sig.c); // paper c in NTT domain: NTT(c) once per call
+    for j in 0..LAS_N {
+        // w' = A z - c t  (exact; [DELETED] c*t1*2^d + UseHint)
+        let ct = b_polymul_prehat(&c_hat, &b_ntt_b_mont(&pk.t[j])); // paper c·t: the product c t
+        for n in 0..N {
+            w[j].0[n] = full_reduce32(w[j].0[n] - ct.0[n]);
+        }
+    }
+    // [PAPER Alg.1] 18:     if c ≠ H(pk, w′, M), then return 0
+    // [PAPER Alg.1] 19:     return 1
+    let c2 = b_hash_challenge(pk, &w, m); // paper H(pk, w′, M): recomputed challenge; c2 = H(pk, w', M)
+    c2 == sig.c // accept iff c == c2
+    // [PAPER Alg.1] 20: end procedure
+}
+
+/// `base_sign_verify` — Algorithm 1 Verify, public entry point (delegates to
+/// the internal).  Upstream's entry wrapper is lib.rs `verify`; kept here for
+/// the one-to-one C mirror (`ref/basesig.c base_sign_verify`).
+/// Returns true iff the signature is valid.
+pub fn base_sign_verify(
+    sig: &LasSig,  // paper σ: sig = (c, z), signature to verify
+    m: &[u8],      // paper M: message
+    pk: &LasPk,    // paper t: pk.t = t (public key)
+    pp: &LasPp,    // paper A: pp = A = [I | A']
+) -> bool {
+    base_sign_verify_internal(sig, m, pk, pp)
+}
+
+// [DELETED] `expand_private` (ml_dsa.rs:445) / `expand_public` (ml_dsa.rs:477) /
+// `private_to_public_key` (ml_dsa.rs:502): byte-encoding expansion and key
+// pre-computes.  Algorithm 1 keys are structs with no byte encodings (the
+// LAS wire format lives in las_serialize.rs / ref/serialize.c), so these
+// slots have no analogue here.
+
+/* ==================== helpers (local copies) ====================
+ * Defined at the BOTTOM of the file (ml_dsa.rs keeps its equivalents in
+ * hashing.rs / helpers.rs / ntt.rs).  Behaviour-identical to las.rs's.
+ * Correspondence to ml_dsa.rs primitives:
  *   b_sample_ternary   <->  expand_s      (ml_dsa.rs:79)  -- CHANGED (S_1)
  *   b_sample_sgamma    <->  expand_mask   (ml_dsa.rs:215) -- CHANGED (S_gamma)
  *   b_challenge        <->  sample_in_ball(ml_dsa.rs:237) -- CHANGED (kappa)
@@ -290,119 +484,4 @@ fn b_sample_ternary(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> R {
         }
     }
     r
-}
-
-/* ============================ scheme (Algorithm 1) ============================ */
-
-/// `base_sign_keypair` <-> `key_gen` (ml_dsa.rs:26): draw a seed, expand a key.
-/// The RNG is injected (Rust idiom), as ml_dsa.rs's `key_gen(rng)`.
-pub fn base_sign_keypair(pp: &LasPp, rng: &mut impl CryptoRngCore) -> (LasPk, LasSk) {
-    // 1: xi <- B^32                      (ml_dsa.rs:40)  [REUSED] random seed
-    let mut seed = [0u8; LAS_SEEDBYTES];
-    rng.fill_bytes(&mut seed);
-    // 5: return KeyGen_internal(xi)      (ml_dsa.rs:44)
-    let out = base_sign_keypair_seed(pp, &seed);
-    seed.zeroize(); // sk is derivable from this seed: wipe
-    out
-}
-
-/// `base_sign_keypair_seed` <-> `key_gen_internal` (ml_dsa.rs:57), Algorithm 1 KeyGen.
-/// Block-by-block against ml_dsa.rs:
-///   [CHANGED] (rho,rho',K) <- H(xi..)  -> the seed samples r directly (:67-74)
-///   [CHANGED] (s1,s2) <- ExpandS(rho') -> r <- S_1^{n+l} ternary        (:79)
-///   [CHANGED] t = NTT-1(A o NTT(s1))+s2 -> t = A r (identity block = s2) (:84-92)
-///   [DELETED] (t1,t0) <- Power2Round(t)                                 (:92)
-///   [DELETED] pkEncode / tr=H(pk) / skEncode + precomputes           (:100-130)
-pub fn base_sign_keypair_seed(pp: &LasPp, seed: &[u8; LAS_SEEDBYTES]) -> (LasPk, LasSk) {
-    let sk = LasSk {
-        s: from_fn(|j| b_sample_ternary(seed, j as u16)), // [CHANGED] ternary r
-    };
-    let pk = LasPk {
-        t: b_amul(pp, &sk.s), // [CHANGED] t = A r ; [DELETED] Power2Round
-    };
-    (pk, sk)
-}
-
-/// `base_sign_signature` <-> `sign_internal` (ml_dsa.rs:153), Algorithm 1 Sign.
-/// Block-by-block against ml_dsa.rs:
-///   [DELETED] skDecode                                        (:166)
-///   [CHANGED] mu=H(tr||M); rho'=H(K||rnd||mu) -> fresh mask seed (:183-201)
-///   [REUSED ] kappa counter / the `loop`                       (:204-212)
-///   [CHANGED] y <- ExpandMask -> y <- S_gamma                  (:215)
-///   [CHANGED] w = NTT-1(A o NTT(y)) -> w = A y                 (:217-222)
-///   [DELETED] w_1 <- HighBits(w)                               (:224-226)
-///   [CHANGED] c_tilde <- H(mu||w1Encode) -> c = H(pk,w,M) full (:230-234)
-///   [CHANGED] c <- SampleInBall (tau) -> kappa challenge       (:237)
-///   [REUSED ] c_hat <- NTT(c) once per attempt                 (:240)
-///   [CHANGED] cs1 <- NTT-1(c_hat o s1_hat); z = y + cs1        (:243-265)
-///   [CHANGED] reject ||z||>=g1-b OR ||r0||>=g2-b -> reject |z|inf>g-k (:276-285)
-///   [DELETED] c_t0, MakeHint, ||ct0||, hint weight             (:287-319)
-///   [DELETED] sigEncode                                        (:334-336)
-pub fn base_sign_signature(
-    m: &[u8],
-    pk: &LasPk,
-    sk: &LasSk,
-    pp: &LasPp,
-    rng: &mut impl CryptoRngCore,
-) -> LasSig {
-    let mut seed = [0u8; 64]; // [CHANGED] fresh mask seed (no mu/rho' chain)
-    rng.fill_bytes(&mut seed);
-    let mut nonce: u16 = 0; // [REUSED] the kappa counter
-    let s_hat_mont: [T; LAS_M] = from_fn(|j| b_ntt_b_mont(&sk.s[j])); // NTT(r) once per call
-    let sig = loop {
-        BASE_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
-        // 11: y <- ExpandMask -> S_gamma
-        let mut y: [R; LAS_M] = [R0; LAS_M];
-        for j in 0..LAS_M {
-            y[j] = b_sample_sgamma(&seed, nonce);
-            nonce = nonce.wrapping_add(1);
-        }
-        let w = b_amul(pp, &y); // 12: w = A y   ([DELETED] 13: HighBits)
-        let c = b_hash_challenge(pk, &w, m); // 15/16: c = H(pk, w, M) full w
-        let c_hat = b_ntt_a(&c); // 17: c_hat <- NTT(c), once per attempt
-
-        // 18/20: z = y + c r
-        let mut z: [R; LAS_M] = [R0; LAS_M];
-        for j in 0..LAS_M {
-            let cr = b_polymul_prehat(&c_hat, &s_hat_mont[j]);
-            for n in 0..N {
-                z[j].0[n] = y[j].0[n] + cr.0[n];
-            }
-        }
-        // 23: reject |z|inf > g-k   ([DELETED] low-bits + hint checks)
-        if b_chknorm_vec(&z, LAS_BOUND_SIGN) {
-            continue;
-        }
-        break LasSig { c, z }; // [DELETED] sigEncode: struct output
-    };
-    seed.zeroize(); // mask seed: wipe
-    sig
-}
-
-/// `base_sign_verify` <-> `verify_internal` (ml_dsa.rs:351), Algorithm 1 Verify.
-/// Block-by-block against ml_dsa.rs:
-///   [DELETED] sigDecode / pkDecode                            (:365-368) struct
-///   [CHANGED] reject |z|inf > g-k                              (:378/434)
-///   [CHANGED] mu = H(tr||M) -> hash pk directly               (:386-397)
-///   [REUSED ] c_hat <- NTT(c) once; NTT(z) via b_amul         (:404-410)
-///   [CHANGED] w'approx = Az - c*t1*2^d -> w' = A z - c t exact (:404-417)
-///   [DELETED] w'_1 <- UseHint(h, w'approx)                     (:420-422)
-///   [CHANGED] c_tilde' = H(mu||w1Encode) -> c2 = H(pk,w',M)    (:427-431)
-///   [CHANGED] return ||z||<g1-b AND c_tilde==c_tilde' -> c==c2 (:433-436)
-pub fn base_sign_verify(sig: &LasSig, m: &[u8], pk: &LasPk, pp: &LasPp) -> bool {
-    if b_chknorm_vec(&sig.z, LAS_BOUND_SIGN) {
-        // [CHANGED] |z|inf > g-k
-        return false;
-    }
-    let mut w = b_amul(pp, &sig.z); // A z
-    let c_hat = b_ntt_a(&sig.c); // NTT(c) once per call
-    for j in 0..LAS_N {
-        // w' = A z - c t  (exact; [DELETED] c*t1*2^d + UseHint)
-        let ct = b_polymul_prehat(&c_hat, &b_ntt_b_mont(&pk.t[j]));
-        for n in 0..N {
-            w[j].0[n] = full_reduce32(w[j].0[n] - ct.0[n]);
-        }
-    }
-    let c2 = b_hash_challenge(pk, &w, m); // c2 = H(pk, w', M)
-    c2 == sig.c // accept iff c == c2
 }

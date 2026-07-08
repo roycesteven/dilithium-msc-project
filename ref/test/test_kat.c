@@ -2,8 +2,8 @@
  * Known-Answer Tests (KATs) for LAS  -  reproducibility (objective C4).
  *
  * Every input here is FIXED (public-parameter seed, key seeds, statement seeds,
- * messages), and keygen / sign / presign are DETERMINISTIC (las_keygen_seed,
- * las_sign_det, las_presign_det).  The whole adaptor contract is therefore a pure
+ * messages), and keygen / sign / presign are DETERMINISTIC (las_keypair_seed,
+ * las_signature_det, las_presign_det).  The whole adaptor contract is therefore a pure
  * function of these inputs, so the serialised outputs are byte-for-byte
  * reproducible across machines and compilers.  We fold the packed bytes of
  * (pk, sk, sig, pre-sig, adapted-sig) for several vectors into one SHAKE256 digest
@@ -89,9 +89,9 @@ int main(void) {
     for(i = 0; i < MLEN; ++i) msg[i] = (uint8_t)(37u * v + i);
 
     /* deterministic keygen / statement / sign / presign / adapt */
-    las_keygen_seed(&pk, &sk, &pp, kseed);
-    las_keygen_seed(&Y, &yw, &pp, yseed);
-    las_sign_det(&sig, msg, MLEN, &pk, &sk, &pp);
+    las_keypair_seed(&pk, &sk, &pp, kseed);
+    las_keypair_seed(&Y, &yw, &pp, yseed);
+    las_signature_det(&sig, msg, MLEN, &pk, &sk, &pp);
     las_presign_det(&presig, msg, MLEN, &Y, &pk, &sk, &pp);
     CHECK(las_adapt(&adapted, &presig, msg, MLEN, &Y, &yw, &pk, &pp) == 0, "adapt");
 
@@ -104,9 +104,9 @@ int main(void) {
           "ext recovers witness");
 
     /* determinism: re-running the seeded/deterministic functions is identical */
-    las_keygen_seed(&pk2, &sk2, &pp, kseed);
+    las_keypair_seed(&pk2, &sk2, &pp, kseed);
     CHECK(pk_eq(&pk, &pk2) && sk_eq(&sk, &sk2), "keygen_seed deterministic");
-    las_sign_det(&sig2, msg, MLEN, &pk, &sk, &pp);
+    las_signature_det(&sig2, msg, MLEN, &pk, &sk, &pp);
     CHECK(sig_eq(&sig, &sig2), "sign_det deterministic");
 
     /* serialise and fold into the running KAT digest */

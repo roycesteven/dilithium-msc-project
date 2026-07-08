@@ -1,4 +1,35 @@
-#include <stddef.h>
+/*
+ * las.c -- LAS, Lattice-based Adaptor Signature (eprint 2020/845, Algorithm 2),
+ * written as a STRUCTURAL MIRROR of ref/basesig.c (which itself mirrors the
+ * upstream ref/sign.c): same layout, same helper set and order, same
+ * int-return convention (0 = success).  Names track provenance to the
+ * uppermost upstream by a uniform prefix swap crypto_sign* -> base_sign* ->
+ * las*, so the chain sign.c <-> basesig.c <-> las.c reads pairwise side by
+ * side:
+ *
+ *   -- Algorithm 1 (base path; one-to-one with basesig.c) --
+ *   las_setup                -   expands A (basesig.c consumes this same las_pp)
+ *   las_keypair             <->  base_sign_keypair
+ *   las_keypair_seed         -   deterministic KeyGen body (KAT path; no upstream slot)
+ *   las_signature_internal  <->  base_sign_signature_internal
+ *   las_signature           <->  base_sign_signature
+ *   las_signature_det        -   deterministic Sign (KAT path; no upstream slot)
+ *   (base_sign slot)         -   none here; byte interface = ref/serialize.c
+ *   las_verify_internal     <->  base_sign_verify_internal
+ *   las_verify              <->  base_sign_verify
+ *   (base_sign_open slot)    -   none here; byte interface = ref/serialize.c
+ *
+ *   -- Algorithm 2 (adaptor layer; upstream = the PAPER, names kept) --
+ *   las_presign_internal / las_presign / las_presign_det /
+ *   las_preverify_internal / las_preverify / las_presign_k / las_preverify_k /
+ *   las_adapt / las_ext
+ *
+ * The ONLY differences between the base path here and basesig.c are the LAS
+ * extras (deterministic KAT variants) -- the crypto is identical, so a
+ * LAS-adapted signature verifies under basesig.c's independent verifier.
+ * The static helpers are defined at the BOTTOM of the file, in the same
+ * order as basesig.c's (which keeps its own behaviourally-identical copies).
+ */
 #include <stdint.h>
 #include "params.h"
 #include "las.h"
@@ -7,7 +38,7 @@
 #include "fips202.h"
 
 /* Rejection-sampling attempt counter (measurement only; see las.h).
- * Incremented once per rejection-loop iteration in las_sign/las_presign/
+ * Incremented once per rejection-loop iteration in las_signature/las_presign/
  * las_presign_k.  Never read by the scheme itself. */
 unsigned long las_attempts = 0;
 
@@ -27,7 +58,559 @@ double las_expected_attempts(int32_t bound) {
   return 1.0 / acc;
 }
 
-/* ============================ helpers ============================ */
+/* ---- local helpers, DEFINED AT THE BOTTOM of this file, in the same order
+ * as basesig.c's local copies (prefix b_ there, none/las_ here):
+ *   pack_poly_canon / poly_equal / chknorm_vec / polymul_prehat / las_Amul /
+ *   las_challenge / hash_challenge / sample_Sgamma / sample_ternary
+ * plus one LAS-only helper with no basesig analogue:
+ *   det_seed -- mask seed = SHAKE256(tag, sk, [Y], M) for the _det variants. */
+static void pack_poly_canon(uint8_t out[N*4], const poly *a);
+static int  poly_equal(const poly *a, const poly *b);
+static int  chknorm_vec(const poly z[LAS_M], int32_t B);
+static void polymul_prehat(poly *out, const poly *ahat, const poly *bhat);
+static void las_Amul(poly w[LAS_N], const las_pp *pp, const poly v[LAS_M]);
+static void las_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]);
+static void hash_challenge(poly *c, const las_pk *pk, const poly commit[LAS_N],
+                           const uint8_t *m, size_t mlen);
+static void sample_Sgamma(poly *y, const uint8_t *seed, size_t seedlen, uint16_t nonce);
+static void sample_ternary(poly *r, const uint8_t *seed, size_t seedlen, uint16_t nonce);
+static void det_seed(uint8_t out[64], uint8_t tag, const las_sk *sk,
+                     const las_pk *Y, const uint8_t *m, size_t mlen);
+
+/* ==================== scheme, Algorithm 1 (base path) ==================== */
+
+/*************************************************
+* Name:        las_setup  (no basesig.c/sign.c analogue)
+*
+* Description: Public parameters pp = A = [I | A']: expand A' from a public
+*              seed, in the NTT domain.  basesig.c consumes this same las_pp
+*              (A is fixed public infrastructure, shared by both schemes).
+**************************************************/
+void las_setup(las_pp *pp,          /* paper A: pp = A = [I | A']; pp->mat = A' (NTT domain) */
+               const uint8_t seed[LAS_SEEDBYTES]) {  /* public seed expanding A' (no paper symbol) */
+  unsigned int i, j;  /* row / column indices over A' (no paper symbol) */
+  for(i = 0; i < LAS_SEEDBYTES; ++i)
+    pp->seed[i] = seed[i];
+  for(i = 0; i < LAS_N; ++i)
+    for(j = 0; j < LAS_ELL; ++j)
+      poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
+}
+
+/*************************************************
+* Name:        las_keypair  <->  base_sign_keypair (basesig.c)
+*              <->  crypto_sign_keypair (sign.c:23)
+*
+* Description: Algorithm 1 KeyGen, random path: fresh seed, then the
+*              deterministic KeyGen body.  Also used to make the
+*              statement/witness pair (Y, y) -- it is literally a key pair.
+*
+* Returns 0 (success)
+**************************************************/
+int las_keypair(las_pk *pk,          /* paper t: pk->t = t = A r (public key) */
+                las_sk *sk,          /* paper r: sk->s = r (secret key)       */
+                const las_pp *pp) {  /* paper A: pp = A = [I | A']            */
+  uint8_t seed[LAS_SEEDBYTES];  /* PRG seed to sample r (no paper symbol) */
+  randombytes(seed, LAS_SEEDBYTES);              /* fresh randomness */
+  return las_keypair_seed(pk, sk, pp, seed);
+}
+
+/*************************************************
+* Name:        las_keypair_seed  (no basesig.c/sign.c slot; deterministic KAT path)
+*
+* Description: Algorithm 1 KeyGen body from an explicit 32-byte seed
+*              (reproducible KAT vectors) -- the body of base_sign_keypair
+*              minus its randombytes line.
+*
+* Returns 0 (success)
+**************************************************/
+int las_keypair_seed(las_pk *pk,            /* paper t: pk->t = t = A r (public key)       */
+                     las_sk *sk,            /* paper r: sk->s = r  (secret key, r <-$ S_1) */
+                     const las_pp *pp,      /* paper A: pp = A = [I | A'] (public matrix)  */
+                     const uint8_t seed[LAS_SEEDBYTES]) {  /* PRG seed to sample r (no paper symbol) */
+  /* [PAPER Alg.1] 1:  procedure KeyGen():    // same as Gen */
+  unsigned int j;   /* index over the n+ℓ components (no paper symbol) */
+  /* [PAPER Alg.1] 2:      r ←$ S₁^(n+ℓ) */
+  for(j = 0; j < LAS_M; ++j)
+    sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);
+  /* [PAPER Alg.1] 3:      t = A r */
+  las_Amul(pk->t, pp, sk->s);
+  /* [PAPER Alg.1] 4:      return (pk, sk) = (t, r) */
+  return 0;
+  /* [PAPER Alg.1] 5:  end procedure */
+}
+
+/*************************************************
+* Name:        las_signature_internal  <->  base_sign_signature_internal (basesig.c)
+*              <->  crypto_sign_signature_internal (sign.c:85)
+*
+* Description: Algorithm 1 Sign body, parameterised by the caller-supplied
+*              64-byte mask seed (random or derived).  NTT hoisting mirrors
+*              ref/sign.c crypto_sign_signature_internal: the secret is
+*              invariant across rejection attempts, so NTT(s_j) is paid once
+*              per call (sign.c:128 polyvecl_ntt(&s1) before the rej loop),
+*              and the challenge is shared by all n+ell products, so NTT(c)
+*              is paid once per attempt (sign.c:154 poly_ntt(&cp)).
+*
+* Returns 0 (success)
+**************************************************/
+int las_signature_internal(las_sig *sig,       /* paper σ: output signature σ = (c, z)  */
+                           const uint8_t *m,   /* paper M: message                      */
+                           size_t mlen,        /* length of M (no paper symbol)         */
+                           const las_pk *pk,   /* paper t: pk->t = t (public key)       */
+                           const las_sk *sk,   /* paper r: sk->s = r (secret key)       */
+                           const las_pp *pp,   /* paper A: pp = A = [I | A']            */
+                           const uint8_t seed[64]) {  /* PRG mask seed (no paper symbol) */
+  /* [PAPER Alg.1] 6:  procedure Sign((pk, sk), M): */
+  uint16_t nonce = 0;    /* PRG counter (no paper symbol)                */
+  unsigned int j;        /* index over n+ℓ components (no paper symbol)  */
+  poly y[LAS_M];         /* paper y: mask, y <-$ Sγ^(n+ℓ)                */
+  poly w[LAS_N];         /* paper w: commitment, w = A y                 */
+  poly shat[LAS_M];      /* paper r in NTT domain: NTT(r) (hoisted)      */
+  poly chat;             /* paper c in NTT domain: NTT(c) (hoisted)      */
+  poly cr;               /* paper c·r: the product c r                   */
+  poly c;                /* paper c: challenge c = H(pk, w, M)           */
+
+  for(j = 0; j < LAS_M; ++j) {                /* NTT(s) once per call */
+    shat[j] = sk->s[j];
+    poly_ntt(&shat[j]);
+  }
+
+  for(;;) {
+    ++las_attempts;                           /* instrumentation only */
+    /* [PAPER Alg.1] 7:      y ←$ Sγ^(n+ℓ) */
+    for(j = 0; j < LAS_M; ++j)
+      sample_Sgamma(&y[j], seed, 64, nonce++);
+    /* [PAPER Alg.1] 8:      w = A y */
+    las_Amul(w, pp, y);                       /* w = A y           */
+    /* [PAPER Alg.1] 9:      c = H(pk, w, M) */
+    hash_challenge(&c, pk, w, m, mlen);        /* c = H(pk, w, M)   */
+    chat = c;                                  /* NTT(c) once per attempt */
+    poly_ntt(&chat);
+    /* [PAPER Alg.1] 10:     z = y + c r, where r := sk */
+    for(j = 0; j < LAS_M; ++j) {               /* z = y + c r       */
+      polymul_prehat(&cr, &chat, &shat[j]);
+      poly_add(&sig->z[j], &y[j], &cr);
+      poly_reduce(&sig->z[j]);
+    }
+    /* [PAPER Alg.1] 11:     if ||z||∞ > γ − κ, then Restart */
+    if(chknorm_vec(sig->z, LAS_BOUND_SIGN))
+      continue;
+    /* [PAPER Alg.1] 12:     return σ = (c, z) */
+    sig->c = c;
+    return 0;
+  }
+  /* [PAPER Alg.1] 13: end procedure */
+}
+
+/*************************************************
+* Name:        las_signature  <->  base_sign_signature (basesig.c)
+*              <->  crypto_sign_signature (sign.c:206)
+*
+* Description: Algorithm 1 Sign, random path: fresh mask seed, then the
+*              internal.
+*
+* Returns 0 (success)
+**************************************************/
+int las_signature(las_sig *sig,        /* paper σ: output signature σ = (c, z) */
+                  const uint8_t *m,    /* paper M: message                     */
+                  size_t mlen,         /* length of M (no paper symbol)        */
+                  const las_pk *pk,    /* paper t: pk->t = t (public key)      */
+                  const las_sk *sk,    /* paper r: sk->s = r (secret key)      */
+                  const las_pp *pp) {  /* paper A: pp = A = [I | A']           */
+  uint8_t seed[64];  /* PRG mask seed (no paper symbol) */
+  randombytes(seed, 64);
+  return las_signature_internal(sig, m, mlen, pk, sk, pp, seed);
+}
+
+/*************************************************
+* Name:        las_signature_det  (no basesig.c/sign.c slot; deterministic KAT path)
+*
+* Description: Deterministic Sign: mask seed derived from (sk, M) via
+*              det_seed, then the same internal.  Same distribution and
+*              validity as las_signature; removes the per-signature RNG (no
+*              nonce-reuse risk) and enables reproducible known-answer tests.
+*
+* Returns 0 (success)
+**************************************************/
+int las_signature_det(las_sig *sig,        /* paper σ: output signature σ = (c, z) */
+                      const uint8_t *m,    /* paper M: message                     */
+                      size_t mlen,         /* length of M (no paper symbol)        */
+                      const las_pk *pk,    /* paper t: pk->t = t (public key)      */
+                      const las_sk *sk,    /* paper r: sk->s = r (secret key)      */
+                      const las_pp *pp) {  /* paper A: pp = A = [I | A']           */
+  uint8_t seed[64];  /* PRG mask seed, derived from (sk, M) (no paper symbol) */
+  det_seed(seed, 0, sk, NULL, m, mlen);        /* tag 0 = sign (no statement) */
+  return las_signature_internal(sig, m, mlen, pk, sk, pp, seed);
+}
+
+/* (basesig.c slot base_sign: no las.c analogue -- the byte-level signed
+ * interface for LAS lives in ref/serialize.c, e.g. las_verify_packed.) */
+
+/*************************************************
+* Name:        las_verify_internal  <->  base_sign_verify_internal (basesig.c)
+*              <->  crypto_sign_verify_internal (sign.c:289)
+*
+* Description: Algorithm 1 Verify: w' = A z - c t; accept iff c == H(pk,w',M).
+*
+* Returns 0 if signature could be verified correctly and -1 otherwise
+**************************************************/
+int las_verify_internal(const las_sig *sig,  /* paper σ: sig = (c, z), signature to verify */
+                        const uint8_t *m,    /* paper M: message                          */
+                        size_t mlen,         /* length of M (no paper symbol)             */
+                        const las_pk *pk,    /* paper t: pk->t = t (public key)           */
+                        const las_pp *pp) {  /* paper A: pp = A = [I | A']                */
+  /* [PAPER Alg.1] 14: procedure Verify(pk, σ, M): */
+  poly w[LAS_N];  /* paper w′: recomputed commitment, w′ = A z − c t          */
+  poly chat;      /* paper c in NTT domain: NTT(c) (hoisted)                  */
+  poly that;      /* paper t in NTT domain: NTT(t) (hoisted)                  */
+  poly ct;        /* paper c·t: the product c t                               */
+  poly c2;        /* paper H(pk, w′, M): recomputed challenge, compared to c  */
+  unsigned int j; /* index over n components (no paper symbol)                */
+
+  /* [PAPER Alg.1] 15:     Parse (c, z) := σ */
+  /* [PAPER Alg.1] 16:     if ||z||∞ > γ − κ, then return 0 */
+  if(chknorm_vec(sig->z, LAS_BOUND_SIGN))
+    return -1;
+
+  /* [PAPER Alg.1] 17:     w′ = A z − c t, where t := pk */
+  las_Amul(w, pp, sig->z);                     /* A z               */
+  chat = sig->c;                                /* NTT(c) once per call */
+  poly_ntt(&chat);                              /* (mirrors ref/sign.c:333) */
+  for(j = 0; j < LAS_N; ++j) {                  /* w' = A z - c t    */
+    that = pk->t[j];
+    poly_ntt(&that);
+    polymul_prehat(&ct, &chat, &that);
+    poly_sub(&w[j], &w[j], &ct);
+    poly_reduce(&w[j]);
+    poly_caddq(&w[j]);
+  }
+  /* [PAPER Alg.1] 18:     if c ≠ H(pk, w′, M), then return 0 */
+  /* [PAPER Alg.1] 19:     return 1 */
+  hash_challenge(&c2, pk, w, m, mlen);
+  return poly_equal(&c2, &sig->c) ? 0 : -1;
+  /* [PAPER Alg.1] 20: end procedure */
+}
+
+/*************************************************
+* Name:        las_verify  <->  base_sign_verify (basesig.c)
+*              <->  crypto_sign_verify (sign.c:375)
+*
+* Description: Algorithm 1 Verify, public entry point (delegates to the
+*              internal, exactly like basesig.c / sign.c).
+*
+* Returns 0 if signature could be verified correctly and -1 otherwise
+**************************************************/
+int las_verify(const las_sig *sig,  /* paper σ: sig = (c, z), signature to verify */
+               const uint8_t *m,    /* paper M: message                          */
+               size_t mlen,         /* length of M (no paper symbol)             */
+               const las_pk *pk,    /* paper t: pk->t = t (public key)           */
+               const las_pp *pp) {  /* paper A: pp = A = [I | A']                */
+  return las_verify_internal(sig, m, mlen, pk, pp);
+}
+
+/* (basesig.c slot base_sign_open: no las.c analogue -- see ref/serialize.c.) */
+
+/* =============== scheme, Algorithm 2 (adaptor layer) ===============
+ * No basesig.c/sign.c analogue from here on: these are the adaptor
+ * operations LAS adds on top of the base signature (upstream = the PAPER). */
+
+/*************************************************
+* Name:        las_presign_internal  (adaptor twin of las_signature_internal)
+*
+* Description: Algorithm 2 PreSign body: like las_signature_internal but
+*              hashes (w + Y) and rejects at `bound` (g-k-1 single-hop, or
+*              g-k-K for AMHL).  Parameterised by the mask seed.  Same NTT
+*              hoisting as las_signature_internal.
+*
+* Returns 0 (success)
+**************************************************/
+int las_presign_internal(las_sig *presig,   /* paper σ̂: output pre-signature σ̂ = (c, ẑ)    */
+                         const uint8_t *m,  /* paper M: message                            */
+                         size_t mlen,       /* length of M (no paper symbol)               */
+                         const las_pk *Y,   /* paper t′ := Y: statement, Y->t = Y = A y_wit */
+                         const las_pk *pk,  /* paper t: pk->t = t (public key)             */
+                         const las_sk *sk,  /* paper r: sk->s = r (secret key)             */
+                         const las_pp *pp,  /* paper A: pp = A = [I | A']                  */
+                         int32_t bound,     /* paper γ−κ−1 (single-hop) / γ−κ−K (AMHL)     */
+                         const uint8_t seed[64]) {  /* PRG mask seed (no paper symbol) */
+  /* [PAPER Alg.2] 1:  procedure PreSign((pk, sk), Y, M): */
+  uint16_t nonce = 0;    /* PRG counter (no paper symbol)                   */
+  unsigned int j;        /* index over n+ℓ / n components (no paper symbol) */
+  poly y[LAS_M];         /* paper y: mask, y <-$ Sγ^(n+ℓ)                   */
+  poly w[LAS_N];         /* paper w: commitment, w = A y                    */
+  poly wY[LAS_N];        /* paper w + t′: the hashed commitment w + Y       */
+  poly shat[LAS_M];      /* paper r in NTT domain: NTT(r) (hoisted)         */
+  poly chat;             /* paper c in NTT domain: NTT(c) (hoisted)         */
+  poly cr;               /* paper c·r: the product c r                      */
+  poly c;                /* paper c: challenge c = H(pk, w + t′, M)         */
+
+  for(j = 0; j < LAS_M; ++j) {                  /* NTT(s) once per call */
+    shat[j] = sk->s[j];
+    poly_ntt(&shat[j]);
+  }
+
+  for(;;) {
+    ++las_attempts;                             /* instrumentation only */
+    /* [PAPER Alg.2] 2:      y ←$ Sγ^(n+ℓ) */
+    for(j = 0; j < LAS_M; ++j)
+      sample_Sgamma(&y[j], seed, 64, nonce++);
+    /* [PAPER Alg.2] 3:      w = A y */
+    las_Amul(w, pp, y);                         /* w = A y                 */
+    /* [PAPER Alg.2] 4:      c = H(pk, w + t′, M), where t′ := Y */
+    for(j = 0; j < LAS_N; ++j) {                 /* commit = w + Y          */
+      poly_add(&wY[j], &w[j], &Y->t[j]);
+      poly_reduce(&wY[j]);
+      poly_caddq(&wY[j]);
+    }
+    hash_challenge(&c, pk, wY, m, mlen);          /* c = H(pk, w+Y, M)       */
+    chat = c;                                     /* NTT(c) once per attempt */
+    poly_ntt(&chat);
+    /* [PAPER Alg.2] 5:      ẑ = y + c r, where r := sk */
+    for(j = 0; j < LAS_M; ++j) {                  /* z^ = y + c r            */
+      polymul_prehat(&cr, &chat, &shat[j]);
+      poly_add(&presig->z[j], &y[j], &cr);
+      poly_reduce(&presig->z[j]);
+    }
+    /* [PAPER Alg.2] 6:      if ||ẑ||∞ > γ − κ − 1, then Restart */
+    if(chknorm_vec(presig->z, bound))
+      continue;
+    /* [PAPER Alg.2] 7:      return σ̂ = (c, ẑ) */
+    presig->c = c;
+    return 0;
+  }
+  /* [PAPER Alg.2] 8:  end procedure */
+}
+
+/*************************************************
+* Name:        las_presign  (adaptor twin of las_signature)
+*
+* Description: Algorithm 2 PreSign(sk, Y, M), random path: fresh mask seed,
+*              then the internal at the single-hop bound g-k-1.
+*
+* Returns 0 (success)
+**************************************************/
+int las_presign(las_sig *presig,     /* paper σ̂: output pre-signature σ̂ = (c, ẑ) */
+                const uint8_t *m,    /* paper M: message                         */
+                size_t mlen,         /* length of M (no paper symbol)            */
+                const las_pk *Y,     /* paper t′ := Y: statement                 */
+                const las_pk *pk,    /* paper t: pk->t = t (public key)          */
+                const las_sk *sk,    /* paper r: sk->s = r (secret key)          */
+                const las_pp *pp) {  /* paper A: pp = A = [I | A']               */
+  uint8_t seed[64];  /* PRG mask seed (no paper symbol) */
+  randombytes(seed, 64);
+  return las_presign_internal(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN, seed);
+}
+
+/*************************************************
+* Name:        las_presign_det  (adaptor twin of las_signature_det; KAT path)
+*
+* Description: Deterministic PreSign: mask seed derived from (sk, Y, M) via
+*              det_seed (tag 1 binds the statement Y), single-hop bound.
+*
+* Returns 0 (success)
+**************************************************/
+int las_presign_det(las_sig *presig,     /* paper σ̂: output pre-signature σ̂ = (c, ẑ) */
+                    const uint8_t *m,    /* paper M: message                         */
+                    size_t mlen,         /* length of M (no paper symbol)            */
+                    const las_pk *Y,     /* paper t′ := Y: statement                 */
+                    const las_pk *pk,    /* paper t: pk->t = t (public key)          */
+                    const las_sk *sk,    /* paper r: sk->s = r (secret key)          */
+                    const las_pp *pp) {  /* paper A: pp = A = [I | A']               */
+  uint8_t seed[64];  /* PRG mask seed, derived from (sk, Y, M) (no paper symbol) */
+  det_seed(seed, 1, sk, Y, m, mlen);            /* tag 1 = presign (binds Y) */
+  return las_presign_internal(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN, seed);
+}
+
+/*************************************************
+* Name:        las_preverify_internal  (adaptor twin of las_verify_internal)
+*
+* Description: Algorithm 2 PreVerify body, parameterised by the rejection
+*              bound (g-k-1 single-hop, g-k-K for AMHL): w' = A z^ - c t;
+*              accept iff c == H(pk, w' + Y, M).
+*
+* Returns 0 if pre-signature could be verified correctly and -1 otherwise
+**************************************************/
+int las_preverify_internal(const las_sig *presig,  /* paper σ̂: presig = (c, ẑ), pre-sig to verify */
+                           const uint8_t *m,       /* paper M: message                            */
+                           size_t mlen,            /* length of M (no paper symbol)               */
+                           const las_pk *Y,        /* paper t′ := Y: statement, Y->t = Y          */
+                           const las_pk *pk,       /* paper t: pk->t = t (public key)             */
+                           const las_pp *pp,       /* paper A: pp = A = [I | A']                  */
+                           int32_t bound) {        /* paper γ−κ−1 (single-hop) / γ−κ−K (AMHL)     */
+  /* [PAPER Alg.2] 9:  procedure PreVerify(Y, pk, σ̂, M): */
+  poly w[LAS_N];  /* paper w′: recomputed commitment, w′ = A ẑ − c t          */
+  poly wY[LAS_N]; /* paper w′ + t′: the hashed commitment w′ + Y              */
+  poly chat;      /* paper c in NTT domain: NTT(c) (hoisted)                  */
+  poly that;      /* paper t in NTT domain: NTT(t) (hoisted)                  */
+  poly ct;        /* paper c·t: the product c t                               */
+  poly c2;        /* paper H(pk, w′ + t′, M): recomputed challenge vs c       */
+  unsigned int j; /* index over n components (no paper symbol)                */
+
+  /* [PAPER Alg.2] 10:     Parse (c, ẑ) := σ̂ and t′ := Y */
+  /* [PAPER Alg.2] 11:     if ||ẑ||∞ > γ − κ − 1 then */
+  /* [PAPER Alg.2] 12:         return 0 */
+  /* [PAPER Alg.2] 13:     end if */
+  if(chknorm_vec(presig->z, bound))
+    return -1;
+
+  /* [PAPER Alg.2] 14:     w′ = A ẑ − c t, where t := pk */
+  las_Amul(w, pp, presig->z);                    /* A z^                    */
+  chat = presig->c;                               /* NTT(c) once per call    */
+  poly_ntt(&chat);
+  for(j = 0; j < LAS_N; ++j) {                    /* w' = A z^ - c t         */
+    that = pk->t[j];
+    poly_ntt(&that);
+    polymul_prehat(&ct, &chat, &that);
+    poly_sub(&w[j], &w[j], &ct);
+    poly_reduce(&w[j]);
+    poly_caddq(&w[j]);
+  }
+  for(j = 0; j < LAS_N; ++j) {                    /* w' + Y                  */
+    poly_add(&wY[j], &w[j], &Y->t[j]);
+    poly_reduce(&wY[j]);
+    poly_caddq(&wY[j]);
+  }
+  /* [PAPER Alg.2] 15:     if c ≠ H(pk, w′ + t′, M) then */
+  /* [PAPER Alg.2] 16:         return 0 */
+  /* [PAPER Alg.2] 17:     end if */
+  /* [PAPER Alg.2] 18:     return 1 */
+  hash_challenge(&c2, pk, wY, m, mlen);            /* check c == H(pk,w'+Y,M) */
+  return poly_equal(&c2, &presig->c) ? 0 : -1;
+  /* [PAPER Alg.2] 19: end procedure */
+}
+
+/*************************************************
+* Name:        las_preverify  (adaptor twin of las_verify)
+*
+* Description: Algorithm 2 PreVerify(Y, pk, σ̂, M), public entry point at the
+*              single-hop bound g-k-1.
+*
+* Returns 0 if pre-signature could be verified correctly and -1 otherwise
+**************************************************/
+int las_preverify(const las_sig *presig,  /* paper σ̂: presig = (c, ẑ), pre-sig to verify */
+                  const uint8_t *m,       /* paper M: message                            */
+                  size_t mlen,            /* length of M (no paper symbol)               */
+                  const las_pk *Y,        /* paper t′ := Y: statement, Y->t = Y          */
+                  const las_pk *pk,       /* paper t: pk->t = t (public key)             */
+                  const las_pp *pp) {     /* paper A: pp = A = [I | A']                  */
+  return las_preverify_internal(presig, m, mlen, Y, pk, pp, LAS_BOUND_PRESIGN);
+}
+
+/*************************************************
+* Name:        las_presign_k  (AMHL K-hop PreSign)
+*
+* Description: Identical to las_presign but rejects at the tighter bound
+*              g-k-K (LAS_BOUND_PRESIGN_K), reserving norm budget K for the
+*              cumulative witness (eprint 2020/845 Fig. 2 / Section 5).
+*
+* Returns 0 (success)
+**************************************************/
+int las_presign_k(las_sig *presig,    /* paper σ̂: output pre-signature σ̂ = (c, ẑ)   */
+                  const uint8_t *m,   /* paper M: message                           */
+                  size_t mlen,        /* length of M (no paper symbol)              */
+                  const las_pk *Y,    /* paper t′ := Y: (cumulative) statement       */
+                  const las_pk *pk,   /* paper t: pk->t = t (public key)            */
+                  const las_sk *sk,   /* paper r: sk->s = r (secret key)            */
+                  const las_pp *pp,   /* paper A: pp = A = [I | A']                 */
+                  unsigned int nhops) {  /* paper K: number of AMHL hops (tighter bound γ−κ−K) */
+  uint8_t seed[64];  /* PRG mask seed (no paper symbol) */
+  randombytes(seed, 64);
+  return las_presign_internal(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN_K(nhops), seed);
+}
+
+/*************************************************
+* Name:        las_preverify_k  (AMHL K-hop PreVerify)
+*
+* Description: Identical to las_preverify but at the tighter bound g-k-K
+*              (same shared internal, different bound).
+*
+* Returns 0 if pre-signature could be verified correctly and -1 otherwise
+**************************************************/
+int las_preverify_k(const las_sig *presig,  /* paper σ̂: presig = (c, ẑ), pre-sig to verify */
+                    const uint8_t *m,       /* paper M: message                            */
+                    size_t mlen,            /* length of M (no paper symbol)               */
+                    const las_pk *Y,        /* paper t′ := Y: (cumulative) statement       */
+                    const las_pk *pk,       /* paper t: pk->t = t (public key)             */
+                    const las_pp *pp,       /* paper A: pp = A = [I | A']                  */
+                    unsigned int nhops) {   /* paper K: number of AMHL hops (bound γ−κ−K)  */
+  return las_preverify_internal(presig, m, mlen, Y, pk, pp, LAS_BOUND_PRESIGN_K(nhops));
+}
+
+/*************************************************
+* Name:        las_adapt  (adaptor operation; no base analogue)
+*
+* Description: Algorithm 2 Adapt((Y,y), pk, σ̂, M): PreVerify, then
+*              σ = (c, ẑ + y).  The adapted signature is a fully ORDINARY
+*              signature (standard Verify sees Az - ct = w + Y).
+*
+* Returns 0 on success, -1 if the pre-signature is invalid
+**************************************************/
+int las_adapt(las_sig *sig,          /* paper σ: output adapted signature σ = (c, ẑ + r′) */
+              const las_sig *presig, /* paper σ̂: presig = (c, ẑ)                          */
+              const uint8_t *m,      /* paper M: message                                  */
+              size_t mlen,           /* length of M (no paper symbol)                     */
+              const las_pk *Y,       /* paper t′ := Y: statement                          */
+              const las_sk *y,       /* paper (Y,y) witness, r′ := y: y->s = y (A y = Y)  */
+              const las_pk *pk,      /* paper t: pk->t = t (public key)                   */
+              const las_pp *pp) {    /* paper A: pp = A = [I | A']                        */
+  /* [PAPER Alg.2] 20: procedure Adapt((Y, y), pk, σ̂, M): */
+  unsigned int j;  /* index over n+ℓ components (no paper symbol) */
+
+  /* [PAPER Alg.2] 21:     if PreVerify(Y, pk, σ̂, M) = 0 then */
+  /* [PAPER Alg.2] 22:         return ⊥ */
+  /* [PAPER Alg.2] 23:     end if */
+  if(las_preverify(presig, m, mlen, Y, pk, pp))
+    return -1;
+
+  /* [PAPER Alg.2] 24:     Parse (c, ẑ) := σ̂ and r′ := y */
+  /* [PAPER Alg.2] 25:     return σ = (c, ẑ + r′) */
+  sig->c = presig->c;
+  for(j = 0; j < LAS_M; ++j) {                    /* z = z^ + y_wit          */
+    poly_add(&sig->z[j], &presig->z[j], &y->s[j]);
+    poly_reduce(&sig->z[j]);
+  }
+  return 0;
+  /* [PAPER Alg.2] 26: end procedure */
+}
+
+/*************************************************
+* Name:        las_ext  (adaptor operation; no base analogue)
+*
+* Description: Algorithm 2 Ext(Y, σ, σ̂): s = z - ẑ; return it iff A s == Y.
+*              This is the on-chain leak that makes swaps atomic: publishing
+*              the adapted σ lets anyone holding σ̂ recover the witness.
+*
+* Returns 0 (and the witness in y) on success, -1 otherwise
+**************************************************/
+int las_ext(las_sk *y,               /* paper s: output extracted witness s (y->s = s)   */
+            const las_sig *sig,      /* paper σ: sig = (c, z)                            */
+            const las_sig *presig,   /* paper σ̂: presig = (ĉ, ẑ)                         */
+            const las_pk *Y,         /* paper t′ := Y: statement                         */
+            const las_pp *pp) {      /* paper A: pp = A = [I | A']                       */
+  /* [PAPER Alg.2] 27: procedure Ext(Y, σ, σ̂): */
+  poly Ay[LAS_N]; /* paper A s: the product A s, checked against t′ = Y */
+  unsigned int j; /* index over n+ℓ / n components (no paper symbol)    */
+
+  /* [PAPER Alg.2] 28:     Parse (c, z) := σ and (ĉ, ẑ) := σ̂ */
+  /* [PAPER Alg.2] 29:     Parse t′ := Y */
+  /* [PAPER Alg.2] 30:     s = z − ẑ */
+  for(j = 0; j < LAS_M; ++j) {                    /* s = z - z^              */
+    poly_sub(&y->s[j], &sig->z[j], &presig->z[j]);
+    poly_reduce(&y->s[j]);
+  }
+  /* [PAPER Alg.2] 31:     if t′ ≠ A s, then return ⊥ */
+  las_Amul(Ay, pp, y->s);                          /* check A s == Y          */
+  for(j = 0; j < LAS_N; ++j)
+    if(!poly_equal(&Ay[j], &Y->t[j]))
+      return -1;
+  /* [PAPER Alg.2] 32:     return s */
+  return 0;
+  /* [PAPER Alg.2] 33: end procedure */
+}
+
+/* ============================ helpers ============================
+ * Definitions of the statics forward-declared at the top, in the same order
+ * as basesig.c's local copies (which are behaviourally identical). */
 
 /* Pack one polynomial into 4 bytes/coeff (canonical [0,Q)) for hashing. */
 static void pack_poly_canon(uint8_t out[N*4], const poly *a) {
@@ -227,34 +810,10 @@ static void sample_ternary(poly *r, const uint8_t *seed, size_t seedlen, uint16_
   }
 }
 
-/* ============================ scheme ============================ */
-
-void las_setup(las_pp *pp, const uint8_t seed[LAS_SEEDBYTES]) {
-  unsigned int i, j;
-  for(i = 0; i < LAS_SEEDBYTES; ++i)
-    pp->seed[i] = seed[i];
-  for(i = 0; i < LAS_N; ++i)
-    for(j = 0; j < LAS_ELL; ++j)
-      poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
-}
-
-void las_keygen_seed(las_pk *pk, las_sk *sk, const las_pp *pp,
-                     const uint8_t seed[LAS_SEEDBYTES]) {
-  unsigned int j;
-  for(j = 0; j < LAS_M; ++j)
-    sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);
-  las_Amul(pk->t, pp, sk->s);
-}
-
-void las_keygen(las_pk *pk, las_sk *sk, const las_pp *pp) {
-  uint8_t seed[LAS_SEEDBYTES];
-  randombytes(seed, LAS_SEEDBYTES);              /* fresh randomness */
-  las_keygen_seed(pk, sk, pp, seed);
-}
-
 /* Deterministic per-(pre)signature mask randomness: seed = SHAKE256(tag, sk, [Y], M).
  * Makes (pre)signing a deterministic function of its inputs - reproducible KATs and
- * no fresh per-signature randomness to mishandle (nonce-reuse safety). */
+ * no fresh per-signature randomness to mishandle (nonce-reuse safety).
+ * LAS-only helper (the _det KAT path); no basesig.c analogue. */
 static void det_seed(uint8_t out[64], uint8_t tag, const las_sk *sk,
                      const las_pk *Y, const uint8_t *m, size_t mlen) {
   keccak_state state;
@@ -277,231 +836,4 @@ static void det_seed(uint8_t out[64], uint8_t tag, const las_sk *sk,
   shake256_absorb(&state, m, mlen);
   shake256_finalize(&state);
   shake256_squeeze(out, 64, &state);
-}
-
-/* Shared Sign body, parameterised by the 64-byte mask seed (random or derived).
- * NTT hoisting mirrors ref/sign.c crypto_sign_signature_internal: the secret is
- * invariant across rejection attempts, so NTT(s_j) is paid once per call
- * (sign.c:128 polyvecl_ntt(&s1) before the rej loop), and the challenge is
- * shared by all n+ell products, so NTT(c) is paid once per attempt
- * (sign.c:154 poly_ntt(&cp)). */
-static void sign_core(las_sig *sig, const uint8_t *m, size_t mlen,
-                      const las_pk *pk, const las_sk *sk, const las_pp *pp,
-                      const uint8_t seed[64]) {
-  uint16_t nonce = 0;
-  unsigned int j;
-  poly y[LAS_M], w[LAS_N], shat[LAS_M], chat, cr, c;
-
-  for(j = 0; j < LAS_M; ++j) {                /* NTT(s) once per call */
-    shat[j] = sk->s[j];
-    poly_ntt(&shat[j]);
-  }
-
-  for(;;) {
-    ++las_attempts;                           /* instrumentation only */
-    for(j = 0; j < LAS_M; ++j)
-      sample_Sgamma(&y[j], seed, 64, nonce++);
-    las_Amul(w, pp, y);                       /* w = A y           */
-    hash_challenge(&c, pk, w, m, mlen);        /* c = H(pk, w, M)   */
-    chat = c;                                  /* NTT(c) once per attempt */
-    poly_ntt(&chat);
-    for(j = 0; j < LAS_M; ++j) {               /* z = y + c r       */
-      polymul_prehat(&cr, &chat, &shat[j]);
-      poly_add(&sig->z[j], &y[j], &cr);
-      poly_reduce(&sig->z[j]);
-    }
-    if(chknorm_vec(sig->z, LAS_BOUND_SIGN))
-      continue;
-    sig->c = c;
-    return;
-  }
-}
-
-void las_sign(las_sig *sig, const uint8_t *m, size_t mlen,
-              const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
-  randombytes(seed, 64);
-  sign_core(sig, m, mlen, pk, sk, pp, seed);
-}
-
-void las_sign_det(las_sig *sig, const uint8_t *m, size_t mlen,
-                  const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
-  det_seed(seed, 0, sk, NULL, m, mlen);        /* tag 0 = sign (no statement) */
-  sign_core(sig, m, mlen, pk, sk, pp, seed);
-}
-
-int las_verify(const las_sig *sig, const uint8_t *m, size_t mlen,
-               const las_pk *pk, const las_pp *pp) {
-  poly w[LAS_N], chat, that, ct, c2;
-  unsigned int j;
-
-  if(chknorm_vec(sig->z, LAS_BOUND_SIGN))
-    return -1;
-
-  las_Amul(w, pp, sig->z);                     /* A z               */
-  chat = sig->c;                                /* NTT(c) once per call */
-  poly_ntt(&chat);                              /* (mirrors ref/sign.c:333) */
-  for(j = 0; j < LAS_N; ++j) {                  /* w' = A z - c t    */
-    that = pk->t[j];
-    poly_ntt(&that);
-    polymul_prehat(&ct, &chat, &that);
-    poly_sub(&w[j], &w[j], &ct);
-    poly_reduce(&w[j]);
-    poly_caddq(&w[j]);
-  }
-  hash_challenge(&c2, pk, w, m, mlen);
-  return poly_equal(&c2, &sig->c) ? 0 : -1;
-}
-
-/* Shared PreSign body: like sign_core but hashes (w+Y) and rejects at `bound`
- * (g-k-1 single-hop, or g-k-K for AMHL).  Parameterised by the mask seed.
- * Same NTT hoisting as sign_core (see the comment there). */
-static void presign_core(las_sig *presig, const uint8_t *m, size_t mlen,
-                         const las_pk *Y, const las_pk *pk, const las_sk *sk,
-                         const las_pp *pp, int32_t bound, const uint8_t seed[64]) {
-  uint16_t nonce = 0;
-  unsigned int j;
-  poly y[LAS_M], w[LAS_N], wY[LAS_N], shat[LAS_M], chat, cr, c;
-
-  for(j = 0; j < LAS_M; ++j) {                  /* NTT(s) once per call */
-    shat[j] = sk->s[j];
-    poly_ntt(&shat[j]);
-  }
-
-  for(;;) {
-    ++las_attempts;                             /* instrumentation only */
-    for(j = 0; j < LAS_M; ++j)
-      sample_Sgamma(&y[j], seed, 64, nonce++);
-    las_Amul(w, pp, y);                         /* w = A y                 */
-    for(j = 0; j < LAS_N; ++j) {                 /* commit = w + Y          */
-      poly_add(&wY[j], &w[j], &Y->t[j]);
-      poly_reduce(&wY[j]);
-      poly_caddq(&wY[j]);
-    }
-    hash_challenge(&c, pk, wY, m, mlen);          /* c = H(pk, w+Y, M)       */
-    chat = c;                                     /* NTT(c) once per attempt */
-    poly_ntt(&chat);
-    for(j = 0; j < LAS_M; ++j) {                  /* z^ = y + c r            */
-      polymul_prehat(&cr, &chat, &shat[j]);
-      poly_add(&presig->z[j], &y[j], &cr);
-      poly_reduce(&presig->z[j]);
-    }
-    if(chknorm_vec(presig->z, bound))
-      continue;
-    presig->c = c;
-    return;
-  }
-}
-
-void las_presign(las_sig *presig, const uint8_t *m, size_t mlen,
-                 const las_pk *Y, const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
-  randombytes(seed, 64);
-  presign_core(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN, seed);
-}
-
-void las_presign_det(las_sig *presig, const uint8_t *m, size_t mlen,
-                     const las_pk *Y, const las_pk *pk, const las_sk *sk, const las_pp *pp) {
-  uint8_t seed[64];
-  det_seed(seed, 1, sk, Y, m, mlen);            /* tag 1 = presign (binds Y) */
-  presign_core(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN, seed);
-}
-
-int las_preverify(const las_sig *presig, const uint8_t *m, size_t mlen,
-                  const las_pk *Y, const las_pk *pk, const las_pp *pp) {
-  poly w[LAS_N], wY[LAS_N], chat, that, ct, c2;
-  unsigned int j;
-
-  if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN))
-    return -1;
-
-  las_Amul(w, pp, presig->z);                    /* A z^                    */
-  chat = presig->c;                               /* NTT(c) once per call    */
-  poly_ntt(&chat);
-  for(j = 0; j < LAS_N; ++j) {                    /* w' = A z^ - c t         */
-    that = pk->t[j];
-    poly_ntt(&that);
-    polymul_prehat(&ct, &chat, &that);
-    poly_sub(&w[j], &w[j], &ct);
-    poly_reduce(&w[j]);
-    poly_caddq(&w[j]);
-  }
-  for(j = 0; j < LAS_N; ++j) {                    /* w' + Y                  */
-    poly_add(&wY[j], &w[j], &Y->t[j]);
-    poly_reduce(&wY[j]);
-    poly_caddq(&wY[j]);
-  }
-  hash_challenge(&c2, pk, wY, m, mlen);            /* check c == H(pk,w'+Y,M) */
-  return poly_equal(&c2, &presig->c) ? 0 : -1;
-}
-
-/* AMHL K-hop PreSign: identical to las_presign but rejects at the tighter bound
- * g-k-K (LAS_BOUND_PRESIGN_K), reserving norm budget K for the cumulative witness. */
-void las_presign_k(las_sig *presig, const uint8_t *m, size_t mlen,
-                   const las_pk *Y, const las_pk *pk, const las_sk *sk,
-                   const las_pp *pp, unsigned int nhops) {
-  uint8_t seed[64];
-  randombytes(seed, 64);
-  presign_core(presig, m, mlen, Y, pk, sk, pp, LAS_BOUND_PRESIGN_K(nhops), seed);
-}
-
-int las_preverify_k(const las_sig *presig, const uint8_t *m, size_t mlen,
-                    const las_pk *Y, const las_pk *pk, const las_pp *pp,
-                    unsigned int nhops) {
-  poly w[LAS_N], wY[LAS_N], chat, that, ct, c2;
-  unsigned int j;
-
-  if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops)))
-    return -1;
-
-  las_Amul(w, pp, presig->z);                    /* A z^                    */
-  chat = presig->c;                               /* NTT(c) once per call    */
-  poly_ntt(&chat);
-  for(j = 0; j < LAS_N; ++j) {                    /* w' = A z^ - c t         */
-    that = pk->t[j];
-    poly_ntt(&that);
-    polymul_prehat(&ct, &chat, &that);
-    poly_sub(&w[j], &w[j], &ct);
-    poly_reduce(&w[j]);
-    poly_caddq(&w[j]);
-  }
-  for(j = 0; j < LAS_N; ++j) {                    /* w' + Y                  */
-    poly_add(&wY[j], &w[j], &Y->t[j]);
-    poly_reduce(&wY[j]);
-    poly_caddq(&wY[j]);
-  }
-  hash_challenge(&c2, pk, wY, m, mlen);            /* check c == H(pk,w'+Y,M) */
-  return poly_equal(&c2, &presig->c) ? 0 : -1;
-}
-
-int las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen,
-              const las_pk *Y, const las_sk *y, const las_pk *pk, const las_pp *pp) {
-  unsigned int j;
-
-  if(las_preverify(presig, m, mlen, Y, pk, pp))
-    return -1;
-
-  sig->c = presig->c;
-  for(j = 0; j < LAS_M; ++j) {                    /* z = z^ + y_wit          */
-    poly_add(&sig->z[j], &presig->z[j], &y->s[j]);
-    poly_reduce(&sig->z[j]);
-  }
-  return 0;
-}
-
-int las_ext(las_sk *y, const las_sig *sig, const las_sig *presig,
-            const las_pk *Y, const las_pp *pp) {
-  poly Ay[LAS_N];
-  unsigned int j;
-
-  for(j = 0; j < LAS_M; ++j) {                    /* s = z - z^              */
-    poly_sub(&y->s[j], &sig->z[j], &presig->z[j]);
-    poly_reduce(&y->s[j]);
-  }
-  las_Amul(Ay, pp, y->s);                          /* check A s == Y          */
-  for(j = 0; j < LAS_N; ++j)
-    if(!poly_equal(&Ay[j], &Y->t[j]))
-      return -1;
-  return 0;
 }

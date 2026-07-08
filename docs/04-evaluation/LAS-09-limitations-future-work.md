@@ -34,7 +34,7 @@
   optimised scheme — out of scope here.
 
 - **Reproducibility / KATs.** ✅ **Implemented** (`ref/test/test_kat.c`, Sections
-  5.11 and 6.4): a deterministic API (`las_keygen_seed`, `las_sign_det`,
+  5.11 and 6.4): a deterministic API (`las_keypair_seed`, `las_signature_det`,
   `las_presign_det`) plus a pinned SHAKE256 known-answer digest over fixed vectors.
   This satisfies objective C4's reproducibility requirement and provides the test
   vectors a future on-chain verifier would be cross-checked against. (NIST-style

@@ -47,7 +47,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;
 
 use fips204::las::{
-    las_adapt, las_expected_attempts, las_ext, las_keygen, las_presign, las_preverify, las_setup,
+    las_adapt, las_expected_attempts, las_ext, las_keypair, las_presign, las_preverify, las_setup,
     LAS_ATTEMPTS, LAS_BOUND_PRESIGN, LAS_BOUND_SIGN,
 };
 use fips204::las_basesig::{base_sign_keypair, base_sign_signature, base_sign_verify, BASE_ATTEMPTS};
@@ -92,8 +92,8 @@ fn bench_stage1(c: &mut Criterion) {
     let mut rng = ChaCha8Rng::seed_from_u64(0x4c41_5342_454e_4348); // "LASBENCH"
 
     // One consistent state, gated on the full success-path contract.
-    let (pk, sk) = las_keygen(&pp, &mut rng);
-    let (y_stmt, y_wit) = las_keygen(&pp, &mut rng);
+    let (pk, sk) = las_keypair(&pp, &mut rng);
+    let (y_stmt, y_wit) = las_keypair(&pp, &mut rng);
     let sig_base = base_sign_signature(MSG, &pk, &sk, &pp, &mut rng);
     let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
     let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
