@@ -25,7 +25,11 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "las.h"          /* las_pk / las_sk / las_sig / las_pp, LAS_* params */
+#include "setup.h"        /* las_pk / las_sk / las_sig / las_pp, LAS_* params --
+                           * the shared system layer; this codec sits BETWEEN
+                           * setup.h and the two scheme files, exactly like
+                           * upstream packing.{c,h} sits between polyvec.h and
+                           * sign.c */
 #include "params.h"       /* N, Q */
 
 /* Bit widths of the packed fields. */
@@ -74,12 +78,10 @@ int  las_unpack_sk(las_sk *sk, const uint8_t in[LAS_SK_BYTES]);
 int  las_pack_sig(uint8_t out[LAS_SIG_BYTES], const las_sig *sig);
 int  las_unpack_sig(las_sig *sig, const uint8_t in[LAS_SIG_BYTES]);
 
-/* On-chain-style verifier entry point: decode pk and signature FROM BYTES (with
- * validation) and run ordinary Verify.  Returns 0 iff the bytes decode to valid
- * objects AND the signature verifies.  This is the interface a real integration
- * (Solidity/precompile/circuit) would expose. */
-int  las_verify_packed(const uint8_t pk_b[LAS_PK_BYTES],
-                       const uint8_t sig_b[LAS_SIG_BYTES],
-                       const uint8_t *m, size_t mlen, const las_pp *pp);
+/* (The end-to-end PACKED-API tier -- las_verify_packed and friends, the
+ * functions that unpack -> run the scheme -> pack INSIDE the call, exactly
+ * as upstream sign.c does with packing.h -- lives in the scheme files
+ * basesig.c/las.c and is declared in basesig.h/las.h.  This file is the
+ * CODEC ONLY, the ref/packing.{c,h} twin.) */
 
 #endif

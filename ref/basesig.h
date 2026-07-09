@@ -104,4 +104,26 @@ int base_sign_open(uint8_t *m, size_t *mlen,
                    const las_pk *pk,
                    const las_pp *pp);
 
+/* ============== end-to-end PACKED-API tier (bytes in/out) ==============
+ * The SECOND measured boundary, mirroring what upstream's ONLY boundary is:
+ * crypto_sign_keypair/crypto_sign_signature/crypto_sign_verify take and
+ * return bit-packed BYTES and pack/unpack inside the call (sign.c uses
+ * packing.h at sign.c:60/64, :108, :186, :311-312).  The struct functions
+ * above are the CORE CRYPTO tier; these end-to-end twins unpack the byte
+ * keys (validating; malformed -> -1), run the core, and pack the outputs,
+ * using the shared codec ref/serialize.{c,h}.  Same argument positions as
+ * the struct twin, byte buffers in place of structs. */
+int base_sign_keypair_packed(uint8_t pk_b[LAS_PK_BYTES],
+                             uint8_t sk_b[LAS_SK_BYTES],
+                             const las_pp *pp);
+int base_sign_signature_packed(uint8_t sig_b[LAS_SIG_BYTES],
+                               const uint8_t *m, size_t mlen,
+                               const uint8_t pk_b[LAS_PK_BYTES],
+                               const uint8_t sk_b[LAS_SK_BYTES],
+                               const las_pp *pp);
+int base_sign_verify_packed(const uint8_t sig_b[LAS_SIG_BYTES],
+                            const uint8_t *m, size_t mlen,
+                            const uint8_t pk_b[LAS_PK_BYTES],
+                            const las_pp *pp);
+
 #endif

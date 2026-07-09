@@ -1,6 +1,5 @@
 #include <string.h>
 #include "serialize.h"
-#include "las.h"
 #include "poly.h"
 #include "params.h"
 
@@ -133,14 +132,7 @@ int las_unpack_sig(las_sig *sig, const uint8_t in[LAS_SIG_BYTES]) {
   return 0;
 }
 
-/* ===================== on-chain-style verifier ===================== */
-
-int las_verify_packed(const uint8_t pk_b[LAS_PK_BYTES],
-                      const uint8_t sig_b[LAS_SIG_BYTES],
-                      const uint8_t *m, size_t mlen, const las_pp *pp) {
-  las_pk pk;
-  las_sig sig;
-  if(las_unpack_pk(&pk, pk_b))   return -1;           /* malformed pk   */
-  if(las_unpack_sig(&sig, sig_b)) return -1;          /* malformed sig  */
-  return las_verify(&sig, m, mlen, &pk, pp);          /* ordinary Verify */
-}
+/* (las_verify_packed, the on-chain-style verifier entry point, moved to
+ * ref/las.c with the rest of the end-to-end packed-API tier: packing
+ * belongs INSIDE the scheme's byte-boundary functions, as in upstream
+ * sign.c, while this file stays the pure codec.) */

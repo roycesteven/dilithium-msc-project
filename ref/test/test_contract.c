@@ -96,11 +96,11 @@ int main(void) {
     las_pack_pk(pkb, &pk);
     las_pack_sig(sgb, &sig);
     /* sanity: the clean packed pair verifies */
-    int clean_ok = (las_verify_packed(pkb, sgb, m, mlen, &pp) == 0);
+    int clean_ok = (las_verify_packed(sgb, m, mlen, pkb, &pp) == 0);
     for(i = 0; i < LAS_SIG_BYTES; ++i) {
       for(bit = 0; bit < 8; ++bit) {
         sgb[i] ^= (uint8_t)(1u << bit);
-        if(las_verify_packed(pkb, sgb, m, mlen, &pp) != 0) ++rejected;
+        if(las_verify_packed(sgb, m, mlen, pkb, &pp) != 0) ++rejected;
         sgb[i] ^= (uint8_t)(1u << bit);
       }
     }

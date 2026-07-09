@@ -15,10 +15,10 @@
  *   crypto_sign_keypair            -> base_sign_keypair            -> las_keypair
  *   crypto_sign_signature_internal -> base_sign_signature_internal -> las_signature_internal
  *   crypto_sign_signature          -> base_sign_signature          -> las_signature
- *   crypto_sign                    -> base_sign                    -> (none; see serialize.c)
+ *   crypto_sign                    -> base_sign                    -> las_sign
  *   crypto_sign_verify_internal    -> base_sign_verify_internal    -> las_verify_internal
  *   crypto_sign_verify             -> base_sign_verify             -> las_verify
- *   crypto_sign_open               -> base_sign_open               -> (none; see serialize.c)
+ *   crypto_sign_open               -> base_sign_open               -> las_open
  *   plus two LAS-only deterministic KAT slots (no upstream analogue):
  *   las_keypair_seed, las_signature_det.
  *
@@ -49,44 +49,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "poly.h"      /* poly type; pulls in params.h => N, Q (mode-independent) */
-
-/* ---- LAS parameters (paper Section 3 / Table). Self-contained. ----
- *
- * The three primitive parameters n, ell, kappa are OVERRIDABLE at compile time
- * (-DLAS_N=.. -DLAS_ELL=.. -DLAS_KAPPA=..) so the scheme can be instantiated at
- * parameter sets matched to each NIST security level for a FAIR same-security
- * comparison (see ref/test/bench_levels.c).  The defaults are the paper set, so
- * every existing target builds unchanged.
- *
- *   Set        (n, ell, kappa)   matches Dilithium mode (K,L,tau)   ~NIST level
- *   LAS-paper  (4, 4, 60)        - (paper's own choice)             -
- *   LAS@D2     (4, 4, 39)        Dilithium-2 (4,4,39)               2
- *   LAS@D3     (6, 5, 49)        Dilithium-3 (6,5,49)               3
- *   LAS@D5     (8, 7, 60)        Dilithium-5 (8,7,60)               5
- *
- * Matching n<->K, ell<->L makes the public-key and secret dimensions equal to
- * Dilithium's; matching kappa<->tau makes the challenge weight equal.  This is a
- * DIMENSION-level (not formally bit-security) match; security proofs are out of
- * project scope. */
-#ifndef LAS_N
-#define LAS_N      4                          /* n   : rows of A, dim of t (=Y) */
-#endif
-#ifndef LAS_ELL
-#define LAS_ELL    4                          /* l   : extra columns of A       */
-#endif
-#ifndef LAS_KAPPA
-#define LAS_KAPPA  60                         /* k   : challenge weight ||c||_1 */
-#endif
-#define LAS_M      (LAS_N + LAS_ELL)          /* n+l : dim of r, y, z           */
-#define LAS_GAMMA  ((int32_t)LAS_KAPPA * 256 * LAS_M)  /* g = k*d*(n+l), d=N=256 */
-#define LAS_SEEDBYTES 32
-
-/*
- * Note on the modulus: the paper specifies q ~ 2^24.  We reuse Dilithium's NTT,
- * whose root-of-unity table is fixed to Q = 8380417 (~2^23), so this build uses
- * that Q.  It comfortably satisfies Q > 2*GAMMA, so correctness is unaffected;
- * only the concrete MSIS/MLWE security margin differs (out of scope per CONTEXT).
- */
+#include "setup.h"     /* SHARED system setup: parameters (LAS_N/ELL/KAPPA/M/GAMMA/
+                        * SEEDBYTES), the shared object types and las_setup() -- a
+                        * separate file because basesig.c consumes the same setup
+                        * (paper Setup() -> pp is not scheme-specific) */
+#include "serialize.h" /* SHARED wire codec (the packing.{c,h} twin): byte sizes
+                        * LAS_{PK,SK,SIG}_BYTES used by the end-to-end packed-API
+                        * tier declared at the bottom of this header */
 
 /* poly_chknorm() rejects when ||.||inf >= bound, so encode the strict ">" tests
  * as bound = (limit)+1. */
@@ -100,12 +69,9 @@
  * For K=1 this collapses to LAS_BOUND_PRESIGN (the single-hop case). */
 #define LAS_BOUND_PRESIGN_K(K)  (LAS_GAMMA - LAS_KAPPA - (int32_t)(K) + 1)
 
-/* ---- Types (vectors are plain arrays of the repo's degree-N poly) ---- */
-typedef struct { poly mat[LAS_N][LAS_ELL];          /* A' in NTT domain */
-                 uint8_t seed[LAS_SEEDBYTES]; } las_pp;
-typedef struct { poly t[LAS_N]; } las_pk;           /* public key / statement  t = A r */
-typedef struct { poly s[LAS_M]; } las_sk;           /* secret key / witness    r in S_1 */
-typedef struct { poly c; poly z[LAS_M]; } las_sig;  /* (pre-)signature (c, z)  */
+/* ---- Types: las_pp / las_pk / las_sk / las_sig live in setup.h (the shared
+ * system layer, below both schemes and the codec), mirroring how upstream
+ * keeps polyvecl/polyveck in polyvec.h rather than sign.h. ---- */
 
 /* ---- Rejection-sampling instrumentation (measurement only) ----
  * Counts the total number of rejection-loop attempts performed by
@@ -140,9 +106,8 @@ double las_expected_attempts(int32_t bound);
 /* ==================== Algorithm 1 (base path) ====================
  * Declarations follow basesig.h (which follows sign.h) one-to-one. */
 
-/* Public parameters pp = A (expanded from a public seed).  No basesig.h slot:
- * basesig consumes this same las_pp (A is shared public infrastructure). */
-void las_setup(las_pp *pp, const uint8_t seed[LAS_SEEDBYTES]);
+/* (las_setup lives in ref/setup.{c,h}: the SHARED system setup, consumed by
+ * basesig.c and las.c alike -- A is public infrastructure, not scheme code.) */
 
 /* las_keypair  <->  base_sign_keypair (basesig.h)
  * KeyGen = Gen: r<-S_1^(n+l); t=Ar; (pk,sk)=(t,r).  Also used to make (Y,y).
@@ -181,8 +146,15 @@ int las_signature_det(las_sig *sig,
                       const las_pk *pk, const las_sk *sk,
                       const las_pp *pp);
 
-/* (basesig.h slot base_sign: no las analogue -- the byte-level signed
- * interface lives in ref/serialize.{c,h}, e.g. las_verify_packed.) */
+/* las_sign  <->  base_sign (basesig.h)
+ * Compute signed message.  The signature is a struct, so sm = M (no packed
+ * prefix; the byte-level wire interface is ref/serialize.{c,h}).
+ * Returns 0 (success). */
+int las_sign(las_sig *sig,
+             uint8_t *sm, size_t *smlen,
+             const uint8_t *m, size_t mlen,
+             const las_pk *pk, const las_sk *sk,
+             const las_pp *pp);
 
 /* las_verify_internal  <->  base_sign_verify_internal (basesig.h)
  * Verify body: w' = A z - c t; accept iff c == H(pk, w', M).
@@ -200,7 +172,14 @@ int las_verify(const las_sig *sig,
                const las_pk *pk,
                const las_pp *pp);
 
-/* (basesig.h slot base_sign_open: no las analogue -- see ref/serialize.{c,h}.) */
+/* las_open  <->  base_sign_open (basesig.h)
+ * Verify signed message (sm holds only M; the signature travels as a struct
+ * beside it).  Returns 0 on success, -1 otherwise. */
+int las_open(uint8_t *m, size_t *mlen,
+             const las_sig *sig,
+             const uint8_t *sm, size_t smlen,
+             const las_pk *pk,
+             const las_pp *pp);
 
 /* ==================== Algorithm 2 (adaptor layer) ====================
  * No basesig.h/sign.h analogue: the four adaptor operations LAS adds, plus
@@ -256,5 +235,49 @@ int las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen
 /* Ext(Y,sigma,sigma^): s=z-z^; returns 0 and s iff A*s==Y, else -1. */
 int las_ext(las_sk *y, const las_sig *sig, const las_sig *presig,
             const las_pk *Y, const las_pp *pp);
+
+/* ============== end-to-end PACKED-API tier (bytes in/out) ==============
+ * The SECOND measured boundary.  The struct functions above are the CORE
+ * CRYPTO tier (pure computation); these are the END-TO-END tier: byte keys
+ * and signatures are unpacked/packed INSIDE the call, exactly the boundary
+ * upstream sign.c exposes (it packs/unpacks with packing.h inside its API).
+ * Same argument positions as the struct twin, byte buffers in place of
+ * structs.  All decoders are VALIDATING: malformed bytes -> -1.
+ * las_verify_packed is the on-chain-style verifier entry point (what a
+ * poqeth-style integration consumes); see ref/test/test_serde.c. */
+int las_keypair_packed(uint8_t pk_b[LAS_PK_BYTES], uint8_t sk_b[LAS_SK_BYTES],
+                       const las_pp *pp);
+int las_signature_packed(uint8_t sig_b[LAS_SIG_BYTES],
+                         const uint8_t *m, size_t mlen,
+                         const uint8_t pk_b[LAS_PK_BYTES],
+                         const uint8_t sk_b[LAS_SK_BYTES],
+                         const las_pp *pp);
+int las_verify_packed(const uint8_t sig_b[LAS_SIG_BYTES],
+                      const uint8_t *m, size_t mlen,
+                      const uint8_t pk_b[LAS_PK_BYTES],
+                      const las_pp *pp);
+int las_presign_packed(uint8_t presig_b[LAS_SIG_BYTES],
+                       const uint8_t *m, size_t mlen,
+                       const uint8_t Y_b[LAS_PK_BYTES],
+                       const uint8_t pk_b[LAS_PK_BYTES],
+                       const uint8_t sk_b[LAS_SK_BYTES],
+                       const las_pp *pp);
+int las_preverify_packed(const uint8_t presig_b[LAS_SIG_BYTES],
+                         const uint8_t *m, size_t mlen,
+                         const uint8_t Y_b[LAS_PK_BYTES],
+                         const uint8_t pk_b[LAS_PK_BYTES],
+                         const las_pp *pp);
+int las_adapt_packed(uint8_t sig_b[LAS_SIG_BYTES],
+                     const uint8_t presig_b[LAS_SIG_BYTES],
+                     const uint8_t *m, size_t mlen,
+                     const uint8_t Y_b[LAS_PK_BYTES],
+                     const uint8_t y_b[LAS_SK_BYTES],
+                     const uint8_t pk_b[LAS_PK_BYTES],
+                     const las_pp *pp);
+int las_ext_packed(uint8_t y_b[LAS_SK_BYTES],
+                   const uint8_t sig_b[LAS_SIG_BYTES],
+                   const uint8_t presig_b[LAS_SIG_BYTES],
+                   const uint8_t Y_b[LAS_PK_BYTES],
+                   const las_pp *pp);
 
 #endif

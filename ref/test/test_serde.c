@@ -22,6 +22,7 @@
 #include <string.h>
 #include "../randombytes.h"
 #include "../las.h"
+#include "../basesig.h"   /* base_sign_*_packed: the base scheme's end-to-end tier */
 #include "../serialize.h"
 #include "../params.h"
 
@@ -103,12 +104,47 @@ int main(void) {
     CHECK(sig_eq(&adapted, &sig2), "adapted round-trip");
 
     /* verify-from-bytes: adapted sig verifies, pre-sig does NOT (tripwire) */
-    CHECK(las_verify_packed(pk_b, adp_b, m, MLEN, &pp) == 0, "verify_packed(adapted)");
-    CHECK(las_verify_packed(pk_b, pre_b, m, MLEN, &pp) != 0, "verify_packed(presig) must fail");
+    CHECK(las_verify_packed(adp_b, m, MLEN, pk_b, &pp) == 0, "verify_packed(adapted)");
+    CHECK(las_verify_packed(pre_b, m, MLEN, pk_b, &pp) != 0, "verify_packed(presig) must fail");
     /* the plain ordinary signature also verifies through bytes */
-    CHECK(las_verify_packed(pk_b, sig_b, m, MLEN, &pp) == 0, "verify_packed(sig)");
+    CHECK(las_verify_packed(sig_b, m, MLEN, pk_b, &pp) == 0, "verify_packed(sig)");
   }
   printf("round-trip + verify-from-bytes: %d iterations OK\n", NITER);
+
+  /* ---- end-to-end PACKED-API tier: unpack -> core -> pack INSIDE the call
+   * (the second measured boundary; see basesig.h/las.h) ---- */
+  {
+    uint8_t ppk_b[LAS_PK_BYTES], psk_b[LAS_SK_BYTES];
+    uint8_t Y_b[LAS_PK_BYTES], yw_b[LAS_SK_BYTES];
+    uint8_t s_b[LAS_SIG_BYTES], p_b[LAS_SIG_BYTES], a_b[LAS_SIG_BYTES];
+    uint8_t w_b[LAS_SK_BYTES];
+
+    CHECK(las_keypair_packed(ppk_b, psk_b, &pp) == 0, "las_keypair_packed");
+    CHECK(las_keypair_packed(Y_b, yw_b, &pp) == 0, "las_keypair_packed (statement/witness)");
+    CHECK(las_signature_packed(s_b, m, MLEN, ppk_b, psk_b, &pp) == 0, "las_signature_packed");
+    CHECK(las_verify_packed(s_b, m, MLEN, ppk_b, &pp) == 0, "las_verify_packed(sign_packed)");
+    CHECK(las_presign_packed(p_b, m, MLEN, Y_b, ppk_b, psk_b, &pp) == 0, "las_presign_packed");
+    CHECK(las_preverify_packed(p_b, m, MLEN, Y_b, ppk_b, &pp) == 0, "las_preverify_packed");
+    CHECK(las_verify_packed(p_b, m, MLEN, ppk_b, &pp) != 0,
+          "las_verify_packed(presign_packed) must fail (tripwire through bytes)");
+    CHECK(las_adapt_packed(a_b, p_b, m, MLEN, Y_b, yw_b, ppk_b, &pp) == 0, "las_adapt_packed");
+    CHECK(las_verify_packed(a_b, m, MLEN, ppk_b, &pp) == 0, "las_verify_packed(adapt_packed)");
+    CHECK(las_ext_packed(w_b, a_b, p_b, Y_b, &pp) == 0, "las_ext_packed");
+    CHECK(memcmp(w_b, yw_b, LAS_SK_BYTES) == 0,
+          "las_ext_packed recovers the exact packed witness");
+
+    /* byte-level interlock: the INDEPENDENT base verifier accepts the
+     * adapted LAS signature through bytes */
+    CHECK(base_sign_verify_packed(a_b, m, MLEN, ppk_b, &pp) == 0,
+          "base_sign_verify_packed accepts adapted LAS signature (interlock)");
+
+    /* base scheme's own packed tier */
+    CHECK(base_sign_keypair_packed(ppk_b, psk_b, &pp) == 0, "base_sign_keypair_packed");
+    CHECK(base_sign_signature_packed(s_b, m, MLEN, ppk_b, psk_b, &pp) == 0,
+          "base_sign_signature_packed");
+    CHECK(base_sign_verify_packed(s_b, m, MLEN, ppk_b, &pp) == 0, "base_sign_verify_packed");
+    printf("end-to-end packed tier: keygen/sign/verify/presign/preverify/adapt/ext OK\n");
+  }
 
   /* ---- tamper: every single-byte flip of a valid adapted sig fails verify ---- */
   {
@@ -116,7 +152,7 @@ int main(void) {
     for(b = 0; b < LAS_SIG_BYTES; ++b) {
       uint8_t saved = adp_b[b];
       adp_b[b] ^= 0x01;
-      if(las_verify_packed(pk_b, adp_b, m, MLEN, &pp) != 0) ++flips;
+      if(las_verify_packed(adp_b, m, MLEN, pk_b, &pp) != 0) ++flips;
       adp_b[b] = saved;
     }
     CHECK(flips == LAS_SIG_BYTES, "every byte-flip must break verification");
