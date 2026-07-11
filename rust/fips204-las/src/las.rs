@@ -1,18 +1,18 @@
 //! LAS — Lattice-based Adaptor Signature (Esgin–Ersoy–Erkin, eprint 2020/845,
 //! Algorithm 2), layered ADDITIVELY on this crate's FIPS 204 primitives.
 //!
-//! STRUCTURED AS A MIRROR of `las_basesig.rs` (which itself mirrors the
+//! STRUCTURED AS A MIRROR of `basesig.rs` (which itself mirrors the
 //! vendored upstream `ml_dsa.rs`), so provenance tracks to the uppermost
 //! upstream by a uniform name chain (same convention as the C build
 //! ref/sign.c -> ref/basesig.c -> ref/las.c):
 //!
 //!   -- Algorithm 1 (base path) --
-//!   key_gen (ml_dsa.rs:26)          -> base_sign_keypair            -> las_keypair
-//!   key_gen_internal (ml_dsa.rs:57) -> base_sign_keypair_seed       -> las_keypair_seed
-//!   sign_internal (ml_dsa.rs:153)   -> base_sign_signature_internal -> las_signature_internal
-//!   (lib.rs try_sign_with_rng)      -> base_sign_signature          -> las_signature
-//!   verify_internal (ml_dsa.rs:351) -> base_sign_verify_internal    -> las_verify_internal
-//!   (lib.rs verify)                 -> base_sign_verify             -> las_verify
+//!   key_gen (ml_dsa.rs:26)          -> base_key_gen            -> las_keypair
+//!   key_gen_internal (ml_dsa.rs:57) -> base_key_gen_internal       -> las_keypair_seed
+//!   sign_internal (ml_dsa.rs:153)   -> base_sign_internal -> las_signature_internal
+//!   (lib.rs try_sign_with_rng)      -> base_sign          -> las_signature
+//!   verify_internal (ml_dsa.rs:351) -> base_verify_internal    -> las_verify_internal
+//!   (lib.rs verify)                 -> base_verify             -> las_verify
 //!   plus a LAS-only deterministic KAT slot: las_signature_det.
 //!
 //!   -- Algorithm 2 (adaptor layer; upstream = the PAPER, names kept) --
@@ -20,7 +20,7 @@
 //!   las_preverify_internal / las_preverify / las_adapt / las_ext.
 //!
 //! The local helpers are defined at the BOTTOM of the file, in the same order
-//! as `las_basesig.rs`'s (ml_dsa.rs keeps its equivalents in hashing.rs /
+//! as `basesig.rs`'s (ml_dsa.rs keeps its equivalents in hashing.rs /
 //! helpers.rs / ntt.rs), so the scheme functions read side by side.
 //!
 //! This module is a Rust port of the C implementation `ref/las.c` from the
@@ -84,33 +84,30 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use rand_core::CryptoRngCore;
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use sha3::{Shake128, Shake256};
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use sha3::Shake256;
+use zeroize::Zeroize;
 
 use crate::helpers::{center_mod, full_reduce32, mont_reduce, partial_reduce32, to_mont};
 use crate::ntt::{inv_ntt, ntt};
 use crate::types::{R, R0, T, T0};
 use crate::Q;
 
-/* ---- LAS parameters (paper Section 3 / Table 1), Simplified Dilithium-III set.
- * Mirrors ref/las.h with -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49. ---- */
+/* ---- Shared system setup: parameters (LAS_N/ELL/KAPPA/M/GAMMA/SEEDBYTES),
+ * the shared object types (LasPp/LasPk/LasSk/LasSig) and las_setup() live in
+ * setup.rs — a separate module because BOTH basesig.rs and this file
+ * consume the same setup (the paper's Setup() -> pp is not scheme-specific).
+ * Re-exported here so callers keep the single `fips204::las::...` path,
+ * exactly as the C `las.h` includes `setup.h`. ---- */
+pub use crate::setup::{
+    las_setup, LasPk, LasPp, LasSig, LasSk, LAS_BOUND_SIGN, LAS_ELL, LAS_GAMMA, LAS_KAPPA,
+    LAS_M, LAS_N, LAS_SEEDBYTES,
+};
 
-/// n: rows of A, dimension of t (=Y).
-pub const LAS_N: usize = 6;
-/// ell: extra columns of A.
-pub const LAS_ELL: usize = 5;
-/// n+ell: dimension of r, y, z.
-pub const LAS_M: usize = LAS_N + LAS_ELL;
-/// kappa: challenge weight ||c||_1.
-pub const LAS_KAPPA: i32 = 49;
-/// gamma = kappa * d * (n+ell), d = 256.
-pub const LAS_GAMMA: i32 = LAS_KAPPA * 256 * (LAS_M as i32);
-/// Seed length in bytes.
-pub const LAS_SEEDBYTES: usize = 32;
-
-/// Sign/Verify rejection bound: reject |z|inf  > gamma-kappa   (chknorm-style: >= bound).
-pub const LAS_BOUND_SIGN: i32 = LAS_GAMMA - LAS_KAPPA + 1;
-/// PreSign/PreVerify rejection bound: reject |z^|inf > gamma-kappa-1 (the tighter -1 budget).
+/* LAS_BOUND_SIGN (the Algorithm-1 Sign/Verify bound) lives in setup.rs and is
+ * re-exported above: it is SHARED with basesig.rs, and everything both schemes
+ * share lives below both — mirrors C las.h/setup.h. */
+/// PreSign/PreVerify rejection bound: reject |z^|inf > gamma-kappa-1 (the
+/// tighter -1 budget).  Adaptor-only — no basesig.rs analogue — so it stays here.
 pub const LAS_BOUND_PRESIGN: i32 = LAS_GAMMA - LAS_KAPPA;
 
 const N: usize = 256;
@@ -161,52 +158,11 @@ pub fn las_expected_attempts(bound: i32) -> f64 {
     1.0 / acc
 }
 
-/* ---- Types (vectors are plain arrays of the crate's degree-256 polys).
- * A' is stored in the NTT domain (type T), exactly like the C `las_pp.mat`. ---- */
+/* ==================== scheme, Algorithm 1 (base path) ====================
+ * (The shared system setup las_setup lives in setup.rs — see the module
+ * header; both basesig.rs and las.rs consume that same LasPp.) */
 
-/// Public parameters pp = A = [I | A'] expanded from a public seed (A' in NTT domain).
-#[derive(Clone)]
-pub struct LasPp {
-    pub(crate) mat: [[T; LAS_ELL]; LAS_N],
-    pub(crate) seed: [u8; LAS_SEEDBYTES],
-}
-
-/// Public key / statement: t = A r, canonical [0,Q).
-#[derive(Clone, PartialEq)]
-pub struct LasPk {
-    pub(crate) t: [R; LAS_N], // paper t (public key t = A r), or t′ = Y when used as a statement
-}
-
-/// Secret key / witness: r in S_1 (ternary, stored as exact -1/0/1).
-/// Zeroized on drop, mirroring the upstream crate's secret-material policy
-/// (types.rs `PrivateKey` derives `Zeroize`/`ZeroizeOnDrop`); the same type
-/// carries the adaptor witness, so extracted witnesses are wiped too.
-#[derive(Clone, PartialEq, Zeroize, ZeroizeOnDrop)]
-pub struct LasSk {
-    pub(crate) s: [R; LAS_M], // paper r (secret key / witness); also the extracted witness s in Ext
-}
-
-/// (Pre-)signature (c, z): c ternary challenge, z exact centred response.
-#[derive(Clone, PartialEq)]
-pub struct LasSig {
-    pub(crate) c: R,          // paper c: the challenge
-    pub(crate) z: [R; LAS_M], // paper z (signature) / ẑ (pre-signature): the response
-}
-
-/* ==================== scheme, Algorithm 1 (base path) ==================== */
-
-/// `las_setup` (no las_basesig.rs/ml_dsa.rs analogue): public parameters
-/// pp = A (A' expanded from a public seed, NTT domain).  las_basesig.rs
-/// consumes this same `LasPp` (A is shared public infrastructure).
-pub fn las_setup(seed: &[u8; LAS_SEEDBYTES]) -> LasPp {  // returns paper A = [I | A']
-    LasPp {
-        // paper A: mat = A' (NTT domain); the [I | ·] identity block is applied in `amul`
-        mat: from_fn(|i| from_fn(|j| poly_uniform_ntt(seed, ((i as u16) << 8) + j as u16))),
-        seed: *seed,
-    }
-}
-
-/// `las_keypair` <-> `base_sign_keypair` (las_basesig.rs) <-> `key_gen`
+/// `las_keypair` <-> `base_key_gen` (basesig.rs) <-> `key_gen`
 /// (ml_dsa.rs:26): draw a fresh seed, then the deterministic KeyGen body.
 /// The RNG is injected (Rust idiom).  Also used to make the statement/witness
 /// pair (Y, y) -- it is literally a key pair.
@@ -221,7 +177,7 @@ pub fn las_keypair(
     out
 }
 
-/// `las_keypair_seed` <-> `base_sign_keypair_seed` (las_basesig.rs) <->
+/// `las_keypair_seed` <-> `base_key_gen_internal` (basesig.rs) <->
 /// `key_gen_internal` (ml_dsa.rs:57): deterministic KeyGen from an explicit
 /// 32-byte seed (reproducible KATs).
 /// KeyGen = Gen: r <- S_1^(n+l); t = A r; (pk,sk) = (t,r).
@@ -243,7 +199,7 @@ pub fn las_keypair_seed(
     (pk, sk)
 }
 
-/// `las_signature_internal` <-> `base_sign_signature_internal` (las_basesig.rs)
+/// `las_signature_internal` <-> `base_sign_internal` (basesig.rs)
 /// <-> `sign_internal` (ml_dsa.rs:153): Algorithm 1 Sign body, parameterised
 /// by the 64-byte mask seed (random or derived).
 /// NTT hoisting mirrors ref/las.c (which mirrors ref/sign.c / ml_dsa.rs):
@@ -291,7 +247,7 @@ pub(crate) fn las_signature_internal(
     // [PAPER Alg.1] 13: end procedure
 }
 
-/// `las_signature` <-> `base_sign_signature` (las_basesig.rs): Algorithm 1
+/// `las_signature` <-> `base_sign` (basesig.rs): Algorithm 1
 /// Sign, random path — fresh 64-byte mask seed per call, then the internal
 /// (mirrors C `las_signature`; upstream's RNG wrapper is lib.rs
 /// `try_sign_with_rng`).
@@ -309,7 +265,7 @@ pub fn las_signature(
     sig
 }
 
-/// `las_signature_det` (no las_basesig.rs/ml_dsa.rs slot; deterministic KAT
+/// `las_signature_det` (no basesig.rs/ml_dsa.rs slot; deterministic KAT
 /// path): mask randomness derived from (sk, M).  Mirrors C `las_signature_det`.
 pub fn las_signature_det(
     m: &[u8],    // paper M: message
@@ -323,7 +279,7 @@ pub fn las_signature_det(
     sig
 }
 
-/// `las_verify_internal` <-> `base_sign_verify_internal` (las_basesig.rs)
+/// `las_verify_internal` <-> `base_verify_internal` (basesig.rs)
 /// <-> `verify_internal` (ml_dsa.rs:351): Algorithm 1 Verify body.
 pub(crate) fn las_verify_internal(
     sig: &LasSig,  // paper σ: sig = (c, z), signature to verify
@@ -354,7 +310,7 @@ pub(crate) fn las_verify_internal(
     // [PAPER Alg.1] 20: end procedure
 }
 
-/// `las_verify` <-> `base_sign_verify` (las_basesig.rs): Algorithm 1 Verify,
+/// `las_verify` <-> `base_verify` (basesig.rs): Algorithm 1 Verify,
 /// public entry point (delegates to the internal, exactly like the C build).
 /// Returns true iff the signature is valid.
 pub fn las_verify(
@@ -367,7 +323,7 @@ pub fn las_verify(
 }
 
 /* =============== scheme, Algorithm 2 (adaptor layer) ===============
- * No las_basesig.rs/ml_dsa.rs analogue from here on: these are the adaptor
+ * No basesig.rs/ml_dsa.rs analogue from here on: these are the adaptor
  * operations LAS adds on top of the base signature (upstream = the PAPER). */
 
 /// `las_presign_internal` (adaptor twin of `las_signature_internal`; was C
@@ -571,9 +527,10 @@ pub fn las_ext(
 }
 
 /* ============================ helpers ============================
- * Defined at the BOTTOM of the file, in the same order as las_basesig.rs's
- * local copies (b_ prefix there), plus two LAS-only helpers at the end
- * (poly_uniform_ntt for las_setup, det_seed for the _det KAT variants). */
+ * Defined at the BOTTOM of the file, in the same order as basesig.rs's
+ * local copies (b_ prefix there), plus one LAS-only helper at the end
+ * (det_seed for the _det KAT variants; the setup expansion lives in
+ * setup.rs). */
 
 /// Pack one polynomial into 4 bytes/coeff (canonical [0,Q)) for hashing.
 /// Mirrors ref/las.c pack_poly_canon (poly_reduce + poly_caddq == full_reduce32).
@@ -797,33 +754,9 @@ fn sample_ternary(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> R {
     r
 }
 
-/// Expand one uniform poly in [0,Q) DIRECTLY IN THE NTT DOMAIN from
-/// SHAKE128(seed || nonce_le16). Byte-stream-identical to the C poly_uniform
-/// (contiguous 3-byte groups; 840 and 168 are both divisible by 3, so the C
-/// leftover-carry never discards bytes).  LAS-only helper (for las_setup).
-fn poly_uniform_ntt(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> T {
-    let mut h = Shake128::default();
-    h.update(seed);
-    h.update(&nonce.to_le_bytes());
-    let mut rd = h.finalize_xof();
-
-    let mut t = T0;
-    let mut ctr = 0usize;
-    let mut b = [0u8; 3];
-    while ctr < N {
-        rd.read(&mut b);
-        let x = (u32::from(b[0]) | (u32::from(b[1]) << 8) | (u32::from(b[2]) << 16)) & 0x7F_FFFF;
-        if x < Q as u32 {
-            t.0[ctr] = x as i32;
-            ctr += 1;
-        }
-    }
-    t
-}
-
 /// Deterministic per-(pre)signature mask randomness:
 /// seed = SHAKE256(tag || sk || [Y] || M), 64 bytes. Mirrors ref/las.c det_seed.
-/// LAS-only helper (the _det KAT path); no las_basesig.rs analogue.
+/// LAS-only helper (the _det KAT path); no basesig.rs analogue.
 fn det_seed(tag: u8, sk: &LasSk, y_stmt: Option<&LasPk>, m: &[u8]) -> [u8; 64] {
     let mut h = Shake256::default();
     h.update(&[tag]); // domain: 0=sign, 1=presign

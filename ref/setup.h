@@ -50,6 +50,14 @@
 #define LAS_GAMMA  ((int32_t)LAS_KAPPA * 256 * LAS_M)  /* g = k*d*(n+l), d=N=256 */
 #define LAS_SEEDBYTES 32
 
+/* Sign/Verify rejection bound, SHARED by both schemes: basesig.c's Algorithm-1
+ * Sign/Verify and las.c's Sign/Verify reject at this same |z|inf > g-k, and an
+ * Adapted pre-signature must clear exactly this bound -- so it lives HERE,
+ * below both schemes (the adaptor-only PreSign bounds stay in las.h).
+ * poly_chknorm() rejects when ||.||inf >= bound, so the strict ">" test is
+ * encoded as bound = (limit)+1. */
+#define LAS_BOUND_SIGN  (LAS_GAMMA - LAS_KAPPA + 1)   /* reject |z|inf > g-k */
+
 /*
  * Note on the modulus: the paper specifies q ~ 2^24.  We reuse Dilithium's NTT,
  * whose root-of-unity table is fixed to Q = 8380417 (~2^23), so this build uses

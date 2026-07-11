@@ -50,7 +50,7 @@ use fips204::las::{
     las_adapt, las_expected_attempts, las_ext, las_keypair, las_presign, las_preverify, las_setup,
     LAS_ATTEMPTS, LAS_BOUND_PRESIGN, LAS_BOUND_SIGN,
 };
-use fips204::las_basesig::{base_sign_keypair, base_sign_signature, base_sign_verify, BASE_ATTEMPTS};
+use fips204::basesig::{base_key_gen, base_sign, base_verify, BASE_ATTEMPTS};
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::cell::Cell;
@@ -94,33 +94,33 @@ fn bench_stage1(c: &mut Criterion) {
     // One consistent state, gated on the full success-path contract.
     let (pk, sk) = las_keypair(&pp, &mut rng);
     let (y_stmt, y_wit) = las_keypair(&pp, &mut rng);
-    let sig_base = base_sign_signature(MSG, &pk, &sk, &pp, &mut rng);
+    let sig_base = base_sign(MSG, &pk, &sk, &pp, &mut rng);
     let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
     let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
 
-    assert!(base_sign_verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
+    assert!(base_verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
     assert!(las_preverify(&presig, MSG, &y_stmt, &pk, &pp), "gate: pre-signature pre-verifies");
-    assert!(!base_sign_verify(&presig, MSG, &pk, &pp), "gate: pre-signature must FAIL ordinary Verify");
-    assert!(base_sign_verify(&adapted, MSG, &pk, &pp), "gate: adapted passes the independent base verifier");
+    assert!(!base_verify(&presig, MSG, &pk, &pp), "gate: pre-signature must FAIL ordinary Verify");
+    assert!(base_verify(&adapted, MSG, &pk, &pp), "gate: adapted passes the independent base verifier");
     let yext = las_ext(&adapted, &presig, &y_stmt, &pp).expect("gate: ext");
     assert!(yext == y_wit, "gate: ext recovers the witness exactly");
 
-    // ---- Algorithm 1: the ordinary signature (independent module las_basesig.rs) ----
+    // ---- Algorithm 1: the ordinary signature (independent module basesig.rs) ----
     let mut g1 = c.benchmark_group("Algorithm 1 - ordinary lattice-based signature");
     g1.bench_function("KeyGen", |b| {
-        b.iter(|| black_box(base_sign_keypair(&pp, &mut rng)));
+        b.iter(|| black_box(base_key_gen(&pp, &mut rng)));
     });
     let sign_calls = Cell::new(0u64);
     let sign_att0 = BASE_ATTEMPTS.load(Ordering::Relaxed);
     g1.bench_function("Sign", |b| {
         b.iter(|| {
             sign_calls.set(sign_calls.get() + 1);
-            black_box(base_sign_signature(black_box(MSG), &pk, &sk, &pp, &mut rng))
+            black_box(base_sign(black_box(MSG), &pk, &sk, &pp, &mut rng))
         });
     });
     let sign_attempts = BASE_ATTEMPTS.load(Ordering::Relaxed) - sign_att0;
     g1.bench_function("Verify", |b| {
-        b.iter(|| black_box(base_sign_verify(black_box(&sig_base), MSG, &pk, &pp)));
+        b.iter(|| black_box(base_verify(black_box(&sig_base), MSG, &pk, &pp)));
     });
     g1.finish();
     rejection_gate(

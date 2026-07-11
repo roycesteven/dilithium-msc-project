@@ -36,7 +36,12 @@
 )]
 
 use crate::helpers::{center_mod, full_reduce32};
-use crate::las::{las_verify, LasPk, LasPp, LasSig, LasSk, LAS_GAMMA, LAS_KAPPA, LAS_M, LAS_N};
+// Shared layer only, like C serialize.h:28 #include "setup.h" (NOT las.h).
+use crate::setup::{LasPk, LasPp, LasSig, LasSk, LAS_GAMMA, LAS_KAPPA, LAS_M, LAS_N};
+// Sole las.rs use: las_verify_packed below runs ordinary Verify after decode.
+// (In C, las_verify_packed lives in las.c, not serialize.c -- moving it to
+// las.rs to mirror that is a known follow-up of the las.rs rewrite round.)
+use crate::las::las_verify;
 use crate::types::{R, R0};
 use crate::Q;
 use core::array::from_fn;

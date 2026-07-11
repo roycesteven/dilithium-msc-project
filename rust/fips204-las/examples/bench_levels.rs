@@ -3,7 +3,7 @@
 //! C driver `ref/test/bench_levels.c`.
 //!
 //! The two paths live in two SEPARATE modules so neither contaminates the other:
-//!     BASE path    -> las_basesig.rs (base_sign_keypair / base_sign_signature / base_sign_verify; no Y)
+//!     BASE path    -> basesig.rs (base_key_gen / base_sign / base_verify; no Y)
 //!     ADAPTOR path -> las.rs         (las_presign / las_preverify / las_adapt / las_ext)
 //!
 //! Protocol (mirrors the C driver):
@@ -33,8 +33,8 @@ use fips204::las::{
     las_adapt, las_expected_attempts, las_ext, las_keypair, las_presign, las_preverify, las_setup,
     LAS_ATTEMPTS, LAS_BOUND_PRESIGN, LAS_BOUND_SIGN, LAS_ELL, LAS_GAMMA, LAS_KAPPA, LAS_N,
 };
-use fips204::las_basesig::{base_sign_keypair, base_sign_signature, base_sign_verify, BASE_ATTEMPTS};
-use fips204::las_serialize::{LAS_PK_BYTES, LAS_SIG_BYTES, LAS_SK_BYTES};
+use fips204::basesig::{base_key_gen, base_sign, base_verify, BASE_ATTEMPTS};
+use fips204::serialize::{LAS_PK_BYTES, LAS_SIG_BYTES, LAS_SK_BYTES};
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
@@ -99,25 +99,25 @@ fn main() {
     // ---- one consistent state, contract-gated before any timing ----
     let (pk, sk) = las_keypair(&pp, &mut rng);
     let (y_stmt, y_wit) = las_keypair(&pp, &mut rng); // statement/witness = another key pair
-    let sig_base = base_sign_signature(MSG, &pk, &sk, &pp, &mut rng);
+    let sig_base = base_sign(MSG, &pk, &sk, &pp, &mut rng);
     let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
     let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
 
-    assert!(base_sign_verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
+    assert!(base_verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
     assert!(las_preverify(&presig, MSG, &y_stmt, &pk, &pp), "gate: pre-signature pre-verifies");
     assert!(
-        !base_sign_verify(&presig, MSG, &pk, &pp),
+        !base_verify(&presig, MSG, &pk, &pp),
         "gate: pre-signature must FAIL the ordinary verifier"
     );
     assert!(
-        base_sign_verify(&adapted, MSG, &pk, &pp),
+        base_verify(&adapted, MSG, &pk, &pp),
         "gate: adapted signature passes the INDEPENDENT base verifier"
     );
     let yext = las_ext(&adapted, &presig, &y_stmt, &pp).expect("gate: ext");
     assert!(yext == y_wit, "gate: ext recovers the witness exactly");
 
     println!("=== LAS Stage-1 benchmark (Rust port) ===");
-    println!("ordinary lattice-based signature (Algorithm 1, las_basesig.rs)");
+    println!("ordinary lattice-based signature (Algorithm 1, basesig.rs)");
     println!("vs LAS adaptor signature (Algorithm 2, las.rs)");
     println!(
         "parameter set: Simplified Dilithium-III engineering setting \
@@ -151,12 +151,12 @@ fn main() {
     for _rep in 0..REPS {
         // ---- Algorithm 1: the base path (independent module) ----
         t_keygen.push(time_us(NITER_FAST, || {
-            black_box(base_sign_keypair(&pp, &mut rng));
+            black_box(base_key_gen(&pp, &mut rng));
         }));
 
         BASE_ATTEMPTS.store(0, Ordering::Relaxed);
         let per_op = time_us(NITER_SIGN, || {
-            black_box(base_sign_signature(black_box(MSG), &pk, &sk, &pp, &mut rng));
+            black_box(base_sign(black_box(MSG), &pk, &sk, &pp, &mut rng));
         });
         let att = BASE_ATTEMPTS.load(Ordering::Relaxed);
         t_sign.push(per_op);
@@ -165,7 +165,7 @@ fn main() {
         base_ops += NITER_SIGN as u64;
 
         t_verify.push(time_us(NITER_FAST, || {
-            black_box(base_sign_verify(black_box(&sig_base), MSG, &pk, &pp));
+            black_box(base_verify(black_box(&sig_base), MSG, &pk, &pp));
         }));
 
         // ---- Algorithm 2: the adaptor path ----

@@ -11,7 +11,7 @@ use fips204::las::{
     las_adapt, las_ext, las_keypair_seed, las_presign_det, las_preverify, las_setup, las_signature_det,
     las_verify,
 };
-use fips204::las_serialize::{las_pack_pk, las_pack_sig, las_pack_sk};
+use fips204::serialize::{las_pack_pk, las_pack_sig, las_pack_sk};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
 use sha3::Shake256;
 

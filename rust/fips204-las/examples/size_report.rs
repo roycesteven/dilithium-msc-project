@@ -6,7 +6,7 @@
 //!    response z, signature, pre-signature, adapted signature), give the bytes
 //!    of each, and name WHICH component drives the size (z, ~99%).
 //!  * Sizes are MEASURED from live objects via the packers in
-//!    `las_serialize.rs` (`.len()` of the produced byte arrays), not quoted
+//!    `serialize.rs` (`.len()` of the produced byte arrays), not quoted
 //!    from formulas. The c/z split inside the signature follows the packer's
 //!    field layout (2-bit challenge region + 19-bit response region) and is
 //!    asserted to sum to the measured total.
@@ -24,8 +24,8 @@
 use fips204::las::{
     las_adapt, las_ext, las_keypair, las_presign, las_preverify, las_setup, LAS_M,
 };
-use fips204::las_basesig::{base_sign_signature, base_sign_verify};
-use fips204::las_serialize::{
+use fips204::basesig::{base_sign, base_verify};
+use fips204::serialize::{
     las_pack_pk, las_pack_sig, las_pack_sk, LAS_C_COEFF_BITS, LAS_PK_BYTES, LAS_SIG_BYTES,
     LAS_SK_BYTES, LAS_Z_COEFF_BITS,
 };
@@ -48,15 +48,15 @@ fn main() {
 
     let (pk, sk) = las_keypair(&pp, &mut rng);
     let (y_stmt, y_wit) = las_keypair(&pp, &mut rng);
-    let sig = base_sign_signature(MSG, &pk, &sk, &pp, &mut rng);
+    let sig = base_sign(MSG, &pk, &sk, &pp, &mut rng);
     let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
     let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
 
     // Gate: only measure objects from a verified success-path state.
-    assert!(base_sign_verify(&sig, MSG, &pk, &pp), "gate: ordinary signature verifies");
+    assert!(base_verify(&sig, MSG, &pk, &pp), "gate: ordinary signature verifies");
     assert!(las_preverify(&presig, MSG, &y_stmt, &pk, &pp), "gate: pre-signature pre-verifies");
-    assert!(!base_sign_verify(&presig, MSG, &pk, &pp), "gate: pre-signature must FAIL ordinary Verify");
-    assert!(base_sign_verify(&adapted, MSG, &pk, &pp), "gate: adapted signature verifies");
+    assert!(!base_verify(&presig, MSG, &pk, &pp), "gate: pre-signature must FAIL ordinary Verify");
+    assert!(base_verify(&adapted, MSG, &pk, &pp), "gate: adapted signature verifies");
     assert!(
         las_ext(&adapted, &presig, &y_stmt, &pp).expect("gate: ext") == y_wit,
         "gate: ext recovers the witness exactly"
@@ -92,7 +92,7 @@ fn main() {
 
     println!("Communication cost — component-level packed sizes (measured)");
     println!("Setting: Simplified Dilithium-III (n=6, ell=5, kappa=49), ring degree d=256");
-    println!("Wire format: las_serialize.rs (byte-for-byte identical to C ref/serialize.c;");
+    println!("Wire format: serialize.rs (byte-for-byte identical to C ref/serialize.c;");
     println!("             cross-checked against the C pinned KAT digest 641a176c…5a19)");
     println!();
     println!("{:<42} {:>7}   {:>14}", "component", "bytes", "% of signature");

@@ -58,8 +58,9 @@
                         * tier declared at the bottom of this header */
 
 /* poly_chknorm() rejects when ||.||inf >= bound, so encode the strict ">" tests
- * as bound = (limit)+1. */
-#define LAS_BOUND_SIGN     (LAS_GAMMA - LAS_KAPPA + 1)  /* reject |z|inf  > g-k   */
+ * as bound = (limit)+1.  (LAS_BOUND_SIGN -- the Algorithm-1 Sign/Verify bound
+ * SHARED with basesig.{c,h} -- lives in setup.h, the shared layer below both
+ * schemes; only the adaptor-only PreSign bounds live here.) */
 #define LAS_BOUND_PRESIGN  (LAS_GAMMA - LAS_KAPPA)      /* reject |z^|inf > g-k-1 */
 
 /* AMHL K-hop PreSign bound: reject |z^|inf > g-k-K, i.e. accept <= g-k-K.

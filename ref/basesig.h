@@ -35,9 +35,9 @@
  * gamma = kappa*d*(n+l); tau-weight SampleInBall -> kappa-weight challenge;
  * and it hashes the FULL commitment w.
  *
- * basesig depends on las.h ONLY for the shared parameter macros
- * (LAS_N/ELL/KAPPA/GAMMA/...) and the key/signature struct layout
- * (las_pp/las_pk/las_sk/las_sig); las.{c,h} are byte-for-byte untouched.
+ * basesig does NOT include las.h: everything BOTH schemes share -- parameters,
+ * the las_pp/las_pk/las_sk/las_sig layout, LAS_BOUND_SIGN -- lives in the
+ * shared setup.h below both schemes; las.{c,h} are byte-for-byte untouched.
  * Sharing the parameters keeps the two schemes at the SAME setting (a fair
  * comparison); sharing the struct layout makes their keys and signatures
  * interchangeable -- an Adapted LAS pre-signature is a fully ORDINARY
@@ -52,7 +52,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "las.h"   /* shared parameters + las_pp/las_pk/las_sk/las_sig types ONLY */
+#include "setup.h"     /* SHARED layer: parameters + object types + LAS_BOUND_SIGN
+                        * (everything both schemes share; NOT las.h) */
+#include "serialize.h" /* SHARED codec: LAS_{PK,SK,SIG}_BYTES for the packed tier */
 
 /* ---- Rejection-sampling instrumentation (measurement only; no sign.h analogue) ----
  * Counts the total rejection-loop attempts performed by base_sign_signature

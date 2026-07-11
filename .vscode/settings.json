@@ -1,2 +1,5 @@
 {
+  "rust-analyzer.linkedProjects": [
+    "rust/fips204-las/Cargo.toml"
+  ]
 }

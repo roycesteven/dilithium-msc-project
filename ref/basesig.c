@@ -29,7 +29,8 @@
  * same body structure -- only dimensions (K,L -> n, l, m=n+l), distributions
  * (eta, gamma1 -> S_1, S_gamma) and weights (tau -> kappa) change.
  *
- * Standalone: depends on las.h for the shared parameters/types only.  las.c
+ * Standalone: depends only on the SHARED layer setup.h (parameters, types,
+ * LAS_BOUND_SIGN) + serialize.h (packed tier) -- NOT on las.h.  las.c
  * is NOT linked -- the helpers are local copies, behaviourally IDENTICAL to
  * las.c's, so A*r and the challenge hash H(pk,w,M) match las.c bit-for-bit
  * and a LAS-adapted signature verifies here.  ref/las.c mirrors THIS file in

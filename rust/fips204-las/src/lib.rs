@@ -106,15 +106,19 @@ mod types;
 // C build where las.c/serialize.c are new files and only the Makefile gains
 // additive targets. ----
 
+/// The SHARED system setup — the paper's `Setup() -> pp`: parameters, shared
+/// object types and `las_setup` (Rust port of C `ref/setup.{c,h}`), consumed
+/// by `serialize`, `basesig` and `las` alike.
+pub mod setup;
+/// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
+pub mod serialize;
+/// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the
+/// fair-benchmark baseline (Rust port of C `ref/basesig.c`).
+pub mod basesig;
 /// LAS — Lattice-based Adaptor Signature (eprint 2020/845) layered additively
 /// on this crate's primitives; Rust port of the C `ref/las.c`, KAT-locked
 /// against the C pinned digest (see `tests/las_kat.rs`).
 pub mod las;
-/// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the
-/// fair-benchmark baseline (Rust port of C `ref/basesig.c`).
-pub mod las_basesig;
-/// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
-pub mod las_serialize;
 
 /// All functionality is covered by traits, such that consumers can utilize trait objects as desired.
 pub mod traits;

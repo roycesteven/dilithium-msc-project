@@ -131,19 +131,20 @@ test/test_swap3: test/test_swap.c las.c las.h setup.c setup.h serialize.c serial
 # DILITHIUM_MODE is used only to satisfy the Dilithium build system/params.h;
 # original/optimised Dilithium timings are not part of this benchmark.
 LEVELS_DEPS = test/bench_levels.c basesig.c basesig.h las.c las.h setup.c setup.h serialize.c serialize.h randombytes.c \
+  test/cpucycles.c test/cpucycles.h \
   $(KECCAK_SOURCES) $(KECCAK_HEADERS)
 test/bench_levels_paper: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=3 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=60 \
-	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c test/cpucycles.c $(KECCAK_SOURCES) -lm
 test/bench_levels2: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DLAS_ELL=4 -DLAS_KAPPA=39 \
-	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c test/cpucycles.c $(KECCAK_SOURCES) -lm
 test/bench_levels3: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 \
-	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c test/cpucycles.c $(KECCAK_SOURCES) -lm
 test/bench_levels5: $(LEVELS_DEPS)
 	$(CC) $(CFLAGS) $(REPRO_FLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DLAS_ELL=7 -DLAS_KAPPA=60 \
-	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c $(KECCAK_SOURCES) -lm
+	  -o $@ $< basesig.c las.c setup.c serialize.c randombytes.c test/cpucycles.c $(KECCAK_SOURCES) -lm
 
 # C mirror of the Rust Criterion.rs statistical benchmark (see
 # rust/fips204-las/benches/las_bench.rs and test/bench_criterion.c's header):

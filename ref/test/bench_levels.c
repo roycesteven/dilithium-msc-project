@@ -15,6 +15,16 @@
  *   The two paths live in two SEPARATE modules so neither contaminates the other:
  *       BASE path     -> basesig.c  (base_sign_keypair / base_sign_signature / base_sign_verify; no Y)
  *       ADAPTOR path  -> las.c      (las_presign / las_preverify / las_adapt / las_ext)
+ *
+ *   BOTH API tiers are timed for every primary operation, and every primary line
+ *   reports wall-clock microseconds AND cycles (upstream test/cpucycles.h rdtsc):
+ *       TIER 1, CORE CRYPTO : the struct API (las_pk/las_sk/las_sig in/out) --
+ *                             pure computation, no (de)serialisation;
+ *       TIER 2, END-TO-END  : the *_packed byte API (validating unpack -> core ->
+ *                             pack INSIDE the call), the boundary upstream sign.c
+ *                             exposes and what a wire/on-chain consumer pays.
+ *   The tier-2 sign-class calls run the SAME rejection loop (they wrap the core),
+ *   so both tiers' Sign/PreSign segments feed the run-validity rejection gate.
  *   las.{c,h} are untouched by the base scheme; basesig shares only las.h's parameter
  *   macros and key/signature struct layout, so both run over matched parameters and
  *   primitives (separate base/adaptor modules over matched parameters and primitives).
@@ -37,9 +47,10 @@
  *          DIRECTLY off the per-module attempt counters (base_attempts / las_attempts):
  *          average attempts/sig, acceptance %, min, max, p50, p95.  Plus the
  *          run-validity REJECTION GATE (mirrors the Rust drivers): the attempts/call
- *          measured over the TIMED sign-class calls is hard-checked against the exact
- *          expectation las_expected_attempts() within 5 sigma -- a run whose restart
- *          rate deviates from theory aborts instead of producing invalid evidence.
+ *          measured over the TIMED sign-class calls (BOTH tiers) is hard-checked
+ *          against the exact expectation las_expected_attempts() within 5 sigma -- a
+ *          run whose restart rate deviates from theory aborts instead of producing
+ *          invalid evidence.
  *       B. Adapt timing clarification: the real protocol cost ("Adapt checked total",
  *          i.e. las_adapt incl. its internal las_preverify -- this is the protocol
  *          Adapt timing above) plus a diagnostic-only lower bound ("witness-add only",
@@ -69,7 +80,10 @@
  * gates all timing on the full success-path contract -- the ordinary signature
  * verifies; the pre-signature pre-verifies but FAILS ordinary Verify (the
  * statement-binding tripwire); the adapted signature verifies; and Ext recovers the
- * witness exactly -- so no failure or early-return path is ever timed.
+ * witness exactly -- so no failure or early-return path is ever timed.  The packed
+ * tier's canonical byte objects are the SAME canonical structs packed once via the
+ * shared codec, and the identical contract is re-enforced at the byte boundary
+ * (packed interlock incl. exact witness-BYTE recovery) before that tier is timed.
  *
  * Build (Makefile sets -DLAS_N/-DLAS_ELL/-DLAS_KAPPA for each parameter set).
  * The L2/L3/L5-style targets are dimension-aligned engineering settings inspired by
@@ -89,6 +103,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 #include "../basesig.h"     /* BASE path: base_sign_keypair/base_sign_signature/base_sign_verify + base_attempts */
@@ -96,6 +111,8 @@
 #include "../params.h"      /* N, Q */
 #include "../poly.h"        /* poly arithmetic for the component microbenchmarks    */
 #include "../fips202.h"     /* SHAKE256 for the local challenge-hash copy           */
+#include "../serialize.h"   /* shared codec: canonical packed state for the end-to-end tier */
+#include "cpucycles.h"      /* upstream cycle counter (rdtsc): cycles/op next to us/op */
 
 /* Reproducibility metadata.  Compiler and build date are always available via the
  * predefined macros below; git commit/branch are injected by the runner
@@ -140,20 +157,29 @@ static void stats(const double *x, int n, double *mean, double *sd) {
 
 static double g_runs[RUNS];
 static double g_mean, g_sd;          /* set by MEASURE / MEASURE_SIGN */
+static double g_cyc_runs[RUNS];      /* per-rep cycles/op series (same window)   */
+static double g_cmean, g_csd;        /* set by MEASURE / MEASURE_SIGN (cycles)   */
 static double g_att_runs[RUNS];      /* per-rep per-ATTEMPT us (set by MEASURE_SIGN) */
 static unsigned long g_att_total;    /* attempts over the RUNS x NITER_SIGN timed calls */
 static volatile long g_sink;
 
-/* Run the op for RUNS x niter_; leave mean/SD (us) in g_mean/g_sd.
+/* Run the op for RUNS x niter_; leave mean/SD (us) in g_mean/g_sd and mean/SD
+ * (cycles) in g_cmean/g_csd.  The cycle window (upstream test/cpucycles.h
+ * rdtsc) nests directly inside the wall-clock window: two counter reads per
+ * repetition, amortised over >= NITER_SIGN iterations -- well under 0.1
+ * cycles/op, so the us series (which mirrors the Rust driver) is unaffected.
  * Variadic so op bodies may contain unparenthesised commas. */
 #define MEASURE(niter_, ...) do {                                     \
     int br_, bi_;                                                     \
     for(br_ = 0; br_ < RUNS; ++br_) {                                 \
       double bt0_ = now_us();                                         \
+      uint64_t bc0_ = cpucycles();                                    \
       for(bi_ = 0; bi_ < (niter_); ++bi_) { __VA_ARGS__; }            \
+      g_cyc_runs[br_] = (double)(cpucycles() - bc0_) / (niter_);      \
       g_runs[br_] = (now_us() - bt0_) / (niter_);                     \
     }                                                                \
     stats(g_runs, RUNS, &g_mean, &g_sd);                             \
+    stats(g_cyc_runs, RUNS, &g_cmean, &g_csd);                       \
   } while(0)
 
 /* Sign-class variant (mirrors the Rust driver): additionally records, per
@@ -166,13 +192,16 @@ static volatile long g_sink;
     for(br_ = 0; br_ < RUNS; ++br_) {                                 \
       unsigned long ba_ = (counter_);                                 \
       double bt0_ = now_us();                                         \
+      uint64_t bc0_ = cpucycles();                                    \
       for(bi_ = 0; bi_ < NITER_SIGN; ++bi_) { __VA_ARGS__; }          \
+      g_cyc_runs[br_] = (double)(cpucycles() - bc0_) / NITER_SIGN;    \
       g_runs[br_] = (now_us() - bt0_) / NITER_SIGN;                   \
       ba_ = (counter_) - ba_;                                         \
       g_att_runs[br_] = g_runs[br_] * NITER_SIGN / (double)ba_;       \
       g_att_total += ba_;                                             \
     }                                                                \
     stats(g_runs, RUNS, &g_mean, &g_sd);                             \
+    stats(g_cyc_runs, RUNS, &g_cmean, &g_csd);                       \
   } while(0)
 
 static int ceil_log2(double x) { return (int)ceil(log2(x)); }
@@ -447,13 +476,31 @@ int main(void) {
   unsigned int j;
   int     i;
 
-  /* PRIMARY protocol timings (mean, sd) */
+  /* PRIMARY protocol timings, TIER 1 core crypto (us mean, sd + cycles mean, sd) */
   double su_m, su_s, kg_m, kg_s, sg_m, sg_s, vf_m, vf_s;
   double ps_m, ps_s, pv_m, pv_s, ad_m, ad_s, ex_m, ex_s;
+  double su_cm, su_cs, kg_cm, kg_cs, sg_cm, sg_cs, vf_cm, vf_cs;
+  double ps_cm, ps_cs, pv_cm, pv_cs, ad_cm, ad_cs, ex_cm, ex_cs;
+  /* PRIMARY protocol timings, TIER 2 end-to-end packed (us + cycles) */
+  double kgp_m, kgp_s, sgp_m, sgp_s, vfp_m, vfp_s, psp_m, psp_s;
+  double pvp_m, pvp_s, adp_m, adp_s, exp_m, exp_s;
+  double kgp_cm, kgp_cs, sgp_cm, sgp_cs, vfp_cm, vfp_cs, psp_cm, psp_cs;
+  double pvp_cm, pvp_cs, adp_cm, adp_cs, exp_cm, exp_cs;
   /* per-attempt (rejection-normalised) series + attempt totals over the TIMED
    * sign-class calls (set via MEASURE_SIGN; feeds the rejection gate) */
   double sg_att_m, sg_att_s, ps_att_m, ps_att_s;
   unsigned long sg_att_tot, ps_att_tot;
+  unsigned long sgp_att_tot, psp_att_tot;   /* packed-tier sign-class attempt totals */
+  uint64_t cyc_ovh;                         /* measured cycle-counter read overhead  */
+
+  /* Canonical PACKED state: the SAME canonical structs, packed once via the
+   * shared codec (serialize.{c,h}); scratch buffers receive the outputs of the
+   * timed producing packed ops so the canonical bytes are never overwritten. */
+  static uint8_t pk_b[LAS_PK_BYTES], Y_b[LAS_PK_BYTES];
+  static uint8_t sk_b[LAS_SK_BYTES], yw_b[LAS_SK_BYTES];
+  static uint8_t sig_b[LAS_SIG_BYTES], presig_b[LAS_SIG_BYTES], adapted_b[LAS_SIG_BYTES];
+  static uint8_t pk2_b[LAS_PK_BYTES], sk2_b[LAS_SK_BYTES];    /* scratch */
+  static uint8_t sig2_b[LAS_SIG_BYTES], y2_b[LAS_SK_BYTES];   /* scratch */
 
   /* DIAGNOSTIC timings (mean, sd): witness-add only + component microbenchmarks */
   double wo_m, wo_s;
@@ -519,26 +566,84 @@ int main(void) {
     return 1;
   }
 
+  /* Canonical PACKED state for the end-to-end tier: pack the SAME canonical
+   * objects once (the codec's pack side rejects out-of-band input, so a failed
+   * pack is itself a state error), then re-enforce the identical success
+   * contract at the BYTE boundary (mirrors test_serde.c's interlock) so the
+   * packed tier never times a failure path either. */
+  las_pack_pk(pk_b, &pk);
+  las_pack_pk(Y_b, &Y);
+  if(las_pack_sk(sk_b, &sk) != 0 || las_pack_sk(yw_b, &yy) != 0 ||
+     las_pack_sig(sig_b, &sig) != 0 || las_pack_sig(presig_b, &presig) != 0 ||
+     las_pack_sig(adapted_b, &adapted) != 0) {
+    printf("FATAL: could not pack the canonical benchmark state\n");
+    return 1;
+  }
+  if(base_sign_verify_packed(sig_b, m, mlen, pk_b, &pp) != 0 ||     /* base sig verifies (bytes) */
+     las_preverify_packed(presig_b, m, mlen, Y_b, pk_b, &pp) != 0 ||/* presig pre-verifies (bytes) */
+     base_sign_verify_packed(presig_b, m, mlen, pk_b, &pp) == 0 ||  /* byte-level tripwire   */
+     base_sign_verify_packed(adapted_b, m, mlen, pk_b, &pp) != 0 || /* adapted = base sig (bytes) */
+     las_ext_packed(y2_b, adapted_b, presig_b, Y_b, &pp) != 0 ||    /* Ext succeeds (bytes)  */
+     memcmp(y2_b, yw_b, LAS_SK_BYTES) != 0) {                       /* exact witness BYTES   */
+    printf("FATAL: packed-tier benchmark state inconsistent before timing\n");
+    return 1;
+  }
+
+  /* Measure the cycle counter's own read overhead (upstream test/cpucycles.c);
+   * reported as metadata -- at two reads per >=NITER_SIGN-iteration repetition
+   * it is far below 0.1 cycles/op and is NOT subtracted from any figure. */
+  cyc_ovh = cpucycles_overhead();
+
   /* ============================ PRIMARY TIMINGS ============================
-   * Protocol-level operations.  Producing operations write to SCRATCH (pp2/pk2/sk2/
-   * tmp/yext) so the canonical state is never mutated; verifies read canonical objects. */
-  MEASURE(NITER_FAST, las_setup(&pp2, ppseed));              su_m = g_mean; su_s = g_sd;
-  MEASURE(NITER_FAST, base_sign_keypair(&pk2, &sk2, &pp));         kg_m = g_mean; kg_s = g_sd;
+   * Protocol-level operations, TIER 1: core crypto (struct API).  Producing
+   * operations write to SCRATCH (pp2/pk2/sk2/tmp/yext) so the canonical state is
+   * never mutated; verifies read canonical objects. */
+  MEASURE(NITER_FAST, las_setup(&pp2, ppseed));
+  su_m = g_mean; su_s = g_sd; su_cm = g_cmean; su_cs = g_csd;
+  MEASURE(NITER_FAST, base_sign_keypair(&pk2, &sk2, &pp));
+  kg_m = g_mean; kg_s = g_sd; kg_cm = g_cmean; kg_cs = g_csd;
   /* BASE path (basesig.c).  Sign-class: MEASURE_SIGN also captures the
    * per-attempt series and the attempt total over the timed calls. */
   MEASURE_SIGN(base_attempts, base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp));
-  sg_m = g_mean; sg_s = g_sd;
+  sg_m = g_mean; sg_s = g_sd; sg_cm = g_cmean; sg_cs = g_csd;
   stats(g_att_runs, RUNS, &sg_att_m, &sg_att_s);
   sg_att_tot = g_att_total;
-  MEASURE(NITER_FAST, g_sink += base_sign_verify(&sig, m, mlen, &pk, &pp)); vf_m = g_mean; vf_s = g_sd;
+  MEASURE(NITER_FAST, g_sink += base_sign_verify(&sig, m, mlen, &pk, &pp));
+  vf_m = g_mean; vf_s = g_sd; vf_cm = g_cmean; vf_cs = g_csd;
   /* LAS ADAPTOR path (las.c). */
   MEASURE_SIGN(las_attempts, las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp));
-  ps_m = g_mean; ps_s = g_sd;
+  ps_m = g_mean; ps_s = g_sd; ps_cm = g_cmean; ps_cs = g_csd;
   stats(g_att_runs, RUNS, &ps_att_m, &ps_att_s);
   ps_att_tot = g_att_total;
-  MEASURE(NITER_FAST, g_sink += las_preverify(&presig, m, mlen, &Y, &pk, &pp)); pv_m = g_mean; pv_s = g_sd;
-  MEASURE(NITER_FAST, g_sink += las_adapt(&tmp, &presig, m, mlen, &Y, &yy, &pk, &pp)); ad_m = g_mean; ad_s = g_sd;
-  MEASURE(NITER_FAST, g_sink += las_ext(&yext, &adapted, &presig, &Y, &pp)); ex_m = g_mean; ex_s = g_sd;
+  MEASURE(NITER_FAST, g_sink += las_preverify(&presig, m, mlen, &Y, &pk, &pp));
+  pv_m = g_mean; pv_s = g_sd; pv_cm = g_cmean; pv_cs = g_csd;
+  MEASURE(NITER_FAST, g_sink += las_adapt(&tmp, &presig, m, mlen, &Y, &yy, &pk, &pp));
+  ad_m = g_mean; ad_s = g_sd; ad_cm = g_cmean; ad_cs = g_csd;
+  MEASURE(NITER_FAST, g_sink += las_ext(&yext, &adapted, &presig, &Y, &pp));
+  ex_m = g_mean; ex_s = g_sd; ex_cm = g_cmean; ex_cs = g_csd;
+
+  /* TIER 2: end-to-end packed (byte API; validating unpack -> core -> pack
+   * INSIDE the call).  Same repetition scheme; producing ops write to byte
+   * SCRATCH (pk2_b/sk2_b/sig2_b/y2_b), verifies read the canonical packed
+   * objects.  The sign-class packed calls wrap the same rejection loop, so
+   * MEASURE_SIGN gates their attempt totals exactly like the core tier's.
+   * (Setup has no packed twin: pp is public infrastructure, never on the wire.) */
+  MEASURE(NITER_FAST, g_sink += base_sign_keypair_packed(pk2_b, sk2_b, &pp));
+  kgp_m = g_mean; kgp_s = g_sd; kgp_cm = g_cmean; kgp_cs = g_csd;
+  MEASURE_SIGN(base_attempts, g_sink += base_sign_signature_packed(sig2_b, m, mlen, pk_b, sk_b, &pp));
+  sgp_m = g_mean; sgp_s = g_sd; sgp_cm = g_cmean; sgp_cs = g_csd;
+  sgp_att_tot = g_att_total;
+  MEASURE(NITER_FAST, g_sink += base_sign_verify_packed(sig_b, m, mlen, pk_b, &pp));
+  vfp_m = g_mean; vfp_s = g_sd; vfp_cm = g_cmean; vfp_cs = g_csd;
+  MEASURE_SIGN(las_attempts, g_sink += las_presign_packed(sig2_b, m, mlen, Y_b, pk_b, sk_b, &pp));
+  psp_m = g_mean; psp_s = g_sd; psp_cm = g_cmean; psp_cs = g_csd;
+  psp_att_tot = g_att_total;
+  MEASURE(NITER_FAST, g_sink += las_preverify_packed(presig_b, m, mlen, Y_b, pk_b, &pp));
+  pvp_m = g_mean; pvp_s = g_sd; pvp_cm = g_cmean; pvp_cs = g_csd;
+  MEASURE(NITER_FAST, g_sink += las_adapt_packed(sig2_b, presig_b, m, mlen, Y_b, yw_b, pk_b, &pp));
+  adp_m = g_mean; adp_s = g_sd; adp_cm = g_cmean; adp_cs = g_csd;
+  MEASURE(NITER_FAST, g_sink += las_ext_packed(y2_b, adapted_b, presig_b, Y_b, &pp));
+  exp_m = g_mean; exp_s = g_sd; exp_cm = g_cmean; exp_cs = g_csd;
 
   /* ===================== DIAGNOSTIC A: rejection distribution =====================
    * Per-call attempt counts read DIRECTLY off base_attempts / las_attempts (deltas).
@@ -627,8 +732,14 @@ int main(void) {
          RUNS, NITER_SIGN, NITER_FAST);
   printf(" single thread, -O3.  Repetition scheme, fixed pp seed and fixed 33-byte message\n");
   printf(" mirror the Rust driver (rust/fips204-las/examples/bench_levels.rs) exactly.\n");
-  printf(" One setup and one consistent state per run; primary protocol timings first,\n");
-  printf(" then diagnostics from the SAME state (cost-attribution / communication aids).\n\n");
+  printf(" Cycles/op via upstream test/cpucycles.{h,c} (rdtsc; invariant-TSC reference\n");
+  printf(" cycles), read once per repetition window: measured read overhead %llu cycles,\n",
+         (unsigned long long)cyc_ovh);
+  printf(" i.e. ~%.4f cycles/op at the %d-iteration sign-class loop -- negligible, not\n",
+         (double)cyc_ovh / NITER_SIGN, NITER_SIGN);
+  printf(" subtracted.  One setup and one consistent state per run (plus its packed byte\n");
+  printf(" image for the end-to-end tier); primary protocol timings first, then\n");
+  printf(" diagnostics from the SAME state (cost-attribution / communication aids).\n\n");
 
   printf("--- WHAT IS COMPARED (separate base/adaptor modules; matched parameters; shared primitives) ---\n");
   printf(" BASE  (simplified Dilithium-style signature; NO adaptor statement t'):\n");
@@ -640,25 +751,29 @@ int main(void) {
   printf("   Ext       s = z - z_hat   (recovers the witness r')\n");
   printf("   Adapted sig clears ordinary Verify without an explicit +t' because\n");
   printf("     A(z_hat + r') - c*t = (A*z_hat - c*t) + A*r' = w' + t'   (t' = A*r').\n");
-  printf("   pi (paper-level off-chain proof of well-formedness) is NOT implemented/measured here.\n\n");
+  printf("   pi (paper-level off-chain proof of well-formedness) is NOT implemented/measured here.\n");
+  printf(" Every operation is timed at BOTH API tiers: TIER 1 core crypto (structs in/out,\n");
+  printf(" pure computation) and TIER 2 end-to-end packed (bytes in/out; validating\n");
+  printf(" unpack -> core -> pack inside the call, upstream sign.c's boundary).\n\n");
 
   printf("##########################################################################\n");
   printf("# PRIMARY (protocol-level) timings -- the headline adaptor-overhead table #\n");
   printf("##########################################################################\n");
-  printf("--- COMPUTATION (microseconds, mean +/- sample SD) ---\n");
+  printf("--- COMPUTATION, TIER 1: CORE CRYPTO (struct API; pure computation, no codec)\n");
+  printf("    (per op: microseconds AND cycles, each mean +/- sample SD) ---\n");
   printf("\n Shared (public params pp=(A,H); KeyGen -> pk=t, sk=r):\n");
-  printf("   Setup          %8.2f +/- %6.2f\n", su_m, su_s);
-  printf("   KeyGen         %8.2f +/- %6.2f\n", kg_m, kg_s);
+  printf("   Setup          %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", su_m, su_s, su_cm, su_cs);
+  printf("   KeyGen         %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", kg_m, kg_s, kg_cm, kg_cs);
   printf("\n Base path (simplified Dilithium-style, c = H(pk, w, M); no t'):\n");
-  printf("   Sign           %8.2f +/- %6.2f\n", sg_m, sg_s);
-  printf("   Verify         %8.2f +/- %6.2f\n", vf_m, vf_s);
+  printf("   Sign           %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", sg_m, sg_s, sg_cm, sg_cs);
+  printf("   Verify         %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", vf_m, vf_s, vf_cm, vf_cs);
   printf("\n LAS adaptor path (statement t' folded into the hash, c = H(pk, w+t', M)):\n");
-  printf("   PreSign        %8.2f +/- %6.2f\n", ps_m, ps_s);
-  printf("   PreVerify      %8.2f +/- %6.2f\n", pv_m, pv_s);
-  printf("   Adapt          %8.2f +/- %6.2f\n", ad_m, ad_s);
-  printf("   Ext            %8.2f +/- %6.2f\n", ex_m, ex_s);
+  printf("   PreSign        %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", ps_m, ps_s, ps_cm, ps_cs);
+  printf("   PreVerify      %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", pv_m, pv_s, pv_cm, pv_cs);
+  printf("   Adapt          %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", ad_m, ad_s, ad_cm, ad_cs);
+  printf("   Ext            %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", ex_m, ex_s, ex_cm, ex_cs);
 
-  printf("\n Adaptor overhead (adaptor op vs the base op it mirrors):\n");
+  printf("\n Adaptor overhead (adaptor op vs the base op it mirrors; core tier, us):\n");
   printf("   PreSign       vs Sign     %8.2f vs %8.2f   (%+.1f%%)\n",
          ps_m, sg_m, 100.0*(ps_m - sg_m)/sg_m);
   printf("   PreVerify     vs Verify   %8.2f vs %8.2f   (%+.1f%%)\n",
@@ -666,6 +781,47 @@ int main(void) {
   printf("   Adapt         vs Verify   %8.2f vs %8.2f   (%+.1f%%)\n",
          ad_m, vf_m, 100.0*(ad_m - vf_m)/vf_m);
   printf("   Ext (separate)            %8.2f            (no base analogue)\n", ex_m);
+
+  printf("\n--- COMPUTATION, TIER 2: END-TO-END PACKED (byte API: validating unpack ->\n");
+  printf("    core -> pack INSIDE the call -- the boundary upstream sign.c exposes;\n");
+  printf("    same repetition scheme and units; Setup has no packed twin) ---\n");
+  printf("\n Shared:\n");
+  printf("   KeyGen_packed    %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", kgp_m, kgp_s, kgp_cm, kgp_cs);
+  printf("\n Base path (bytes in/out):\n");
+  printf("   Sign_packed      %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", sgp_m, sgp_s, sgp_cm, sgp_cs);
+  printf("   Verify_packed    %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", vfp_m, vfp_s, vfp_cm, vfp_cs);
+  printf("\n LAS adaptor path (bytes in/out; las_verify_packed = the on-chain-style entry):\n");
+  printf("   PreSign_packed   %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", psp_m, psp_s, psp_cm, psp_cs);
+  printf("   PreVerify_packed %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", pvp_m, pvp_s, pvp_cm, pvp_cs);
+  printf("   Adapt_packed     %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", adp_m, adp_s, adp_cm, adp_cs);
+  printf("   Ext_packed       %8.2f +/- %6.2f us  %11.0f +/- %9.0f cyc\n", exp_m, exp_s, exp_cm, exp_cs);
+
+  printf("\n Adaptor overhead at the packed boundary (adaptor op vs base op, us):\n");
+  printf("   PreSign_packed   vs Sign_packed    %8.2f vs %8.2f   (%+.1f%%)\n",
+         psp_m, sgp_m, 100.0*(psp_m - sgp_m)/sgp_m);
+  printf("   PreVerify_packed vs Verify_packed  %8.2f vs %8.2f   (%+.1f%%)\n",
+         pvp_m, vfp_m, 100.0*(pvp_m - vfp_m)/vfp_m);
+  printf("   Adapt_packed     vs Verify_packed  %8.2f vs %8.2f   (%+.1f%%)\n",
+         adp_m, vfp_m, 100.0*(adp_m - vfp_m)/vfp_m);
+  printf("   Ext_packed (separate)              %8.2f            (no base analogue)\n", exp_m);
+  printf("   NOTE: these packed-boundary overheads fold in EXTRA CODEC WORK, not just\n");
+  printf("   adaptor math -- PreSign_packed/PreVerify_packed additionally decode the\n");
+  printf("   pk-sized statement t'; Adapt_packed additionally decodes t' and the witness\n");
+  printf("   r' and re-packs the adapted signature.  The CORE tier above isolates the\n");
+  printf("   pure adaptor computation (the headline overhead); the codec-cost table\n");
+  printf("   below prices the byte boundary itself.\n");
+
+  printf("\n Codec boundary cost (packed minus core, per op, us -- the price of the\n");
+  printf(" byte boundary: validating unpack of the inputs + pack of the output;\n");
+  printf(" differences of independently measured means, so small values sit within\n");
+  printf(" the SDs above):\n");
+  printf("   KeyGen_packed    - KeyGen      %+9.2f   (%+6.1f%%)\n", kgp_m - kg_m, 100.0*(kgp_m - kg_m)/kg_m);
+  printf("   Sign_packed      - Sign        %+9.2f   (%+6.1f%%)\n", sgp_m - sg_m, 100.0*(sgp_m - sg_m)/sg_m);
+  printf("   Verify_packed    - Verify      %+9.2f   (%+6.1f%%)\n", vfp_m - vf_m, 100.0*(vfp_m - vf_m)/vf_m);
+  printf("   PreSign_packed   - PreSign     %+9.2f   (%+6.1f%%)\n", psp_m - ps_m, 100.0*(psp_m - ps_m)/ps_m);
+  printf("   PreVerify_packed - PreVerify   %+9.2f   (%+6.1f%%)\n", pvp_m - pv_m, 100.0*(pvp_m - pv_m)/pv_m);
+  printf("   Adapt_packed     - Adapt       %+9.2f   (%+6.1f%%)\n", adp_m - ad_m, 100.0*(adp_m - ad_m)/ad_m);
+  printf("   Ext_packed       - Ext         %+9.2f   (%+6.1f%%)\n", exp_m - ex_m, 100.0*(exp_m - ex_m)/ex_m);
 
   printf("\n");
   printf("##########################################################################\n");
@@ -685,12 +841,19 @@ int main(void) {
   printf("   avg = mean attempts/sig; accept%% = 1/avg; both schemes reject under\n");
   printf("   Fiat-Shamir-with-aborts at the bound gamma-kappa (Base Sign) /\n");
   printf("   gamma-kappa-1 (LAS PreSign).\n");
-  printf("   Run-validity gates below cover the %d x %d TIMED sign-class calls from the\n",
+  printf("   Run-validity gates below cover the %d x %d TIMED sign-class calls of EACH\n",
          RUNS, NITER_SIGN);
-  printf("   primary table (same 5-sigma check and line format as the Rust drivers):\n");
+  printf("   tier of the primary table -- the packed sign-class calls wrap the same\n");
+  printf("   rejection loop -- (same 5-sigma check and line format as the Rust drivers):\n");
   rejection_gate("Algorithm 1 Sign", sg_att_tot, (unsigned long)RUNS * NITER_SIGN,
                  las_expected_attempts(LAS_BOUND_SIGN));
   rejection_gate("Algorithm 2 PreSign", ps_att_tot, (unsigned long)RUNS * NITER_SIGN,
+                 las_expected_attempts(LAS_BOUND_PRESIGN));
+  rejection_gate("Algorithm 1 Sign (packed tier)", sgp_att_tot,
+                 (unsigned long)RUNS * NITER_SIGN,
+                 las_expected_attempts(LAS_BOUND_SIGN));
+  rejection_gate("Algorithm 2 PreSign (packed tier)", psp_att_tot,
+                 (unsigned long)RUNS * NITER_SIGN,
                  las_expected_attempts(LAS_BOUND_PRESIGN));
   printf("per-attempt diagnostic (rejection-normalised): Sign %.1f +/- %.1f us | "
          "PreSign %.1f +/- %.1f us | overhead %+.1f%%\n\n",
