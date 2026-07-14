@@ -25,6 +25,90 @@ with cumulative / end-to-end time.
 **Presentation rule (Royce):** no table↔chart redundancy (chart in body, exact-number
 table in appendix); no abbreviations of scheme/level names in tables/figures.
 
+## ⚠️ CANONICAL NAMING CONVENTION — Rust ⇄ C ⇄ paper (Stage-A seven-type layout; DO NOT DEVIATE)
+
+The Rust port (`rust/fips204-las/src/`) is **DONE, PROVEN (KAT digest
+`641a176c…5a19`), and is the AUTHORITY**. The C mirror (`ref/`) must reproduce
+these names **exactly** so the two languages stay faithful to each other and to
+the paper↔code notation. Never invent a variant; if a name here looks wrong,
+fix it against the paper (`docs/paper/LAS_2020_845_NOTATION.md`), not from memory.
+
+**Construction parameters** (paper Section 3 / Table 1):
+
+| paper | Rust (setup.rs) | C (setup.h) | value @ D3 |
+|---|---|---|---|
+| n (module rank) | `N` | `LAS_N` (kept; `-DLAS_N=` sweepable) | 6 |
+| ℓ | `ELL` | `ELL` (`-DELL=`) | 5 |
+| n+ℓ | `N_PLUS_ELL` | `N_PLUS_ELL` | 11 |
+| d (ring degree) | `D` | `LAS_D` (`#define LAS_D N`, params.h N=256) | 256 |
+| κ | `KAPPA` | `KAPPA` (`-DKAPPA=`) | 49 |
+| γ = κ·d·(n+ℓ) | `GAMMA` | `GAMMA` | — |
+| seed length | `LAS_SEEDBYTES` | `LAS_SEEDBYTES` | 32 |
+
+C-only divergence: **only** `LAS_N` and `LAS_D` keep the `LAS_` prefix (params.h
+already owns bare `N`=256 and `D`=13 for the reused Dilithium primitives). C
+ring-degree loops in the **LAS files** read `LAS_D`; the reused Dilithium
+primitive files keep bare `N`.
+
+**The seven semantic types** (physical home: setup.rs / setup.h; each owned by one layer):
+
+| paper object | Rust type {fields} | C type {fields} | owner |
+|---|---|---|---|
+| pp = A = [I\|A'] | `PublicParams { a_prime, seed }` | `public_params { a_prime, seed }` | setup |
+| pk = t | `PublicKey { t }` | `public_key { t }` | basesig |
+| sk = r | `SecretKey { r }` | `secret_key { r }` | basesig |
+| σ = (c, z) | `Signature { c, z }` | `signature { c, z }` | basesig |
+| σ̂ = (c, ẑ) | `PreSignature { c, z_hat }` | `pre_signature { c, z_hat }` | las |
+| Y = t' | `Statement([R;N])`, `as_t_prime()` | `statement { t_prime }` | relation |
+| y / s (witness) | `Witness([R;N_PLUS_ELL])`, `as_relation_vector()`/`from_relation_vector()` | `witness { value }` | relation |
+
+`witness.value` is NEUTRAL storage: Gen's honest ternary r′ AND Ext's extracted
+s (relation R′_A, may exceed norm 1). A statement is pk-shaped but is NOT a
+public_key; a pre_signature is sig-shaped but NOT a signature — never cast/alias.
+
+**Rejection bounds** (each owned by its scheme, NOT in setup):
+
+| Rust | C | value |
+|---|---|---|
+| `basesig::BOUND_SIGN` | `BOUND_SIGN` (basesig.h) | γ−κ+1 |
+| `las::BOUND_PRESIGN` | `BOUND_PRESIGN` (las.h) | γ−κ |
+| — (dropped in Rust) | `BOUND_PRESIGN_K(K)` (las.h; AMHL-only, out of scope but kept as hook) | γ−κ−K+1 |
+
+**Public function names** (paper/upstream ⇄ Rust ⇄ C):
+
+- setup: `setup_public_params` (both).
+- relation (Gen): `gen`/`gen_seed` ⇄ `relation_gen`/`relation_gen_seed`.
+- basesig (Algorithm 1, Σ): `keygen`⇄`base_keygen`, `keygen_seed`⇄`base_keygen_seed`,
+  `sign_internal`⇄`base_sign_internal`, `sign`⇄`base_sign`, `sign_det`⇄`base_sign_det`,
+  `verify_internal`⇄`base_verify_internal`, `verify`⇄`base_verify`; packed
+  `keygen_packed`/`sign_packed`/`verify_packed` ⇄ `base_keygen_packed`/
+  `base_sign_packed`/`base_verify_packed`. (Old C `base_sign_keypair`,
+  `base_sign_signature*`, `base_sign_verify*`, and the zero-caller sm-wrappers
+  `base_sign`/`base_sign_open` are RENAMED/DELETED to these.)
+- las (Algorithm 2): `presign_internal`⇄`las_presign_internal`, `presign`⇄`las_presign`,
+  `presign_det`⇄`las_presign_det`, `preverify_internal`⇄`las_preverify_internal`,
+  `preverify`⇄`las_preverify`, `adapt`⇄`las_adapt`, `ext`⇄`las_ext`; packed
+  `las_presign_packed`/`las_preverify_packed`/`las_adapt_packed`/`las_ext_packed`.
+  (`las_keypair*`/`las_signature*`/`las_verify*`/`las_sign`/`las_open` and their
+  packed twins are DELETED from las.c — Algorithm 1 lives only in basesig.)
+- **Gate names — NEVER rename:** `LAS_ATTEMPTS`/`las_attempts`,
+  `BASE_ATTEMPTS`/`base_attempts`, `las_expected_attempts`, `LAS_SEEDBYTES`,
+  serialize bit-widths `LAS_{PK,SK,C,Z}_COEFF_BITS`, `LAS_Z_OFFSET`, `LAS_Z_MAX`.
+
+**Serialize sizes** (semantic `*_BYTES`, six typed pack/unpack pairs over 3 encoders):
+`PUBLIC_KEY_BYTES`(4416) `SECRET_KEY_BYTES`(704) `SIGNATURE_BYTES`(6752),
+`STATEMENT_BYTES`=pk, `WITNESS_BYTES`=sk, `PRE_SIGNATURE_BYTES`=sig. Pairs:
+`pack_/unpack_` × {`public_key`,`statement`,`secret_key`,`witness`,`signature`,
+`pre_signature`}. `las_verify_packed` is DELETED from serialize (moved to
+basesig as `base_verify_packed`).
+
+**Locked local conventions** (bit-for-bit, from the plan; unaffected by the rename):
+vector split `x_0`/`x_1`; NTT-operand suffixes `_hat`/`_mont`; products `c_r`/`c_t`;
+mask counter `mask_nonce`; recomputed challenge `c_check`; commitments
+`w_prime`/`w_plus_t_prime`; object vars `sigma`/`sigma_hat`/`statement`/`witness`;
+challenge sampler renamed to its upstream twin `sample_in_ball` (`las_` prefix is
+reserved for the four Algorithm-2 public ops, not private helpers).
+
 ## Working agreement — token-saving mode
 
 Use token-saving mode by default.

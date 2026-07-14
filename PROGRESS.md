@@ -1,58 +1,53 @@
 
-## Checkpoint — 2026-07-09 10:54
+## Checkpoint — 2026-07-13 (Stage-A C mirror DONE + KAT gate GREEN)
 
 Branch: restructure
 
 Current goal:
-- Re-lay-out the 4 scheme files for side-by-side comparison and rename LAS API for uniform provenance chain crypto_sign*→base_sign*→las*.
+- Stage A: seven-type/Algorithm-split C mirror of the proven Rust. Gate = pinned KAT digest unchanged.
+
+Done (this session):
+- C mirror COMPLETE for the in-scope core: ref/relation.{h,c} (new), serialize.{h,c} (six typed pairs), basesig.{h,c} (base_keygen/base_sign/base_verify + base_keygen_seed/base_sign_det/det_seed/base_verify_packed; paper-faithful locals), las.{h,c} (Algorithm-2 only; Alg-1 + S1 sampler deleted; packed tier uses typed codecs; BOUND_PRESIGN[_K]).
+- Core tests retyped + BUILT + PASS at D3: test_kat3 (KAT digest 641a176c…5a19 MATCHES — zero bytes changed), test_las3 (1000/1000), test_basesig3 (all checks), test_serde3 (all serde). All under full CFLAGS -Wall -Wextra -Wpedantic -Wshadow…, zero warnings.
+- Benches retyped + syntax-clean (-Wall -Wextra -Wpedantic): bench_levels.c, bench_criterion.c, export_packed.c. NOT run (8-min benches; not sanctioned). Rejection-gate lines preserved (LAS_BOUND_*→BOUND_*, las_expected_attempts kept).
+- Makefile patched: relation.c added to core link lines; -DLAS_ELL/-DLAS_KAPPA → -DELL/-DKAPPA (LAS_N kept).
+- Royce scope decision (this session): AMHL + chain OUT of Stage-A scope. amhl.{c,h}, chain.{c,h}, test_amhl.c, test_pcn.c, test_swap.c, test_contract.c, bench_app.c NOT retyped (still old API; their `make` targets will fail — intentional).
+- CLAUDE.md gained a canonical "Rust ⇄ C ⇄ paper" naming-convention section (source of truth for the mirror).
+
+Evidence used:
+- In-session build+run of test_kat3/las3/serde3/basesig3 (compiled + executed by Claude this session, sanctioned by Royce). Digest 641a176c…5a19 reproduced.
+
+Open risks:
+- Benches compiled but NOT run (Royce should run bench_levels3/bench_criterion3 to confirm the rejection gate passes at runtime, and test_las2/las5, test_serde_l2/l3/l5, test_basesig_paper/2/5 across param sets).
+- Out-of-scope amhl/chain tier left on old API — `make all` fails on those targets; build only the in-scope targets.
+- Stage B (c_tilde) NOT started; will change wire size (D3 6752→6720) → new digest both langs.
+
+Next action:
+- Royce: `make test/test_kat3 && ./test/test_kat3` to reconfirm digest; optionally run benches. Then decide amhl/chain retype + Stage B.
+
+## Checkpoint — 2026-07-12 (c_tilde correction + seven-type refactor)
+
+Branch: restructure
+
+Current goal:
+- Stage A: finish seven-type/Algorithm-split refactor + LAS_-prefix param rename (both langs). Stage B: c_tilde challenge-lifecycle correction. Two digest checkpoints.
 
 Done:
-- Mirrored basesig.c↔sign.c and las.c↔basesig.c (same slots/order/int returns, helpers at bottom); Rust twins las_basesig.rs/las.rs likewise.
-- Renamed las_keygen→las_keypair, las_sign→las_signature, sign_core→las_signature_internal (+ _internal splits) across all C/Rust callers, examples, and project docs.
-- Built + ran full suites: 16 C targets PASS (KAT digest matches), Rust cargo test PASS (las_kat parity, doctests); fixed pre-existing rustdoc failure.
+- Rust Stage A COMPLETE + PROVEN: basesig.rs (det_seed, packed tier), las.rs (Alg-2 only), lib.rs (pub mod relation), all tests/examples/benches; byte-level presig tripwires. KAT digest 641a176c… UNCHANGED, cargo build/check --all-targets/las_stage1 all pass.
+- Applied Royce's naming decision (this session): Rust drops LAS_ → N/ELL/GAMMA/KAPPA/N_PLUS_ELL, ring degree D; BOUND_SIGN→basesig, BOUND_PRESIGN→las. C keeps LAS_N + adds LAS_D alias (params.h N=256/D=13 collision).
+- C mirror STARTED: setup.{h,c} done (7 typedefs, setup_public_params, params rename, LAS_D, BOUND_SIGN removed).
 
 Files touched/inspected:
-- ref/basesig.{c,h}, ref/las.{c,h}
-- rust/fips204-las/src/las.rs, las_basesig.rs
-- plus other related files (tests, examples, docs), not listed to keep checkpoint short.
+- rust/fips204-las/src/{setup,relation,serialize,basesig,las,lib}.rs
+- ref/setup.{h,c}
+- plus Rust tests/examples/benches + plan file, not listed to keep checkpoint short.
 
 Evidence used:
-- none
+- none (KAT run in-session: digest 641a176c…, matched)
 
 Open risks:
-- report/REPORT_DRAFT.md (~L376/433/787) still uses old names — left for Royce.
-- las_verbose_comment.{c,h,rs} renamed but still old layout (annotated copies, unbuilt).
+- C mirror is large + unbuildable by Claude (Royce runs make); semantic split las_pk→{public_key|statement} etc. per-site.
+- Stage B c_tilde changes wire size (D3 6752→6720) → new digest, both langs.
 
 Next action:
-- Decide whether to regenerate las_verbose_comment.* to the new layout or drop them.
-
-## Checkpoint 2026-07-09 (mirror-rigor rewrite + two-tier architecture)
-
-Branch: restructure
-
-Current goal:
-- Upstream-twin-helper rewrite of las.c (quote basesig.c lines verbatim + WHY), then two-tier architecture: core-crypto (struct) vs end-to-end (packed) API.
-
-Done:
-- ref/basesig.c (accepted earlier) built+tested: 4 param sets x 1000 iters PASS.
-- ref/las.c rewritten to the same standard: helpers = verbatim copies of basesig.c's b_* twins (las_* prefix), inline SHAKE/matrix/rej composition, every line annotated [REUSED]/[CHANGED]/[DELETED] quoting basesig.c:<line> (Alg-1) or its own Alg-1 twin las.c:<line> (Alg-2); all 207 line citations machine-verified.
-- Adopted basesig's z-pipeline order (proved KAT-safe: divergent reduce32 representatives differ by Q and both always fail chknorm).
-- Provenance chain completed per Royce: las_sign<->base_sign, las_open<->base_sign_open added.
-- Shared setup split out: ref/setup.{c,h} = params + shared types (las_pp/pk/sk/sig) + las_setup (paper Setup()->pp); las.h/basesig.h/serialize.h re-layered (setup.h -> serialize.h -> schemes, mirroring params/polyvec -> packing -> sign).
-- End-to-end PACKED-API tier added per Royce (packing inside the call, like sign.c): base_sign_{keypair,signature,verify}_packed in basesig.c; las_{keypair,signature,verify,presign,preverify,adapt,ext}_packed in las.c; serialize.c now pure codec (las_verify_packed moved to las.c, arg order unified with struct tier; callers updated).
-- test_serde.c: packed-tier roundtrips + byte-level interlock (base verifier accepts adapted LAS sig through bytes).
-- Build clean (zero warnings), ALL 16 C tests PASS, KAT digest 641a176c... matches pinned value.
-
-Files touched:
-- ref/las.{c,h}, ref/basesig.{c,h}, ref/setup.{c,h} (new), ref/serialize.{c,h}, ref/Makefile, ref/test/test_serde.c, ref/test/test_contract.c.
-
-Evidence used:
-- test run output this session (16/16 PASS incl. test_kat3 pinned digest).
-
-Open risks:
-- docs/walkthrough/FUNCTION_MAP/bridge line-number links now stale (doc sync deferred until Royce accepts code).
-- basesig.h header still says "las.{c,h} are byte-for-byte untouched" (stale claim).
-- las_verbose_comment.* still old layout.
-
-Next action:
-- Cycles/op + packed-tier timings in bench drivers (bench_levels.c; bench_criterion.c must stay in lockstep with the Rust driver), then Rust mirror rewrite (las_basesig.rs quotes ml_dsa.rs, las.rs quotes las_basesig.rs, + setup/packed-tier parity), then cargo test KAT parity, then doc sync.
+- Write ref/relation.{h,c} (new), then serialize.{h,c}, basesig, las, amhl, chain, tests, Makefile.

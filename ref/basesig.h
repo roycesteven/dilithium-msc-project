@@ -3,129 +3,129 @@
 
 /*
  * basesig.{c,h} -- the SEPARATE simplified Dilithium-style BASE signature,
- * i.e. Algorithm 1 ("Lattice-Based Signature") of eprint 2020/845.
+ * i.e. Algorithm 1 ("Lattice-Based Signature") of eprint 2020/845.  This is the
+ * ONE canonical Algorithm-1 implementation of the build (Definition 3: the
+ * adaptor scheme INHERITS KeyGen/Sign/Verify from the base signature, so they
+ * live HERE and only here; las.c holds Algorithm 2 only, and an Adapt output is
+ * verified by THIS file's base_verify).
  *
- * DELIBERATELY STRUCTURED AS A MIRROR OF THE UPSTREAM ML-DSA REFERENCE
- * (ref/sign.{c,h}): SAME function count, SAME order, SAME int-return
- * convention; every name is the uniform prefix swap crypto_sign* ->
- * base_sign* (the real ML-DSA crypto_sign_* live in sign.c and mean
- * OPTIMISED Dilithium; distinct names avoid a link clash and keep `grep`
- * unambiguous).  The declarations below follow sign.h one-to-one:
+ * STRUCTURED AS A MIRROR OF THE UPSTREAM ML-DSA REFERENCE (ref/sign.{c,h}):
+ * SAME order, SAME int-return convention; names by the uniform prefix swap
+ * crypto_sign* -> base_*.  Declarations follow sign.h one-to-one:
  *
- *     base_sign_keypair             <->  crypto_sign_keypair            (sign.h:10)
- *     base_sign_signature_internal  <->  crypto_sign_signature_internal (sign.h:13)
- *     base_sign_signature           <->  crypto_sign_signature          (sign.h:23)
- *     base_sign                     <->  crypto_sign                    (sign.h:29)
- *     base_sign_verify_internal     <->  crypto_sign_verify_internal    (sign.h:35)
- *     base_sign_verify              <->  crypto_sign_verify             (sign.h:44)
- *     base_sign_open                <->  crypto_sign_open               (sign.h:50)
+ *   base_keygen                   <->  crypto_sign_keypair            (sign.c:23)
+ *   base_keygen_seed               -   deterministic KeyGen body (KAT slot; no sign.c slot)
+ *   base_sign_internal            <->  crypto_sign_signature_internal (sign.c:85)
+ *   base_sign                     <->  crypto_sign_signature          (sign.c:206)
+ *   base_sign_det                  -   deterministic Sign (KAT slot; no sign.c slot)
+ *   base_verify_internal          <->  crypto_sign_verify_internal    (sign.c:289)
+ *   base_verify                   <->  crypto_sign_verify             (sign.c:375)
+ *   (the base_sign/base_sign_open sm-wrappers were dropped: struct signatures
+ *    carry no byte prefix, so "sm = sig || m" degenerates to sm = m.)
  *
  * Algorithm 1 (paper p.7-8), the target of this file:
- *     KeyGen : r <- S_1^{n+l};  t = A r;  (pk, sk) = (t, r)
+ *     KeyGen : r <- S_1^{n+ell};  t = A r;  (pk, sk) = (t, r)
  *     Sign   : y <- S_g; w = A y; c = H(pk, w,  M); z = y + c r; reject |z|inf > g-k
  *     Verify : w' = A z - c t;   accept iff  c == H(pk, w',  M)
  *
- * What Algorithm 1 DELETES vs ML-DSA (all "for ease of presentation", paper
- * s2.2 / s3.2 -- these are precisely the lines removed in basesig.c):
- * Power2Round key compression, the high/low-bit Decompose, the hint vector
- * (MakeHint/UseHint, the OMEGA bound), the second (low-bits) rejection test,
- * hashing only the high bits, and the byte-packed key/signature/ctx APIs
- * (keys and signatures are structs here).  What it CHANGES: eta-sampling ->
- * ternary S_1; the gamma1 power-of-two mask -> uniform S_gamma with
- * gamma = kappa*d*(n+l); tau-weight SampleInBall -> kappa-weight challenge;
- * and it hashes the FULL commitment w.
+ * basesig does NOT include las.h: everything Algorithm 1 needs -- the
+ * construction parameters (setup.h) and its OWN object types (public_key /
+ * secret_key / signature, defined in the shared las_types.h) -- lives below
+ * both schemes.  A LAS-adapted pre-signature is a fully ORDINARY signature that
+ * THIS base_verify accepts with no explicit +Y, because
  *
- * basesig does NOT include las.h: everything BOTH schemes share -- parameters,
- * the las_pp/las_pk/las_sk/las_sig layout, LAS_BOUND_SIGN -- lives in the
- * shared setup.h below both schemes; las.{c,h} are byte-for-byte untouched.
- * Sharing the parameters keeps the two schemes at the SAME setting (a fair
- * comparison); sharing the struct layout makes their keys and signatures
- * interchangeable -- an Adapted LAS pre-signature is a fully ORDINARY
- * signature that THIS base_sign_verify accepts with no explicit +Y, because
- *
- *     A(z_hat + y) - c t = (A z_hat - c t) + A y = w' + Y      (since Y = A y).
+ *     A(z_hat + r') - c t = (A z_hat - c t) + A r' = w' + Y      (since Y = A r').
  *
  * basesig reuses only the repo's mode-independent primitives (poly/NTT/SHAKE);
- * its static helpers (matrix product, challenge hash, samplers, norm check)
- * are local copies, so the file compiles and links independently of las.c.
+ * its static helpers (matrix product, challenge hash, samplers, norm check) are
+ * local copies, so the file compiles and links independently of las.c.
  */
 
 #include <stddef.h>
 #include <stdint.h>
-#include "setup.h"     /* SHARED layer: parameters + object types + LAS_BOUND_SIGN
-                        * (everything both schemes share; NOT las.h) */
-#include "serialize.h" /* SHARED codec: LAS_{PK,SK,SIG}_BYTES for the packed tier */
+#include "setup.h"     /* SHARED layer: construction parameters + public_params -- NOT las.h */
+#include "las_types.h" /* SHARED object types (public_key/secret_key/signature owned here) */
+#include "serialize.h" /* SHARED codec: {PUBLIC_KEY,SECRET_KEY,SIGNATURE}_BYTES for the packed tier */
+
+/* Algorithm-1 Sign/Verify rejection bound (chknorm-style: reject `>= bound`, so
+ * the strict `>` test is encoded as bound = limit+1): Sign and Verify reject at
+ * ||z||inf > gamma-kappa (Alg. 1 steps 11/16), and an Adapt output must clear
+ * exactly this bound.  This is the Algorithm-1 rejection rule, so basesig OWNS
+ * it (the adaptor-only BOUND_PRESIGN lives in las.h).  Moved here from setup.h. */
+#define BOUND_SIGN  (GAMMA - KAPPA + 1)
 
 /* ---- Rejection-sampling instrumentation (measurement only; no sign.h analogue) ----
- * Counts the total rejection-loop attempts performed by base_sign_signature
- * since last reset, mirroring las_attempts for the adaptor path so base and
- * adaptor restart counts can be compared directly.  Never read by the scheme. */
+ * Counts the total rejection-loop attempts performed by base_sign_internal since
+ * last reset, mirroring las_attempts for the adaptor path so base and adaptor
+ * restart counts can be compared directly.  Never read by the scheme. */
 extern unsigned long base_attempts;
 
-/* (no DILITHIUM_NAMESPACE(keypair) define: base symbols are mode-independent) */
-int base_sign_keypair(las_pk *pk, las_sk *sk, const las_pp *pp);
+/* base_keygen  <->  crypto_sign_keypair.  KeyGen: r<-S_1^(n+ell); t=Ar; (pk,sk)=(t,r).
+ * (Gen (relation.c) uses the same sampling/arithmetic but is a distinct algorithm
+ * returning a (statement, witness) pair.)  Returns 0 (success). */
+int base_keygen(public_key *pk, secret_key *sk, const public_params *pp);
 
-/* (no DILITHIUM_NAMESPACE(signature_internal) define) */
-int base_sign_signature_internal(las_sig *sig,
-                                 const uint8_t *m,
-                                 size_t mlen,
-                                 const las_pk *pk,
-                                 const las_sk *sk,
-                                 const las_pp *pp,
-                                 const uint8_t seed[64]);
+/* Deterministic KeyGen body from an explicit 32-byte seed (reproducible KAT
+ * vectors).  No sign.h slot.  Returns 0 (success). */
+int base_keygen_seed(public_key *pk, secret_key *sk, const public_params *pp,
+                     const uint8_t seed[LAS_SEEDBYTES]);
 
-/* (no DILITHIUM_NAMESPACE(signature) define) */
-int base_sign_signature(las_sig *sig,
-                        const uint8_t *m, size_t mlen,
-                        const las_pk *pk, const las_sk *sk,
-                        const las_pp *pp);
+/* base_sign_internal  <->  crypto_sign_signature_internal.  Sign body,
+ * parameterised by the 64-byte mask seed (implementation randomness, no paper
+ * symbol; Dilithium's rnd).  Returns 0 (success). */
+int base_sign_internal(signature *sig,
+                       const uint8_t *m, size_t mlen,
+                       const public_key *pk, const secret_key *sk,
+                       const public_params *pp, const uint8_t mask_seed[64]);
 
-/* (no DILITHIUM_NAMESPACETOP define) */
-int base_sign(las_sig *sig, uint8_t *sm, size_t *smlen,
+/* base_sign  <->  crypto_sign_signature.  Sign, random path (fresh mask seed).
+ * Returns 0 (success). */
+int base_sign(signature *sig,
               const uint8_t *m, size_t mlen,
-              const las_pk *pk, const las_sk *sk,
-              const las_pp *pp);
+              const public_key *pk, const secret_key *sk,
+              const public_params *pp);
 
-/* (no DILITHIUM_NAMESPACE(verify_internal) define) */
-int base_sign_verify_internal(const las_sig *sig,
-                              const uint8_t *m,
-                              size_t mlen,
-                              const las_pk *pk,
-                              const las_pp *pp);
+/* base_sign_det  (KAT slot).  Deterministic Sign: the per-signature mask
+ * randomness is derived from (sk, M), so the output is a deterministic function
+ * of its inputs.  Same distribution/validity as base_sign.  Returns 0 (success). */
+int base_sign_det(signature *sig,
+                  const uint8_t *m, size_t mlen,
+                  const public_key *pk, const secret_key *sk,
+                  const public_params *pp);
 
-/* (no DILITHIUM_NAMESPACE(verify) define) */
-int base_sign_verify(const las_sig *sig,
-                     const uint8_t *m, size_t mlen,
-                     const las_pk *pk,
-                     const las_pp *pp);
+/* base_verify_internal  <->  crypto_sign_verify_internal.  Verify body:
+ * w' = A z - c t; accept iff c == H(pk, w', M).  The ONLY verifier a final
+ * (ordinary or adapted) signature ever meets -- a pre_signature cannot be passed
+ * here (distinct type; PreVerify lives in las.c).  0 on success, -1 otherwise. */
+int base_verify_internal(const signature *sig,
+                         const uint8_t *m, size_t mlen,
+                         const public_key *pk, const public_params *pp);
 
-/* (no DILITHIUM_NAMESPACE(open) define) */
-int base_sign_open(uint8_t *m, size_t *mlen,
-                   const las_sig *sig,
-                   const uint8_t *sm, size_t smlen,
-                   const las_pk *pk,
-                   const las_pp *pp);
+/* base_verify  <->  crypto_sign_verify.  Verify, public entry point.
+ * Returns 0 on success, -1 otherwise. */
+int base_verify(const signature *sig,
+                const uint8_t *m, size_t mlen,
+                const public_key *pk, const public_params *pp);
 
 /* ============== end-to-end PACKED-API tier (bytes in/out) ==============
- * The SECOND measured boundary, mirroring what upstream's ONLY boundary is:
- * crypto_sign_keypair/crypto_sign_signature/crypto_sign_verify take and
- * return bit-packed BYTES and pack/unpack inside the call (sign.c uses
- * packing.h at sign.c:60/64, :108, :186, :311-312).  The struct functions
- * above are the CORE CRYPTO tier; these end-to-end twins unpack the byte
- * keys (validating; malformed -> -1), run the core, and pack the outputs,
- * using the shared codec ref/serialize.{c,h}.  Same argument positions as
- * the struct twin, byte buffers in place of structs. */
-int base_sign_keypair_packed(uint8_t pk_b[LAS_PK_BYTES],
-                             uint8_t sk_b[LAS_SK_BYTES],
-                             const las_pp *pp);
-int base_sign_signature_packed(uint8_t sig_b[LAS_SIG_BYTES],
-                               const uint8_t *m, size_t mlen,
-                               const uint8_t pk_b[LAS_PK_BYTES],
-                               const uint8_t sk_b[LAS_SK_BYTES],
-                               const las_pp *pp);
-int base_sign_verify_packed(const uint8_t sig_b[LAS_SIG_BYTES],
-                            const uint8_t *m, size_t mlen,
-                            const uint8_t pk_b[LAS_PK_BYTES],
-                            const las_pp *pp);
+ * The SECOND measured boundary, mirroring upstream's ONLY boundary (sign.c
+ * packs/unpacks bytes inside its API with packing.h).  The struct functions
+ * above are the CORE CRYPTO tier; these end-to-end twins unpack the byte keys
+ * (validating; malformed -> -1), run the core, and pack the outputs, using the
+ * shared codec ref/serialize.{c,h}.  base_verify_packed is the byte interface an
+ * on-chain verifier consumes (it moved here from serialize, where the codec now
+ * stays pure). */
+int base_keygen_packed(uint8_t pk_b[PUBLIC_KEY_BYTES],
+                       uint8_t sk_b[SECRET_KEY_BYTES],
+                       const public_params *pp);
+int base_sign_packed(uint8_t sig_b[SIGNATURE_BYTES],
+                     const uint8_t *m, size_t mlen,
+                     const uint8_t pk_b[PUBLIC_KEY_BYTES],
+                     const uint8_t sk_b[SECRET_KEY_BYTES],
+                     const public_params *pp);
+int base_verify_packed(const uint8_t sig_b[SIGNATURE_BYTES],
+                       const uint8_t *m, size_t mlen,
+                       const uint8_t pk_b[PUBLIC_KEY_BYTES],
+                       const public_params *pp);
 
 #endif

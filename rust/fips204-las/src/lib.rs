@@ -106,10 +106,20 @@ mod types;
 // C build where las.c/serialize.c are new files and only the Makefile gains
 // additive targets. ----
 
-/// The SHARED system setup — the paper's `Setup() -> pp`: parameters, shared
-/// object types and `las_setup` (Rust port of C `ref/setup.{c,h}`), consumed
-/// by `serialize`, `basesig` and `las` alike.
+/// The SHARED system setup — the paper's `Setup() -> pp`: the construction
+/// parameters, the `PublicParams` type and `setup_public_params` (Rust port of
+/// C `ref/setup.{c,h}`), consumed by every layer below.
 pub mod setup;
+/// The six LAS protocol object types (PublicKey, SecretKey, Signature,
+/// Statement, Witness, PreSignature), split out of `setup` so the codec and
+/// both schemes share one physical home (Rust port of C `ref/las_types.h`).
+/// Each type is re-exported by its owning layer (`basesig`, `relation`, `las`).
+pub mod las_types;
+/// The HARD-RELATION layer — the statement/witness generator `Gen` for
+/// `R_A`/`R'_A` (Rust port of C `ref/relation.{c,h}`); owns `Statement`/
+/// `Witness`.  Sits below both schemes: `las` consumes them, `basesig` never
+/// sees them.
+pub mod relation;
 /// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
 pub mod serialize;
 /// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the

@@ -1,11 +1,39 @@
-//! Byte-level serialisation for LAS objects — Rust port of `ref/serialize.c`
-//! (packing side only; the validating decoders live in the C tree and are not
-//! needed by the KAT).  LSB-first bit packing over a pre-zeroed buffer.
+//! Byte-level serialisation for the LAS construction — Rust port of
+//! `ref/serialize.c`.  The key/statement/witness fields use an LSB-first bit
+//! packer with VALIDATING decoders (malformed bytes -> `None`); the response z
+//! reuses the UPSTREAM FIPS BitPack/BitUnpack (`conversion::bit_pack/unpack`),
+//! so the signature is the canonical cross-language `c_tilde || BitPack(z)`.
 //!
 //! Encoding (Simplified Dilithium-III set, n=6 ell=5 kappa=49):
-//!   pk / statement Y : n polys,  23 bits/coeff (canonical [0,Q))      -> 4416 B
-//!   sk / witness     : n+l polys, 2 bits/coeff (ternary {-1,0,1})     ->  704 B
-//!   signature (c,z)  : c 2-bit ternary + z 19-bit offset-encoded      -> 6752 B
+//!   public key / statement : n polys,  23 bits/coeff (canonical [0,Q)) -> 4416 B
+//!   secret key / witness   : n+ell polys, 2 bits/coeff (ternary)       ->  704 B
+//!   signature / pre-sig    : 32-byte c_tilde digest + BitPack(z) 19-bit -> 6720 B
+//!
+//! SEMANTIC WRAPPERS over SHARED PRIVATE ENCODERS: the six public object
+//! types (see `setup.rs` for ownership) get one typed pack/unpack pair EACH,
+//! but pairs with identical wire layouts share one private encoder:
+//!
+//!   encode_canonical_vec  <- pack_public_key  / pack_statement
+//!   encode_ternary_vec    <- pack_secret_key  / pack_witness
+//!   encode_chal_response  <- pack_signature   / pack_pre_signature
+//!
+//! The layouts being identical is itself a paper fact (a statement IS
+//! pk-shaped because Gen runs as KeyGen; a pre-signature costs exactly as
+//! many bytes as a signature — the "essentially as efficient" claim at the
+//! byte level) — but the TYPES stay non-interchangeable: bytes decode into
+//! the semantic type the caller names, never "a PublicKey used as a
+//! Statement".  Validation rules match the C codec: canonical pk/statement
+//! coefficients >= Q rejected; non-ternary 2-bit sk/witness code 3 rejected;
+//! the response z is decoded by the upstream FIPS BitUnpack, whose native range
+//! is permissive, so a tampered z is caught at Verify, not decode (upstream-
+//! faithful; PreVerify still enforces the tighter operational bound on z_hat).
+//! `pack_witness` therefore serialises only HONEST (ternary)
+//! witnesses — an AMHL cumulative witness (norm > 1) is deliberately outside
+//! this wire form, exactly like the C `las_pack_sk` behaviour it mirrors.
+//!
+//! (The packed ordinary verifier lives with Algorithm 1 —
+//! `basesig::verify_packed` — not here: this file is the CODEC ONLY, the
+//! ref/packing.{c,h} twin.)
 
 #![allow(warnings)]
 #![allow(clippy::all, clippy::pedantic, clippy::nursery)]
@@ -35,31 +63,26 @@
     variant_size_differences
 )]
 
+use crate::conversion::{bit_pack, bit_unpack};
 use crate::helpers::{center_mod, full_reduce32};
-// Shared layer only, like C serialize.h:28 #include "setup.h" (NOT las.h).
-use crate::setup::{LasPk, LasPp, LasSig, LasSk, LAS_GAMMA, LAS_KAPPA, LAS_M, LAS_N};
-// Sole las.rs use: las_verify_packed below runs ordinary Verify after decode.
-// (In C, las_verify_packed lives in las.c, not serialize.c -- moving it to
-// las.rs to mirror that is a known follow-up of the las.rs rewrite round.)
-use crate::las::las_verify;
+// Shared layers only, like C serialize.h #include "setup.h" + "las_types.h"
+// (NOT las.h / basesig.h / relation.h): the codec sits below every scheme layer
+// and sees the six object types at their physical home, las_types.
+use crate::las_types::{PreSignature, PublicKey, SecretKey, Signature, Statement, Witness};
+use crate::setup::{D, GAMMA, KAPPA, LAS_CTILDEBYTES, N, N_PLUS_ELL};
 use crate::types::{R, R0};
 use crate::Q;
-use core::array::from_fn;
-
-const N: usize = 256;
 
 /// Bit widths of the packed fields (mirrors ref/serialize.h).
 pub const LAS_PK_COEFF_BITS: usize = 23;
 /// Ternary secret: 2 bits/coeff.
 pub const LAS_SK_COEFF_BITS: usize = 2;
-/// Ternary challenge: 2 bits/coeff.
-pub const LAS_C_COEFF_BITS: usize = 2;
 
-/// Offset used to encode the signed response z as an unsigned field.
-pub const LAS_Z_OFFSET: i32 = LAS_GAMMA - LAS_KAPPA;
-/// Max offset-encoded z value.
-pub const LAS_Z_MAX: i32 = 2 * (LAS_GAMMA - LAS_KAPPA);
-/// z field width, selected from the actual parameter set (C #if ladder).
+/// Offset used to encode the signed response (z or z_hat) as an unsigned field.
+pub const LAS_Z_OFFSET: i32 = GAMMA - KAPPA;
+/// Max offset-encoded response value.
+pub const LAS_Z_MAX: i32 = 2 * (GAMMA - KAPPA);
+/// Response field width, selected from the actual parameter set (C #if ladder).
 pub const LAS_Z_COEFF_BITS: usize = if LAS_Z_MAX < (1 << 18) {
     18
 } else if LAS_Z_MAX < (1 << 19) {
@@ -69,15 +92,26 @@ pub const LAS_Z_COEFF_BITS: usize = if LAS_Z_MAX < (1 << 18) {
 };
 
 /// Packed public-key bytes.
-pub const LAS_PK_BYTES: usize = (LAS_N * N * LAS_PK_COEFF_BITS) / 8;
+pub const PUBLIC_KEY_BYTES: usize = (N * D * LAS_PK_COEFF_BITS) / 8;
+/// Packed statement bytes — a statement is pk-SHAPED (Gen runs as KeyGen),
+/// so the wire size coincides; the semantic type does not.
+pub const STATEMENT_BYTES: usize = PUBLIC_KEY_BYTES;
 /// Packed secret-key bytes.
-pub const LAS_SK_BYTES: usize = (LAS_M * N * LAS_SK_COEFF_BITS) / 8;
-/// Packed signature bytes.
-pub const LAS_SIG_BYTES: usize = ((N * LAS_C_COEFF_BITS) + (LAS_M * N * LAS_Z_COEFF_BITS)) / 8;
+pub const SECRET_KEY_BYTES: usize = (N_PLUS_ELL * D * LAS_SK_COEFF_BITS) / 8;
+/// Packed (honest, ternary) witness bytes — same ternary wire form as a
+/// secret key; the semantic type does not coincide.
+pub const WITNESS_BYTES: usize = SECRET_KEY_BYTES;
+/// Packed signature bytes: the raw 32-byte challenge digest c_tilde followed by
+/// the offset-packed response z (the paper's eq. 7 layout, 32 + |z|).
+pub const SIGNATURE_BYTES: usize = LAS_CTILDEBYTES + (N_PLUS_ELL * D * LAS_Z_COEFF_BITS) / 8;
+/// Packed pre-signature bytes — exactly a signature's size (the paper's
+/// "essentially as efficient" claim at the byte level).
+pub const PRE_SIGNATURE_BYTES: usize = SIGNATURE_BYTES;
 
 // Anchor: these must equal the C test_kat3 build (D3 set) sizes.
 const _: () = assert!(LAS_Z_COEFF_BITS == 19);
-const _: () = assert!(LAS_PK_BYTES == 4416 && LAS_SK_BYTES == 704 && LAS_SIG_BYTES == 6752);
+const _: () =
+    assert!(PUBLIC_KEY_BYTES == 4416 && SECRET_KEY_BYTES == 704 && SIGNATURE_BYTES == 6720);
 
 /// LSB-first bit writer over a pre-zeroed buffer (mirrors bw_put).
 fn bw_put(buf: &mut [u8], bitpos: &mut usize, val: u32, bits: usize) {
@@ -106,26 +140,46 @@ fn centred(a: i32) -> i32 {
     center_mod(a)
 }
 
-/// Pack a public key / statement (canonicalises to [0,Q)).
-pub fn las_pack_pk(pk: &LasPk) -> [u8; LAS_PK_BYTES] {
-    let mut out = [0u8; LAS_PK_BYTES];
+/* ================= private shared encoders (one per wire layout) ========= */
+
+/// 23-bit canonical n-vector (public key t / statement t'); canonicalises
+/// to [0,Q) on encode.
+fn encode_canonical_vec(t: &[R; N]) -> [u8; PUBLIC_KEY_BYTES] {
+    let mut out = [0u8; PUBLIC_KEY_BYTES];
     let mut bp = 0usize;
-    for i in 0..LAS_N {
-        for k in 0..N {
-            let v = full_reduce32(pk.t[i].0[k]) as u32; // canonical [0,Q)
+    for i in 0..N {
+        for k in 0..D {
+            let v = full_reduce32(t[i].0[k]) as u32; // canonical [0,Q)
             bw_put(&mut out, &mut bp, v, LAS_PK_COEFF_BITS);
         }
     }
     out
 }
 
-/// Pack a secret key / ternary witness; None if any coefficient is non-ternary.
-pub fn las_pack_sk(sk: &LasSk) -> Option<[u8; LAS_SK_BYTES]> {
-    let mut out = [0u8; LAS_SK_BYTES];
+/// Validating inverse of `encode_canonical_vec`; None on any coeff >= Q.
+fn decode_canonical_vec(input: &[u8; PUBLIC_KEY_BYTES]) -> Option<[R; N]> {
     let mut bp = 0usize;
-    for i in 0..LAS_M {
-        for k in 0..N {
-            let c = centred(sk.s[i].0[k]);
+    let mut t: [R; N] = [R0; N];
+    for i in 0..N {
+        for k in 0..D {
+            let v = br_get(input, &mut bp, LAS_PK_COEFF_BITS);
+            if v >= Q as u32 {
+                return None; // defensive: reject >= Q
+            }
+            t[i].0[k] = v as i32;
+        }
+    }
+    Some(t)
+}
+
+/// 2-bit ternary (n+ell)-vector (secret key r / honest witness); None if any
+/// coefficient is non-ternary.
+fn encode_ternary_vec(s: &[R; N_PLUS_ELL]) -> Option<[u8; SECRET_KEY_BYTES]> {
+    let mut out = [0u8; SECRET_KEY_BYTES];
+    let mut bp = 0usize;
+    for i in 0..N_PLUS_ELL {
+        for k in 0..D {
+            let c = centred(s[i].0[k]);
             if !(-1..=1).contains(&c) {
                 return None; // must be ternary
             }
@@ -135,54 +189,12 @@ pub fn las_pack_sk(sk: &LasSk) -> Option<[u8; LAS_SK_BYTES]> {
     Some(out)
 }
 
-/// Pack a (pre-)signature; None on non-ternary c or out-of-band z.
-pub fn las_pack_sig(sig: &LasSig) -> Option<[u8; LAS_SIG_BYTES]> {
-    let mut out = [0u8; LAS_SIG_BYTES];
+/// Validating inverse of `encode_ternary_vec`; None on the invalid code 3.
+fn decode_ternary_vec(input: &[u8; SECRET_KEY_BYTES]) -> Option<[R; N_PLUS_ELL]> {
     let mut bp = 0usize;
-
-    for k in 0..N {
-        let c = centred(sig.c.0[k]);
-        if !(-1..=1).contains(&c) {
-            return None;
-        }
-        bw_put(&mut out, &mut bp, (c + 1) as u32, LAS_C_COEFF_BITS);
-    }
-    for i in 0..LAS_M {
-        for k in 0..N {
-            let z = centred(sig.z[i].0[k]);
-            if z < -LAS_Z_OFFSET || z > LAS_Z_OFFSET {
-                return None; // out of band
-            }
-            bw_put(&mut out, &mut bp, (z + LAS_Z_OFFSET) as u32, LAS_Z_COEFF_BITS);
-        }
-    }
-    Some(out)
-}
-
-/* ==================== validating decoders (mirror serialize.c) ==================== */
-
-/// Unpack a public key / statement; None on any coefficient >= Q (defensive).
-pub fn las_unpack_pk(input: &[u8; LAS_PK_BYTES]) -> Option<LasPk> {
-    let mut bp = 0usize;
-    let mut t: [R; LAS_N] = [R0; LAS_N];
-    for i in 0..LAS_N {
-        for k in 0..N {
-            let v = br_get(input, &mut bp, LAS_PK_COEFF_BITS);
-            if v >= Q as u32 {
-                return None; // defensive: reject >= Q
-            }
-            t[i].0[k] = v as i32;
-        }
-    }
-    Some(LasPk { t })
-}
-
-/// Unpack a secret key / ternary witness; None on the invalid 2-bit code 3.
-pub fn las_unpack_sk(input: &[u8; LAS_SK_BYTES]) -> Option<LasSk> {
-    let mut bp = 0usize;
-    let mut s: [R; LAS_M] = [R0; LAS_M];
-    for i in 0..LAS_M {
-        for k in 0..N {
+    let mut s: [R; N_PLUS_ELL] = [R0; N_PLUS_ELL];
+    for i in 0..N_PLUS_ELL {
+        for k in 0..D {
             let v = br_get(input, &mut bp, LAS_SK_COEFF_BITS);
             if v > 2 {
                 return None; // code 3 is invalid
@@ -190,49 +202,128 @@ pub fn las_unpack_sk(input: &[u8; LAS_SK_BYTES]) -> Option<LasSk> {
             s[i].0[k] = v as i32 - 1;
         }
     }
-    Some(LasSk { s })
+    Some(s)
 }
 
-/// Unpack a (pre-)signature; None on non-ternary c code or out-of-band z.
-pub fn las_unpack_sig(input: &[u8; LAS_SIG_BYTES]) -> Option<LasSig> {
-    let mut bp = 0usize;
-    let mut c = R0;
-    for k in 0..N {
-        let v = br_get(input, &mut bp, LAS_C_COEFF_BITS);
-        if v > 2 {
-            return None;
-        }
-        c.0[k] = v as i32 - 1;
-    }
-    let mut z: [R; LAS_M] = [R0; LAS_M];
-    for i in 0..LAS_M {
-        for k in 0..N {
-            let v = br_get(input, &mut bp, LAS_Z_COEFF_BITS);
-            if v > LAS_Z_MAX as u32 {
-                return None; // out of the encoded band
+/// `c_tilde || BitPack(z)`: the raw 32-byte challenge digest followed by the
+/// response z packed per-polynomial with the UPSTREAM FIPS BitPack (Alg. 17,
+/// `conversion::bit_pack`) at the LAS band `a = b = gamma-kappa` (LAS_Z_OFFSET).
+/// This is the canonical cross-language encoding — the C mirror packs
+/// byte-identically.  `None` only if a response coefficient is out of the band
+/// (bit_pack's own precondition); the 32-byte digest half never fails.
+fn encode_chal_response(
+    c_tilde: &[u8; LAS_CTILDEBYTES],
+    z: &[R; N_PLUS_ELL],
+) -> Option<[u8; SIGNATURE_BYTES]> {
+    let mut out = [0u8; SIGNATURE_BYTES];
+    out[..LAS_CTILDEBYTES].copy_from_slice(c_tilde);
+    let poly_bytes = 32 * LAS_Z_COEFF_BITS; // = 32*bitlen(a+b) bytes per poly
+    for i in 0..N_PLUS_ELL {
+        // canonical centred representative; reject out-of-band so bit_pack's
+        // precondition (|coeff| <= LAS_Z_OFFSET) holds.
+        let mut zc = R0;
+        for k in 0..D {
+            let zz = centred(z[i].0[k]);
+            if zz < -LAS_Z_OFFSET || zz > LAS_Z_OFFSET {
+                return None; // out of band
             }
-            z[i].0[k] = v as i32 - LAS_Z_OFFSET;
+            zc.0[k] = zz;
         }
+        let start = LAS_CTILDEBYTES + i * poly_bytes;
+        bit_pack(&zc, LAS_Z_OFFSET, LAS_Z_OFFSET, &mut out[start..start + poly_bytes]);
     }
-    Some(LasSig { c, z })
+    Some(out)
 }
 
-/// On-chain-style verifier entry point (mirrors C `las_verify_packed`): decode
-/// pk and signature FROM BYTES (with validation) and run ordinary Verify.
-/// Returns true iff the bytes decode to valid objects AND the signature verifies.
-pub fn las_verify_packed(
-    pk_b: &[u8; LAS_PK_BYTES],
-    sig_b: &[u8; LAS_SIG_BYTES],
-    m: &[u8],
-    pp: &LasPp,
-) -> bool {
-    let pk = match las_unpack_pk(pk_b) {
-        Some(pk) => pk,
-        None => return false, // malformed pk
-    };
-    let sig = match las_unpack_sig(sig_b) {
-        Some(sig) => sig,
-        None => return false, // malformed sig
-    };
-    las_verify(&sig, m, &pk, pp) // ordinary Verify
+/// Inverse of `encode_chal_response`.  The 32-byte digest is copied out raw (any
+/// bytes are a valid c_tilde); z is decoded per-polynomial with the UPSTREAM
+/// FIPS BitUnpack (Alg. 19, `conversion::bit_unpack`).  Its native range check
+/// is the ONLY z validation here (upstream-faithful): a tampered z that survives
+/// decode is caught at Verify (the recomputed-digest byte-compare).
+fn decode_chal_response(
+    input: &[u8; SIGNATURE_BYTES],
+) -> Option<([u8; LAS_CTILDEBYTES], [R; N_PLUS_ELL])> {
+    let mut c_tilde = [0u8; LAS_CTILDEBYTES];
+    c_tilde.copy_from_slice(&input[..LAS_CTILDEBYTES]);
+    let poly_bytes = 32 * LAS_Z_COEFF_BITS;
+    let mut z: [R; N_PLUS_ELL] = [R0; N_PLUS_ELL];
+    for i in 0..N_PLUS_ELL {
+        let start = LAS_CTILDEBYTES + i * poly_bytes;
+        z[i] = bit_unpack(&input[start..start + poly_bytes], LAS_Z_OFFSET, LAS_Z_OFFSET).ok()?;
+    }
+    Some((c_tilde, z))
+}
+
+/* ==================== public typed wrappers (six pairs) ================== */
+
+/// Pack a public key t (Algorithm-1 object; canonicalises to [0,Q)).
+pub fn pack_public_key(pk: &PublicKey) -> [u8; PUBLIC_KEY_BYTES] {
+    encode_canonical_vec(&pk.t)
+}
+
+/// Unpack a public key; None on any coefficient >= Q (defensive).
+pub fn unpack_public_key(input: &[u8; PUBLIC_KEY_BYTES]) -> Option<PublicKey> {
+    Some(PublicKey {
+        t: decode_canonical_vec(input)?,
+    })
+}
+
+/// Pack a statement Y = t' (relation object; same wire layout as a public
+/// key — Gen runs as KeyGen — but the semantic types stay distinct).
+pub fn pack_statement(statement: &Statement) -> [u8; STATEMENT_BYTES] {
+    encode_canonical_vec(statement.as_t_prime())
+}
+
+/// Unpack a statement; None on any coefficient >= Q (defensive).
+pub fn unpack_statement(input: &[u8; STATEMENT_BYTES]) -> Option<Statement> {
+    Some(Statement(decode_canonical_vec(input)?))
+}
+
+/// Pack a secret key r (Algorithm-1 object); None if non-ternary.
+pub fn pack_secret_key(sk: &SecretKey) -> Option<[u8; SECRET_KEY_BYTES]> {
+    encode_ternary_vec(&sk.r)
+}
+
+/// Unpack a secret key; None on the invalid 2-bit code 3.
+pub fn unpack_secret_key(input: &[u8; SECRET_KEY_BYTES]) -> Option<SecretKey> {
+    Some(SecretKey {
+        r: decode_ternary_vec(input)?,
+    })
+}
+
+/// Pack an HONEST (ternary, relation R_A) witness; None if non-ternary —
+/// an extracted AMHL-style cumulative witness (norm > 1, relation R'_A) is
+/// deliberately outside this wire form and is never serialised unvalidated.
+pub fn pack_witness(witness: &Witness) -> Option<[u8; WITNESS_BYTES]> {
+    encode_ternary_vec(witness.as_relation_vector())
+}
+
+/// Unpack a (ternary) witness; None on the invalid 2-bit code 3.
+pub fn unpack_witness(input: &[u8; WITNESS_BYTES]) -> Option<Witness> {
+    Some(Witness::from_relation_vector(decode_ternary_vec(input)?))
+}
+
+/// Pack a signature sigma = (c_tilde, z); None on out-of-band z (the 32-byte
+/// challenge digest never fails).
+pub fn pack_signature(sigma: &Signature) -> Option<[u8; SIGNATURE_BYTES]> {
+    encode_chal_response(&sigma.c_tilde, &sigma.z)
+}
+
+/// Unpack a signature; None on out-of-band z.
+pub fn unpack_signature(input: &[u8; SIGNATURE_BYTES]) -> Option<Signature> {
+    let (c_tilde, z) = decode_chal_response(input)?;
+    Some(Signature { c_tilde, z })
+}
+
+/// Pack a pre-signature sigma_hat = (c_tilde, z_hat); same wire layout and band
+/// as a signature (PreVerify enforces the tighter operational bound after
+/// decode, exactly as the C build does).
+pub fn pack_pre_signature(sigma_hat: &PreSignature) -> Option<[u8; PRE_SIGNATURE_BYTES]> {
+    encode_chal_response(&sigma_hat.c_tilde, &sigma_hat.z_hat)
+}
+
+/// Unpack a pre-signature; None on out-of-band z_hat.
+pub fn unpack_pre_signature(input: &[u8; PRE_SIGNATURE_BYTES]) -> Option<PreSignature> {
+    let (c_tilde, z_hat) = decode_chal_response(input)?;
+    Some(PreSignature { c_tilde, z_hat })
 }

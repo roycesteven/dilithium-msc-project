@@ -1,148 +1,126 @@
-//! `setup` — the SHARED system setup, i.e. the paper's `Setup() -> pp`
-//! (eprint 2020/845): the public parameters (n, ell, kappa, gamma), the shared
-//! object types, and the public matrix `A = [I | A']`, expanded once from a
-//! public seed.  Rust twin of `ref/setup.{c,h}` (the C build's shared setup
-//! layer).
+//! `setup` — the SHARED system setup, i.e. the paper's public parameters
+//! `pp = (A, H)` (eprint 2020/845, Section 3): the construction parameters
+//! (n, ell, kappa, gamma), the `PublicParams` type, and `setup_public_params`,
+//! which expands the public matrix `A = [I | A']` once from a public seed
+//! (`H` is the fixed SHAKE256-based challenge hash, realised in the scheme
+//! modules, not a stored field).  Rust twin of `ref/setup.{c,h}`.
 //!
-//! This layer is deliberately a SEPARATE module because it is NOT scheme
-//! specific: BOTH `basesig.rs` (Algorithm 1, the base signature) and
-//! `las.rs` (Algorithm 2, the adaptor scheme) consume the same `LasPp` by
-//! parameter, and `serialize.rs` (the wire codec) encodes the same object
-//! layouts.  The module layering mirrors the C build exactly
-//! (`setup.h -> serialize.h -> basesig.c/las.c`, itself mirroring upstream's
-//! `params/polyvec -> packing -> sign.c`):
+//! The six LAS PROTOCOL object types (PublicKey, SecretKey, Signature,
+//! Statement, Witness, PreSignature) live in the sibling module
+//! [`crate::las_types`] (C twin `ref/las_types.h`), which sits directly below
+//! this one; `PublicParams` stays HERE because it is the system infrastructure
+//! the parameters are expanded into, not a protocol object.
 //!
-//! ```text
-//!     setup.rs  ->  serialize.rs  ->  basesig.rs / las.rs
-//! ```
+//! Dependency layering (each module uses only modules listed above it — a DAG,
+//! not a single chain): `setup` (parameters + `PublicParams`) is used by
+//! `las_types` (the six object types), which in turn is used by `relation`,
+//! `serialize` and both scheme modules.  `serialize` and both schemes each
+//! import `las_types` directly; `basesig` additionally uses `serialize`; `las`
+//! additionally uses `relation` and `serialize`.  C build headers follow the
+//! same order: `setup.h -> las_types.h -> {relation.h, serialize.h} ->
+//! {basesig.c, las.c}`.
 //!
-//! That is exactly why both scheme files carry [DELETED] notes for
-//! `ml_dsa.rs`'s per-call `expand_a` (ml_dsa.rs:181, ml_dsa.rs:406): upstream
-//! must re-expand A from rho inside every call because rho travels inside each
-//! packed key, whereas here A is fixed public infrastructure set up once.
+//! Both scheme files carry [DELETED] notes for `ml_dsa.rs`'s per-call
+//! `expand_a` (ml_dsa.rs:181, ml_dsa.rs:406): upstream must re-expand A from
+//! rho inside every call because rho travels inside each packed key, whereas
+//! here A is fixed public infrastructure set up once.
 //!
-//! `las_setup` itself calls the UNMODIFIED upstream `expand_a` (hashing.rs:225,
-//! FIPS 204 Algorithm 32): the absorb order `seed || col || row` and the
-//! 23-bit accept window of `rej_ntt_poly`/`coeff_from_three_bytes` are
-//! byte-identical to the C `poly_uniform(&pp->mat[i][j], seed, (i << 8) + j)`
-//! calls in `ref/setup.c` — the KAT digest (tests/las_kat.rs) proves it.
+//! `setup_public_params` itself calls the UNMODIFIED upstream `expand_a`
+//! (hashing.rs:225, FIPS 204 Algorithm 32): the absorb order
+//! `seed || col || row` and the 23-bit accept window of
+//! `rej_ntt_poly`/`coeff_from_three_bytes` match the C
+//! `poly_uniform(&pp->a_prime[i][j], seed, (i << 8) + j)` calls in
+//! `ref/setup.c` — the pinned KAT digest (tests/las_kat.rs) cross-checks that
+//! byte agreement.
 
-#![allow(warnings)]
-#![allow(clippy::all, clippy::pedantic, clippy::nursery)]
-// Named allows: crate root denies these BY NAME, and named lints outrank the
-// `warnings` group regardless of scope depth.
-#![allow(
-    absolute_paths_not_starting_with_crate,
-    dead_code,
-    elided_lifetimes_in_paths,
-    explicit_outlives_requirements,
-    let_underscore_drop,
-    macro_use_extern_crate,
-    meta_variable_misuse,
-    missing_abi,
-    missing_docs,
-    non_ascii_idents,
-    single_use_lifetimes,
-    trivial_casts,
-    trivial_numeric_casts,
-    unreachable_pub,
-    unused_extern_crates,
-    unused_import_braces,
-    unused_lifetimes,
-    unused_macro_rules,
-    unused_qualifications,
-    unused_results,
-    variant_size_differences
-)]
+// This module is deliberately kept lint-clean under the crate-root deny list
+// (no blanket `#![allow(warnings)]` / clippy suppression): it is only the
+// construction parameters, the `PublicParams` type, and `setup_public_params`.
 
 use crate::hashing::expand_a;
-use crate::types::{R, T};
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use crate::types::T;
 
-/* ---- LAS parameters (paper Section 3 / Table 1), Simplified Dilithium-III set.
- * Mirrors ref/setup.h with -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49 (the parameter
- * set pinned by the C KAT build, `make test/test_kat3`).  The C build makes
- * n/ell/kappa compile-time overridable to sweep parameter sets; the Rust port
- * is fixed at this one set. ---- */
+/* ---- LAS construction parameters (paper Section 3 / Table 1), Simplified
+ * Dilithium-III set.  Mirrors ref/setup.h with -DLAS_N=6 -DLAS_ELL=5
+ * -DLAS_KAPPA=49 (the parameter set pinned by the C KAT build,
+ * `make test/test_kat3`).  The C build makes n/ell/kappa compile-time
+ * overridable to sweep parameter sets; the Rust port is fixed at this one set.
+ *
+ * These are the SHARED construction parameters — every layer (las_types,
+ * relation, serialize, basesig, las) consumes them by import, so they live in
+ * this setup module.  They are named after the paper's Table-1 identifiers with
+ * NO `LAS_` prefix (n -> N, ell -> ELL, kappa -> KAPPA, gamma -> GAMMA, ring
+ * degree d -> D); the C twins keep `LAS_N`/`LAS_D`/... only because C's
+ * params.h already defines bare `N`=256 and `D`=13 for the reused Dilithium
+ * primitives, which the -DLAS_N sweep must not collide with.  The two
+ * per-scheme rejection bounds do NOT live here: `BOUND_SIGN` (Algorithm 1)
+ * belongs to `basesig`, `BOUND_PRESIGN` (Algorithm 2) belongs to `las`. ---- */
 
-/// n: rows of A, dimension of t (=Y).
-pub const LAS_N: usize = 6;
-/// ell: extra columns of A.
-pub const LAS_ELL: usize = 5;
-/// n+ell: dimension of r, y, z.
-pub const LAS_M: usize = LAS_N + LAS_ELL;
-/// kappa: challenge weight ||c||_1.
-pub const LAS_KAPPA: i32 = 49;
-/// gamma = kappa * d * (n+ell), d = 256.
-pub const LAS_GAMMA: i32 = LAS_KAPPA * 256 * (LAS_M as i32);
+/// paper n: rows of A, dimension of t (and of the statement t' = Y).
+pub const N: usize = 6;
+/// paper ell: extra columns of A.
+pub const ELL: usize = 5;
+/// paper n+ell: dimension of r, y, z, z_hat.  NOT the paper's M — in
+/// Algorithms 1 and 2, M denotes the MESSAGE; this array length is n + ell.
+pub const N_PLUS_ELL: usize = N + ELL;
+/// paper d: ring degree, R_q = Z_q[X]/(X^d + 1).  Equals the reused upstream
+/// FIPS 204 ring degree (256).  C twin: `LAS_D` (= params.h `N`), the alias
+/// that dodges the params.h `N`=256 / `D`=13 macros.
+pub const D: usize = 256;
+/// paper kappa: challenge weight ||c||_1.
+pub const KAPPA: i32 = 49;
+/// paper gamma = kappa * d * (n+ell).
+pub const GAMMA: i32 = KAPPA * (D as i32) * (N_PLUS_ELL as i32);
 /// Seed length in bytes.
 pub const LAS_SEEDBYTES: usize = 32;
+/// Challenge-hash length in bytes: the stored digest `c_tilde`, the
+/// implementation realisation of the paper's `H : {0,1}* -> C` (the paper's
+/// challenge `c` IS this hash — eq. 7 counts it as the 32-byte term of `|sigma|`).
+/// Twin of upstream `CTILDEBYTES` (params.h) / `LAMBDA_DIV4` (ml_dsa.rs); the
+/// same value as `LAS_SEEDBYTES`, but a DISTINCT knob, as upstream keeps the two
+/// separate.  Stored in the `Signature`/`PreSignature` types (las_types.rs); the
+/// challenge polynomial `c = SampleInBall(c_tilde)` is only ever a local
+/// arithmetic value, never serialised.
+pub const LAS_CTILDEBYTES: usize = 32;
 
-/// Sign/Verify rejection bound, SHARED by both schemes (chknorm-style: reject
-/// `>= bound`, so the strict `>` test is encoded as bound = limit+1):
-/// basesig.rs's Algorithm-1 Sign/Verify and las.rs's Sign/Verify reject at
-/// this same `|z|inf > gamma-kappa`, and an Adapted pre-signature must clear
-/// exactly this bound — so it lives HERE, below both schemes (the
-/// adaptor-only PreSign bound stays in las.rs).  Mirrors `ref/setup.h`.
-pub const LAS_BOUND_SIGN: i32 = LAS_GAMMA - LAS_KAPPA + 1;
+/* ---- The construction-wide public parameters `pp = (A, H)`.  A' is held in
+ * the NTT domain (type T), as the C `public_params.a_prime` holds it.  The six
+ * protocol object types live in `las_types.rs`. ---- */
 
-/* ---- Shared object types (vectors are plain arrays of the crate's degree-256
- * polys).  These live HERE, below both schemes, for the same reason upstream
- * keeps its vector types in types.rs rather than ml_dsa.rs: the key/signature
- * LAYOUT is common infrastructure — basesig.rs, las.rs and
- * serialize.rs all operate on the same structs, which is what makes a
- * LAS-adapted signature verifiable by the independent base verifier and one
- * codec serve both schemes.  A' is stored in the NTT domain (type T), exactly
- * like the C `las_pp.mat`. ---- */
-
-/// Public parameters pp = A = [I | A'] expanded from a public seed (A' in NTT domain).
+/// CONSTRUCTION-WIDE.  Paper `pp = (A, H)` (Section 3): the public matrix
+/// `A = [I | A']` expanded from a public seed (A' in NTT domain).  `H` is the
+/// fixed hash implementation, not a field.  One concrete type, passed by
+/// parameter into every procedure of every layer.
 #[derive(Clone)]
-pub struct LasPp {
-    pub(crate) mat: [[T; LAS_ELL]; LAS_N],
+pub struct PublicParams {
+    pub(crate) a_prime: [[T; ELL]; N], // paper A': the non-identity block of A = [I | A']
+    // Kept for parity with the C `public_params.seed`: the schemes read only
+    // `a_prime`, so nothing reads this field in the Rust build (the seed is
+    // public and A is re-derivable from it).  A precise, justified suppression
+    // rather than a module-wide blanket allow.
+    #[allow(dead_code)]
     pub(crate) seed: [u8; LAS_SEEDBYTES],
 }
 
-/// Public key / statement: t = A r, canonical [0,Q).
-#[derive(Clone, PartialEq)]
-pub struct LasPk {
-    pub(crate) t: [R; LAS_N], // paper t (public key t = A r), or t′ = Y when used as a statement
-}
-
-/// Secret key / witness: r in S_1 (ternary, stored as exact -1/0/1).
-/// Zeroized on drop, mirroring the upstream crate's secret-material policy
-/// (types.rs `PrivateKey` derives `Zeroize`/`ZeroizeOnDrop`); the same type
-/// carries the adaptor witness, so extracted witnesses are wiped too.
-#[derive(Clone, PartialEq, Zeroize, ZeroizeOnDrop)]
-pub struct LasSk {
-    pub(crate) s: [R; LAS_M], // paper r (secret key / witness); also the extracted witness s in Ext
-}
-
-/// (Pre-)signature (c, z): c ternary challenge, z exact centred response.
-#[derive(Clone, PartialEq)]
-pub struct LasSig {
-    pub(crate) c: R,          // paper c: the challenge
-    pub(crate) z: [R; LAS_M], // paper z (signature) / ẑ (pre-signature): the response
-}
-
-/// `las_setup` (shared system setup — consumed by `basesig.rs` AND
-/// `las.rs`; no basesig.rs/ml_dsa.rs slot): public parameters
-/// pp = A = [I | A'], with A' expanded from a public seed into the NTT domain
-/// by the UNMODIFIED upstream `expand_a` (hashing.rs:225).  A is expanded ONCE
-/// here and passed BY PARAMETER into every basesig.rs and las.rs scheme
-/// function alike — that is why both scheme files carry [DELETED] notes for
-/// the per-call `expand_a` (ml_dsa.rs:181, ml_dsa.rs:406).
+/// `setup_public_params` (construction-wide system setup — consumed by every
+/// layer alike; no basesig.rs/ml_dsa.rs slot): the public parameters
+/// `pp = (A, H)`, with `A = [I | A']` expanded from a public seed into the NTT
+/// domain by the UNMODIFIED upstream `expand_a` (hashing.rs:225).  A is expanded
+/// ONCE here and passed BY PARAMETER into every scheme function — that is why
+/// both scheme files carry [DELETED] notes for the per-call `expand_a`
+/// (ml_dsa.rs:181, ml_dsa.rs:406).
 ///
-/// Byte-identity with `ref/setup.c las_setup`: upstream `expand_a` absorbs
-/// `seed || IntegerToBytes(s,1) || IntegerToBytes(r,1)` = `seed || col || row`
-/// per poly, which equals the C `poly_uniform(seed, (row << 8) + col)` nonce
-/// bytes (little-endian 16-bit: low byte = col, high byte = row), and
-/// `coeff_from_three_bytes` applies the same 23-bit mask + reject-≥-Q window
-/// as the C `rej_uniform`.
-pub fn las_setup(seed: &[u8; LAS_SEEDBYTES]) -> LasPp {  // returns paper A = [I | A']
-    LasPp {
-        // paper A: mat = A' (NTT domain); the [I | ·] identity block is applied
-        // by the schemes' matrix-product helpers (b_amul / las_amul)
-        mat: expand_a::<false, LAS_N, LAS_ELL>(seed),
+/// Byte-identity with `ref/setup.c setup_public_params`: upstream `expand_a`
+/// absorbs `seed || IntegerToBytes(s,1) || IntegerToBytes(r,1)` =
+/// `seed || col || row` per poly, which equals the C
+/// `poly_uniform(seed, (row << 8) + col)` nonce bytes (little-endian 16-bit:
+/// low byte = col, high byte = row), and `coeff_from_three_bytes` applies the
+/// same 23-bit mask + reject-≥-Q window as the C `rej_uniform`.
+pub fn setup_public_params(seed: &[u8; LAS_SEEDBYTES]) -> PublicParams {  // returns paper pp = (A, H); A = [I | A']
+    PublicParams {
+        // paper A': the [I | ·] identity block is applied by the schemes'
+        // matrix-product helpers (b_mat_vec_mul / the A-product twins)
+        a_prime: expand_a::<false, N, ELL>(seed),
         seed: *seed,
     }
 }

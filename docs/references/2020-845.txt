@@ -337,27 +337,19 @@ This is because ! if one can find r such ! that (t, r) ∈ RA for a random t, th
 2γd(n + `) since krk ≤ β.
 
 
+# Table 1: Identifiers for LAS
 
-                                 Table 1: Identifiers for LAS.
-    Notation Explanation                                                             Value
-         d         a power-of-2 ring dimension                                         256
-                                                                  d
-        Rq         cyclotomic ring of degree d: Rq = Zq [X]/(X + 1)                 log q ≈ 24
-        Sc         the set of polynomials f ∈ Rq with kf k∞ ≤ c for c ∈ Z+
-         n         M-SIS rank                                                           4
-         `         M-LWE rank                                                           4
-                   the challenge set and range of H:
-         C                                                                           κ = 60
-                   {c ∈ R : kck1 = κ ∧ kck∞ = 1}
-         γ         maximum absolute coefficient of a masking randomness κd(n + `)
-                                                              n×(n+`)
-                   the base relation with [ I n k A0 ] = A ∈ Rq         :
-    (Y, y) ∈ RA
-                   (Y, y) = (t, r) ∈ RA if t = Ar and krk∞ ≤ 1
-                                                                      n×(n+`)
-                   the extended relation with [ I n k A0 ] = A ∈ Rq             :
-    (Y, y) ∈ R0A                                                                      γ>κ
-                   (Y, y) = (t, r) ∈ RA if t = Ar and krk∞ ≤ 2(γ − κ)
+| Notation | Explanation | Value |
+|---|---|---|
+| *d* | a power-of-2 ring dimension | 256 |
+| 𝓡<sub>q</sub> | cyclotomic ring of degree *d*: 𝓡<sub>q</sub> = ℤ<sub>q</sub>[X]/(X<sup>d</sup> + 1) | log q ≈ 24 |
+| 𝓢<sub>c</sub> | the set of polynomials *f* ∈ 𝓡<sub>q</sub> with ‖*f*‖<sub>∞</sub> ≤ *c* for *c* ∈ ℤ<sup>+</sup> | |
+| *n* | M-SIS rank | 4 |
+| *ℓ* | M-LWE rank | 4 |
+| 𝓒 | the challenge set and range of H:<br>{*c* ∈ 𝓡 : ‖*c*‖<sub>1</sub> = κ ∧ ‖*c*‖<sub>∞</sub> = 1} | κ = 60 |
+| *γ* | maximum absolute coefficient of a masking randomness | κ*d*(*n* + *ℓ*) |
+| (*Y*, *y*) ∈ ℜ<sub>𝐀</sub> | the base relation with [ I<sub>n</sub> ∥ 𝐀′ ] = 𝐀 ∈ 𝓡<sub>q</sub><sup>n×(n+ℓ)</sup>:<br>(*Y*, *y*) = (*t*, 𝐫) ∈ ℜ<sub>𝐀</sub> if *t* = 𝐀𝐫 and ‖𝐫‖<sub>∞</sub> ≤ 1 | |
+| (*Y*, *y*) ∈ ℜ′<sub>𝐀</sub> | the extended relation with [ I<sub>n</sub> ∥ 𝐀′ ] = 𝐀 ∈ 𝓡<sub>q</sub><sup>n×(n+ℓ)</sup>:<br>(*Y*, *y*) = (*t*, 𝐫) ∈ ℜ<sub>𝐀</sub> if *t* = 𝐀𝐫 and ‖𝐫‖<sub>∞</sub> ≤ 2(*γ* − *κ*) | γ > κ |
 
 
                                                7
@@ -422,28 +414,44 @@ to rejection sampling plays a crucial role.
 
 
                                          8
-Algorithm 2 LAS: Lattice-Based Adaptor Signature
+Algorithm 2: LAS: Lattice-Based Adaptor Signature
 
- 1: procedure PreSign((pk, sk), Y, M ):   18:    return 1
-          $                               19: end procedure
- 2:    y ← Sn+`
-              γ
- 3:    w = Ay
- 4:    c = H(pk, w + t0 , M ) for t0 := Y 20: procedure Adapt((Y, y), pk, σ̂, M ):
- 5:    ẑ = y + cr where r := sk          21:    if PreVerify(Y, pk, σ̂, M ) = 0 then
- 6:    if kẑk∞ > γ − κ − 1, then Restart 22:        return ⊥
- 7:    return σ̂ = (c, ẑ)                23:    end if
- 8: end procedure                         24:    Parse (c, ẑ) := σ̂ and r 0 := y
-                                          25:    return σ = (c, ẑ + r 0 )
- 9: procedure PreVerify(Y, pk, σ̂, M ):   26: end procedure
-10:    Parse (c, ẑ) := σ̂ and t0 := Y
-11:    if kẑk∞ > γ − κ − 1 then            27: procedure Ext(Y, σ, σ̂):
-12:        return 0                         28:    Parse (c, z) := σ and (ĉ, ẑ) := σ̂
-13:    end if                               29:    Parse t0 := Y
-14:    w0 = Aẑ − ct where t := pk          30:    s = z − ẑ
-15:    if c 6= H(pk, w0 + t0 , M ) then     31:    if t0 6= As, then return ⊥
-16:        return 0                         32:    return s
-17:    end if                               33: end procedure
+1:  procedure PreSign((pk, sk), Y, M):
+2:      y ←$ Sγ^(n+ℓ)
+3:      w = A y
+4:      c = H(pk, w + t′, M), where t′ := Y
+5:      ẑ = y + c r, where r := sk
+6:      if ||ẑ||∞ > γ − κ − 1, then Restart
+7:      return σ̂ = (c, ẑ)
+8:  end procedure
+
+9:  procedure PreVerify(Y, pk, σ̂, M):
+10:     Parse (c, ẑ) := σ̂ and t′ := Y
+11:     if ||ẑ||∞ > γ − κ − 1 then
+12:         return 0
+13:     end if
+14:     w′ = A ẑ − c t, where t := pk
+15:     if c ≠ H(pk, w′ + t′, M) then
+16:         return 0
+17:     end if
+18:     return 1
+19: end procedure
+
+20: procedure Adapt((Y, y), pk, σ̂, M):
+21:     if PreVerify(Y, pk, σ̂, M) = 0 then
+22:         return ⊥
+23:     end if
+24:     Parse (c, ẑ) := σ̂ and r′ := y
+25:     return σ = (c, ẑ + r′)
+26: end procedure
+
+27: procedure Ext(Y, σ, σ̂):
+28:     Parse (c, z) := σ and (ĉ, ẑ) := σ̂
+29:     Parse t′ := Y
+30:     s = z − ẑ
+31:     if t′ ≠ A s, then return ⊥
+32:     return s
+33: end procedure
 
 
 

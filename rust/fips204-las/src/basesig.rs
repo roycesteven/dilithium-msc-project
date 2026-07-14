@@ -9,21 +9,28 @@
 //! names.  Each function also names its C twin (`ref/basesig.c`, the file
 //! that mirrors `ref/sign.c` the same way):
 //!
+//! This module is the ONE canonical Algorithm-1 implementation of the build:
+//! Definition 3 (paper §2.3) says the adaptor scheme ΠR,R',Σ *inherits*
+//! KeyGen, Sign and Verify from the underlying signature scheme Σ — so they
+//! live HERE and only here (the `las` module holds no Algorithm-1 code; an
+//! Adapt output is verified by THIS module's `verify`).
+//!
 //! ```text
-//!   base_key_gen          <-> key_gen          (ml_dsa.rs:26)  <-> base_sign_keypair            (basesig.c:115)
-//!   base_key_gen_internal <-> key_gen_internal (ml_dsa.rs:57)  <-> (no basesig.c slot; the C KAT
-//!                                                                   slot is las_keypair_seed, las.c:193)
-//!   base_sign_internal    <-> sign_internal    (ml_dsa.rs:153) <-> base_sign_signature_internal (basesig.c:212)
-//!   base_sign              -  try_sign_with_rng (lib.rs:287)   <-> base_sign_signature          (basesig.c:426)
-//!   base_verify_internal  <-> verify_internal  (ml_dsa.rs:351) <-> base_sign_verify_internal    (basesig.c:499)
-//!   base_verify            -  verify           (lib.rs:383)    <-> base_sign_verify             (basesig.c:645)
-//!   [DELETED]             <-> expand_private (ml_dsa.rs:445) /
-//!                             expand_public (ml_dsa.rs:477) /
-//!                             private_to_public_key (ml_dsa.rs:502)
-//!                             — byte-encoding expansion slots; the struct
-//!                             tier has no byte keys.  The PACKED tier at the
-//!                             BOTTOM of this file restores that byte
-//!                             boundary (twin of basesig.c:1089-1194).
+//!   keygen        <-> key_gen          (ml_dsa.rs:26)  <-> base_keygen          (basesig.c)
+//!   keygen_seed   <-> key_gen_internal (ml_dsa.rs:57)  <-> base_keygen_seed     (basesig.c; the KAT slot)
+//!   sign_internal <-> sign_internal    (ml_dsa.rs:153) <-> base_sign_internal   (basesig.c)
+//!   sign           -  try_sign_with_rng (lib.rs:287)   <-> base_sign            (basesig.c)
+//!   sign_det       -  (deterministic KAT slot; no ml_dsa.rs analogue)
+//!                                                      <-> base_sign_det        (basesig.c)
+//!   verify_internal <-> verify_internal (ml_dsa.rs:351) <-> base_verify_internal (basesig.c)
+//!   verify         -  verify           (lib.rs:383)    <-> base_verify          (basesig.c)
+//!   [DELETED]     <-> expand_private (ml_dsa.rs:445) /
+//!                     expand_public (ml_dsa.rs:477) /
+//!                     private_to_public_key (ml_dsa.rs:502)
+//!                     — byte-encoding expansion slots; the struct
+//!                     tier has no byte keys.  The PACKED tier at the
+//!                     BOTTOM of this file restores that byte boundary
+//!                     (twin of basesig.c's packed tier).
 //! ```
 //!
 //! ANNOTATION CONVENTION (read side by side with ml_dsa.rs):
@@ -79,13 +86,12 @@
 //! S_1; ExpandMask(gamma1) -> uniform S_gamma; SampleInBall(tau) -> kappa-weight
 //! challenge; and it hashes the FULL commitment w.
 //!
-//! Kept SEPARATE from `las.rs`, with NO las.rs dependency: everything BOTH
-//! schemes share — setup.rs's parameters, its `LasPp`/`LasPk`/`LasSk`/`LasSig`
-//! struct layout and the shared bound `LAS_BOUND_SIGN` — lives in setup.rs,
-//! below both schemes (mirrors C `basesig.h` -> `setup.h`).  Behaviour-
-//! identical to las.rs's Algorithm-1 path, so `A*r` and the challenge hash
-//! match `las.rs` bit-for-bit and an Adapted LAS pre-signature verifies under
-//! `base_verify` with no explicit `+Y`:
+//! Kept SEPARATE from `las.rs`, with NO las.rs dependency: this module's
+//! types (`PublicKey`/`SecretKey`/`Signature` — owned here, physically
+//! defined in setup.rs with `PublicParams` and the shared bound
+//! `BOUND_SIGN`) sit below both schemes (mirrors C `basesig.h` ->
+//! `setup.h`).  The challenge hash binds `(pk, w, M)`, so an Adapted LAS
+//! pre-signature verifies under THIS module's `verify` with no explicit `+Y`:
 //!
 //! ```text
 //!     A(z_hat + y) - c t = (A z_hat - c t) + A y = w' + Y      (since Y = A y).
@@ -134,6 +140,11 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use rand_core::CryptoRngCore; // [REUSED] ml_dsa.rs:13: use rand_core::CryptoRngCore;
 use sha3::digest::{ExtendableOutput, Update, XofReader};
 use sha3::Shake256;
+use zeroize::Zeroize;
+// ^[CHANGED] no ml_dsa.rs import line (upstream zeroizes via its key structs'
+// derives, types.rs).
+// WHY: sign/sign_det wipe their sk-equivalent mask seeds after use (the
+// upstream secret-material policy applied to this file's loose seed buffers).
 // ^[CHANGED] ml_dsa.rs:14: use sha3::digest::XofReader;
 // WHY: ml_dsa.rs only READS XOF streams built inside hashing.rs (h256_xof,
 // hashing.rs:12-16, which imports Shake256/Update/ExtendableOutput itself at
@@ -177,31 +188,40 @@ use crate::types::{R, R0, T, T0};
 // WHY: D only feeds Power2Round's 2^d shifts (ml_dsa.rs:111) and Q only feeds
 // make_hint's `Q - c_t_0[k].0[n]` (ml_dsa.rs:302) -- both deleted.
 
-// <-> basesig.c:41: #include "basesig.h" -> setup.h (basesig.h:55): the SHARED
-// system layer -- parameters, object types and the shared Sign/Verify bound
-// LAS_BOUND_SIGN.  Everything BOTH schemes share lives there, NOT in las.rs:
-// this file has no las.rs dependency (the two schemes are true siblings).
-use crate::setup::{
-    LasPk, LasPp, LasSig, LasSk, LAS_BOUND_SIGN, LAS_ELL, LAS_GAMMA, LAS_KAPPA, LAS_M, LAS_N,
-    LAS_SEEDBYTES,
-};
-// [REUSED] basesig.c:44: #include "serialize.h"
+// <-> basesig.c: #include "setup.h": the shared system layer -- the
+// construction parameters and this module's OWN types (PublicKey / SecretKey /
+// Signature, physically defined in setup.rs so the codec below can see them).
+// This file has no las.rs or relation.rs dependency (the layers above are
+// never looked up at).
+use crate::setup::{PublicParams, D, ELL, GAMMA, KAPPA, N, N_PLUS_ELL, LAS_CTILDEBYTES, LAS_SEEDBYTES};
+// Owner re-export: the Algorithm-1 (Σ) types belong to THIS module (physical
+// home is las_types.rs, see that module's header) — callers import them
+// from their owner: `use fips204::basesig::{PublicKey, SecretKey, Signature}`.
+pub use crate::las_types::{PublicKey, SecretKey, Signature};
+// [REUSED] basesig.c: #include "serialize.h"
 // (itself [REUSED] sign.c:4: #include "packing.h")
 // WHY: the end-to-end PACKED-API tier at the BOTTOM of this file unpacks/packs
 // inside the call, exactly the boundary ml_dsa.rs exposes; the core (struct)
 // tier stays byte-free.
 use crate::serialize::{
-    las_pack_pk, las_pack_sig, las_pack_sk, las_unpack_pk, las_unpack_sig, las_unpack_sk,
-    LAS_PK_BYTES, LAS_SIG_BYTES, LAS_SK_BYTES,
+    pack_public_key, pack_secret_key, pack_signature, unpack_public_key, unpack_secret_key,
+    unpack_signature, PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES,
 };
 
-const N: usize = 256;
 const SHAKE256_RATE: usize = 136;
 // ^[CHANGED] no upstream lines.
-// WHY: loop bounds and the SHAKE256 block size for the local b_* twins'
-// C-matching block-buffered squeezes; upstream's originals get these from
-// their own files (the 256 is fixed inside types.rs's arrays, and hashing.rs
-// reads its XOFs unbuffered).
+// WHY: the SHAKE256 block size for the local b_* twins' C-matching
+// block-buffered squeezes; upstream's originals get this from their own files
+// (hashing.rs reads its XOFs unbuffered).  The ring degree is `D` (imported
+// from setup, = 256), fixed inside types.rs's arrays.
+
+/// Algorithm-1 Sign/Verify rejection bound (chknorm-style: reject `>= bound`,
+/// so the strict `>` test is encoded as bound = limit+1): Sign and Verify
+/// reject at `||z||inf > gamma-kappa` (Alg. 1 steps 11/16), and an Adapt
+/// output must clear exactly this bound (Lemma 1, Eq. (1)).  This is the
+/// Algorithm-1 rejection rule, so `basesig` OWNS it (the adaptor-only
+/// `BOUND_PRESIGN` lives in `las`).  C twin: `BOUND_SIGN` (basesig.h).
+pub const BOUND_SIGN: i32 = GAMMA - KAPPA + 1;
 
 /// Rejection-sampling attempt counter for the BASE path (measurement only;
 /// C twin: `base_attempts`, basesig.c:54; no ml_dsa.rs analogue).  Never read
@@ -210,16 +230,16 @@ const SHAKE256_RATE: usize = 136;
 pub static BASE_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 
 /* ==================== scheme, Algorithm 1 (base path) ====================
- * (The shared system setup las_setup lives in setup.rs — see that module's
- * header; both basesig.rs and las.rs consume that same LasPp.) */
+ * (The construction-wide setup_public_params lives in setup.rs — see that
+ * module's header; every layer consumes that same PublicParams.) */
 
-/// `base_key_gen` <-> `key_gen` (ml_dsa.rs:26); C twin: `base_sign_keypair`
-/// (basesig.c:115).  Draw a fresh seed, then the deterministic KeyGen body.
+/// `keygen` <-> `key_gen` (ml_dsa.rs:26); C twin: `base_keygen` (basesig.c).
+/// Draw a fresh seed, then the deterministic KeyGen body.
 /// The RNG is injected (Rust idiom), exactly as ml_dsa.rs's `key_gen(rng)`.
-pub fn base_key_gen(
-    pp: &LasPp,                    // paper A: pp = A = [I | A'] (public matrix)
+pub fn keygen(
+    pp: &PublicParams,             // paper A: pp = A = [I | A'] (public matrix)
     rng: &mut impl CryptoRngCore,  // CSPRNG for the seed (no paper symbol)
-) -> (LasPk, LasSk) {              // returns (paper t, paper r) = (pk, sk)
+) -> (PublicKey, SecretKey) {      // returns (paper t, paper r) = (pk, sk)
     // 1: ξ ← B^{32}    ▷ Choose random seed
     let mut xi = [0u8; LAS_SEEDBYTES]; // PRG seed to sample r (no paper symbol)
     rng.fill_bytes(&mut xi);
@@ -231,19 +251,20 @@ pub fn base_key_gen(
     // unconditionally, basesig.c:124 randombytes()).
 
     // 5: return ML-DSA.KeyGen_internal(𝜉)
-    base_key_gen_internal(pp, &xi)
+    keygen_seed(pp, &xi)
     // ^[REUSED] ml_dsa.rs:44: Ok(key_gen_internal::<CTEST, K, L, PK_LEN, SK_LEN>(eta, &xi))
-    // (eta gone: the secret set is fixed ternary S_1, see base_key_gen_internal)
+    // (eta gone: the secret set is fixed ternary S_1, see keygen_seed)
 }
 
-/// `base_key_gen_internal` <-> `key_gen_internal` (ml_dsa.rs:57); C twin:
-/// none in basesig.c (sign.c has no keypair-from-seed slot; the C KAT slot is
-/// `las_keypair_seed`, las.c:193).  Algorithm 1 KeyGen from an explicit
-/// 32-byte seed: r <- S_1^{n+l}; t = A r; (pk,sk) = (t,r).
-pub fn base_key_gen_internal(
-    pp: &LasPp,                // paper A: pp = A = [I | A']
+/// `keygen_seed` <-> `key_gen_internal` (ml_dsa.rs:57); C twin:
+/// `base_keygen_seed` (basesig.c).  Algorithm 1 KeyGen from an explicit
+/// 32-byte seed — the deterministic KAT slot (Definition 3: KeyGen belongs to
+/// Σ, so the seeded slot lives HERE; test_kat's key vectors call this).
+/// r <- S_1^{n+l}; t = A r; (pk,sk) = (t,r).
+pub fn keygen_seed(
+    pp: &PublicParams,         // paper A: pp = A = [I | A']
     xi: &[u8; LAS_SEEDBYTES],  // PRG seed to sample r (<-> xi, ml_dsa.rs:64)
-) -> (LasPk, LasSk) {
+) -> (PublicKey, SecretKey) {
     // [PAPER Alg.1] 1:  procedure KeyGen():    // same as Gen
     //
     // 1: (rho, rho′, 𝐾) ∈ 𝔹^{32} × 𝔹^{64} × 𝔹^{32} ← H(𝜉||IntegerToBytes(𝑘,1)||IntegerToBytes(ℓ,1),128)
@@ -263,7 +284,7 @@ pub fn base_key_gen_internal(
 
     // 4: (s_1, s_2) ← ExpandS(ρ′)
     // [PAPER Alg.1] 2:      r ←$ S₁^(n+ℓ)
-    let s: [R; LAS_M] = b_expand_s(xi); // paper r: the secret vector
+    let r: [R; N_PLUS_ELL] = b_expand_s(xi); // paper r: the secret vector
     // ^[CHANGED] ml_dsa.rs:79:
     //     let (s_1, s_2): ([R; L], [R; K]) = expand_s::<CTEST, K, L>(eta, &rho_prime);
     // WHY: the paper's secret is ONE ternary vector r <- S_1^{n+l} with
@@ -282,33 +303,35 @@ pub fn base_key_gen_internal(
 
     // 5: t ← NTT−1(cap_a_hat ◦ NTT(s_1)) + s_2    ▷ Compute t = As1 + s2
     // [PAPER Alg.1] 3:      t = A r
-    let t: [R; LAS_N] = {
-        let s_bot: [R; LAS_ELL] = from_fn(|j| s[LAS_N + j].clone());
+    let t: [R; N] = {
+        // r = (r_0 || r_1): r_0 = top n components (identity block of
+        // A = [I | A']), r_1 = bottom ell components (the ones that meet A').
+        let r_1: [R; ELL] = from_fn(|j| r[N + j].clone());
         // ^[CHANGED] (input of) ml_dsa.rs:86: let s_1_hat: [T; L] = ntt(&s_1);
         // WHY: A = [I | A'] -- only the BOTTOM l components of r meet A' and
         // need the NTT; the top n components pass through the identity block
         // untouched (added below).  Upstream's A is a full K x L matrix, so
         // ALL of s_1 is transformed.
-        let mut s_1_hat: [T; LAS_ELL] = ntt(&s_bot); // [REUSED] ml_dsa.rs:86: let s_1_hat: [T; L] = ntt(&s_1);
-        for p in s_1_hat.iter_mut() {
+        let mut r_1_hat: [T; ELL] = ntt(&r_1); // [REUSED] ml_dsa.rs:86: let s_1_hat: [T; L] = ntt(&s_1);
+        for p in r_1_hat.iter_mut() {
             for x in p.0.iter_mut() {
                 *x = partial_reduce32(*x);
             }
         }
         // ^[CHANGED] no upstream line.
         // WHY: reduce the NTT output to (-Q,Q) before the Montgomery products
-        // (mirrors the C poly_reduce placement, basesig.c:168) so every i64
+        // (mirrors the C poly_reduce placement in basesig.c) so every i64
         // product and i32 accumulator stays in the reduced-domain bounds;
         // representative-neutral (the result is canonicalised below).
-        let as1_hat: [T; LAS_N] = b_mat_vec_mul(&pp.mat, &s_1_hat);
+        let a_prime_r_1_hat: [T; N] = b_mat_vec_mul(&pp.a_prime, &r_1_hat); // A' r_1 (NTT domain)
         // ^[REUSED] ml_dsa.rs:87: let as1_hat: [T; K] = mat_vec_mul(&cap_a_hat, &s_1_hat);
-        let s_top: [R; LAS_N] = from_fn(|k| s[k].clone());
-        let t_not_reduced: [R; LAS_N] = add_vector_ntt(&inv_ntt(&as1_hat), &s_top);
+        let r_0: [R; N] = from_fn(|k| r[k].clone());
+        let t_not_reduced: [R; N] = add_vector_ntt(&inv_ntt(&a_prime_r_1_hat), &r_0);
         // ^[CHANGED] ml_dsa.rs:88:
         //     let t_not_reduced: [R; K] = add_vector_ntt(&inv_ntt(&as1_hat), &s_2);
         // WHY: same "+ error" step (UNMODIFIED upstream add_vector_ntt), but
-        // the error IS the top n components of r: t = A r = r_top + A' r_bot
-        // for A = [I | A'] (s_top is that explicit n-polynomial prefix).
+        // the error IS the top n components of r: t = A r = r_0 + A' r_1
+        // for A = [I | A'] (r_0 is that explicit n-polynomial prefix).
         from_fn(|k| R(from_fn(|n| full_reduce32(t_not_reduced[k].0[n]))))
         // ^[REUSED] ml_dsa.rs:89-91:
         //     let t: [R; K] = core::array::from_fn(|k| {
@@ -340,32 +363,32 @@ pub fn base_key_gen_internal(
     // 11: return (pk, sk)
     // [PAPER Alg.1] 4:      return (pk, sk) = (t, r)
     // [PAPER Alg.1] 5:  end procedure
-    (LasPk { t }, LasSk { s })
+    (PublicKey { t }, SecretKey { r })
 }
 
-/// `base_sign_internal` <-> `sign_internal` (ml_dsa.rs:153); C twin:
-/// `base_sign_signature_internal` (basesig.c:212).  Algorithm 1 Sign body,
+/// `sign_internal` <-> `sign_internal` (ml_dsa.rs:153); C twin:
+/// `base_sign_internal` (basesig.c).  Algorithm 1 Sign body,
 /// parameterised by the caller-supplied 64-byte mask seed (ml_dsa.rs's
 /// internal takes `rnd` the same way).
-pub(crate) fn base_sign_internal(
-    m: &[u8],          // paper M: message
-    pk: &LasPk,        // paper t: pk.t = t (public key)
-    sk: &LasSk,        // paper r: sk.s = r (secret key)
-    pp: &LasPp,        // paper A: pp = A = [I | A']
-    seed: &[u8; 64],   // PRG mask seed (<-> rnd, ml_dsa.rs:163)
-) -> LasSig {          // paper σ: returns σ = (c, z)
+pub(crate) fn sign_internal(
+    m: &[u8],           // paper M: message
+    pk: &PublicKey,     // paper t: pk.t = t (public key)
+    sk: &SecretKey,     // paper r: sk.r = r (secret key)
+    pp: &PublicParams,  // paper A: pp = A = [I | A']
+    seed: &[u8; 64],    // PRG mask seed (<-> rnd, ml_dsa.rs:163)
+) -> Signature {        // paper σ: returns σ = (c, z)
     // [PAPER Alg.1] 6:  procedure Sign((pk, sk), M):
     //
     // 1: (ρ, K, tr, s_1, s_2, t_0) ← skDecode(sk)
     // 2: s_1_hat ← NTT(s_1)
-    let s_1_hat_mont: [T; LAS_M] = {
-        let mut s_hat: [T; LAS_M] = ntt(&sk.s);
-        for p in s_hat.iter_mut() {
+    let r_hat_mont: [T; N_PLUS_ELL] = {
+        let mut r_hat: [T; N_PLUS_ELL] = ntt(&sk.r); // paper r in NTT domain
+        for p in r_hat.iter_mut() {
             for x in p.0.iter_mut() {
                 *x = partial_reduce32(*x);
             }
         }
-        to_mont(&s_hat)
+        to_mont(&r_hat)
     };
     // ^[CHANGED] ml_dsa.rs:169:
     //     let PrivateKey { rho, cap_k, tr, s_1_hat_mont, s_2_hat_mont, t_0_hat_mont } = esk;
@@ -375,8 +398,8 @@ pub(crate) fn base_sign_internal(
     // to_mont(&ntt(..)) hoist happens HERE, once per call (the secret is
     // invariant across rejection attempts), with the reduced-domain
     // partial_reduce32 in between (same reason as in KeyGen).  The FULL
-    // m-vector is transformed (the products below run over all m response
-    // polynomials).  No s_2/t_0 transforms exist.
+    // (n+ell)-vector r is transformed (the products below run over all n+ell
+    // response polynomials).  No s_2/t_0 transforms exist.
 
     // 5: cap_a_hat ← ExpandA(ρ)    ▷ A is generated and stored in NTT representation as Â
     // [DELETED] ml_dsa.rs:181:
@@ -384,7 +407,7 @@ pub(crate) fn base_sign_internal(
     // WHY: A is fixed in pp (see setup.rs).
 
     // 6: 𝜇 ← H(BytesToBits(𝑡𝑟)||𝑀 , 64)    ▷ Compute message representative µ
-    let mut t_tilde = [0u8; LAS_N * N * 4]; // packed pk: plays mu's role as the fixed hash prefix
+    let mut t_tilde = [0u8; N * D * 4]; // packed pk: plays mu's role as the fixed hash prefix
     b_w_encode(&pk.t, &mut t_tilde);
     // ^[CHANGED] ml_dsa.rs:190 (the 6b path):
     //     h256_xof(&[tr, &[0u8], &[ctx.len().to_le_bytes()[0]], ctx, message])
@@ -405,7 +428,11 @@ pub(crate) fn base_sign_internal(
     // same role, same width.
 
     // 8: κ ← 0    ▷ Initialize counter κ
-    let mut kappa_ctr = 0u16;                // [REUSED] ml_dsa.rs:204: let mut kappa_ctr = 0u16;
+    let mut mask_nonce = 0u16;
+    // ^[CHANGED] ml_dsa.rs:204: let mut kappa_ctr = 0u16;
+    // WHY: same counter, renamed -- upstream's "κ" counter name collides with
+    // the LAS paper's κ = challenge weight (KAPPA); this is the mask
+    // sampler's per-attempt nonce, so it is named as such.
 
     // 9: (z, h) ← ⊥    ▷ we will handle ⊥ inline with 'continue'
     // [DELETED] ml_dsa.rs:207-209:
@@ -423,7 +450,7 @@ pub(crate) fn base_sign_internal(
 
         // 11: y ← ExpandMask(ρ′', κ)
         // [PAPER Alg.1] 7:      y ←$ Sγ^(n+ℓ)
-        let y: [R; LAS_M] = b_expand_mask(seed, kappa_ctr);
+        let y: [R; N_PLUS_ELL] = b_expand_mask(seed, mask_nonce);
         // ^[CHANGED] ml_dsa.rs:215:
         //     let y: [R; L] = expand_mask(gamma1, &rho_prime, kappa_ctr);
         // WHY: the paper's mask set is S_gamma = uniform [-gamma, gamma] with
@@ -435,28 +462,30 @@ pub(crate) fn base_sign_internal(
 
         // 12: w ← NTT−1(cap_a_hat ◦ NTT(y))
         // [PAPER Alg.1] 8:      w = A y
-        let w: [R; LAS_N] = {
-            let y_bot: [R; LAS_ELL] = from_fn(|j| y[LAS_N + j].clone());
+        let w: [R; N] = {
+            // y = (y_0 || y_1), same split as r: y_0 = identity-block prefix,
+            // y_1 = the ell components that meet A'.
+            let y_1: [R; ELL] = from_fn(|j| y[N + j].clone());
             // ^[CHANGED] (input of) ml_dsa.rs:219: let y_hat: [T; L] = ntt(&y);
             // WHY: A = [I | A'] -- only the bottom l components of y meet A';
             // the top n join via the identity block below (same as KeyGen).
-            let mut y_hat: [T; LAS_ELL] = ntt(&y_bot); // [REUSED] ml_dsa.rs:219: let y_hat: [T; L] = ntt(&y);
-            for p in y_hat.iter_mut() {
+            let mut y_1_hat: [T; ELL] = ntt(&y_1); // [REUSED] ml_dsa.rs:219: let y_hat: [T; L] = ntt(&y);
+            for p in y_1_hat.iter_mut() {
                 for x in p.0.iter_mut() {
                     *x = partial_reduce32(*x);
                 }
             }
             // ^[CHANGED] no upstream line: reduced domain before the products
             // (same reason as in KeyGen; representative-neutral).
-            let ay_hat: [T; LAS_N] = b_mat_vec_mul(&pp.mat, &y_hat);
+            let a_prime_y_1_hat: [T; N] = b_mat_vec_mul(&pp.a_prime, &y_1_hat); // A' y_1 (NTT domain)
             // ^[REUSED] ml_dsa.rs:220: let ay_hat: [T; K] = mat_vec_mul(&cap_a_hat, &y_hat);
-            let y_top: [R; LAS_N] = from_fn(|k| y[k].clone());
-            let w_not_reduced: [R; LAS_N] = add_vector_ntt(&inv_ntt(&ay_hat), &y_top);
+            let y_0: [R; N] = from_fn(|k| y[k].clone());
+            let w_not_reduced: [R; N] = add_vector_ntt(&inv_ntt(&a_prime_y_1_hat), &y_0);
             // ^[CHANGED] ml_dsa.rs:221: inv_ntt(&ay_hat)
             // WHY: upstream's Sign has no addition here because its A is a
             // full matrix; the identity block of A = [I | A'] completes
-            // w = A y = y_top + A' y_bot (UNMODIFIED upstream add_vector_ntt
-            // exactly as KeyGen's step 5 uses it, ml_dsa.rs:88; y_top is the
+            // w = A y = y_0 + A' y_1 (UNMODIFIED upstream add_vector_ntt
+            // exactly as KeyGen's step 5 uses it, ml_dsa.rs:88; y_0 is the
             // explicit n-polynomial prefix of y).
             from_fn(|k| R(from_fn(|n| full_reduce32(w_not_reduced[k].0[n]))))
             // ^[REUSED] ml_dsa.rs:89-91 (the canonicalising from_fn/full_reduce32 wrap)
@@ -472,26 +501,28 @@ pub(crate) fn base_sign_internal(
 
         // 15: c_tildẽ ← H(mu||w1Encode(w_1), 𝜆/4)    ▷ commitment hash
         // [PAPER Alg.1] 9:      c = H(pk, w, M)
-        let mut w_tilde = [0u8; LAS_N * N * 4];
+        let mut w_tilde = [0u8; N * D * 4];
         b_w_encode(&w, &mut w_tilde);           // [REUSED] ml_dsa.rs:232: w1_encode::<K>(gamma2, &w_1, &mut w1_tilde);
         let mut h15 = h256_xof(&[&t_tilde[..], &w_tilde[..], m]);
-        let mut c_tilde = [0u8; LAS_SEEDBYTES];
+        let mut c_tilde = [0u8; LAS_CTILDEBYTES];
         h15.read(&mut c_tilde);
         // ^[CHANGED] ml_dsa.rs:233-234:
         //     let mut h15 = h256_xof(&[&mu, &w1_tilde]);
         //     h15.read(&mut c_tilde);
         // WHY: same UNMODIFIED upstream h256_xof, but the oracle input is
         // (packed raw pk, packed full w, M) -- the paper's c = H(pk, w, M)
-        // binds pk and M directly -- and the digest is a fixed 32 bytes (the
-        // challenge-sampler seed), not the lambda/4 signature component.
+        // binds pk and M directly.  As in upstream, this 32-byte digest c_tilde
+        // IS the stored challenge component of the signature (returned below).
 
         // 16: c ∈ 𝑅𝑞 ← SampleInBall(c_tilde_1)    ▷ Verifier’s challenge
         let c: R = b_sample_in_ball(&c_tilde);
-        // ^[CHANGED] ml_dsa.rs:237:
+        // ^[REUSED] ml_dsa.rs:237:
         //     let c: R = sample_in_ball::<CTEST>(tau, &c_tilde);
-        // WHY: same SampleInBall construction with the paper's challenge
-        // weight kappa (per parameter set) instead of tau; the challenge
-        // POLYNOMIAL c is itself the signature component, not the digest.
+        // WHY: same SampleInBall construction with the paper's challenge weight
+        // kappa (per parameter set) instead of tau.  c is a LOCAL arithmetic
+        // value only (feeds c*r below); the STORED component is the digest
+        // c_tilde, exactly as upstream sign.c stores c_tilde and re-derives the
+        // polynomial via poly_challenge.
 
         // 17: c_hat ← NTT(c)
         let c_hat: T = {
@@ -507,14 +538,16 @@ pub(crate) fn base_sign_internal(
         // reduced-domain partial_reduce32, same reason as in KeyGen)
 
         // 18: ⟨⟨c_s_1⟩⟩ ← NTT−1(c_hat ◦ s_1_hat)
-        let c_s_1: [R; LAS_M] = {
-            let cs1_hat: [T; LAS_M] = from_fn(|l| {
+        let c_r: [R; N_PLUS_ELL] = {
+            // paper c·r (exact, |c·r|inf <= kappa): upstream's c_s_1 slot,
+            // named after the paper's factors (the secret is r, not s_1).
+            let c_r_hat: [T; N_PLUS_ELL] = from_fn(|l| {
                 T(from_fn(|n| {
-                    mont_reduce(i64::from(c_hat.0[n]) * i64::from(s_1_hat_mont[l].0[n]))
+                    mont_reduce(i64::from(c_hat.0[n]) * i64::from(r_hat_mont[l].0[n]))
                 }))
             });
-            let cs1 = inv_ntt(&cs1_hat);
-            from_fn(|l| R(from_fn(|n| center_mod(cs1[l].0[n]))))
+            let c_r = inv_ntt(&c_r_hat);
+            from_fn(|l| R(from_fn(|n| center_mod(c_r[l].0[n]))))
         };
         // ^[REUSED] ml_dsa.rs:243-249:
         //     let cs1_hat: [T; L] = core::array::from_fn(|l| {
@@ -527,7 +560,7 @@ pub(crate) fn base_sign_internal(
         // WHY: pins the unique centred representative of c·r, which is EXACT
         // and small (|c·r|inf <= kappa, the paper's Fact 1) -- so the z sum
         // below needs no reduction and the adaptor arithmetic in las.rs
-        // (z = z^ + y_wit, s = z - z^) stays exact.
+        // (z = z_hat + r', s = z - z_hat) stays exact.
 
         // 19: ⟨⟨c_s_2⟩⟩ ← NTT−1(c_hat ◦ s_2_hat)
         // [DELETED] ml_dsa.rs:253-260:
@@ -536,7 +569,7 @@ pub(crate) fn base_sign_internal(
 
         // 20: z ← y + ⟨⟨c_s_1⟩⟩    ▷ Signer’s response
         // [PAPER Alg.1] 10:     z = y + c r, where r := sk
-        let z: [R; LAS_M] = from_fn(|l| R(from_fn(|n| y[l].0[n] + c_s_1[l].0[n])));
+        let z: [R; N_PLUS_ELL] = from_fn(|l| R(from_fn(|n| y[l].0[n] + c_r[l].0[n])));
         // ^[CHANGED] ml_dsa.rs:263-265:
         //     z = core::array::from_fn(|l| {
         //         R(core::array::from_fn(|n| partial_reduce32(y[l].0[n] + c_s_1[l].0[n])))
@@ -558,7 +591,7 @@ pub(crate) fn base_sign_internal(
         // 23: if ||z||∞ ≥ Gamma1 − β or ||r0||∞ ≥ Gamma2 − β then (z, h) ← ⊥    ▷ Validity checks
         // [PAPER Alg.1] 11:     if ||z||∞ > γ − κ, then Restart
         let z_norm = infinity_norm(&z);          // [REUSED] ml_dsa.rs:277: let z_norm = infinity_norm(&z);
-        if z_norm >= LAS_BOUND_SIGN {
+        if z_norm >= BOUND_SIGN {
             // ^[CHANGED] ml_dsa.rs:280:
             //     if !CTEST && ((z_norm >= (gamma1 - beta)) || (r0_norm >= (gamma2 - beta))) {
             // WHY: same reject-if-too-large test with the UNMODIFIED upstream
@@ -569,7 +602,7 @@ pub(crate) fn base_sign_internal(
             // and there is no CTEST path (no constant-time measurements).
 
             // 31: κ ← κ + ℓ ▷ Increment counter
-            kappa_ctr += LAS_M as u16;           // [REUSED] ml_dsa.rs:281: kappa_ctr += u16::try_from(L)... (L -> m)
+            mask_nonce += N_PLUS_ELL as u16; // [REUSED] ml_dsa.rs:281: kappa_ctr += u16::try_from(L)... (L -> n+ell)
             continue;                            // [REUSED] ml_dsa.rs:282: continue;
         }
 
@@ -584,30 +617,32 @@ pub(crate) fn base_sign_internal(
         // 33: σ ← sigEncode(c_tilde, z mod± q, h)
         // 34: return σ
         // [PAPER Alg.1] 12:     return σ = (c, z)
-        return LasSig { c, z };
+        return Signature { c_tilde, z };
         // ^[CHANGED] ml_dsa.rs:334-336:
         //     let zmodq: [R; L] =
         //         core::array::from_fn(|l| R(core::array::from_fn(|n| center_mod(z[l].0[n]))));
         //     sig_encode::<CTEST, K, L, LAMBDA_DIV4, SIG_LEN>(gamma1, omega, &c_tilde, &zmodq, &h)
-        // WHY: struct output -- z is already the exact centred representative
-        // (see the c_s_1 center_mod above) and the challenge POLYNOMIAL is
-        // returned; the byte encoding lives in serialize.rs (and the
-        // packed tier below) instead.
+        // WHY: TYPED struct return, not upstream's packed BYTE encoding.  Upstream
+        // sig_encode serialises (c_tilde, z, h) into SIG_LEN bytes here; this core
+        // tier instead returns the struct Signature { c_tilde, z }, deferring the
+        // byte encoding to serialize.rs (the packed tier below).  It carries the
+        // SAME challenge component upstream stores -- the 32-byte digest c_tilde --
+        // plus z (already the exact centred representative, see the c_s_1
+        // center_mod above); only the hint slot h is dropped (feature absent).
     }
     // [PAPER Alg.1] 13: end procedure
 }
 
-/// `base_sign` — Algorithm 1 Sign, random path: fresh 64-byte mask seed,
+/// `sign` — Algorithm 1 Sign, random path: fresh 64-byte mask seed,
 /// then the internal.  Upstream slot: `try_sign_with_rng` (lib.rs:287,
-/// `rnd <- rng`); C twin: `base_sign_signature` (basesig.c:426, itself <->
-/// sign.c:206).
-pub fn base_sign(
+/// `rnd <- rng`); C twin: `base_sign` (basesig.c, itself <-> sign.c:206).
+pub fn sign(
     m: &[u8],                      // paper M: message
-    pk: &LasPk,                    // paper t: pk.t = t (public key)
-    sk: &LasSk,                    // paper r: sk.s = r (secret key)
-    pp: &LasPp,                    // paper A: pp = A = [I | A']
+    pk: &PublicKey,                // paper t: pk.t = t (public key)
+    sk: &SecretKey,                // paper r: sk.r = r (secret key)
+    pp: &PublicParams,             // paper A: pp = A = [I | A']
     rng: &mut impl CryptoRngCore,  // CSPRNG for the mask seed (no paper symbol)
-) -> LasSig {                      // paper σ: returns σ = (c, z)
+) -> Signature {                   // paper σ: returns σ = (c, z)
     let mut rnd = [0u8; 64]; // PRG mask seed (<-> rnd, lib.rs try_sign_with_rng)
     rng.fill_bytes(&mut rnd);
     // ^[CHANGED] lib.rs:293-295 (inside try_sign_with_rng):
@@ -616,21 +651,44 @@ pub fn base_sign(
     // WHY: upstream draws a 32-byte rnd that feeds the rho_prime CRH chain
     // (ml_dsa.rs:199); here the 64-byte mask seed IS the randomness itself
     // (there is no CRH chain), so it is drawn fresh at full width.  The
-    // deterministic analogue is las.rs `las_sign_det` (seed derived from
-    // (sk, M)).
-    base_sign_internal(m, pk, sk, pp, &rnd)
+    // deterministic analogue is `sign_det` below (seed derived from (sk, M)).
+    let sigma = sign_internal(m, pk, sk, pp, &rnd);
+    rnd.zeroize(); // mask seed: knowing it + sigma reveals c*r, hence r
+    sigma
     // ^[REUSED] the try_sign_with_rng -> sign_internal delegation (lib.rs:287);
-    // C twin basesig.c:451: return base_sign_signature_internal(sig, m, mlen, pk, sk, pp, seed);
+    // C twin basesig.c: return base_sign_internal(sigma, m, mlen, pk, sk, pp, seed);
 }
 
-/// `base_verify_internal` <-> `verify_internal` (ml_dsa.rs:351); C twin:
-/// `base_sign_verify_internal` (basesig.c:499).  Algorithm 1 Verify body:
-/// w' = A z - c t; accept iff c == H(pk, w', M).
-pub(crate) fn base_verify_internal(
-    sig: &LasSig,  // paper σ: sig = (c, z), signature to verify
-    m: &[u8],      // paper M: message
-    pk: &LasPk,    // paper t: pk.t = t (public key)
-    pp: &LasPp,    // paper A: pp = A = [I | A']
+/// `sign_det` — deterministic Sign (the KAT slot; no ml_dsa.rs analogue —
+/// the counterpart of upstream's zeroed-rnd deterministic branch); C twin:
+/// `base_sign_det` (basesig.c).  Mask randomness derived from (sk, M) via
+/// `det_seed` (tag 0), then the same internal.  Same distribution and
+/// validity as `sign`; removes the per-signature RNG (no nonce-reuse risk)
+/// and makes the signature a reproducible function of (sk, M).
+/// Definition 3: Sign belongs to Σ, so the deterministic slot lives HERE
+/// (test_kat's ordinary-signature vectors call this).
+pub fn sign_det(
+    m: &[u8],           // paper M: message
+    pk: &PublicKey,     // paper t: pk.t = t (public key)
+    sk: &SecretKey,     // paper r: sk.r = r (secret key)
+    pp: &PublicParams,  // paper A: pp = A = [I | A']
+) -> Signature {        // paper σ: returns σ = (c, z)
+    let mut seed = det_seed(sk, m); // PRG mask seed from (sk, M); tag 0 = sign
+    let sigma = sign_internal(m, pk, sk, pp, &seed);
+    seed.zeroize(); // sk-derived mask seed: wipe
+    sigma
+}
+
+/// `verify_internal` <-> `verify_internal` (ml_dsa.rs:351); C twin:
+/// `base_verify_internal` (basesig.c).  Algorithm 1 Verify body:
+/// w' = A z - c t; accept iff c == H(pk, w', M).  The ONLY verifier a final
+/// (ordinary or adapted) signature ever meets — a `PreSignature` cannot be
+/// passed here (distinct type; PreVerify lives in `las`).
+pub(crate) fn verify_internal(
+    sigma: &Signature,  // paper σ: sigma = (c, z), signature to verify
+    m: &[u8],           // paper M: message
+    pk: &PublicKey,     // paper t: pk.t = t (public key)
+    pp: &PublicParams,  // paper A: pp = A = [I | A']
 ) -> bool {
     // [PAPER Alg.1] 14: procedure Verify(pk, σ, M):
     //
@@ -647,7 +705,7 @@ pub(crate) fn base_verify_internal(
 
     // [PAPER Alg.1] 15:     Parse (c, z) := σ
     // [PAPER Alg.1] 16:     if ||z||∞ > γ − κ, then return 0
-    if infinity_norm(&sig.z) >= LAS_BOUND_SIGN {
+    if infinity_norm(&sigma.z) >= BOUND_SIGN {
         return false;
     }
     // ^[CHANGED] ml_dsa.rs:433-434 (upstream tests this at the END):
@@ -655,10 +713,10 @@ pub(crate) fn base_verify_internal(
     // WHY: same norm gate with the UNMODIFIED upstream infinity_norm, bound
     // gamma - kappa (= gamma1 - beta with eta = 1), moved to the top as the
     // paper's Verify step 16 -- exactly where the C twin tests it
-    // (basesig.c:526, itself mirroring sign.c:314).
+    // (mirroring sign.c:314).
 
     // 7: 𝜇 ← (H(BytesToBits(tr)||𝑀′, 64))    ▷ Compute message representative µ
-    let mut t_tilde = [0u8; LAS_N * N * 4]; // packed pk: plays mu's role as the fixed hash prefix
+    let mut t_tilde = [0u8; N * D * 4]; // packed pk: plays mu's role as the fixed hash prefix
     b_w_encode(&pk.t, &mut t_tilde);
     // ^[CHANGED] ml_dsa.rs:391 (the 7b path):
     //     h256_xof(&[tr, &[0u8], &[ctx.len().to_le_bytes()[0]], ctx, m])
@@ -667,33 +725,36 @@ pub(crate) fn base_verify_internal(
     // canonically, not hashing it into mu.
 
     // 8: c ∈ 𝑅𝑞 ← SampleInBall(c_tilde_1)    ▷ Compute verifier’s challenge from c_tilde
-    // [DELETED] ml_dsa.rs:400:
+    let c: R = b_sample_in_ball(&sigma.c_tilde);
+    // ^[REUSED] ml_dsa.rs:400:
     //     let c: R = sample_in_ball::<false>(tau, &c_tilde);
-    // WHY: upstream must re-derive the challenge POLYNOMIAL from the c_tilde
-    // digest bytes it stores; here the signature already carries the
-    // challenge polynomial sig.c.
+    // WHY: the signature stores the challenge DIGEST c_tilde (upstream's c_tilde
+    // lifecycle), so Verify re-derives the challenge polynomial locally right
+    // here -- exactly as upstream sign.c:327 poly_challenge(&cp, sig) does after
+    // unpacking.  Same SampleInBall construction, challenge weight kappa.
 
     // 5: cap_a_hat ← ExpandA(ρ)    ▷ A is generated and stored in NTT representation as cap_A_hat
     // 9: w′_Approx ← invNTT(cap_A_hat ◦ NTT(z) - NTT(c) ◦ NTT(t_1 · 2^d)    ▷ w′_Approx = Az − ct1·2^d
     // [PAPER Alg.1] 17:     w′ = A z − c t, where t := pk
-    let wp: [R; LAS_N] = {
-        // A z, identity block included (the same sequence as Sign's w = A y):
-        let z_bot: [R; LAS_ELL] = from_fn(|j| sig.z[LAS_N + j].clone());
-        let mut z_hat: [T; LAS_ELL] = ntt(&z_bot); // [REUSED] ml_dsa.rs:407: let z_hat: [T; L] = ntt(&z);
-        for p in z_hat.iter_mut() {
+    let w_prime: [R; N] = {
+        // A z, identity block included (the same sequence as Sign's w = A y;
+        // z = (z_0 || z_1), same split convention as r and y):
+        let z_1: [R; ELL] = from_fn(|j| sigma.z[N + j].clone());
+        let mut z_1_hat: [T; ELL] = ntt(&z_1); // [REUSED] ml_dsa.rs:407: let z_hat: [T; L] = ntt(&z);
+        for p in z_1_hat.iter_mut() {
             for x in p.0.iter_mut() {
                 *x = partial_reduce32(*x);
             }
         }
-        let az_hat: [T; LAS_N] = b_mat_vec_mul(&pp.mat, &z_hat);
+        let a_prime_z_1_hat: [T; N] = b_mat_vec_mul(&pp.a_prime, &z_1_hat); // A' z_1 (NTT domain)
         // ^[REUSED] ml_dsa.rs:408: let az_hat: [T; K] = mat_vec_mul(&cap_a_hat, &z_hat);
-        let z_top: [R; LAS_N] = from_fn(|k| sig.z[k].clone()); // identity-block prefix of z
-        let az_not_reduced: [R; LAS_N] = add_vector_ntt(&inv_ntt(&az_hat), &z_top);
-        let az: [R; LAS_N] = from_fn(|k| R(from_fn(|n| full_reduce32(az_not_reduced[k].0[n]))));
+        let z_0: [R; N] = from_fn(|k| sigma.z[k].clone()); // identity-block prefix of z
+        let a_z_not_reduced: [R; N] = add_vector_ntt(&inv_ntt(&a_prime_z_1_hat), &z_0);
+        let a_z: [R; N] = from_fn(|k| R(from_fn(|n| full_reduce32(a_z_not_reduced[k].0[n]))));
 
         // c t, exact (against the RAW t):
         let c_hat: T = {
-            let mut ch = ntt(&[sig.c.clone()]);
+            let mut ch = ntt(&[c.clone()]);
             for x in ch[0].0.iter_mut() {
                 *x = partial_reduce32(*x);
             }
@@ -701,8 +762,8 @@ pub(crate) fn base_verify_internal(
             ch
         };
         // ^[REUSED] ml_dsa.rs:410: let c_hat: &T = &ntt(&[c])[0];  (once per call)
-        let t_hat_mont: [T; LAS_N] = {
-            let mut t_hat: [T; LAS_N] = ntt(&pk.t);
+        let t_hat_mont: [T; N] = {
+            let mut t_hat: [T; N] = ntt(&pk.t);
             for p in t_hat.iter_mut() {
                 for x in p.0.iter_mut() {
                     *x = partial_reduce32(*x);
@@ -719,14 +780,15 @@ pub(crate) fn base_verify_internal(
         // WHY: t was never compressed (no Power2Round), so the operand is the
         // EXACT t -- to_mont(&ntt(&t)) with no 2^d shift to restore -- and it
         // is built per call because struct keys carry no pre-computes.
-        let ct: [R; LAS_N] = {
-            let ct_hat: [T; LAS_N] = from_fn(|k| {
+        let c_t: [R; N] = {
+            // paper c·t: named after its factors, like c_r on the Sign side.
+            let c_t_hat: [T; N] = from_fn(|k| {
                 T(from_fn(|n| {
                     mont_reduce(i64::from(c_hat.0[n]) * i64::from(t_hat_mont[k].0[n]))
                 }))
             });
-            let ct = inv_ntt(&ct_hat);
-            from_fn(|k| R(from_fn(|n| center_mod(ct[k].0[n]))))
+            let c_t = inv_ntt(&c_t_hat);
+            from_fn(|k| R(from_fn(|n| center_mod(c_t[k].0[n]))))
         };
         // ^[CHANGED] ml_dsa.rs:411-416:
         //     inv_ntt(&core::array::from_fn(|k| {
@@ -737,12 +799,12 @@ pub(crate) fn base_verify_internal(
         //     }))
         // WHY: upstream subtracts c·t from Az entirely in the NTT domain and
         // inverse-transforms once; here the identity block of A = [I | A']
-        // must add the NON-transformed z_top to Az, which forces the
+        // must add the NON-transformed z_0 to Az, which forces the
         // subtraction into the normal domain: invert both halves first (the
         // c·t product uses the same mont_reduce/inv_ntt/center_mod shape as
-        // Sign's c_s_1 block), then subtract canonically below.  w' is exact
-        // either way.  Same structure as the C twin (basesig.c:574-589).
-        from_fn(|k| R(from_fn(|n| full_reduce32(az[k].0[n] - ct[k].0[n]))))
+        // Sign's c_r block), then subtract canonically below.  w' is exact
+        // either way.  Same structure as the C twin (base_verify_internal).
+        from_fn(|k| R(from_fn(|n| full_reduce32(a_z[k].0[n] - c_t[k].0[n]))))
     };
 
     // 10: w′_1 ← UseHint(h, w′_Approx)    ▷ Reconstruction of signer’s commitment
@@ -756,40 +818,43 @@ pub(crate) fn base_verify_internal(
     // 12: c_tilde_′ ← H(µ || w1Encode(w′_1), λ/4)     ▷ Hash it; this should match c_tilde
     // [PAPER Alg.1] 18:     if c ≠ H(pk, w′, M), then return 0
     // [PAPER Alg.1] 19:     return 1
-    let mut w_tilde = [0u8; LAS_N * N * 4];
-    b_w_encode(&wp, &mut w_tilde);              // [REUSED] ml_dsa.rs:428: w1_encode::<K>(gamma2, &wp_1, &mut tmp);
+    let mut w_tilde = [0u8; N * D * 4];
+    b_w_encode(&w_prime, &mut w_tilde);         // [REUSED] ml_dsa.rs:428: w1_encode::<K>(gamma2, &wp_1, &mut tmp);
     let mut h12 = h256_xof(&[&t_tilde[..], &w_tilde[..], m]);
-    let mut c_tilde = [0u8; LAS_SEEDBYTES];
-    h12.read(&mut c_tilde);
-    let c_p: R = b_sample_in_ball(&c_tilde);
-    c_p == sig.c
-    // ^[CHANGED] ml_dsa.rs:429-436:
+    let mut c_tilde_check = [0u8; LAS_CTILDEBYTES]; // paper H(pk, w′, M): recomputed digest
+    h12.read(&mut c_tilde_check);
+    c_tilde_check == sigma.c_tilde
+    // ^[REUSED] ml_dsa.rs:429-435 (minus the norm conjunct):
     //     let mut h12 = h256_xof(&[&mu, &tmp]);
     //     let mut c_tilde_p = [0u8; LAMBDA_DIV4];
     //     h12.read(&mut c_tilde_p);
     //     let left = infinity_norm(&z) < (gamma1 - beta);
     //     let right = c_tilde == c_tilde_p;
     //     left && right
-    // WHY: same accept-iff-equal comparison, but over the recomputed
-    // challenge POLYNOMIAL (the signature carries the polynomial, not the
-    // digest bytes), and the norm half of the conjunction was already tested
+    // WHY: accept iff the recomputed DIGEST equals the stored one -- a byte
+    // compare, exactly upstream's `right = c_tilde == c_tilde_p`.  This restores
+    // the upstream c_tilde lifecycle (the refactor's polynomial compare is gone);
+    // it is strictly stronger than that polynomial compare and identical on
+    // honest paths.  The norm half of upstream's conjunction was already tested
     // at the top (paper step 16).
     // [PAPER Alg.1] 20: end procedure
 }
 
-/// `base_verify` — Algorithm 1 Verify, public entry point (delegates to the
+/// `verify` — Algorithm 1 Verify, public entry point (delegates to the
 /// internal).  Upstream slot: `verify` (lib.rs:383); C twin:
-/// `base_sign_verify` (basesig.c:645, itself <-> sign.c:375).
-/// Returns true iff the signature is valid.
-pub fn base_verify(
-    sig: &LasSig,  // paper σ: sig = (c, z), signature to verify
-    m: &[u8],      // paper M: message
-    pk: &LasPk,    // paper t: pk.t = t (public key)
-    pp: &LasPp,    // paper A: pp = A = [I | A']
+/// `base_verify` (basesig.c, itself <-> sign.c:375).
+/// THE verifier of the whole construction (Definition 3): ordinary
+/// signatures AND Adapt outputs are checked here; miners/on-chain code see
+/// nothing else.  Returns true iff the signature is valid.
+pub fn verify(
+    sigma: &Signature,  // paper σ: sigma = (c, z), signature to verify
+    m: &[u8],           // paper M: message
+    pk: &PublicKey,     // paper t: pk.t = t (public key)
+    pp: &PublicParams,  // paper A: pp = A = [I | A']
 ) -> bool {
-    base_verify_internal(sig, m, pk, pp)
+    verify_internal(sigma, m, pk, pp)
     // ^[REUSED] the verify -> verify_internal delegation (lib.rs:383);
-    // C twin basesig.c:655: return base_sign_verify_internal(sig, m, mlen, pk, pp);
+    // C twin basesig.c: return base_verify_internal(sigma, m, mlen, pk, pp);
 }
 
 // [DELETED] `expand_private` (ml_dsa.rs:445) / `expand_public` (ml_dsa.rs:477) /
@@ -840,7 +905,7 @@ fn b_rej_bounded_poly(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> R {
     let mut a = R0;
     let mut j = 0usize;
     // 4: while j < 256 do                       (hashing.rs:171)
-    while j < N {
+    while j < D {
         if pos >= SHAKE256_RATE {
             rd.read(&mut buf);
             pos = 0;
@@ -850,7 +915,7 @@ fn b_rej_bounded_poly(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> R {
         pos += 1;
         // 6-15: the two half-byte candidates -> four 2-bit candidates
         let mut s = 0u8;
-        while s < 4 && j < N {
+        while s < 4 && j < D {
             let v = (z >> (2 * s)) & 3;
             if v < 3 {
                 a.0[j] = i32::from(v) - 1;
@@ -878,7 +943,7 @@ fn b_rej_bounded_poly(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> R {
  * of r that role).  Same per-poly nonce derivation: nonce j as two
  * little-endian bytes = upstream's [r as u8], [0].
  *************************************************/
-fn b_expand_s(seed: &[u8; LAS_SEEDBYTES]) -> [R; LAS_M] {
+fn b_expand_s(seed: &[u8; LAS_SEEDBYTES]) -> [R; N_PLUS_ELL] {
     from_fn(|j| b_rej_bounded_poly(seed, j as u16))
 }
 
@@ -908,17 +973,17 @@ fn b_expand_s(seed: &[u8; LAS_SEEDBYTES]) -> [R; LAS_M] {
  * matching the C sampler byte-for-byte (basesig.c:797:
  * `while(ctr < len && pos + 3 <= buflen)`, 136 = 45*3 + 1).
  *************************************************/
-fn b_expand_mask(rho: &[u8; 64], mu: u16) -> [R; LAS_M] {
-    let two_gamma = 2u32 * (LAS_GAMMA as u32);
+fn b_expand_mask(rho: &[u8; 64], mu: u16) -> [R; N_PLUS_ELL] {
+    let two_gamma = 2u32 * (GAMMA as u32);
     let mut gmask: u32 = 1; // smallest 2^k - 1 >= 2*gamma (the acceptance window)
     while gmask < two_gamma {
         gmask <<= 1;
     }
     gmask -= 1;
 
-    let mut y = [R0; LAS_M];
+    let mut y = [R0; N_PLUS_ELL];
     // 2: for r from 0 to ℓ − 1 do               (hashing.rs:290; ell -> m)
-    for r in 0..LAS_M {
+    for r in 0..N_PLUS_ELL {
         // 3: rho′ ← rho || IntegerToBytes(mu + r, 2)   (hashing.rs:293)
         let n = mu.wrapping_add(r as u16);
         // 4: v ← H(rho′, 32*c)                  (hashing.rs:296-297, block-buffered)
@@ -932,7 +997,7 @@ fn b_expand_mask(rho: &[u8; 64], mu: u16) -> [R; LAS_M] {
 
         // 5: y[r] ← BitUnpack(v, γ_1 − 1, γ_1)  -> rejection loop (see WHY above)
         let mut ctr = 0usize;
-        while ctr < N {
+        while ctr < D {
             if pos + 3 > SHAKE256_RATE {
                 rd.read(&mut buf);
                 pos = 0;
@@ -943,7 +1008,7 @@ fn b_expand_mask(rho: &[u8; 64], mu: u16) -> [R; LAS_M] {
                 & gmask;
             pos += 3;
             if t < two_gamma + 1 {
-                y[r].0[ctr] = (t as i32) - LAS_GAMMA;
+                y[r].0[ctr] = (t as i32) - GAMMA;
                 ctr += 1;
             }
         }
@@ -957,7 +1022,7 @@ fn b_expand_mask(rho: &[u8; 64], mu: u16) -> [R; LAS_M] {
  * b_sample_in_ball  <->  sample_in_ball (hashing.rs:43)
  * C twin: b_poly_challenge (basesig.c:860)
  *
- * Implementation of H: samples the challenge polynomial with LAS_KAPPA
+ * Implementation of H: samples the challenge polynomial with KAPPA
  * nonzero coefficients in {-1,1} from SHAKE256(seed).  Same Fisher-Yates
  * construction (sign bits from the first 8 squeezed bytes, then the swap
  * loop with rejected indices).
@@ -991,7 +1056,7 @@ fn b_sample_in_ball(rho: &[u8; LAS_SEEDBYTES]) -> R {
     let mut pos = 8usize;
 
     // 6: for 𝑖 from 256 − 𝜏 to 255 do           (hashing.rs:59; tau -> kappa)
-    for i in (N - LAS_KAPPA as usize)..N {
+    for i in (D - KAPPA as usize)..D {
         // 7: (ctx, 𝑗) ← H.Squeeze(ctx, 1)
         // 8: while 𝑗 > 𝑖 do
         // 9:   (ctx, 𝑗) ← H.Squeeze(ctx, 1)
@@ -1035,11 +1100,11 @@ fn b_sample_in_ball(rho: &[u8; LAS_SEEDBYTES]) -> R {
  * canonicalisation is an identity for already-canonical callers, and makes
  * the packing representative-neutral for the rest).
  *************************************************/
-fn b_w_encode(w1: &[R; LAS_N], w1_tilde: &mut [u8]) {
+fn b_w_encode(w1: &[R; N], w1_tilde: &mut [u8]) {
     for (k, p) in w1.iter().enumerate() {
         for (n, &coeff) in p.0.iter().enumerate() {
             let x = full_reduce32(coeff) as u32;
-            w1_tilde[4 * (k * N + n)..4 * (k * N + n) + 4].copy_from_slice(&x.to_le_bytes());
+            w1_tilde[4 * (k * D + n)..4 * (k * D + n) + 4].copy_from_slice(&x.to_le_bytes());
         }
     }
 }
@@ -1060,11 +1125,11 @@ fn b_w_encode(w1: &[R; LAS_N], w1_tilde: &mut [u8]) {
  * arithmetic stays in the reduced domain; representative-neutral (callers
  * canonicalise with full_reduce32).
  *************************************************/
-fn b_mat_vec_mul(a_hat: &[[T; LAS_ELL]; LAS_N], u_hat: &[T; LAS_ELL]) -> [T; LAS_N] {
-    let mut w_hat = [T0; LAS_N];
+fn b_mat_vec_mul(a_hat: &[[T; ELL]; N], u_hat: &[T; ELL]) -> [T; N] {
+    let mut w_hat = [T0; N];
     let u_hat_mont = to_mont(u_hat);             // [REUSED] helpers.rs:104: let u_hat_mont = to_mont(u_hat);
-    for i in 0..LAS_N {
-        for j in 0..LAS_ELL {
+    for i in 0..N {
+        for j in 0..ELL {
             w_hat[i].0.iter_mut().enumerate().for_each(|(n, e)| {
                 *e += mont_reduce(i64::from(a_hat[i][j].0[n]) * i64::from(u_hat_mont[j].0[n]));
             });                                  // [REUSED] helpers.rs:107-110, verbatim
@@ -1074,6 +1139,35 @@ fn b_mat_vec_mul(a_hat: &[[T; LAS_ELL]; LAS_N], u_hat: &[T; LAS_ELL]) -> [T; LAS
         }
     }
     w_hat
+}
+
+/// Deterministic per-signature mask randomness for the BASE path:
+/// seed = SHAKE256(tag=0 || sk || M), 64 bytes.  Private tag-0-ONLY twin of
+/// las.rs's `det_seed` (which also handles tag 1 = presign, binding the
+/// statement Y); the base signature has no statement to bind, so this variant
+/// is simpler.  Duplicated here per this file's no-las-dependency rule,
+/// exactly as the C build keeps a `static det_seed` in both basesig.c and
+/// las.c.  Byte-identical to las.rs's `det_seed(0, sk, None, m)`, so
+/// `sign_det` reproduces the KAT's ordinary-signature vectors unchanged.
+/// LAS-only helper (the _det KAT path); no ml_dsa.rs analogue.
+fn det_seed(sk: &SecretKey, m: &[u8]) -> [u8; 64] {
+    let mut h = Shake256::default();
+    h.update(&[0u8]); // domain: 0 = sign (base path; no statement)
+
+    // ternary sk -> 1 byte/coeff, (uint8_t)(int8_t) semantics: -1 -> 0xFF
+    let mut skb = [0u8; N_PLUS_ELL * D];
+    for i in 0..N_PLUS_ELL {
+        for k in 0..D {
+            skb[i * D + k] = sk.r[i].0[k] as i8 as u8;
+        }
+    }
+    h.update(&skb);
+    h.update(m);
+    skb.zeroize(); // raw sk bytes: wipe (upstream secret-material policy)
+
+    let mut out = [0u8; 64];
+    h.finalize_xof().read(&mut out);
+    out
 }
 
 /* ============== end-to-end PACKED-API tier (bytes in/out) ==============
@@ -1088,24 +1182,24 @@ fn b_mat_vec_mul(a_hat: &[[T; LAS_ELL]; LAS_N], u_hat: &[T; LAS_ELL]) -> [T; LAS
  * struct twin, byte buffers in place of structs.  C twin: the basesig.c
  * packed tier (basesig.c:1089-1194). */
 
-/// `base_key_gen_packed` (end-to-end tier of `base_key_gen`); C twin:
-/// `base_sign_keypair_packed` (basesig.c:1119).  KeyGen at the byte
+/// `keygen_packed` (end-to-end tier of `keygen`); C twin:
+/// `base_keygen_packed` (basesig.c).  KeyGen at the byte
 /// boundary -- run the core KeyGen, then pack both keys inside the call.
 /// [REUSED] ml_dsa.rs:100: `pk_encode::<K, PK_LEN>(&rho, &t_1)` -- the slot
 /// where upstream's KeyGen packs.  A freshly sampled sk is always ternary,
 /// so packing cannot fail.
-pub fn base_key_gen_packed(
-    pp: &LasPp,                    // paper A: pp = A = [I | A']
+pub fn keygen_packed(
+    pp: &PublicParams,             // paper A: pp = A = [I | A']
     rng: &mut impl CryptoRngCore,  // CSPRNG for the seed (no paper symbol)
-) -> ([u8; LAS_PK_BYTES], [u8; LAS_SK_BYTES]) {
-    let (pk, sk) = base_key_gen(pp, rng);
-    let pk_b = las_pack_pk(&pk);
-    let sk_b = las_pack_sk(&sk).expect("freshly sampled sk is ternary");
+) -> ([u8; PUBLIC_KEY_BYTES], [u8; SECRET_KEY_BYTES]) {
+    let (pk, sk) = keygen(pp, rng);
+    let pk_b = pack_public_key(&pk);
+    let sk_b = pack_secret_key(&sk).expect("freshly sampled sk is ternary");
     (pk_b, sk_b)
 }
 
-/// `base_sign_packed` (end-to-end tier of `base_sign`); C twin:
-/// `base_sign_signature_packed` (basesig.c:1146).  Sign at the byte
+/// `sign_packed` (end-to-end tier of `sign`); C twin:
+/// `base_sign_packed` (basesig.c).  Sign at the byte
 /// boundary -- unpack the keys (validating), run the core Sign, pack the
 /// signature, all inside the call.
 /// [REUSED] ml_dsa.rs:166 (`skDecode`, resolved via expand_private) and
@@ -1113,38 +1207,38 @@ pub fn base_key_gen_packed(
 /// decodes sk): the paper's oracle is c = H(pk, w, M) with the raw public
 /// key, while upstream binds the key digest tr, which travels INSIDE its
 /// packed sk.  Returns None if a key fails validating decode.
-pub fn base_sign_packed(
+pub fn sign_packed(
     m: &[u8],                          // paper M: message
-    pk_b: &[u8; LAS_PK_BYTES],         // packed public key (bytes)
-    sk_b: &[u8; LAS_SK_BYTES],         // packed secret key (bytes)
-    pp: &LasPp,                        // paper A: pp = A = [I | A']
+    pk_b: &[u8; PUBLIC_KEY_BYTES],     // packed public key (bytes)
+    sk_b: &[u8; SECRET_KEY_BYTES],     // packed secret key (bytes)
+    pp: &PublicParams,                 // paper A: pp = A = [I | A']
     rng: &mut impl CryptoRngCore,      // CSPRNG for the mask seed
-) -> Option<[u8; LAS_SIG_BYTES]> {
-    let pk = las_unpack_pk(pk_b)?;
-    let sk = las_unpack_sk(sk_b)?;
-    let sig = base_sign(m, &pk, &sk, pp, rng);
-    las_pack_sig(&sig) // in-band by the norm gate: always Some
+) -> Option<[u8; SIGNATURE_BYTES]> {
+    let pk = unpack_public_key(pk_b)?;
+    let sk = unpack_secret_key(sk_b)?;
+    let sigma = sign(m, &pk, &sk, pp, rng);
+    pack_signature(&sigma) // in-band by the norm gate: always Some
 }
 
-/// `base_verify_packed` (end-to-end tier of `base_verify`); C twin:
-/// `base_sign_verify_packed` (basesig.c:1181).  Verify at the byte
+/// `verify_packed` (end-to-end tier of `verify`); C twin:
+/// `base_verify_packed` (basesig.c).  Verify at the byte
 /// boundary -- validating decode of pk and signature, then the core Verify,
 /// all inside the call.
 /// [REUSED] ml_dsa.rs:365 (`pkDecode`, resolved via expand_public) and
 /// ml_dsa.rs:368-372 (`sig_decode`, whose decode failure returns false --
 /// the same defensive stance an on-chain verifier must take).  Returns true
 /// iff the bytes decode AND the signature verifies.
-pub fn base_verify_packed(
-    sig_b: &[u8; LAS_SIG_BYTES],  // packed signature (bytes)
-    m: &[u8],                     // paper M: message
-    pk_b: &[u8; LAS_PK_BYTES],    // packed public key (bytes)
-    pp: &LasPp,                   // paper A: pp = A = [I | A']
+pub fn verify_packed(
+    sig_b: &[u8; SIGNATURE_BYTES],  // packed signature (bytes)
+    m: &[u8],                       // paper M: message
+    pk_b: &[u8; PUBLIC_KEY_BYTES],  // packed public key (bytes)
+    pp: &PublicParams,              // paper A: pp = A = [I | A']
 ) -> bool {
-    let Some(pk) = las_unpack_pk(pk_b) else {
+    let Some(pk) = unpack_public_key(pk_b) else {
         return false; // malformed pk
     };
-    let Some(sig) = las_unpack_sig(sig_b) else {
+    let Some(sigma) = unpack_signature(sig_b) else {
         return false; // malformed sig
     };
-    base_verify(&sig, m, &pk, pp)
+    verify(&sigma, m, &pk, pp)
 }

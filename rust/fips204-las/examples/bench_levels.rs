@@ -3,8 +3,8 @@
 //! C driver `ref/test/bench_levels.c`.
 //!
 //! The two paths live in two SEPARATE modules so neither contaminates the other:
-//!     BASE path    -> basesig.rs (base_key_gen / base_sign / base_verify; no Y)
-//!     ADAPTOR path -> las.rs         (las_presign / las_preverify / las_adapt / las_ext)
+//!     BASE path    -> basesig.rs (keygen / sign / verify; no Y)
+//!     ADAPTOR path -> las.rs         (presign / preverify / adapt / ext)
 //!
 //! Protocol (mirrors the C driver):
 //!  * ONE consistent state per run (key pair, statement/witness, and the
@@ -29,12 +29,15 @@ use std::hint::black_box;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
 
+use fips204::basesig::{keygen, sign, verify, BASE_ATTEMPTS, BOUND_SIGN};
 use fips204::las::{
-    las_adapt, las_expected_attempts, las_ext, las_keypair, las_presign, las_preverify, las_setup,
-    LAS_ATTEMPTS, LAS_BOUND_PRESIGN, LAS_BOUND_SIGN, LAS_ELL, LAS_GAMMA, LAS_KAPPA, LAS_N,
+    adapt, ext, las_expected_attempts, presign, preverify, LAS_ATTEMPTS, BOUND_PRESIGN,
 };
-use fips204::basesig::{base_key_gen, base_sign, base_verify, BASE_ATTEMPTS};
-use fips204::serialize::{LAS_PK_BYTES, LAS_SIG_BYTES, LAS_SK_BYTES};
+use fips204::relation::gen;
+use fips204::serialize::{
+    pack_pre_signature, unpack_signature, PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES,
+};
+use fips204::setup::{setup_public_params, ELL, GAMMA, KAPPA, N};
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
@@ -93,39 +96,43 @@ fn main() {
     // Fixed public parameters; fixed-seed RNG => identical workload every run
     // (repetition-to-repetition SD then measures timing noise only).
     let ppseed: [u8; 32] = core::array::from_fn(|i| i as u8);
-    let pp = las_setup(&ppseed);
+    let pp = setup_public_params(&ppseed);
     let mut rng = ChaCha8Rng::seed_from_u64(0x4c41_5342_454e_4348); // "LASBENCH"
 
     // ---- one consistent state, contract-gated before any timing ----
-    let (pk, sk) = las_keypair(&pp, &mut rng);
-    let (y_stmt, y_wit) = las_keypair(&pp, &mut rng); // statement/witness = another key pair
-    let sig_base = base_sign(MSG, &pk, &sk, &pp, &mut rng);
-    let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
-    let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
+    let (pk, sk) = keygen(&pp, &mut rng);
+    let (statement, witness) = gen(&pp, &mut rng); // statement/witness = another key pair
+    let sig_base = sign(MSG, &pk, &sk, &pp, &mut rng);
+    let presig = presign(MSG, &statement, &pk, &sk, &pp, &mut rng);
+    let adapted = adapt(&presig, MSG, &statement, &witness, &pk, &pp).expect("adapt");
 
-    assert!(base_verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
-    assert!(las_preverify(&presig, MSG, &y_stmt, &pk, &pp), "gate: pre-signature pre-verifies");
+    assert!(verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
+    assert!(preverify(&presig, MSG, &statement, &pk, &pp), "gate: pre-signature pre-verifies");
+    // Pre-signature is a distinct type from a signature; the "must FAIL ordinary
+    // Verify" tripwire runs at the BYTE level (decode its bytes AS a signature).
+    let pre_b_gate = pack_pre_signature(&presig).expect("gate: presig packs");
+    let pre_as_sig = unpack_signature(&pre_b_gate).expect("gate: presig bytes decode as a signature");
     assert!(
-        !base_verify(&presig, MSG, &pk, &pp),
+        !verify(&pre_as_sig, MSG, &pk, &pp),
         "gate: pre-signature must FAIL the ordinary verifier"
     );
     assert!(
-        base_verify(&adapted, MSG, &pk, &pp),
+        verify(&adapted, MSG, &pk, &pp),
         "gate: adapted signature passes the INDEPENDENT base verifier"
     );
-    let yext = las_ext(&adapted, &presig, &y_stmt, &pp).expect("gate: ext");
-    assert!(yext == y_wit, "gate: ext recovers the witness exactly");
+    let wext = ext(&adapted, &presig, &statement, &pp).expect("gate: ext");
+    assert!(wext == witness, "gate: ext recovers the witness exactly");
 
     println!("=== LAS Stage-1 benchmark (Rust port) ===");
     println!("ordinary lattice-based signature (Algorithm 1, basesig.rs)");
     println!("vs LAS adaptor signature (Algorithm 2, las.rs)");
     println!(
         "parameter set: Simplified Dilithium-III engineering setting \
-         (n={LAS_N}, ell={LAS_ELL}, kappa={LAS_KAPPA}, gamma={LAS_GAMMA})"
+         (n={N}, ell={ELL}, kappa={KAPPA}, gamma={GAMMA})"
     );
     println!(
-        "packed sizes: public key {LAS_PK_BYTES} B | secret key / witness {LAS_SK_BYTES} B | \
-         signature {LAS_SIG_BYTES} B (ordinary = pre-signature = adapted)"
+        "packed sizes: public key {PUBLIC_KEY_BYTES} B | secret key / witness {SECRET_KEY_BYTES} B | \
+         signature {SIGNATURE_BYTES} B (ordinary = pre-signature = adapted)"
     );
     println!(
         "protocol: {REPS} repetitions, {NITER_SIGN} iterations/sign-class op, \
@@ -151,12 +158,12 @@ fn main() {
     for _rep in 0..REPS {
         // ---- Algorithm 1: the base path (independent module) ----
         t_keygen.push(time_us(NITER_FAST, || {
-            black_box(base_key_gen(&pp, &mut rng));
+            black_box(keygen(&pp, &mut rng));
         }));
 
         BASE_ATTEMPTS.store(0, Ordering::Relaxed);
         let per_op = time_us(NITER_SIGN, || {
-            black_box(base_sign(black_box(MSG), &pk, &sk, &pp, &mut rng));
+            black_box(sign(black_box(MSG), &pk, &sk, &pp, &mut rng));
         });
         let att = BASE_ATTEMPTS.load(Ordering::Relaxed);
         t_sign.push(per_op);
@@ -165,13 +172,13 @@ fn main() {
         base_ops += NITER_SIGN as u64;
 
         t_verify.push(time_us(NITER_FAST, || {
-            black_box(base_verify(black_box(&sig_base), MSG, &pk, &pp));
+            black_box(verify(black_box(&sig_base), MSG, &pk, &pp));
         }));
 
         // ---- Algorithm 2: the adaptor path ----
         LAS_ATTEMPTS.store(0, Ordering::Relaxed);
         let per_op = time_us(NITER_SIGN, || {
-            black_box(las_presign(black_box(MSG), &y_stmt, &pk, &sk, &pp, &mut rng));
+            black_box(presign(black_box(MSG), &statement, &pk, &sk, &pp, &mut rng));
         });
         let att = LAS_ATTEMPTS.load(Ordering::Relaxed);
         t_presign.push(per_op);
@@ -180,14 +187,14 @@ fn main() {
         las_ops += NITER_SIGN as u64;
 
         t_preverify.push(time_us(NITER_FAST, || {
-            black_box(las_preverify(black_box(&presig), MSG, &y_stmt, &pk, &pp));
+            black_box(preverify(black_box(&presig), MSG, &statement, &pk, &pp));
         }));
         // Adapt checked total: the protocol operation (incl. its internal PreVerify).
         t_adapt.push(time_us(NITER_FAST, || {
-            black_box(las_adapt(black_box(&presig), MSG, &y_stmt, &y_wit, &pk, &pp).is_some());
+            black_box(adapt(black_box(&presig), MSG, &statement, &witness, &pk, &pp).is_some());
         }));
         t_ext.push(time_us(NITER_FAST, || {
-            black_box(las_ext(black_box(&adapted), &presig, &y_stmt, &pp).is_some());
+            black_box(ext(black_box(&adapted), &presig, &statement, &pp).is_some());
         }));
     }
 
@@ -228,12 +235,12 @@ fn main() {
         las_att as f64 / las_ops as f64,
         las_ops as f64 / las_att as f64 * 100.0,
     );
-    rejection_gate("Algorithm 1 Sign", base_att, base_ops, las_expected_attempts(LAS_BOUND_SIGN));
+    rejection_gate("Algorithm 1 Sign", base_att, base_ops, las_expected_attempts(BOUND_SIGN));
     rejection_gate(
         "Algorithm 2 PreSign",
         las_att,
         las_ops,
-        las_expected_attempts(LAS_BOUND_PRESIGN),
+        las_expected_attempts(BOUND_PRESIGN),
     );
     // Rejection-normalised diagnostic: per-ATTEMPT cost removes the residual
     // restart-count luck between the two paths, isolating the pure adaptor

@@ -13,12 +13,12 @@
  *   same-security or NIST-equivalence claim (security proofs are out of scope).
  *
  *   The two paths live in two SEPARATE modules so neither contaminates the other:
- *       BASE path     -> basesig.c  (base_sign_keypair / base_sign_signature / base_sign_verify; no Y)
+ *       BASE path     -> basesig.c  (base_keygen / base_sign / base_verify; no Y)
  *       ADAPTOR path  -> las.c      (las_presign / las_preverify / las_adapt / las_ext)
  *
  *   BOTH API tiers are timed for every primary operation, and every primary line
  *   reports wall-clock microseconds AND cycles (upstream test/cpucycles.h rdtsc):
- *       TIER 1, CORE CRYPTO : the struct API (las_pk/las_sk/las_sig in/out) --
+ *       TIER 1, CORE CRYPTO : the struct API (public_key/secret_key/signature + statement/witness/pre_signature in/out) --
  *                             pure computation, no (de)serialisation;
  *       TIER 2, END-TO-END  : the *_packed byte API (validating unpack -> core ->
  *                             pack INSIDE the call), the boundary upstream sign.c
@@ -43,7 +43,7 @@
  *   DIAGNOSTIC sections (SECONDARY; printed after the primary timings, from the SAME
  *   state) are cost-attribution and communication aids for the report -- they do NOT
  *   change any protocol semantics:
- *       A. Rejection-sampling distribution for base_sign_signature and las_presign, read
+ *       A. Rejection-sampling distribution for base_sign and las_presign, read
  *          DIRECTLY off the per-module attempt counters (base_attempts / las_attempts):
  *          average attempts/sig, acceptance %, min, max, p50, p95.  Plus the
  *          run-validity REJECTION GATE (mirrors the Rust drivers): the attempts/call
@@ -85,7 +85,7 @@
  * shared codec, and the identical contract is re-enforced at the byte boundary
  * (packed interlock incl. exact witness-BYTE recovery) before that tier is timed.
  *
- * Build (Makefile sets -DLAS_N/-DLAS_ELL/-DLAS_KAPPA for each parameter set).
+ * Build (Makefile sets -DLAS_N/-DELL/-DKAPPA for each parameter set).
  * The L2/L3/L5-style targets are dimension-aligned engineering settings inspired by
  * Dilithium's parameter progression, used to study scaling across matched parameter
  * sets, not to claim formal same-security equivalence.
@@ -106,9 +106,10 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "../basesig.h"     /* BASE path: base_sign_keypair/base_sign_signature/base_sign_verify + base_attempts */
-#include "../las.h"         /* ADAPTOR path: las_presign/preverify/adapt/ext + las_attempts  */
-#include "../params.h"      /* N, Q */
+#include "../basesig.h"     /* BASE path: base_keygen/base_sign/base_verify + base_attempts + BOUND_SIGN */
+#include "../relation.h"    /* relation_gen -> (statement, witness) */
+#include "../las.h"         /* ADAPTOR path: las_presign/preverify/adapt/ext + las_attempts + BOUND_PRESIGN */
+#include "../params.h"      /* Q */
 #include "../poly.h"        /* poly arithmetic for the component microbenchmarks    */
 #include "../fips202.h"     /* SHAKE256 for the local challenge-hash copy           */
 #include "../serialize.h"   /* shared codec: canonical packed state for the end-to-end tier */
@@ -207,11 +208,11 @@ static volatile long g_sink;
 static int ceil_log2(double x) { return (int)ceil(log2(x)); }
 
 /* coefficientwise equality of two witness/secret vectors */
-static int sk_equal(const las_sk *a, const las_sk *b) {
+static int witness_equal(const witness *a, const witness *b) {
   unsigned int j, k;
-  for(j = 0; j < LAS_M; ++j)
-    for(k = 0; k < N; ++k)
-      if(a->s[j].coeffs[k] != b->s[j].coeffs[k])
+  for(j = 0; j < N_PLUS_ELL; ++j)
+    for(k = 0; k < LAS_D; ++k)
+      if(a->value[j].coeffs[k] != b->value[j].coeffs[k])
         return 0;
   return 1;
 }
@@ -266,13 +267,13 @@ static void rejection_gate(const char *label, unsigned long attempts,
  * ATTRIBUTE cost to the components in diagnostic section D; they are not the
  * protocol (the protocol entry points are the PRIMARY timings). */
 
-static void mc_pack_poly_canon(uint8_t out[N*4], const poly *a) {
+static void mc_pack_poly_canon(uint8_t out[LAS_D*4], const poly *a) {
   unsigned int i;
   uint32_t x;
   poly t = *a;
   poly_reduce(&t);
   poly_caddq(&t);
-  for(i = 0; i < N; ++i) {
+  for(i = 0; i < LAS_D; ++i) {
     x = (uint32_t)t.coeffs[i];
     out[4*i+0] = (uint8_t)x;
     out[4*i+1] = (uint8_t)(x >> 8);
@@ -292,20 +293,20 @@ static void mc_polymul_prehat(poly *out, const poly *ahat, const poly *bhat) {
   poly_reduce(out);
 }
 
-/* w = A*v = v_top + A'*v_bot, A=[I|A'], A' (pp->mat) already in NTT domain. */
-static void mc_Amul(poly w[LAS_N], const las_pp *pp, const poly v[LAS_M]) {
-  poly vhat[LAS_ELL], tmp, acc;
+/* w = A*v = v_top + A'*v_bot, A=[I|A'], A' (pp->a_prime) already in NTT domain. */
+static void mc_Amul(poly w[LAS_N], const public_params *pp, const poly v[N_PLUS_ELL]) {
+  poly vhat[ELL], tmp, acc;
   unsigned int i, j, k;
 
-  for(j = 0; j < LAS_ELL; ++j) {
+  for(j = 0; j < ELL; ++j) {
     vhat[j] = v[LAS_N + j];
     poly_ntt(&vhat[j]);
   }
   for(i = 0; i < LAS_N; ++i) {
-    for(k = 0; k < N; ++k)
+    for(k = 0; k < LAS_D; ++k)
       acc.coeffs[k] = 0;
-    for(j = 0; j < LAS_ELL; ++j) {
-      poly_pointwise_montgomery(&tmp, &pp->mat[i][j], &vhat[j]);
+    for(j = 0; j < ELL; ++j) {
+      poly_pointwise_montgomery(&tmp, &pp->a_prime[i][j], &vhat[j]);
       poly_add(&acc, &acc, &tmp);
     }
     poly_reduce(&acc);
@@ -332,9 +333,9 @@ static void mc_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]) {
     signs |= (uint64_t)buf[i] << 8*i;
   pos = 8;
 
-  for(i = 0; i < N; ++i)
+  for(i = 0; i < LAS_D; ++i)
     c->coeffs[i] = 0;
-  for(i = N - LAS_KAPPA; i < N; ++i) {
+  for(i = LAS_D - KAPPA; i < LAS_D; ++i) {
     do {
       if(pos >= SHAKE256_RATE) {
         shake256_squeezeblocks(buf, 1, &state);
@@ -349,21 +350,21 @@ static void mc_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]) {
 }
 
 /* c = H(pk, commit, M): the Fiat-Shamir challenge hash (full SHAKE absorb path). */
-static void mc_hash_challenge(poly *c, const las_pk *pk, const poly commit[LAS_N],
+static void mc_hash_challenge(poly *c, const public_key *pk, const poly commit[LAS_N],
                               const uint8_t *m, size_t mlen) {
   keccak_state state;
-  uint8_t buf[N*4];
+  uint8_t buf[LAS_D*4];
   uint8_t seed[LAS_SEEDBYTES];
   unsigned int i;
 
   shake256_init(&state);
   for(i = 0; i < LAS_N; ++i) {
     mc_pack_poly_canon(buf, &pk->t[i]);
-    shake256_absorb(&state, buf, N*4);
+    shake256_absorb(&state, buf, LAS_D*4);
   }
   for(i = 0; i < LAS_N; ++i) {
     mc_pack_poly_canon(buf, &commit[i]);
-    shake256_absorb(&state, buf, N*4);
+    shake256_absorb(&state, buf, LAS_D*4);
   }
   shake256_absorb(&state, m, mlen);
   shake256_finalize(&state);
@@ -372,19 +373,19 @@ static void mc_hash_challenge(poly *c, const las_pk *pk, const poly commit[LAS_N
 }
 
 /* Reject if any component has ||.||inf >= B (the rejection-loop norm check). */
-static int mc_chknorm_vec(const poly z[LAS_M], int32_t B) {
+static int mc_chknorm_vec(const poly z[N_PLUS_ELL], int32_t B) {
   unsigned int j;
-  for(j = 0; j < LAS_M; ++j)
+  for(j = 0; j < N_PLUS_ELL; ++j)
     if(poly_chknorm(&z[j], B))
       return 1;
   return 0;
 }
 
 /* commit = w + Y over the n statement polynomials (PreSign/PreVerify inner step). */
-static void mc_add_wY(poly out[LAS_N], const poly w[LAS_N], const las_pk *Y) {
+static void mc_add_wY(poly out[LAS_N], const poly w[LAS_N], const statement *Y) {
   unsigned int j;
   for(j = 0; j < LAS_N; ++j) {
-    poly_add(&out[j], &w[j], &Y->t[j]);
+    poly_add(&out[j], &w[j], &Y->t_prime[j]);
     poly_reduce(&out[j]);
     poly_caddq(&out[j]);
   }
@@ -392,11 +393,11 @@ static void mc_add_wY(poly out[LAS_N], const poly w[LAS_N], const las_pk *Y) {
 
 /* z = z_hat + r' over the n+l response polynomials (the Adapt witness add).
  * Identical to las_adapt()'s body AFTER its mandatory PreVerify -- see section B. */
-static void mc_witness_add(las_sig *out, const las_sig *presig, const las_sk *y) {
+static void mc_witness_add(signature *out, const pre_signature *presig, const witness *y) {
   unsigned int j;
-  out->c = presig->c;
-  for(j = 0; j < LAS_M; ++j) {
-    poly_add(&out->z[j], &presig->z[j], &y->s[j]);
+  memcpy(out->c_tilde, presig->c_tilde, LAS_CTILDEBYTES);  /* Adapt preserves the challenge digest */
+  for(j = 0; j < N_PLUS_ELL; ++j) {
+    poly_add(&out->z[j], &presig->z_hat[j], &y->value[j]);
     poly_reduce(&out->z[j]);
   }
 }
@@ -404,7 +405,7 @@ static void mc_witness_add(las_sig *out, const las_sig *presig, const las_sk *y)
 /* coefficientwise poly equality (the t' == A*s check inside Ext). */
 static int mc_poly_equal(const poly *a, const poly *b) {
   unsigned int i;
-  for(i = 0; i < N; ++i)
+  for(i = 0; i < LAS_D; ++i)
     if(a->coeffs[i] != b->coeffs[i])
       return 0;
   return 1;
@@ -417,13 +418,13 @@ static int mc_poly_equal(const poly *a, const poly *b) {
 static int32_t mc_max_abs(const poly *a) {
   int32_t mx = 0, v;
   unsigned int i;
-  for(i = 0; i < N; ++i) { v = a->coeffs[i]; if(v < 0) v = -v; if(v > mx) mx = v; }
+  for(i = 0; i < LAS_D; ++i) { v = a->coeffs[i]; if(v < 0) v = -v; if(v > mx) mx = v; }
   return mx;
 }
-static int32_t mc_max_abs_vec(const poly z[LAS_M]) {
+static int32_t mc_max_abs_vec(const poly z[N_PLUS_ELL]) {
   int32_t mx = 0, v;
   unsigned int j;
-  for(j = 0; j < LAS_M; ++j) { v = mc_max_abs(&z[j]); if(v > mx) mx = v; }
+  for(j = 0; j < N_PLUS_ELL; ++j) { v = mc_max_abs(&z[j]); if(v > mx) mx = v; }
   return mx;
 }
 
@@ -444,10 +445,10 @@ static void mc_sample_ternary(poly *r, const uint8_t *seed, size_t seedlen, uint
   shake256_finalize(&state);
   shake256_squeezeblocks(buf, 1, &state);
 
-  while(ctr < N) {
+  while(ctr < LAS_D) {
     if(pos >= SHAKE256_RATE) { shake256_squeezeblocks(buf, 1, &state); pos = 0; }
     byte = buf[pos++];
-    for(s = 0; s < 4 && ctr < N; ++s) {
+    for(s = 0; s < 4 && ctr < LAS_D; ++s) {
       v = (byte >> (2*s)) & 3;            /* 2 bits: {0,1,2}->{-1,0,1}, reject 3 */
       if(v < 3) r->coeffs[ctr++] = (int32_t)v - 1;
     }
@@ -467,12 +468,15 @@ int main(void) {
   static const uint8_t msg[] = "bench message, thirty-three bytes";
   const uint8_t *m = msg;
   size_t  mlen = sizeof msg - 1;
-  las_pp  pp, pp2;                                /* pp = canonical; pp2 = Setup scratch */
-  las_pk  pk, Y, pk2;                             /* pk2 = KeyGen scratch                */
-  las_sk  sk, yy, sk2, yext;                      /* sk2 = KeyGen scratch                */
-  las_sig sig, presig, adapted, tmp;
+  public_params pp, pp2;                          /* pp = canonical; pp2 = Setup scratch */
+  public_key    pk, pk2;                          /* pk2 = KeyGen scratch                */
+  statement     Y;
+  secret_key    sk, sk2;                          /* sk2 = KeyGen scratch                */
+  witness       yy, yext;                         /* honest witness r' (Gen); extracted s (Ext) */
+  signature     sig, adapted, tmp;
+  pre_signature presig, tmp_pre;                  /* tmp_pre = pre_signature scratch     */
   poly    w[LAS_N], wY[LAS_N], cc, cr;
-  poly    chat_mc, that_mc, shat_mc[LAS_M];       /* pre-NTT'd operands (section D)      */
+  poly    chat_mc, that_mc, shat_mc[N_PLUS_ELL];  /* pre-NTT'd operands (section D)      */
   unsigned int j;
   int     i;
 
@@ -496,11 +500,11 @@ int main(void) {
   /* Canonical PACKED state: the SAME canonical structs, packed once via the
    * shared codec (serialize.{c,h}); scratch buffers receive the outputs of the
    * timed producing packed ops so the canonical bytes are never overwritten. */
-  static uint8_t pk_b[LAS_PK_BYTES], Y_b[LAS_PK_BYTES];
-  static uint8_t sk_b[LAS_SK_BYTES], yw_b[LAS_SK_BYTES];
-  static uint8_t sig_b[LAS_SIG_BYTES], presig_b[LAS_SIG_BYTES], adapted_b[LAS_SIG_BYTES];
-  static uint8_t pk2_b[LAS_PK_BYTES], sk2_b[LAS_SK_BYTES];    /* scratch */
-  static uint8_t sig2_b[LAS_SIG_BYTES], y2_b[LAS_SK_BYTES];   /* scratch */
+  static uint8_t pk_b[PUBLIC_KEY_BYTES], Y_b[STATEMENT_BYTES];
+  static uint8_t sk_b[SECRET_KEY_BYTES], yw_b[WITNESS_BYTES];
+  static uint8_t sig_b[SIGNATURE_BYTES], presig_b[PRE_SIGNATURE_BYTES], adapted_b[SIGNATURE_BYTES];
+  static uint8_t pk2_b[PUBLIC_KEY_BYTES], sk2_b[SECRET_KEY_BYTES];    /* scratch */
+  static uint8_t sig2_b[SIGNATURE_BYTES], y2_b[WITNESS_BYTES];        /* scratch */
 
   /* DIAGNOSTIC timings (mean, sd): witness-add only + component microbenchmarks */
   double wo_m, wo_s;
@@ -517,17 +521,17 @@ int main(void) {
 
   /* packed component sizes (bytes) for THIS parameter set */
   int    pk_bits = ceil_log2((double)Q);                       /* 23 for Q<2^23 */
-  int    z_bits  = ceil_log2(2.0*(LAS_GAMMA - LAS_KAPPA) + 1.0);
-  size_t sz_pk   = (size_t)(LAS_N * N * pk_bits + 7) / 8;
-  size_t sz_sk   = (size_t)(LAS_M * N * 2 + 7) / 8;
-  size_t sz_c    = (size_t)(N * 2 + 7) / 8;
-  size_t sz_z    = (size_t)(LAS_M * N * z_bits + 7) / 8;
+  int    z_bits  = ceil_log2(2.0*(GAMMA - KAPPA) + 1.0);
+  size_t sz_pk   = (size_t)(LAS_N * LAS_D * pk_bits + 7) / 8;
+  size_t sz_sk   = (size_t)(N_PLUS_ELL * LAS_D * 2 + 7) / 8;
+  size_t sz_c    = LAS_CTILDEBYTES;                           /* challenge digest c_tilde (raw 32 B) */
+  size_t sz_z    = (size_t)(N_PLUS_ELL * LAS_D * z_bits + 7) / 8;
   size_t sz_sig  = sz_c + sz_z;
   /* protocol-component catalogue sizes (context rows; see diagnostic section C) */
-  int    y_bits  = ceil_log2(2.0*(double)LAS_GAMMA + 1.0);      /* mask y in S_gamma   */
+  int    y_bits  = ceil_log2(2.0*(double)GAMMA + 1.0);      /* mask y in S_gamma   */
   size_t sz_seed = LAS_SEEDBYTES;                              /* the public A' seed  */
-  size_t sz_Aexp = (size_t)((size_t)LAS_N * LAS_ELL * N * pk_bits + 7) / 8; /* expanded A' */
-  size_t sz_ymask= (size_t)((size_t)LAS_M * N * y_bits + 7) / 8; /* signing mask (internal) */
+  size_t sz_Aexp = (size_t)((size_t)LAS_N * ELL * LAS_D * pk_bits + 7) / 8; /* expanded A' */
+  size_t sz_ymask= (size_t)((size_t)N_PLUS_ELL * LAS_D * y_bits + 7) / 8; /* signing mask (internal) */
 
   for(j = 0; j < LAS_SEEDBYTES; ++j) ppseed[j] = (uint8_t)j;
 
@@ -536,10 +540,10 @@ int main(void) {
    * key pair), and the BASE signature / LAS pre-signature / adapted signature, all
    * derived from THAT key.  KeyGen and Setup are timed below into SCRATCH objects so
    * the canonical state stays intact for the sanity gate and the remaining timings. */
-  las_setup(&pp, ppseed);                                    /* Setup (public params) */
-  base_sign_keypair(&pk, &sk, &pp);                                /* BASE KeyGen           */
-  base_sign_keypair(&Y,  &yy, &pp);                                /* statement/witness     */
-  base_sign_signature(&sig, m, mlen, &pk, &sk, &pp);                   /* BASE sign (no Y)      */
+  setup_public_params(&pp, ppseed);                                    /* Setup (public params) */
+  base_keygen(&pk, &sk, &pp);                                /* BASE KeyGen           */
+  relation_gen(&Y,  &yy, &pp);                                /* statement/witness     */
+  base_sign(&sig, m, mlen, &pk, &sk, &pp);                   /* BASE sign (no Y)      */
   las_presign(&presig, m, mlen, &Y, &pk, &sk, &pp);          /* LAS pre-sign (folds Y)*/
   if(las_adapt(&adapted, &presig, m, mlen, &Y, &yy, &pk, &pp) != 0) {
     printf("FATAL: could not establish a valid adapted signature\n");
@@ -548,22 +552,32 @@ int main(void) {
 
   /* Refuse to benchmark unless the FULL cross-path success contract holds, so no
    * failure or early-return path is ever timed.  The ordinary-signature checks use
-   * the SEPARATE base verifier (base_sign_verify, from basesig.c), proving the two paths
+   * the SEPARATE base verifier (base_verify, from basesig.c), proving the two paths
    * interlock:
-   *   - the base signature verifies under base_sign_verify;
-   *   - the LAS pre-signature pre-verifies, but base_sign_verify REJECTS it (its hash binds
+   *   - the base signature verifies under base_verify;
+   *   - the LAS pre-signature pre-verifies, but base_verify REJECTS it (its hash binds
    *     w+Y, the base verifier recomputes H(pk,w',M) without Y -- the tripwire);
-   *   - the LAS-adapted signature verifies under the INDEPENDENT base_sign_verify with no
+   *   - the LAS-adapted signature verifies under the INDEPENDENT base_verify with no
    *     explicit +Y (because A(z^+y)-ct = w'+Y); and
    *   - Ext recovers the witness EXACTLY. */
-  if(base_sign_verify(&sig, m, mlen, &pk, &pp) != 0 ||              /* base sig verifies     */
-     las_preverify(&presig, m, mlen, &Y, &pk, &pp) != 0 ||    /* presig pre-verifies   */
-     base_sign_verify(&presig, m, mlen, &pk, &pp) == 0 ||          /* presig is NOT a base sig */
-     base_sign_verify(&adapted, m, mlen, &pk, &pp) != 0 ||         /* adapted = base sig    */
-     las_ext(&yext, &adapted, &presig, &Y, &pp) != 0 ||       /* Ext succeeds          */
-     !sk_equal(&yext, &yy)) {                                 /* exact witness recover */
-    printf("FATAL: benchmark state inconsistent before timing\n");
-    return 1;
+  {
+    /* byte-level relabel of the pre-signature (distinct type) for the tripwire clause */
+    signature presig_as_sig;
+    uint8_t relabel_b[PRE_SIGNATURE_BYTES];
+    if(pack_pre_signature(relabel_b, &presig) != 0 ||
+       unpack_signature(&presig_as_sig, relabel_b) != 0) {
+      printf("FATAL: tripwire pack/unpack\n");
+      return 1;
+    }
+    if(base_verify(&sig, m, mlen, &pk, &pp) != 0 ||                /* base sig verifies     */
+       las_preverify(&presig, m, mlen, &Y, &pk, &pp) != 0 ||      /* presig pre-verifies   */
+       base_verify(&presig_as_sig, m, mlen, &pk, &pp) == 0 ||     /* presig is NOT a base sig */
+       base_verify(&adapted, m, mlen, &pk, &pp) != 0 ||           /* adapted = base sig    */
+       las_ext(&yext, &adapted, &presig, &Y, &pp) != 0 ||         /* Ext succeeds          */
+       !witness_equal(&yext, &yy)) {                              /* exact witness recover */
+      printf("FATAL: benchmark state inconsistent before timing\n");
+      return 1;
+    }
   }
 
   /* Canonical PACKED state for the end-to-end tier: pack the SAME canonical
@@ -571,20 +585,20 @@ int main(void) {
    * pack is itself a state error), then re-enforce the identical success
    * contract at the BYTE boundary (mirrors test_serde.c's interlock) so the
    * packed tier never times a failure path either. */
-  las_pack_pk(pk_b, &pk);
-  las_pack_pk(Y_b, &Y);
-  if(las_pack_sk(sk_b, &sk) != 0 || las_pack_sk(yw_b, &yy) != 0 ||
-     las_pack_sig(sig_b, &sig) != 0 || las_pack_sig(presig_b, &presig) != 0 ||
-     las_pack_sig(adapted_b, &adapted) != 0) {
+  pack_public_key(pk_b, &pk);
+  pack_statement(Y_b, &Y);
+  if(pack_secret_key(sk_b, &sk) != 0 || pack_witness(yw_b, &yy) != 0 ||
+     pack_signature(sig_b, &sig) != 0 || pack_pre_signature(presig_b, &presig) != 0 ||
+     pack_signature(adapted_b, &adapted) != 0) {
     printf("FATAL: could not pack the canonical benchmark state\n");
     return 1;
   }
-  if(base_sign_verify_packed(sig_b, m, mlen, pk_b, &pp) != 0 ||     /* base sig verifies (bytes) */
+  if(base_verify_packed(sig_b, m, mlen, pk_b, &pp) != 0 ||     /* base sig verifies (bytes) */
      las_preverify_packed(presig_b, m, mlen, Y_b, pk_b, &pp) != 0 ||/* presig pre-verifies (bytes) */
-     base_sign_verify_packed(presig_b, m, mlen, pk_b, &pp) == 0 ||  /* byte-level tripwire   */
-     base_sign_verify_packed(adapted_b, m, mlen, pk_b, &pp) != 0 || /* adapted = base sig (bytes) */
+     base_verify_packed(presig_b, m, mlen, pk_b, &pp) == 0 ||  /* byte-level tripwire   */
+     base_verify_packed(adapted_b, m, mlen, pk_b, &pp) != 0 || /* adapted = base sig (bytes) */
      las_ext_packed(y2_b, adapted_b, presig_b, Y_b, &pp) != 0 ||    /* Ext succeeds (bytes)  */
-     memcmp(y2_b, yw_b, LAS_SK_BYTES) != 0) {                       /* exact witness BYTES   */
+     memcmp(y2_b, yw_b, SECRET_KEY_BYTES) != 0) {                       /* exact witness BYTES   */
     printf("FATAL: packed-tier benchmark state inconsistent before timing\n");
     return 1;
   }
@@ -598,20 +612,20 @@ int main(void) {
    * Protocol-level operations, TIER 1: core crypto (struct API).  Producing
    * operations write to SCRATCH (pp2/pk2/sk2/tmp/yext) so the canonical state is
    * never mutated; verifies read canonical objects. */
-  MEASURE(NITER_FAST, las_setup(&pp2, ppseed));
+  MEASURE(NITER_FAST, setup_public_params(&pp2, ppseed));
   su_m = g_mean; su_s = g_sd; su_cm = g_cmean; su_cs = g_csd;
-  MEASURE(NITER_FAST, base_sign_keypair(&pk2, &sk2, &pp));
+  MEASURE(NITER_FAST, base_keygen(&pk2, &sk2, &pp));
   kg_m = g_mean; kg_s = g_sd; kg_cm = g_cmean; kg_cs = g_csd;
   /* BASE path (basesig.c).  Sign-class: MEASURE_SIGN also captures the
    * per-attempt series and the attempt total over the timed calls. */
-  MEASURE_SIGN(base_attempts, base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp));
+  MEASURE_SIGN(base_attempts, base_sign(&tmp, m, mlen, &pk, &sk, &pp));
   sg_m = g_mean; sg_s = g_sd; sg_cm = g_cmean; sg_cs = g_csd;
   stats(g_att_runs, RUNS, &sg_att_m, &sg_att_s);
   sg_att_tot = g_att_total;
-  MEASURE(NITER_FAST, g_sink += base_sign_verify(&sig, m, mlen, &pk, &pp));
+  MEASURE(NITER_FAST, g_sink += base_verify(&sig, m, mlen, &pk, &pp));
   vf_m = g_mean; vf_s = g_sd; vf_cm = g_cmean; vf_cs = g_csd;
   /* LAS ADAPTOR path (las.c). */
-  MEASURE_SIGN(las_attempts, las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp));
+  MEASURE_SIGN(las_attempts, las_presign(&tmp_pre, m, mlen, &Y, &pk, &sk, &pp));
   ps_m = g_mean; ps_s = g_sd; ps_cm = g_cmean; ps_cs = g_csd;
   stats(g_att_runs, RUNS, &ps_att_m, &ps_att_s);
   ps_att_tot = g_att_total;
@@ -628,12 +642,12 @@ int main(void) {
    * objects.  The sign-class packed calls wrap the same rejection loop, so
    * MEASURE_SIGN gates their attempt totals exactly like the core tier's.
    * (Setup has no packed twin: pp is public infrastructure, never on the wire.) */
-  MEASURE(NITER_FAST, g_sink += base_sign_keypair_packed(pk2_b, sk2_b, &pp));
+  MEASURE(NITER_FAST, g_sink += base_keygen_packed(pk2_b, sk2_b, &pp));
   kgp_m = g_mean; kgp_s = g_sd; kgp_cm = g_cmean; kgp_cs = g_csd;
-  MEASURE_SIGN(base_attempts, g_sink += base_sign_signature_packed(sig2_b, m, mlen, pk_b, sk_b, &pp));
+  MEASURE_SIGN(base_attempts, g_sink += base_sign_packed(sig2_b, m, mlen, pk_b, sk_b, &pp));
   sgp_m = g_mean; sgp_s = g_sd; sgp_cm = g_cmean; sgp_cs = g_csd;
   sgp_att_tot = g_att_total;
-  MEASURE(NITER_FAST, g_sink += base_sign_verify_packed(sig_b, m, mlen, pk_b, &pp));
+  MEASURE(NITER_FAST, g_sink += base_verify_packed(sig_b, m, mlen, pk_b, &pp));
   vfp_m = g_mean; vfp_s = g_sd; vfp_cm = g_cmean; vfp_cs = g_csd;
   MEASURE_SIGN(las_attempts, g_sink += las_presign_packed(sig2_b, m, mlen, Y_b, pk_b, sk_b, &pp));
   psp_m = g_mean; psp_s = g_sd; psp_cm = g_cmean; psp_cs = g_csd;
@@ -651,7 +665,7 @@ int main(void) {
   for(i = 0; i < NSIG; ++i) {
     unsigned long before = base_attempts;
     int32_t v;
-    base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp);
+    base_sign(&tmp, m, mlen, &pk, &sk, &pp);
     att_base[i] = base_attempts - before;
     tot_base   += att_base[i];
     v = mc_max_abs_vec(tmp.z); if(v > maxz) maxz = v;     /* achieved |z|inf */
@@ -659,10 +673,10 @@ int main(void) {
   for(i = 0; i < NSIG; ++i) {
     unsigned long before = las_attempts;
     int32_t v;
-    las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp);
+    las_presign(&tmp_pre, m, mlen, &Y, &pk, &sk, &pp);
     att_pre[i] = las_attempts - before;
     tot_pre   += att_pre[i];
-    v = mc_max_abs_vec(tmp.z); if(v > maxzhat) maxzhat = v; /* achieved |z^|inf */
+    v = mc_max_abs_vec(tmp_pre.z_hat); if(v > maxzhat) maxzhat = v; /* achieved |z^|inf */
   }
   qsort(att_base, NSIG, sizeof att_base[0], cmp_ul);
   qsort(att_pre,  NSIG, sizeof att_pre[0],  cmp_ul);
@@ -675,25 +689,25 @@ int main(void) {
   MEASURE(NITER_FAST, { mc_witness_add(&tmp, &presig, &yy); g_sink += tmp.z[0].coeffs[0]; });
   wo_m = g_mean; wo_s = g_sd;
 
-  mc_Amul(w, &pp, sk.s);                          /* prime a commitment for the hash */
-  MEASURE(NITER_FAST, { mc_Amul(w, &pp, sk.s);                       g_sink += w[0].coeffs[0]; });
+  mc_Amul(w, &pp, sk.r);                          /* prime a commitment for the hash */
+  MEASURE(NITER_FAST, { mc_Amul(w, &pp, sk.r);                       g_sink += w[0].coeffs[0]; });
   am_m = g_mean; am_s = g_sd;
   MEASURE(NITER_FAST, { mc_hash_challenge(&cc, &pk, w, m, mlen);     g_sink += cc.coeffs[0]; });
   ch_m = g_mean; ch_s = g_sd;
-  /* pre-NTT'd operands, matching the protocol's hoisting (las.c las_signature_internal) */
-  for(j = 0; j < LAS_M; ++j) { shat_mc[j] = sk.s[j]; poly_ntt(&shat_mc[j]); }
+  /* pre-NTT'd operands, matching the protocol's hoisting (las.c las_presign_internal) */
+  for(j = 0; j < N_PLUS_ELL; ++j) { shat_mc[j] = sk.r[j]; poly_ntt(&shat_mc[j]); }
   chat_mc = cc; poly_ntt(&chat_mc);
   MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc);            g_sink += that_mc.coeffs[0]; });
   ntc_m = g_mean; ntc_s = g_sd;
-  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { shat_mc[j] = sk.s[j]; poly_ntt(&shat_mc[j]); } g_sink += shat_mc[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { for(j = 0; j < N_PLUS_ELL; ++j) { shat_mc[j] = sk.r[j]; poly_ntt(&shat_mc[j]); } g_sink += shat_mc[0].coeffs[0]; });
   nts_m = g_mean; nts_s = g_sd;
   MEASURE(NITER_FAST, { mc_polymul_prehat(&cr, &chat_mc, &shat_mc[0]); g_sink += cr.coeffs[0]; });
   mu_m = g_mean; mu_s = g_sd;
   /* per-attempt c*r step exactly as the protocol pays it: NTT(c) once, then
    * pointwise+invNTT per response poly (NTT(s) is per-call, timed above) */
-  MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc); for(j = 0; j < LAS_M; ++j) { mc_polymul_prehat(&cr, &that_mc, &shat_mc[j]); g_sink += cr.coeffs[0]; } });
+  MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc); for(j = 0; j < N_PLUS_ELL; ++j) { mc_polymul_prehat(&cr, &that_mc, &shat_mc[j]); g_sink += cr.coeffs[0]; } });
   ma_m = g_mean; ma_s = g_sd;
-  MEASURE(NITER_FAST, g_sink += mc_chknorm_vec(presig.z, LAS_BOUND_PRESIGN));
+  MEASURE(NITER_FAST, g_sink += mc_chknorm_vec(presig.z_hat, BOUND_PRESIGN));
   nk_m = g_mean; nk_s = g_sd;
   MEASURE(NITER_FAST, { mc_add_wY(wY, w, &Y);                        g_sink += wY[0].coeffs[0]; });
   wy_m = g_mean; wy_s = g_sd;
@@ -703,23 +717,23 @@ int main(void) {
    * NTT(t_j) + pointwise+invNTT per public-key poly (las.c las_verify). */
   MEASURE(NITER_FAST, { that_mc = cc; poly_ntt(&that_mc); for(j = 0; j < LAS_N; ++j) { poly tj = pk.t[j]; poly_ntt(&tj); mc_polymul_prehat(&cr, &that_mc, &tj); g_sink += cr.coeffs[0]; } });
   ct_m = g_mean; ct_s = g_sd;
-  /* KeyGen / Gen "sample r": LAS_M ternary polys (statement Y generation = KeyGen).
+  /* KeyGen / Gen "sample r": N_PLUS_ELL ternary polys (statement Y generation = KeyGen).
    * The other half of KeyGen, A*r, is the A-product line above. */
-  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { mc_sample_ternary(&sk2.s[j], ppseed, LAS_SEEDBYTES, (uint16_t)j); g_sink += sk2.s[0].coeffs[0]; } });
+  MEASURE(NITER_FAST, { for(j = 0; j < N_PLUS_ELL; ++j) { mc_sample_ternary(&sk2.r[j], ppseed, LAS_SEEDBYTES, (uint16_t)j); g_sink += sk2.r[0].coeffs[0]; } });
   kr_m = g_mean; kr_s = g_sd;
   /* Ext breakdown: s = z - z^ (n+ell polys); A*s; then t' == A*s check (n polys). */
-  MEASURE(NITER_FAST, { for(j = 0; j < LAS_M; ++j) { poly_sub(&yext.s[j], &adapted.z[j], &presig.z[j]); poly_reduce(&yext.s[j]); } g_sink += yext.s[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { for(j = 0; j < N_PLUS_ELL; ++j) { poly_sub(&yext.value[j], &adapted.z[j], &presig.z_hat[j]); poly_reduce(&yext.value[j]); } g_sink += yext.value[0].coeffs[0]; });
   es_m = g_mean; es_s = g_sd;
-  MEASURE(NITER_FAST, { mc_Amul(w, &pp, yext.s);                     g_sink += w[0].coeffs[0]; });
+  MEASURE(NITER_FAST, { mc_Amul(w, &pp, yext.value);                 g_sink += w[0].coeffs[0]; });
   ea_m = g_mean; ea_s = g_sd;
-  MEASURE(NITER_FAST, { int eq = 1; for(j = 0; j < LAS_N; ++j) eq &= mc_poly_equal(&w[j], &Y.t[j]); g_sink += eq; });
+  MEASURE(NITER_FAST, { int eq = 1; for(j = 0; j < LAS_N; ++j) eq &= mc_poly_equal(&w[j], &Y.t_prime[j]); g_sink += eq; });
   ec_m = g_mean; ec_s = g_sd;
 
   /* ================================ report ================================= */
   printf("==========================================================================\n");
-  printf(" LAS parameter set: n=%d ell=%d kappa=%d gamma=%d  (N=%d, Q=%d)\n",
-         LAS_N, LAS_ELL, LAS_KAPPA, LAS_GAMMA, N, Q);
-  printf("   M = n + ell = %d   (dim of sk=r, witness r', mask y, responses z_hat/z)\n", LAS_M);
+  printf(" LAS parameter set: n=%d ell=%d kappa=%d gamma=%d  (d=%d, Q=%d)\n",
+         LAS_N, ELL, KAPPA, GAMMA, LAS_D, Q);
+  printf("   M = n + ell = %d   (dim of sk=r, witness r', mask y, responses z_hat/z)\n", N_PLUS_ELL);
   printf("   paper notation: pp=(A,H)  pk=t  sk=r  statement Y=t'  witness r'\n");
   printf("   signing mask y -> commitment w = A*y  (hashed into c; NOT transmitted)\n");
   printf("==========================================================================\n");
@@ -846,15 +860,15 @@ int main(void) {
   printf("   tier of the primary table -- the packed sign-class calls wrap the same\n");
   printf("   rejection loop -- (same 5-sigma check and line format as the Rust drivers):\n");
   rejection_gate("Algorithm 1 Sign", sg_att_tot, (unsigned long)RUNS * NITER_SIGN,
-                 las_expected_attempts(LAS_BOUND_SIGN));
+                 las_expected_attempts(BOUND_SIGN));
   rejection_gate("Algorithm 2 PreSign", ps_att_tot, (unsigned long)RUNS * NITER_SIGN,
-                 las_expected_attempts(LAS_BOUND_PRESIGN));
+                 las_expected_attempts(BOUND_PRESIGN));
   rejection_gate("Algorithm 1 Sign (packed tier)", sgp_att_tot,
                  (unsigned long)RUNS * NITER_SIGN,
-                 las_expected_attempts(LAS_BOUND_SIGN));
+                 las_expected_attempts(BOUND_SIGN));
   rejection_gate("Algorithm 2 PreSign (packed tier)", psp_att_tot,
                  (unsigned long)RUNS * NITER_SIGN,
-                 las_expected_attempts(LAS_BOUND_PRESIGN));
+                 las_expected_attempts(BOUND_PRESIGN));
   printf("per-attempt diagnostic (rejection-normalised): Sign %.1f +/- %.1f us | "
          "PreSign %.1f +/- %.1f us | overhead %+.1f%%\n\n",
          sg_att_m, sg_att_s, ps_att_m, ps_att_s,
@@ -874,7 +888,7 @@ int main(void) {
   printf("   statement     Y = t'             %6zu   (%.1f%% of the signature; t' has pk size)\n",
          sz_pk, 100.0*(double)sz_pk/(double)sz_sig);
   printf("   witness       r'                 %6zu   (same packed layout as sk = r)\n", sz_sk);
-  printf("   challenge     c                  %6zu\n", sz_c);
+  printf("   challenge     c_tilde            %6zu   (32-byte H digest)\n", sz_c);
   printf("   response      z (final)          %6zu   (%.1f%% of the signature)\n",
          sz_z, 100.0*(double)sz_z/(double)sz_sig);
   printf("   response      z_hat (pre-sig)    %6zu   (same packed layout as z)\n", sz_z);
@@ -913,7 +927,7 @@ int main(void) {
   printf("   Ext: s = z - z_hat   (n+ell polys)                   %8.3f +/- %6.3f\n", es_m, es_s);
   printf("   Ext: A*s   (recompute statement; = an A-product)     %8.3f +/- %6.3f\n", ea_m, ea_s);
   printf("   Ext: t' == A*s check   (n polys)                     %8.3f +/- %6.3f\n", ec_m, ec_s);
-  printf("   note: a full Sign/PreSign attempt applies c*r across LAS_M = n+ell = %d\n", LAS_M);
+  printf("   note: a full Sign/PreSign attempt applies c*r across N_PLUS_ELL = n+ell = %d\n", N_PLUS_ELL);
   printf("         response polynomials; Verify-style challenge multiplication applies\n");
   printf("         c*t across LAS_N = n = %d public-key polynomials.  NTT hoisting\n", LAS_N);
   printf("         follows upstream ref/sign.c: NTT(s) is paid once per CALL (amortised\n");
@@ -922,9 +936,9 @@ int main(void) {
   printf("\n--- E. NORM-MARGIN DIAGNOSTICS (achieved infinity-norm vs the reject bound;\n");
   printf("       max over the %d sampled accepted signatures from section A) ---\n", NSIG);
   printf("   accepted |z|inf      max %9d   vs accept limit g-k   = %9d   (%.2f%% of band)\n",
-         maxz, LAS_BOUND_SIGN - 1, 100.0*(double)maxz/(double)(LAS_BOUND_SIGN - 1));
+         maxz, BOUND_SIGN - 1, 100.0*(double)maxz/(double)(BOUND_SIGN - 1));
   printf("   accepted |z^|inf     max %9d   vs accept limit g-k-1 = %9d   (%.2f%% of band)\n",
-         maxzhat, LAS_BOUND_PRESIGN - 1, 100.0*(double)maxzhat/(double)(LAS_BOUND_PRESIGN - 1));
+         maxzhat, BOUND_PRESIGN - 1, 100.0*(double)maxzhat/(double)(BOUND_PRESIGN - 1));
   printf("   Interpretation: the RESPONSE z/z^ saturates its band (~100%%) -- the bound is\n");
   printf("   the binding constraint and is exactly why ~63%% of attempts are rejected.\n");
   printf("   Contrast the AMHL cumulative WITNESS ||s_j||inf, which is tiny (<=K) vs the\n");

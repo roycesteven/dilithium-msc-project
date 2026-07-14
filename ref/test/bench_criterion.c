@@ -59,9 +59,11 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include "../basesig.h"     /* Algorithm 1: base_sign_keypair/base_sign_signature/base_sign_verify   */
-#include "../las.h"         /* Algorithm 2: las_presign/preverify/adapt/ext     */
-#include "../params.h"      /* N, Q */
+#include "../basesig.h"     /* Algorithm 1: base_keygen/base_sign/base_verify + base_attempts + BOUND_SIGN */
+#include "../relation.h"    /* relation_gen -> (statement, witness) */
+#include "../las.h"         /* Algorithm 2: las_presign/preverify/adapt/ext + las_attempts + BOUND_PRESIGN */
+#include "../serialize.h"   /* byte-level pre-signature tripwire */
+#include "../params.h"      /* Q */
 
 #define CRIT_WARMUP_S   3.0     /* Criterion default warm_up_time               */
 #define CRIT_MEAS_S    60.0     /* .measurement_time(Duration::from_secs(60))   */
@@ -213,12 +215,12 @@ static void rejection_gate(const char *label, unsigned long attempts,
   }
 }
 
-/* coefficientwise equality of two witness/secret vectors */
-static int sk_equal(const las_sk *a, const las_sk *b) {
+/* coefficientwise equality of two witness vectors */
+static int witness_equal(const witness *a, const witness *b) {
   unsigned int j, k;
-  for(j = 0; j < LAS_M; ++j)
-    for(k = 0; k < N; ++k)
-      if(a->s[j].coeffs[k] != b->s[j].coeffs[k])
+  for(j = 0; j < N_PLUS_ELL; ++j)
+    for(k = 0; k < LAS_D; ++k)
+      if(a->value[j].coeffs[k] != b->value[j].coeffs[k])
         return 0;
   return 1;
 }
@@ -228,10 +230,13 @@ int main(void) {
   static const uint8_t msg[] = "bench message, thirty-three bytes";
   const uint8_t *m = msg;
   size_t  mlen = sizeof msg - 1;
-  las_pp  pp;
-  las_pk  pk, Y, pk2;                       /* pk2/sk2/tmp = producing-op scratch */
-  las_sk  sk, yy, sk2, yext;
-  las_sig sig, presig, adapted, tmp;
+  public_params pp;
+  public_key    pk, pk2;                    /* pk2/sk2/tmp = producing-op scratch */
+  statement     Y;
+  secret_key    sk, sk2;
+  witness       r_prime, s_ext;             /* honest witness r' (Gen); extracted s (Ext) */
+  signature     sig, adapted, tmp;
+  pre_signature presig, tmp_pre;   /* pre_signature-typed producing-op scratch */
   crit_result r_kg, r_sg, r_vf, r_ps, r_pv, r_ad, r_ex;
   unsigned long sg_calls, ps_calls, att0;
   unsigned long sg_attempts, ps_attempts;
@@ -241,29 +246,39 @@ int main(void) {
 
   /* ---- one consistent state, gated on the full success-path contract
    * (identical assertions to las_bench.rs) ---- */
-  las_setup(&pp, ppseed);
-  base_sign_keypair(&pk, &sk, &pp);
-  base_sign_keypair(&Y, &yy, &pp);
-  base_sign_signature(&sig, m, mlen, &pk, &sk, &pp);
+  setup_public_params(&pp, ppseed);
+  base_keygen(&pk, &sk, &pp);
+  relation_gen(&Y, &r_prime, &pp);
+  base_sign(&sig, m, mlen, &pk, &sk, &pp);
   las_presign(&presig, m, mlen, &Y, &pk, &sk, &pp);
-  if(las_adapt(&adapted, &presig, m, mlen, &Y, &yy, &pk, &pp) != 0) {
+  if(las_adapt(&adapted, &presig, m, mlen, &Y, &r_prime, &pk, &pp) != 0) {
     printf("FATAL: could not establish a valid adapted signature\n");
     return 1;
   }
-  if(base_sign_verify(&sig, m, mlen, &pk, &pp) != 0 ||          /* ordinary sig verifies */
-     las_preverify(&presig, m, mlen, &Y, &pk, &pp) != 0 || /* presig pre-verifies   */
-     base_sign_verify(&presig, m, mlen, &pk, &pp) == 0 ||       /* presig FAILS Verify   */
-     base_sign_verify(&adapted, m, mlen, &pk, &pp) != 0 ||      /* adapted verifies      */
-     las_ext(&yext, &adapted, &presig, &Y, &pp) != 0 ||    /* Ext succeeds          */
-     !sk_equal(&yext, &yy)) {                              /* exact witness recover */
-    printf("FATAL: benchmark state inconsistent before timing\n");
-    return 1;
+  {
+    /* byte-level relabel of the pre-signature (distinct type) for the tripwire */
+    signature presig_as_sig;
+    uint8_t relabel_b[PRE_SIGNATURE_BYTES];
+    if(pack_pre_signature(relabel_b, &presig) != 0 ||
+       unpack_signature(&presig_as_sig, relabel_b) != 0) {
+      printf("FATAL: tripwire pack/unpack\n");
+      return 1;
+    }
+    if(base_verify(&sig, m, mlen, &pk, &pp) != 0 ||             /* ordinary sig verifies */
+       las_preverify(&presig, m, mlen, &Y, &pk, &pp) != 0 ||   /* presig pre-verifies   */
+       base_verify(&presig_as_sig, m, mlen, &pk, &pp) == 0 ||  /* presig FAILS Verify   */
+       base_verify(&adapted, m, mlen, &pk, &pp) != 0 ||        /* adapted verifies      */
+       las_ext(&s_ext, &adapted, &presig, &Y, &pp) != 0 ||     /* Ext succeeds          */
+       !witness_equal(&s_ext, &r_prime)) {                     /* exact witness recover */
+      printf("FATAL: benchmark state inconsistent before timing\n");
+      return 1;
+    }
   }
 
   printf("==========================================================================\n");
   printf(" C mirror of the Rust Criterion benchmark (benches/las_bench.rs)\n");
-  printf(" LAS parameter set: n=%d ell=%d kappa=%d gamma=%d  (N=%d, Q=%d)\n",
-         LAS_N, LAS_ELL, LAS_KAPPA, LAS_GAMMA, N, Q);
+  printf(" LAS parameter set: n=%d ell=%d kappa=%d gamma=%d  (d=%d, Q=%d)\n",
+         LAS_N, ELL, KAPPA, GAMMA, LAS_D, Q);
   printf(" Criterion-equivalent config: warm-up %.0f s; %d samples over %.0f s,\n",
          CRIT_WARMUP_S, CRIT_SAMPLES, CRIT_MEAS_S);
   printf(" linear iteration ramp (SamplingMode::Linear); sample value = us/iter;\n");
@@ -276,25 +291,25 @@ int main(void) {
   printf("==========================================================================\n\n");
 
   /* ---- Algorithm 1: the ordinary signature (basesig.c) ---- */
-  CRIT_BENCH(r_kg, base_sign_keypair(&pk2, &sk2, &pp));
+  CRIT_BENCH(r_kg, base_keygen(&pk2, &sk2, &pp));
   crit_print("Algorithm 1 - ordinary lattice-based signature", "KeyGen", &r_kg);
 
   att0 = base_attempts;
-  CRIT_BENCH(r_sg, base_sign_signature(&tmp, m, mlen, &pk, &sk, &pp));
+  CRIT_BENCH(r_sg, base_sign(&tmp, m, mlen, &pk, &sk, &pp));
   sg_attempts = base_attempts - att0;
   sg_calls = r_sg.warm_iters + r_sg.total_iters;
   crit_print("Algorithm 1 - ordinary lattice-based signature", "Sign", &r_sg);
 
-  CRIT_BENCH(r_vf, g_sink += base_sign_verify(&sig, m, mlen, &pk, &pp));
+  CRIT_BENCH(r_vf, g_sink += base_verify(&sig, m, mlen, &pk, &pp));
   crit_print("Algorithm 1 - ordinary lattice-based signature", "Verify", &r_vf);
 
   rejection_gate("Algorithm 1 Sign", sg_attempts, sg_calls,
-                 las_expected_attempts(LAS_BOUND_SIGN));
+                 las_expected_attempts(BOUND_SIGN));
   printf("\n");
 
   /* ---- Algorithm 2: the LAS adaptor signature (las.c) ---- */
   att0 = las_attempts;
-  CRIT_BENCH(r_ps, las_presign(&tmp, m, mlen, &Y, &pk, &sk, &pp));
+  CRIT_BENCH(r_ps, las_presign(&tmp_pre, m, mlen, &Y, &pk, &sk, &pp));
   ps_attempts = las_attempts - att0;
   ps_calls = r_ps.warm_iters + r_ps.total_iters;
   crit_print("Algorithm 2 - LAS adaptor signature", "PreSign", &r_ps);
@@ -302,15 +317,15 @@ int main(void) {
   CRIT_BENCH(r_pv, g_sink += las_preverify(&presig, m, mlen, &Y, &pk, &pp));
   crit_print("Algorithm 2 - LAS adaptor signature", "PreVerify", &r_pv);
 
-  CRIT_BENCH(r_ad, g_sink += las_adapt(&tmp, &presig, m, mlen, &Y, &yy, &pk, &pp));
+  CRIT_BENCH(r_ad, g_sink += las_adapt(&tmp, &presig, m, mlen, &Y, &r_prime, &pk, &pp));
   crit_print("Algorithm 2 - LAS adaptor signature",
              "Adapt (including its internal PreVerify)", &r_ad);
 
-  CRIT_BENCH(r_ex, g_sink += las_ext(&yext, &adapted, &presig, &Y, &pp));
+  CRIT_BENCH(r_ex, g_sink += las_ext(&s_ext, &adapted, &presig, &Y, &pp));
   crit_print("Algorithm 2 - LAS adaptor signature", "Extract", &r_ex);
 
   rejection_gate("Algorithm 2 PreSign", ps_attempts, ps_calls,
-                 las_expected_attempts(LAS_BOUND_PRESIGN));
+                 las_expected_attempts(BOUND_PRESIGN));
   printf("\n");
 
   /* ---- adaptor-overhead summary (mean-based, sign-class; median, verify-class) ---- */
