@@ -1,7 +1,7 @@
 # A/02 · How OUR simplified Dilithium base signature works
 
 > **Our code:** `ref/basesig.c` (C) and
-> `rust/fips204-las/src/las_basesig.rs` (Rust). This is the paper's
+> `rust/fips204-las/src/basesig.rs` (Rust). This is the paper's
 > **Algorithm 1** ("ordinary lattice-based signature"). It is a **new, small,
 > self-contained module** — *not* an edited copy of `sign.c`. It calls the
 > reused primitives (NTT, SHAKE, sampling, reduction) and nothing else.
@@ -21,7 +21,7 @@ The scheme parameters are self-contained: `n` rows, `ℓ` extra columns,
 Before any key exists, the public parameters fix one matrix
 **A = [ I | A′ ]** (identity block next to a random block A′). Only A′ is random,
 and it is expanded from a 32-byte seed straight into the NTT domain (the same
-trick ML-DSA uses for ExpandA). In LAS this is `las_setup`; the base signature
+trick ML-DSA uses for ExpandA). In LAS this is `setup_public_params`; the base signature
 shares the same A via the shared parameter struct.
 
 Why `[ I | A′ ]` and not a full random matrix: the identity block makes
@@ -33,8 +33,8 @@ vector, not two.
 
 ## KeyGen — make a key pair
 
-> C: `base_sign_keypair` ([basesig.c:80](../../../../ref/basesig.c#L80)) ·
-> Rust: `base_sign_keypair_seed` ([las_basesig.rs:119](../../../../rust/fips204-las/src/las_basesig.rs#L119))
+> C: `base_keygen` ([basesig.c:80](../../../../ref/basesig.c#L80)) ·
+> Rust: `keygen_seed` ([basesig.rs:119](../../../../rust/fips204-las/src/basesig.rs#L119))
 
 ```
    1.  r ← ternary secret in S_1^{n+ℓ}     (every coefficient is −1, 0, or +1)
@@ -55,8 +55,8 @@ vector, not two.
 
 ## Sign — produce a signature σ = (c, z) on message M
 
-> C: `base_sign_signature_internal` ([basesig.c:121](../../../../ref/basesig.c#L121)) ·
-> Rust: `base_sign_signature_internal` ([las_basesig.rs:153](../../../../rust/fips204-las/src/las_basesig.rs#L153))
+> C: `base_sign_internal` ([basesig.c:121](../../../../ref/basesig.c#L121)) ·
+> Rust: `sign_internal` ([basesig.rs:153](../../../../rust/fips204-las/src/basesig.rs#L153))
 
 ```
    once per call:   ŝ = NTT(r)                          ← the secret is fixed, transform it once
@@ -96,8 +96,8 @@ Step by step, in our code:
 
 ## Verify — check a signature σ = (c, z)
 
-> C: `base_sign_verify_internal` ([basesig.c:238](../../../../ref/basesig.c#L238)) ·
-> Rust: `base_sign_verify_internal` ([las_basesig.rs:226](../../../../rust/fips204-las/src/las_basesig.rs#L226))
+> C: `base_verify_internal` ([basesig.c:238](../../../../ref/basesig.c#L238)) ·
+> Rust: `verify_internal` ([basesig.rs:226](../../../../rust/fips204-las/src/basesig.rs#L226))
 
 ```
    1.  if ‖z‖∞ > γ − κ :  reject

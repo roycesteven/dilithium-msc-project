@@ -169,7 +169,7 @@ of its functions** (`docs/02-methodology/FUNCTION_MAP.md`). The new pieces:
    └───┬───────────┬────────────┘
        │           │
        │           ├── ref/serialize.{c,h}  turn objects into BYTES (+ a
-       │           │     validating decoder + las_verify_packed = the
+       │           │     validating decoder + base_verify_packed = the
        │           │     interface an on-chain verifier would call)
        │           │
        │           ├── ref/amhl.{c,h}        multi-hop locks (paying via a chain
@@ -192,7 +192,7 @@ What each test program proves (all pass, zero compiler warnings):
   (nobody loses coins if a party vanishes), and a multi-hop payment.
 - **`test_amhl`** — the proper multi-hop version (§6.4 below).
 - **`test_serde`** — bytes round-trip perfectly; **flipping any single one of the
-  4672 signature bytes makes verification fail** (tamper-evidence); garbage input
+  4640 signature bytes makes verification fail** (tamper-evidence); garbage input
   is rejected.
 - **`test_kat`** — runs everything from fixed seeds and checks the output against a
   **pinned fingerprint** (`f7fc40…e6b1`), so the build is bit-for-bit reproducible
@@ -279,7 +279,7 @@ cd ref
 make test/test_las3   && ./test/test_las3     # core: 1000 trials, the 8-point contract
 make test/test_swap3  && ./test/test_swap3    # the Alice↔Bob atomic swap, narrated
 make test/test_amhl3  && ./test/test_amhl3    # multi-hop: wormhole-resistance + norm growth
-make test/test_serde3 && ./test/test_serde3   # tamper test: all 4672 byte-flips rejected
+make test/test_serde3 && ./test/test_serde3   # tamper test: all 4640 byte-flips rejected
 make test/test_kat3   && ./test/test_kat3     # reproducible fingerprint match
 make test/bench_las3      && ./test/bench_las3      # speeds + rejection rate
 make test/bench_compare3  && ./test/bench_compare3  # LAS vs basic Dilithium-3
@@ -292,7 +292,7 @@ cd ../evm && forge test --gas-report
 ```
 *(The classical baseline needs a one-time clone — see `README.md`.)*
 Good things to film: `test_amhl3` scrolling its wormhole/norm-growth asserts; the
-`test_serde3` "all 4672 byte-flips rejected" line; the `bench_classical` 2×2; the
+`test_serde3` "all 4640 byte-flips rejected" line; the `bench_classical` 2×2; the
 `forge --gas-report` table.
 
 ---

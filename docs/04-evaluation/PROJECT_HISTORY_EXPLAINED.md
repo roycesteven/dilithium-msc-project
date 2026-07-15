@@ -70,15 +70,15 @@ then the scheme, then the adaptor layer:
    - `sample_Sgamma`, `sample_ternary` — draw the random masks and the ternary
      secret/witness.
 2. **The ordinary signature (built and tested *before* the adaptor part):**
-   - `las_setup`, `las_keypair` — public parameters and a key pair.
-   - `las_signature_internal` → `las_signature`, and `las_verify`.
+   - `setup_public_params`, `base_keygen` — public parameters and a key pair.
+   - `base_sign_internal` → `base_sign`, and `base_verify`.
 3. **The adaptor layer (built last, *on top of* a working Verify):**
    - `las_presign_internal` → `las_presign`, `las_preverify`.
    - `las_adapt` (turns a pre-signature into an ordinary signature), `las_ext`
      (recovers the secret witness — the trick that makes swaps atomic).
 
 **Decision/why this internal order:** `las_adapt`'s whole job is to produce a
-signature that **ordinary `las_verify` accepts**. So `las_verify` must exist and be
+signature that **ordinary `base_verify` accepts**. So `base_verify` must exist and be
 trusted *first*; only then can you build and test `las_adapt`/`las_ext` against it.
 `test_las.c` then hammers all eight functions **1000×** and asserts the key safety
 property (the pre-signature must *not* pass ordinary Verify — the "tripwire").
@@ -119,10 +119,10 @@ optional/bonus at Meeting 2 — done, but it must not displace the core.
 ### Step 5 — Bytes, baselines, reproducibility (`5dc1b63`)
 **New files:** `ref/serialize.c`+`.h`, `ref/test/bench_classical.c`,
 `ref/test/bench_app.c`, `ref/test/test_serde.c`, `ref/test/test_kat.c`.
-**Also extended `las.c`:** a **deterministic** API — `las_keypair_seed`,
-`las_signature_det`, `las_presign_det`, and the shared `det_seed`/`las_signature_internal`/`las_presign_internal`
+**Also extended `las.c`:** a **deterministic** API — `base_keygen_seed`,
+`base_sign_det`, `las_presign_det`, and the shared `det_seed`/`base_sign_internal`/`las_presign_internal`
 refactor — so runs are byte-for-byte reproducible.
-`serialize.h` adds `las_pack_*`/`las_unpack_*` and, crucially, **`las_verify_packed`**
+`serialize.h` adds `pack_*`/`unpack_*` and, crucially, **`base_verify_packed`**
 — verification straight from a byte string (the exact interface an on-chain verifier
 would consume).
 **Decision/why:** Two things become possible only once signatures exist as **bytes**:
@@ -138,14 +138,14 @@ anyone can reproduce identical output.
 **Decision/why:** Now that there is a byte format and a working swap, graduate from
 the simulated ledger to a **real local Ethereum**. The contract settles a swap with
 either a classical or a LAS signature, so a gas report isolates the on-chain "price of
-post-quantum." `export_packed.c` exists so the on-chain test uses a *real* 4672-byte
+post-quantum." `export_packed.c` exists so the on-chain test uses a *real* 6720-byte
 signature, not a fake.
 
 ### Step 7 — The gas experiment (this session, uncommitted)
 **New files:** `evm/src/LASVerifyCost.sol`, `evm/test/LASVerifyCost.t.sol`.
 **Decision/why:** Step 6 left a claim it never proved ("native verification exceeds
 the block gas limit"). Supervisor feedback item 8 demanded an experiment or a
-calculation. The cost probe runs the exact arithmetic op-budget of `las_verify`
+calculation. The cost probe runs the exact arithmetic op-budget of `base_verify`
 (12 fwd NTT + 8 inv NTT + 20 pointwise) on the EVM, prices it (**~12 M gas**), and
 **corrects** the claim — see `docs/03-results/GAS_LIMIT_INVESTIGATION.md`.
 
@@ -167,7 +167,7 @@ calculation. The cost probe runs the exact arithmetic op-budget of `las_verify`
         ├── AMHL multi-hop  (extends PreSign w/ tighter bound)   ← after single-hop
         │
         ▼
- Serialization  serialize.c  →  bytes + las_verify_packed
+ Serialization  serialize.c  →  bytes + base_verify_packed
         │   (unlocks SIZE measurement + classical baseline + KATs)
         ▼
  Real EVM  AdaptorSwap.sol  (real gas of a real swap)

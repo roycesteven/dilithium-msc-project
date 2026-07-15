@@ -47,12 +47,12 @@ you changed it. Every claim is grounded in the code as it stands today.
 
 ---
 
-## 3. Public parameters: `las_setup`
+## 3. Public parameters: `setup_public_params`
 
 ### Paper: sample `A' ← R_q^{n×ℓ}` uniformly at random
 
 ```c
-/* las.c — las_setup */
+/* las.c — setup_public_params */
 poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
 ```
 
@@ -97,7 +97,7 @@ means the equality check `poly_equal(Ay, Y->t)` in `las_ext` is byte-exact.
 ### Paper: `r ← S_1^{n+ℓ}; t = A·r; return (pk=t, sk=r)`
 
 ```c
-/* las.c — las_keypair */
+/* las.c — base_keygen */
 randombytes(seed, LAS_SEEDBYTES);            // fresh randomness
 for(j = 0; j < LAS_M; ++j)
     sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);  // r ← S_1^8
@@ -151,7 +151,7 @@ return σ = (c, z)
 ```
 
 ```c
-/* las.c — las_signature_internal (shared by las_signature / las_signature_det) */
+/* las.c — base_sign_internal (shared by base_sign / base_sign_det) */
 for(j=0; j<LAS_M; ++j) { shat[j] = sk->s[j]; poly_ntt(&shat[j]); }  // NTT(s) once per CALL
 for(;;) {                                          // rejection loop
     for(j=0; j<LAS_M; ++j)
@@ -205,10 +205,10 @@ hint-free design carries no acceptance penalty (the old ">80% with hints" framin
 was directionally wrong); Dilithium's own expected repetitions are a small
 single-digit count per its specification.
 
-**Deterministic variant (`las_signature_det`, `las.c`).** The randomised `las_signature`
-draws the 64-byte mask seed from `randombytes`; `las_signature_det` instead derives it
+**Deterministic variant (`base_sign_det`, `las.c`).** The randomised `base_sign`
+draws the 64-byte mask seed from `randombytes`; `base_sign_det` instead derives it
 as `SHAKE256(0x00 ‖ sk ‖ M)` (and `las_presign_det` as `SHAKE256(0x01 ‖ sk ‖ Y ‖ M)`),
-making (pre)signing a pure function of its inputs. Both call the same `las_signature_internal`
+making (pre)signing a pure function of its inputs. Both call the same `base_sign_internal`
 / `las_presign_internal` rejection loop, so distribution and validity are unchanged; the
 deterministic variants exist only for reproducible KATs (`test_kat.c`) and to
 remove the nonce-reuse failure mode. This is the standard Fiat–Shamir
@@ -226,7 +226,7 @@ return c == H(pk, w', M)
 ```
 
 ```c
-/* las.c — las_verify */
+/* las.c — base_verify */
 if(chknorm_vec(sig->z, LAS_BOUND_SIGN)) return -1;   // ‖z‖∞ > γ−κ
 las_Amul(w, pp, sig->z);                              // A·z
 chat = sig->c; poly_ntt(&chat);                       // NTT(c) once (cf. sign.c:333)
@@ -320,7 +320,7 @@ return poly_equal(&c2, &presig->c) ? 0 : -1;        // c == c2 ?
 **Why it works:** `w' = A·ẑ − c·t = w` (same algebra as Verify), so
 `w' + Y = w + Y`, and `H(pk, w+Y, M) = c` (the pre-signing challenge). ✓
 
-**The tripwire (test step 5):** If you feed `σ̂` to standard `las_verify`, it
+**The tripwire (test step 5):** If you feed `σ̂` to standard `base_verify`, it
 computes `H(pk, w', M) = H(pk, w, M)`. Since `c = H(pk, w+Y, M) ≠ H(pk, w, M)`
 (with overwhelming probability over the random oracle H), standard Verify returns
 false. This is asserted in `test_las.c` (the tripwire, test step 5).
@@ -390,7 +390,7 @@ z − ẑ = (ẑ + y_wit) − ẑ = y_wit
 Then `A·y_wit = Y` by construction (Y is the statement). ✓
 
 **`poly_equal` is safe here** because both `Ay[j]` (output of `las_Amul`,
-always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `las_keypair` via
+always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `base_keygen` via
 `las_Amul`, also `[0,Q)`) use the same canonical representation.
 
 ---
@@ -422,12 +422,12 @@ parameter would be textually replaced by `6` and fail to compile.)
 #### Cumulative setup: `amhl_setup_gen`
 ```c
 /* amhl.c — amhl_setup_gen */
-las_keypair(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
+base_keygen(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
 // s_j = s_{j-1} + l_j           (amhl.c, kept small/centred)
 // Y_j = Y_{j-1} + L_j = A·s_j   (amhl.c, canonical [0,Q))
 ```
 The statements are built **additively** from the increment key pairs, so AMHL adds
-no new lattice arithmetic — it is pure reuse of `las_keypair` (= `A·(·)`) plus
+no new lattice arithmetic — it is pure reuse of `base_keygen` (= `A·(·)`) plus
 `poly_add`. `Y_0 = 0`, `s_0 = 0`.
 
 #### Adapt / Ext are unchanged
@@ -500,7 +500,7 @@ Neither proof is reproduced here — see eprint 2020/845 §4 for the formal trea
 |---|---|---|---|
 | Modulus `q` | ≈2^24 | 8380417 ≈ 2^23 | Correctness unaffected (Q > 2γ); reduced MSIS/MLWE security margin |
 | Multi-hop PCN | AMHL with `γ−κ−K` per hop | **AMHL implemented** (`amhl.c`, `las_presign_k`, §12.5) + same-Y baseline (`chain.c`) | Functionally matches the paper's multi-hop locks; a *privacy*-preserving variant remains future work |
-| Signature packing | Bit-packed, ~3210B | Bit-packed wire/on-chain encoding **implemented** (`serialize.c`, 4672B) + full-int32 9216B in-memory structs | Sizes only; correctness unaffected. Validating decoder + `las_verify_packed` byte-level verifier added for on-chain use |
+| Signature packing | Bit-packed, ~3210B | Wire/on-chain encoding **implemented** (`serialize.c`, `c_tilde ‖ BitPack(z)`, 4640B) + in-memory structs (8224B) | Sizes only; correctness unaffected. Validating pk/sk decoder + `base_verify_packed` byte-level verifier for on-chain use |
 | Hint vector | Used in paper's optimised scheme | Not used (simplified scheme) | ~2.7 attempts/sign (≈37% acceptance, measured directly); Dilithium's own rate not measured here |
 
 ---

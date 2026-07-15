@@ -40,7 +40,7 @@ typedef struct { poly c; poly z[LAS_M]; }      las_sig;  // (pre-)signature (c, 
 `LAS_N = 4`, `LAS_ELL = 4`, `LAS_M = 8`, `LAS_KAPPA = 60`, `LAS_GAMMA = 122880`.
 
 ### 5.3 Public parameters and the `[I | A']` product
-`las_setup` expands `A'` from a public seed with `poly_uniform`, which yields
+`setup_public_params` expands `A'` from a public seed with `poly_uniform`, which yields
 coefficients already in the NTT domain (Dilithium's convention — the uniform samples
 *are* the NTT representation). The matrix–vector product exploits the identity block:
 ```
@@ -61,11 +61,11 @@ representative). Used for `c·r` (small, `≤κ`) and `c·t` (a full mod-`q` pro
 The two forward NTTs are **hoisted** out of the hot paths exactly as upstream
 `ref/sign.c` does, so `polymul_prehat(out, ahat, bhat)` is only the
 `pointwise_montgomery; invntt_tomont; reduce` tail on operands that are already
-in the NTT domain. In `las_signature_internal`/`las_presign_internal` the secret `NTT(s_j)` is taken
+in the NTT domain. In `base_sign_internal`/`las_presign_internal` the secret `NTT(s_j)` is taken
 **once per call** (invariant across the rejection loop, as `sign.c:128`
 transforms `s1` before its `rej:` loop) and the challenge `NTT(c)` **once per
 attempt** (shared by all `n+ℓ` products, as `sign.c:154`); in
-`las_verify`/`las_preverify`, `NTT(c)` is once per call (`sign.c:333`) and
+`base_verify`/`las_preverify`, `NTT(c)` is once per call (`sign.c:333`) and
 `NTT(t_j)` once per public-key polynomial. This is a pure micro-optimisation:
 the accepted `(c, z)` is bit-identical to the un-hoisted form (the KAT digest is
 unchanged), it only removes redundant transforms.
@@ -94,7 +94,7 @@ comfortably below that, so the primitive is reused directly. We encode the stric
 "`> limit`" tests of the spec as `bound = limit + 1`.
 
 ### 5.8 The seven functions
-`las_keypair`, `las_signature`, `las_verify`, `las_presign`, `las_preverify`, `las_adapt`,
+`base_keygen`, `base_sign`, `base_verify`, `las_presign`, `las_preverify`, `las_adapt`,
 `las_ext` follow Section 4 verbatim. Subtraction of `c·t` happens in the normal
 domain; commitments are canonicalised with `reduce`+`caddq` before hashing so that
 `w'` at verify time is byte-identical to `w`/`w+Y` at sign time whenever they are
@@ -121,20 +121,20 @@ scheme code (`las.c`) untouched (clean separation):
 
 - **Encoding** (LSB-first bit packing): pk/statement `Y` at 23 bits/coeff
   (`Q < 2^23`); sk/witness at 2 bits/coeff (ternary); signature `(c, z)` as a
-  2-bit ternary `c` plus an offset-encoded `z` whose width is parameter-derived
-  (`LAS_Z_COEFF_BITS` = 18 bits for the paper/D2 sets, 19 for D3/D5). Sizes
-  (paper/D2): `LAS_PK_BYTES = 2944`, `LAS_SK_BYTES = 512`, `LAS_SIG_BYTES = 4672`.
+  32-byte challenge digest `c_tilde` plus `BitPack(z)` (the reused FIPS BitPack;
+  `LAS_Z_COEFF_BITS` = 18 bits for the paper/D2 sets, 19 for D3/D5). Sizes
+  (paper/D2): `PUBLIC_KEY_BYTES = 2944`, `SECRET_KEY_BYTES = 512`, `SIGNATURE_BYTES = 4640`.
 - **Defensive decoding.** A verifier cannot trust its input, so `unpack`
   *rejects* malformed bytes: a pk coefficient `≥ Q`, the invalid ternary code `3`,
   or a `z` field outside the valid band. `pack` symmetrically rejects
   out-of-range inputs (e.g. a non-ternary secret, or a `z` exceeding `γ−κ`).
-- **`las_verify_packed(pk_bytes, sig_bytes, M, pp)`** is the byte-level verifier an
+- **`base_verify_packed(pk_bytes, sig_bytes, M, pp)`** is the byte-level verifier an
   integration would call: it decodes-with-validation and runs ordinary `Verify`,
   returning `0` only if the bytes are well-formed *and* the signature verifies.
   This is exactly the interface a Solidity/precompile/circuit verifier consumes.
 
 `test_serde` (Section 6.3) hard-asserts round-trip identity, that a packed adapted
-signature verifies through `las_verify_packed` while a packed *pre-signature* does
+signature verifies through `base_verify_packed` while a packed *pre-signature* does
 not (the statement-binding tripwire survives serialisation), that **every**
 single-byte flip of a packed signature breaks verification, and that the
 validation paths reject malformed bytes. This realises the "packed" sizes of
@@ -147,13 +147,13 @@ To make the implementation *reproducible* — a distinction-level engineering
 property, and a prerequisite for cross-checking an independent on-chain verifier —
 the randomness-consuming algorithms gain deterministic siblings:
 
-- `las_keypair_seed(pk, sk, pp, seed)` derives the secret directly from a 32-byte
+- `base_keygen_seed(pk, sk, pp, seed)` derives the secret directly from a 32-byte
   seed (KeyGen from explicit randomness);
-- `las_signature_det` and `las_presign_det` derive the per-signature mask seed as
+- `base_sign_det` and `las_presign_det` derive the per-signature mask seed as
   `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)` instead of drawing fresh randomness, so the
   output is a *pure function* of the inputs.
 
-Internally `las_signature`/`las_signature_det` share one `las_signature_internal`, and
+Internally `base_sign`/`base_sign_det` share one `base_sign_internal`, and
 `las_presign`/`las_presign_k`/`las_presign_det` share one `las_presign_internal`, differing
 only in (a) where the 64-byte mask seed comes from (fresh `randombytes` vs the
 derivation above) and (b) the rejection bound — so the deterministic and randomised

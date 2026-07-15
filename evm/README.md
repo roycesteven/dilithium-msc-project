@@ -12,16 +12,18 @@ verification differs, so the gas difference is attributable to the signature:
 
 - `claimClassical` — the adapted ECDSA signature is verified natively with the
   `ecrecover` precompile (this is how a real EVM ECDSA-adaptor swap settles).
-- `claimLAS` — the adapted LAS signature is a real 4672-byte packed lattice
-  signature (`test/las_sig.bin`, exported from the C implementation). A
-  *numerically-correct* native lattice verifier (NTT + SHAKE256) in the EVM is left
-  as future work, so this charges only the unavoidable on-chain **floor**: calldata
-  for 4672 bytes + one keccak256 pass. The reported gas is therefore a strict
-  **lower bound** on the true settlement cost.
+- `claimLAS` — the adapted LAS signature is a real 6720-byte packed lattice
+  signature (`test/las_sig.bin`, exported from the C implementation at the D3 set,
+  wire form `c_tilde ‖ BitPack(z)`). A *numerically-correct* native lattice verifier
+  (NTT + SHAKE256) in the EVM is left as future work, so this charges only the
+  unavoidable on-chain **floor**: calldata for 6720 bytes + one keccak256 pass. The
+  reported gas is a strict **lower bound** on the true settlement cost. **⚠ Re-measure:**
+  the committed gas figures were captured on the pre-Stage-B 6752-byte export; re-run
+  `forge test` to refresh them against the 6720-byte signature.
 
 The *cost* of that native verification — the thing the floor leaves out — is then
 measured separately by `src/LASVerifyCost.sol` + `test/LASVerifyCost.t.sol`, a
-gas-faithful probe that runs the exact arithmetic op-budget of one `las_verify`
+gas-faithful probe that runs the exact arithmetic op-budget of one `base_verify`
 (12 fwd NTT + 8 inv NTT + 20 pointwise) on the EVM so it can be priced. **Result:
 ≈12M gas** (10.08M arithmetic measured + ≈1.92M for the SHAKE256 challenge,
 calculated) — **≈158× the classical claim, ≈40% of a 30M block, but NOT over the
@@ -64,7 +66,7 @@ hard-limit, grounds. See `docs/LAS.md §8.4` / `§8.4.1`.
 
 ### Native LAS verification cost (`LASVerifyCost`, deterministic EVM gas)
 
-| `las_verify` component | gas | basis |
+| `base_verify` component | gas | basis |
 |---|---:|---|
 | forward NTT ×12 | 4,537,776 | measured |
 | inverse NTT ×8 | 3,374,048 | measured |
@@ -72,4 +74,4 @@ hard-limit, grounds. See `docs/LAS.md §8.4` / `§8.4.1`.
 | coefficient passes (~40) | ≈1,227,720 | measured (residual) |
 | **arithmetic subtotal** | **10,080,044** | **measured** |
 | SHAKE256 challenge (~64 Keccak-f) | 1,920,000 | calculated (~30k/perm) |
-| **native `las_verify`** | **≈12,000,044** | measured + calculated |
+| **native `base_verify`** | **≈12,000,044** | measured + calculated |

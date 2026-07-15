@@ -120,7 +120,7 @@ Cascade (claims flow right→left, receiver first):
 ```
 
 The cumulative statements are built additively from the increment key pairs
-(`Y_j = Y_{j-1} + A·l_j`), reusing `las_keypair` to produce each `(A·l_j, l_j)` —
+(`Y_j = Y_{j-1} + A·l_j`), reusing `base_keygen` to produce each `(A·l_j, l_j)` —
 no new lattice arithmetic. Adapt and Ext are **unchanged** from Section 4: Adapt
 adds the cumulative witness `s_j`, and Ext returns exactly `s_j` (it satisfies
 `A·s_j = Y_j`).

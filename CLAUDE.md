@@ -27,8 +27,8 @@ table in appendix); no abbreviations of scheme/level names in tables/figures.
 
 ## ⚠️ CANONICAL NAMING CONVENTION — Rust ⇄ C ⇄ paper (Stage-A seven-type layout; DO NOT DEVIATE)
 
-The Rust port (`rust/fips204-las/src/`) is **DONE, PROVEN (KAT digest
-`641a176c…5a19`), and is the AUTHORITY**. The C mirror (`ref/`) must reproduce
+The Rust port (`rust/fips204-las/src/`) is **DONE, PROVEN (Stage-B KAT digest
+`bb6ad0da…260c`), and is the AUTHORITY**. The C mirror (`ref/`) must reproduce
 these names **exactly** so the two languages stay faithful to each other and to
 the paper↔code notation. Never invent a variant; if a name here looks wrong,
 fix it against the paper (`docs/paper/LAS_2020_845_NOTATION.md`), not from memory.
@@ -50,15 +50,16 @@ already owns bare `N`=256 and `D`=13 for the reused Dilithium primitives). C
 ring-degree loops in the **LAS files** read `LAS_D`; the reused Dilithium
 primitive files keep bare `N`.
 
-**The seven semantic types** (physical home: setup.rs / setup.h; each owned by one layer):
+**The seven semantic types** (the six object types' physical home is now
+las_types.rs / las_types.h; `public_params` stays in setup.rs / setup.h; each owned by one layer):
 
 | paper object | Rust type {fields} | C type {fields} | owner |
 |---|---|---|---|
 | pp = A = [I\|A'] | `PublicParams { a_prime, seed }` | `public_params { a_prime, seed }` | setup |
 | pk = t | `PublicKey { t }` | `public_key { t }` | basesig |
 | sk = r | `SecretKey { r }` | `secret_key { r }` | basesig |
-| σ = (c, z) | `Signature { c, z }` | `signature { c, z }` | basesig |
-| σ̂ = (c, ẑ) | `PreSignature { c, z_hat }` | `pre_signature { c, z_hat }` | las |
+| σ = (c, z) | `Signature { c_tilde, z }` | `signature { c_tilde, z }` | basesig |
+| σ̂ = (c, ẑ) | `PreSignature { c_tilde, z_hat }` | `pre_signature { c_tilde, z_hat }` | las |
 | Y = t' | `Statement([R;N])`, `as_t_prime()` | `statement { t_prime }` | relation |
 | y / s (witness) | `Witness([R;N_PLUS_ELL])`, `as_relation_vector()`/`from_relation_vector()` | `witness { value }` | relation |
 
@@ -93,10 +94,12 @@ public_key; a pre_signature is sig-shaped but NOT a signature — never cast/ali
   packed twins are DELETED from las.c — Algorithm 1 lives only in basesig.)
 - **Gate names — NEVER rename:** `LAS_ATTEMPTS`/`las_attempts`,
   `BASE_ATTEMPTS`/`base_attempts`, `las_expected_attempts`, `LAS_SEEDBYTES`,
-  serialize bit-widths `LAS_{PK,SK,C,Z}_COEFF_BITS`, `LAS_Z_OFFSET`, `LAS_Z_MAX`.
+  `LAS_CTILDEBYTES` (Stage-B; the challenge digest width), serialize bit-widths
+  `LAS_{PK,SK,Z}_COEFF_BITS` (`LAS_C_COEFF_BITS` is DELETED — the challenge is no
+  longer bit-packed), `LAS_Z_OFFSET`, `LAS_Z_MAX`.
 
 **Serialize sizes** (semantic `*_BYTES`, six typed pack/unpack pairs over 3 encoders):
-`PUBLIC_KEY_BYTES`(4416) `SECRET_KEY_BYTES`(704) `SIGNATURE_BYTES`(6752),
+`PUBLIC_KEY_BYTES`(4416) `SECRET_KEY_BYTES`(704) `SIGNATURE_BYTES`(6720),
 `STATEMENT_BYTES`=pk, `WITNESS_BYTES`=sk, `PRE_SIGNATURE_BYTES`=sig. Pairs:
 `pack_/unpack_` × {`public_key`,`statement`,`secret_key`,`witness`,`signature`,
 `pre_signature`}. `las_verify_packed` is DELETED from serialize (moved to
@@ -104,7 +107,8 @@ basesig as `base_verify_packed`).
 
 **Locked local conventions** (bit-for-bit, from the plan; unaffected by the rename):
 vector split `x_0`/`x_1`; NTT-operand suffixes `_hat`/`_mont`; products `c_r`/`c_t`;
-mask counter `mask_nonce`; recomputed challenge `c_check`; commitments
+mask counter `mask_nonce`; recomputed challenge digest `c_tilde_check`
+(Stage-B: verify byte-compares digests, not the old polynomial `c_check`); commitments
 `w_prime`/`w_plus_t_prime`; object vars `sigma`/`sigma_hat`/`statement`/`witness`;
 challenge sampler renamed to its upstream twin `sample_in_ball` (`las_` prefix is
 reserved for the four Algorithm-2 public ops, not private helpers).
@@ -291,8 +295,8 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   Ext≈65µs. Acceptance ≈37% per attempt (~2.7 attempts/sig), matching the
   `(1−κ/γ)^{(n+ℓ)·N} ≈ e^{−1}` theory. (An older ~23% figure came from a biased
   timing-ratio estimate — superseded, see `docs/LAS.md §8`.)
-  Sizes: in-memory sig=9216B; **measured packed (serialize.c)=4672B**; paper's
-  optimised=~3210B (different scheme — not directly comparable).
+  Sizes: in-memory sig=8224B; **measured packed (serialize.c)=4640B** (wire =
+  `c_tilde ‖ BitPack(z)`); paper's optimised=~3210B (different scheme — not directly comparable).
 - ✅ **Full design write-up** — `docs/LAS.md` (report source material, includes
   literature/methodology section §1.1 for assessment rubric).
 - ✅ **Theory↔implementation bridge** — `docs/02-methodology/THEORY_IMPL_BRIDGE.md` (every paper
@@ -310,13 +314,14 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
   be done already, but it must not displace Stage-1/2 + benchmark work.
 - ✅ **Serialization + byte-level verifier** — `ref/serialize.{c,h}` +
   `ref/test/test_serde.c`. Bit-packed wire encoding (pk 2944B, sk/witness 512B,
-  sig 4672B — measured, not formulas), *validating* decoder (rejects coeff≥Q,
-  non-ternary code, out-of-band z), and `las_verify_packed` = the byte interface
-  an on-chain verifier consumes. Tamper test: all 4672 single-byte flips rejected.
+  sig 4640B — measured, not formulas; wire = `c_tilde ‖ BitPack(z)`), *validating*
+  pk/sk decoder (rejects coeff≥Q, non-ternary code; c_tilde/z decode permissively,
+  tamper caught at Verify), and `base_verify_packed` = the byte interface an
+  on-chain verifier consumes. Tamper test: all 4640 single-byte flips rejected.
   See `docs/LAS.md §5.10, §6.3`.
-- ✅ **Deterministic API + pinned KATs (C4)** — `las_keypair_seed` / `las_signature_det`
+- ✅ **Deterministic API + pinned KATs (C4)** — `base_keygen_seed` / `base_sign_det`
   / `las_presign_det` (mask seed = `SHAKE256(tag‖sk‖[Y]‖M)`; shared
-  `las_signature_internal`/`las_presign_internal` with the randomised paths) + `ref/test/test_kat.c`
+  `base_sign_internal`/`las_presign_internal` with the randomised paths) + `ref/test/test_kat.c`
   with a pinned SHAKE256 digest over 4 fully-deterministic vectors. Reproducible
   across runs/machines; cross-check anchor for any future on-chain verifier.
   See `docs/LAS.md §5.11, §6.4`.

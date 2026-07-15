@@ -28,7 +28,7 @@ Scope:
 Check these mappings:
 
 1. Setup / public parameters
-   - paper matrix/public parameters -> `las_setup`
+   - paper matrix/public parameters -> `setup_public_params`
    - matrix-vector multiplication -> `las_Amul` or equivalent helper
    - use of Dilithium primitives such as poly arithmetic, NTT, SHAKE, and sampling
 

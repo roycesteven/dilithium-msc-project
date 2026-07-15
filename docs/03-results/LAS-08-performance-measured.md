@@ -20,7 +20,7 @@ measured by `ref/test/bench_las3`. Absolute numbers are machine-dependent; the
 | Ext | 68 | one `A·s` + compare |
 
 **Rejection-sampling acceptance rate (measured *directly*, bench_las3).**
-`las_signature`/`las_presign`/`las_presign_k` increment a global `las_attempts`
+`base_sign`/`las_presign`/`las_presign_k` increment a global `las_attempts`
 counter once per rejection-loop iteration (instrumentation only — never read by
 the scheme), so the benchmark reports the **exact** average attempts per
 signature over 2000 calls rather than estimating it. Measured:
@@ -64,15 +64,15 @@ governs the MSIS hardness parameter, not the acceptance rate.
 |---|---:|---:|---|
 | pk / statement Y | 4096 B | 2944 B | — |
 | sk / witness y | 8192 B | 512 B | — |
-| sig / pre-sig | 9216 B | 4672 B | ~3210 B |
+| sig / pre-sig | 8224 B | 4640 B | ~3210 B |
 
 - *In-memory:* `sizeof` counts full `int32_t` per coefficient.
 - *Packed (measured):* these are the **actual** sizes emitted by `ref/serialize.c`
-  (`LAS_PK_BYTES`, `LAS_SK_BYTES`, `LAS_SIG_BYTES`), validated by `test_serde`, not
-  formulas. pk: 23 bits/coeff (`Q < 2^23`) → `4·256·23/8 = 2944 B`. sk: ternary at
-  2 bits/coeff → `8·256·2/8 = 512 B`. sig: challenge `c` packed as a 2-bit ternary
-  polynomial (`256·2/8 = 64 B`) + response `z` at 18 bits/coeff
-  (`8·256·18/8 = 4608 B`) = **4672 B**. (`z` needs 18 bits at the paper/D2 sets because
+  (`PUBLIC_KEY_BYTES`, `SECRET_KEY_BYTES`, `SIGNATURE_BYTES`), validated by `test_serde`,
+  not formulas. pk: 23 bits/coeff (`Q < 2^23`) → `4·256·23/8 = 2944 B`. sk: ternary at
+  2 bits/coeff → `8·256·2/8 = 512 B`. sig: the 32-byte challenge digest `c_tilde`
+  (stored raw) + response `z` packed with the reused FIPS BitPack at 18 bits/coeff
+  (`8·256·18/8 = 4608 B`) = **4640 B**. (`z` needs 18 bits at the paper/D2 sets because
   the centred range `2·(γ−κ)+1 = 245641 < 2^18`; the larger D3/D5 dimensions need 19 bits,
   so `LAS_Z_COEFF_BITS` is selected from the parameters at compile time. Packing `c` as
   ternary is 4 B smaller than the position-encoded 68 B and simpler to validate.)
@@ -83,7 +83,7 @@ governs the MSIS hardness parameter, not the acceptance rate.
 **Takeaways for the report.** (i) `PreSign ≈ Sign`, `PreVerify ≈ Verify` — the
 adaptor operations add negligible overhead over the base scheme, matching the
 paper's efficiency claim. (ii) Sizes are large in-memory only; the *measured*
-packed sig (4672 B) is not dramatically larger than optimised Dilithium-3
+packed sig (4640 B) is not dramatically larger than optimised Dilithium-3
 (3309 B bit-packed), and bit-packing is now implemented, not just estimated.
 (iii) The sign rejection rate (~2.7 attempts, ≈37 % acceptance) is the honest cost
 of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` theory.
@@ -94,7 +94,7 @@ of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` t
 > **primary, fair** comparison is the **simplified Dilithium-style base signature path**
 > against the **LAS adaptor path**, using the *same parameters and same primitives*. The
 > base path is now a **separate, dedicated module** — `ref/basesig.c`
-> (`base_sign_keypair`/`base_sign_signature`/`base_sign_verify`): `Sign` hashes `c = H(pk, w, M)` and `Verify`
+> (`base_keygen`/`base_sign`/`base_verify`): `Sign` hashes `c = H(pk, w, M)` and `Verify`
 > recomputes `c = H(pk, w', M)` with **no statement `Y`** anywhere. The adaptor path is
 > `ref/las.c` (`PreSign`/`PreVerify`/`Adapt`/`Ext`), which folds `Y` into the hash
 > (`c = H(pk, w + Y, M)`). `basesig.c` is kept **out of `las.{c,h}`** on purpose so the
@@ -103,7 +103,7 @@ of the simplified, hint-free scheme — not a bug, and it matches the `e^{-1}` t
 > (a dimension-level match — `n,ℓ,κ` — not a formal bit-security claim; security proofs are
 > out of scope) and makes their keys/signatures interchangeable. That interchangeability is verified at
 > runtime: a LAS pre-signature, once `Adapt`-ed, verifies under the **independent**
-> `base_sign_verify` with no explicit `+Y`, because `A(ẑ+y) − c·t = (Aẑ − c·t) + A·y = w' + Y`.
+> `base_verify` with no explicit `+Y`, because `A(ẑ+y) − c·t = (Aẑ − c·t) + A·y = w' + Y`.
 > The only thing that varies between the paths is the adaptor layer, so the fair result
 > is its **overhead**. Official PQ-CRYSTALS Dilithium is a *different* algorithm (hints,
 > Power2Round, decomposition, bit-packing) and appears **only as context, clearly
@@ -167,18 +167,18 @@ label still prints `Adapt`; this caption is the precise reading.)*
 
 | Component | NIST 2 (4,4) | NIST 3 (6,5) | NIST 5 (8,7) |
 |---|---:|---:|---:|
-| `c` (challenge) | 64 | 64 | 64 |
+| `c_tilde` (challenge digest) | 32 | 32 | 32 |
 | `z` (response) | 4608 | 6688 | 9120 |
-| **signature (c,z)** | **4672** | **6752** | **9184** |
-| `z` as % of sig | 98.6% | 99.1% | 99.3% |
+| **signature (c,z)** | **4640** | **6720** | **9152** |
+| `z` as % of sig | 99.31% | 99.52% | 99.65% |
 | public key `pk` | 2944 | 4416 | 5888 |
 | secret key `sk` | 512 | 704 | 960 |
 | statement `Y` (LAS only) | 2944 | 4416 | 5888 |
-| pre-signature (LAS only) | 4672 | 6752 | 9184 |
+| pre-signature (LAS only) | 4640 | 6720 | 9152 |
 
 **The sharp conclusion:** the cost of LAS is **not adaptor computation** (≤~6% over
 the base, everywhere) but **communication** — especially the response vector `z`
-(98.6–99.3% of the signature) and the public-key-sized statement `Y`. For a blockchain,
+(99.3–99.7% of the signature) and the public-key-sized statement `Y`. For a blockchain,
 where every byte is stored and replicated, this is the property that matters.
 
 #### 8.1.1 Context only: optimised CRYSTALS-Dilithium (NOT algorithm-matched)
@@ -188,9 +188,9 @@ algorithm — the simplified base vs the optimised reference at matching dimensi
 
 | | base KeyGen | Dil KeyGen | base Sign | Dil Sign | base Verify | Dil Verify | base sig | Dil sig |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| NIST 2 | 77 | 144 | 857 | 689 | 181 | 160 | 4672 | 2420 |
-| NIST 3 | 116 | 260 | 1311 | 1168 | 280 | 258 | 6752 | 3309 |
-| NIST 5 | 174 | 388 | 1594 | 1409 | 397 | 420 | 9184 | 4627 |
+| NIST 2 | 77 | 144 | 857 | 689 | 181 | 160 | 4640 | 2420 |
+| NIST 3 | 116 | 260 | 1311 | 1168 | 280 | 258 | 6720 | 3309 |
+| NIST 5 | 174 | 388 | 1594 | 1409 | 397 | 420 | 9152 | 4627 |
 
 The simplified base is in the same regime (KeyGen faster — no Power2Round/packing;
 Verify within a few %; Sign somewhat slower as it is otherwise unoptimised). Its
@@ -219,16 +219,16 @@ counts are measured directly via `las_attempts`.
 
 | Phase | Object(s) | Bytes |
 |---|---|---:|
-| Off-chain (3 messages) | `Y` + `σ̂_A` + `σ̂_B` | 2944 + 4672 + 4672 = **12 288 B** |
-| Settlement footprint (proxy) | `σ_A`, `σ_B` published | 2 × 4672 = **9 344 B** |
-| Settlement footprint incl. escrowed `Y` | + 2 × `Y` | 15 232 B |
+| Off-chain (3 messages) | `Y` + `σ̂_A` + `σ̂_B` | 2944 + 4640 + 4640 = **12 224 B** |
+| Settlement footprint (proxy) | `σ_A`, `σ_B` published | 2 × 4640 = **9 280 B** |
+| Settlement footprint incl. escrowed `Y` | + 2 × `Y` | 15 168 B |
 
 Only the two *adapted* signatures would be published on a real chain; each is a
 single ordinary-looking LAS signature. The "escrowed `Y`" row is the more
 conservative **same-`Y` scriptless-HTLC** model realised only in the *simulated*
 ledger (`ref/chain.c`, which stores `Y` as the on-chain lock); the deployed EVM
 artefact (§8.4, `evm/src/AdaptorSwap.sol`) **deliberately stores no `Y`** — its LAS
-claim path charges calldata for the final 4672-byte adapted signature alone, so the
+claim path charges calldata for the final 4640-byte adapted signature alone, so the
 `Y` bytes are off-chain adaptor communication, not an on-chain cost there.
 End-to-end signing work (2× PreSign + 2×
 Adapt + Ext) is a few milliseconds (a single un-averaged sample, dominated by the
@@ -295,8 +295,8 @@ harness (which mirrors the LAS operation set one-to-one) is ours. Reproduce via
 |---|---:|---:|---:|
 | public key / statement | 33 | 2944 | ×89 |
 | secret key / witness | 32 | 512 | ×16 |
-| signature | 64 (70 DER) | 4672 | ×73 |
-| pre-signature | 162 | 4672 | ×29 |
+| signature | 64 (70 DER) | 4640 | ×73 |
+| pre-signature | 162 | 4640 | ×29 |
 
 **Reading the data (the report's "let the data speak" paragraph):**
 
@@ -340,12 +340,12 @@ differs, so a gas report isolates the price of post-quantum **on-chain**:
 - **Classical** (`claimClassical`): the adapted ECDSA signature is verified
   natively with the `ecrecover` precompile — how a real EVM ECDSA-adaptor swap
   settles.
-- **Post-quantum** (`claimLAS`): the adapted LAS signature is a **real 4672-byte
+- **Post-quantum** (`claimLAS`): the adapted LAS signature is a **real 4640-byte
   packed lattice signature** (`evm/test/las_sig.bin`, exported deterministically
   from the C implementation by `ref/test/export_packed`). Native lattice
   verification (NTT + SHAKE256 over the packed signature) is **infeasible in the
   EVM**, so this charges only the unavoidable on-chain **floor** — calldata for the
-  4672 bytes + one keccak256 pass — a strict *lower bound* on the true cost.
+  4640 bytes + one keccak256 pass — a strict *lower bound* on the true cost.
 
 **Measured gas (EVM gas is deterministic — not machine-dependent):**
 
@@ -359,7 +359,7 @@ differs, so a gas report isolates the price of post-quantum **on-chain**:
 The real LAS signature is 4649 non-zero / 23 zero bytes → **74,476 gas of calldata
 alone** (16 gas/non-zero byte, 4 gas/zero). Three readings for the report:
 
-1. **The on-chain price of PQ is, again, communication.** The 4672-byte signature's
+1. **The on-chain price of PQ is, again, communication.** The 4640-byte signature's
    calldata (74,476 gas) is ~97 % of the marginal claim cost and alone exceeds the
    *entire* classical claim (75,709 gas, which includes real verification).
 2. **Even the floor is ~2.75× the full classical claim** (208,400 vs 75,709), and
@@ -371,7 +371,7 @@ alone** (16 gas/non-zero byte, 4 gas/zero). Three readings for the report:
    `mulmod`/`addmod` opcodes (8 gas each), so the modular arithmetic, while large, is
    not astronomically so. Section 8.4.1 replaces the assertion with an actual
    experiment (`evm/test/LASVerifyCost.t.sol`). The corrected, evidenced finding is
-   that one native `las_verify` costs **≈12 M gas** — roughly **158× the classical
+   that one native `base_verify` costs **≈12 M gas** — roughly **158× the classical
    `ecrecover` claim** and **≈40 % of a 30 M block** (≈33 % of the ~36 M block limit
    of 2025). It is *economically absurd* and an *implementation nightmare* (it needs
    SHAKE256 and a negacyclic NTT in EVM bytecode), which is exactly why on-chain PQ
@@ -392,12 +392,12 @@ Reproduce: `evm/README.md` (one `export_packed` + `forge test --gas-report`).
 The "exceeds the block gas limit" claim above is a falsifiable quantitative
 statement, so we measured it rather than asserting it. `evm/src/LASVerifyCost.sol`
 is a **gas-faithful cost probe**: it executes the exact arithmetic op-budget of one
-`ref/las.c` `las_verify` — recomputing `w' = A·ẑ − c·t` — on Foundry's local EVM,
+`ref/las.c` `base_verify` — recomputing `w' = A·ẑ − c·t` — on Foundry's local EVM,
 and `forge test --match-contract LASVerifyCost -vv` prices it. The probe relies on a
 property of the EVM that makes it rigorous despite not being a *correct* verifier:
 **opcode gas is independent of operand values** (`mulmod`/`addmod` are a flat 8 gas,
 `MLOAD`/`MSTORE` 3 gas), so a kernel that reproduces the exact *structure* of
-`las_verify` — the same **12 forward NTTs, 8 inverse NTTs, 20 pointwise products**
+`base_verify` — the same **12 forward NTTs, 8 inverse NTTs, 20 pointwise products**
 and coefficient passes over real 256-word memory arrays — has the same gas as a
 numerically-correct verifier's arithmetic. (Twiddle factors come from a runtime
 recurrence purely so the optimiser cannot constant-fold the loops away; a
@@ -422,7 +422,7 @@ strict lower bound.
 | coefficient passes (add/sub/reduce/caddq) | ≈30,700 | ~40 | ≈1,227,720 | measured (residual) |
 | **`w' = A·ẑ − c·t` arithmetic** | | | **10,080,044** | **measured (`verifyArith`)** |
 | SHAKE256 challenge hash | ≈30,000 | 64 perm. | 1,920,000 | calculated |
-| **One native `las_verify`** | | | **≈12,000,044** | measured + calculated |
+| **One native `base_verify`** | | | **≈12,000,044** | measured + calculated |
 | — for reference: classical `ecrecover` claim | | | 75,709 | measured (§8.4) |
 | — for reference: 30 M block gas limit | | | 30,000,000 | Ethereum mainnet |
 
@@ -441,7 +441,7 @@ precisely the case for a PQ precompile or a zk-proof-of-verification rather than
 on-chain replay — the same conclusion poqeth reaches for *basic* PQ, here quantified
 for the exotic case. The figure is a *lower bound* on a straightforward Solidity
 verifier: it excludes expanding the public matrix `A'` from its seed and unpacking the
-4672-byte signature into coefficients (both add gas but not an order of magnitude),
+4640-byte signature into coefficients (both add gas but not an order of magnitude),
 while a hand-tuned Yul implementation could shave the per-NTT cost. Across that whole
 range the conclusion is invariant: a large fraction of a block, ~10²× the classical
 claim, but not over the ceiling.

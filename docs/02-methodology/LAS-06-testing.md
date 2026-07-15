@@ -31,11 +31,12 @@ demonstrate the full adaptor-signature contract end to end.
 A separate suite exercises the byte-level encoding of Section 5.10 over 256 random
 instances, hard-asserting: (i) **round-trip** `unpack(pack(x)) == x` for pk, sk, and
 the ordinary / pre / adapted signatures; (ii) **verify-from-bytes** — a packed
-`(pk, adapted σ)` verifies via `las_verify_packed`, while a packed *pre-signature*
+`(pk, adapted σ)` verifies via `base_verify_packed`, while a packed *pre-signature*
 is rejected (the tripwire survives serialisation); (iii) **tamper** — every one of
-the `LAS_SIG_BYTES = 4672` single-byte flips of a valid packed signature makes it
-fail verification; (iv) **validation** — `pack` and `unpack` both reject
-out-of-range inputs (coefficient `≥ Q`, non-ternary code, `z` outside the band).
+the `SIGNATURE_BYTES = 4640` single-byte flips of a valid packed signature makes it
+fail verification (caught at Verify: the wire is `c_tilde ‖ BitPack(z)`, decoded
+permissively); (iv) **validation** — `pack`/`unpack` reject out-of-range pk/sk
+inputs (coefficient `≥ Q`, non-ternary code).
 All pass, zero warnings.
 
 ### 6.4 Known-answer tests (`ref/test/test_kat.c`)

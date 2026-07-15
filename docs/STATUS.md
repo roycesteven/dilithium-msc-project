@@ -24,7 +24,7 @@ functions were written first, and why) →
 | D3 | Atomic swap (2-party, 2-chain), narrated + asserted | ✅ | ✅ | ✅ | `make test/test_swap3 && ./test/test_swap3` |
 | D4 | Scriptless HTLC ledger: swap / timeout-refund / same-Y PCN | ✅ | ✅ | ✅ | `make test/test_pcn3 && ./test/test_pcn3` |
 | D5 | AMHL multi-hop (γ−κ−K, distinct Y_j, wormhole-resistant, refund) — *bonus* | ✅ | ✅ | ✅ | `make test/test_amhl3 && ./test/test_amhl3` |
-| D6 | Byte serialisation + validating decoder + `las_verify_packed`; swept across parameter sets (paper + D2/D3/D5, parameter-derived `z` width) | ✅ | ✅ | ✅ | `make test/test_serde3 test/test_serde_l2 test/test_serde_l3 test/test_serde_l5 && ./test/test_serde3 && ./test/test_serde_l2 && ./test/test_serde_l3 && ./test/test_serde_l5` |
+| D6 | Byte serialisation + validating decoder + `base_verify_packed`; swept across parameter sets (paper + D2/D3/D5, parameter-derived `z` width) | ✅ | ✅ | ✅ | `make test/test_serde3 test/test_serde_l2 test/test_serde_l3 test/test_serde_l5 && ./test/test_serde3 && ./test/test_serde_l2 && ./test/test_serde_l3 && ./test/test_serde_l5` |
 | D7 | Deterministic API + pinned KAT (reproducibility, C4) | ✅ | ✅ | ✅ | `make test/test_kat3 && ./test/test_kat3` |
 | D8 | Benchmark 1 — per-op timings + **direct** rejection rate | ✅ | ✅ | ✅ | `make test/bench_las3 && ./test/bench_las3` |
 | D9 | Benchmark 2 — LAS vs optimised Dilithium-3 (context; superseded as headline by D20) | ✅ | ✅ | ✅ | `make test/bench_compare3 && ./test/bench_compare3` |
@@ -93,10 +93,10 @@ All run with zero compiler warnings under
 | `test_swap3` | 1 narrated run | two-leg atomicity; pre-adaptation σ̂_B unspendable |
 | `test_pcn3` | 3 scenarios | cross-chain swap; timeout-refund (no coins lost); same-Y multi-hop PCN |
 | `test_amhl3` | K=4 happy + K=2 refund | distinct Y_j; **wormhole resistance** (s_K can't open hop 1); ‖s_j‖∞≤j; exact cascade recovery; refund |
-| `test_serde3` | 256 random + exhaustive | round-trip pk/sk/sig; verify-from-bytes; tripwire survives packing; **all 4672 byte-flips rejected**; malformed-input rejected |
+| `test_serde3` | 256 random + exhaustive | round-trip pk/sk/sig; verify-from-bytes; tripwire survives packing; **all 4640 byte-flips rejected at Verify** (wire = `c_tilde ‖ BitPack(z)`); malformed pk/sk input rejected |
 | `test_kat3` | 4 fixed vectors | full deterministic pipeline; byte-identical re-runs; **pinned SHAKE256 digest match** |
 
-KAT digest (pinned): `641a176c3eb2125098fdbb7ad16bfa38fb5744b52dd9696beeb7d07be1445a19`.
+KAT digest (pinned, C = Rust): `bb6ad0dab998c1f90ca4d3cc0f5d3dfa723e89f79aff18fce2698a08c96e260c`.
 
 ---
 
@@ -123,21 +123,27 @@ Sign 45, Verify 69, PreSign 207, PreVerify 268, Adapt 4, Ext 36; sizes pk 33, sk
 sig 64 (70 DER), pre-sig 162.
 
 **Sizes (bytes):** LAS packed pk/Y **2944**, sk/witness **512**, sig=pre-sig
-**4672** (in-memory `sizeof` 4096/8192/9216). Classical: pk 33, sk 32, sig 64
-(70 DER), pre-sig 162. Dilithium-3: pk 1952, sk 4032, sig 3309.
+**4640** (32-byte `c_tilde` + `BitPack(z)`; in-memory `sizeof` 4096/8192/8224).
+Classical: pk 33, sk 32, sig 64 (70 DER), pre-sig 162. Dilithium-3: pk 1952,
+sk 4032, sig 3309.
 
 **On-chain gas (EVM, deterministic — `evm/`, `forge test --gas-report`):** classical
 claim (ecrecover) 75,709; LAS claim *floor* 208,400 (calldata 74,476 for the real
 4672-B sig + keccak, **no** verification); fund 180k/140k; refund 39,330. LAS
 settlement floor = 2.75× the full classical claim. **Native verification cost —
 measured experiment (`evm/test/LASVerifyCost.t.sol`, `make`-free
-`forge test --match-contract LASVerifyCost -vv`):** the full `las_verify` arithmetic
+`forge test --match-contract LASVerifyCost -vv`):** the full `base_verify` arithmetic
 (12 fwd NTT + 8 inv NTT + 20 pointwise) is **10.08 M gas measured** on the EVM; the
 SHAKE256 challenge (~64 Keccak-f permutations) adds **~1.92 M calculated** ⇒ **≈12 M
 gas total ≈ 158× the classical claim ≈ 40 % of a 30 M block**. Correction: native
 verification is *prohibitively expensive but does **not** exceed the block gas limit*
 (EVM-native `mulmod` is 8 gas) — the earlier "exceeds the block gas limit" wording was
 an overstatement and is retracted; the real barrier is cost + missing PQ precompiles.
+**⚠ Stage-B caveat (re-measure):** the *calldata*-derived figures above (74,476 /
+208,400, based on the 4672-B sig) predate the `c_tilde ‖ BitPack(z)` change; the packed
+sig is now 4640 B (paper) / 6720 B (D3 export), so re-run `forge test` to refresh them.
+The native-verify arithmetic figures (~12 M gas) are unaffected — Verify does the same
+NTTs and one `SampleInBall(c_tilde)` as before.
 
 **Three headline findings** (the report's centrepieces): (i) price of PQ is
 *communication* (×29–89 sizes; on-chain calldata 74k gas > whole classical claim)
@@ -177,7 +183,7 @@ wormhole-resistance assertion + norm growth scrolling [90s]; (3) animate the swa
 cascade (Fig. 3) with the "publishing σ reveals y" reveal [120s]; (4) the
 "price of PQ" bar chart — sizes ×29–89 vs near-flat adaptor overhead, the
 counter-intuitive inverted-overhead result [120s]; (5) `test_serde3` tamper test
-(all 4672 flips rejected) + KAT digest match as the "it's real, reproducible"
+(all 4640 flips rejected) + KAT digest match as the "it's real, reproducible"
 beat [60s]; (6) limitations + future work [30s]. Talking-head in corner.
 
 ---

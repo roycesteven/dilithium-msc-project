@@ -28,13 +28,13 @@
 
 - **Signature packing.** ✅ **Implemented** (`ref/serialize.{c,h}`, Section 5.10):
   bit-packed wire/on-chain encoding with a validating decoder and the
-  `las_verify_packed` byte-level verifier, giving a measured packed signature of
-  4672 B (vs 9216 B in-memory). The residual gap to optimised Dilithium-3 (3309 B)
+  `base_verify_packed` byte-level verifier, giving a measured packed signature of
+  4640 B (vs 8224 B in-memory). The residual gap to optimised Dilithium-3 (3309 B)
   is the modulus (`2^23` vs `2^24`) and the hint/decomposition compression of the
   optimised scheme — out of scope here.
 
 - **Reproducibility / KATs.** ✅ **Implemented** (`ref/test/test_kat.c`, Sections
-  5.11 and 6.4): a deterministic API (`las_keypair_seed`, `las_signature_det`,
+  5.11 and 6.4): a deterministic API (`base_keygen_seed`, `base_sign_det`,
   `las_presign_det`) plus a pinned SHAKE256 known-answer digest over fixed vectors.
   This satisfies objective C4's reproducibility requirement and provides the test
   vectors a future on-chain verifier would be cross-checked against. (NIST-style

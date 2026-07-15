@@ -79,8 +79,8 @@ confirmed at the file level by this diff.
 | File | What it is |
 |---|---|
 | `ref/las.c`, `ref/las.h` | the LAS scheme: KeyGen, Sign, Verify + the adaptor operations PreSign, PreVerify, Adapt, Ext (paper Algorithm 2, "variant B") |
-| `ref/basesig.c`, `ref/basesig.h` | the **separate** simplified Dilithium-style base signature (`base_sign_keypair`/`base_sign_signature`/`base_sign_verify`, `c = H(pk, w, M)`, no statement `Y`) — the fair baseline for `bench_levels`; kept out of `las.{c,h}` so the LAS protocol is untouched, shares only `las.h`'s parameter macros + struct layout |
-| `ref/serialize.c`, `ref/serialize.h` | byte-level wire/on-chain encoding + validating decoder + `las_verify_packed` |
+| `ref/basesig.c`, `ref/basesig.h` | the **separate** simplified Dilithium-style base signature (`base_keygen`/`base_sign`/`base_verify`, `c = H(pk, w, M)`, no statement `Y`) — the fair baseline for `bench_levels`; kept out of `las.{c,h}` so the LAS protocol is untouched, shares only `las.h`'s parameter macros + struct layout |
+| `ref/serialize.c`, `ref/serialize.h` | byte-level wire/on-chain encoding + validating decoder + `base_verify_packed` |
 | `ref/amhl.c`, `ref/amhl.h` | anonymous multi-hop locks (distinct per-hop statements) — optional/bonus tier |
 | `ref/chain.c`, `ref/chain.h` | scriptless-HTLC toy ledger (accounts, block height, claim / timeout-refund) |
 | `ref/test/test_las.c` | LAS correctness test (1000 iters, modes 2/3/5) |

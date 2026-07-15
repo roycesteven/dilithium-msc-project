@@ -37,7 +37,7 @@ transitively, also unmodified.)
 | `poly_pointwise_montgomery` | `poly.c` | **call-as-is** | pointwise product in NTT domain (`A'·v`, `c·r`, `c·t`) |
 | `poly_uniform` | `poly.c` | **call-as-is** | expand the public matrix `A'` (pulls in SHAKE128) |
 | `shake256_init/absorb/finalize/squeeze/squeezeblocks` | `fips202.c` | **call-as-is** | the random oracle `H`, all samplers, deterministic-seed derivation |
-| `randombytes` | `randombytes.c` | **call-as-is** | seeds for `las_setup`, randomised KeyGen/Sign/PreSign |
+| `randombytes` | `randombytes.c` | **call-as-is** | seeds for `setup_public_params`, randomised KeyGen/Sign/PreSign |
 | `params.h` constants `N`, `Q` | `params.h` | **call-as-is** | ring degree 256, modulus `8380417` (≈2²³) |
 
 **Count:** 9 Dilithium API functions + their transitive callees, all unmodified.
@@ -74,11 +74,11 @@ mode-specific `K`, `L`, `TAU`, `GAMMA1`, … — so it builds identically under
 ### 3.1 `las.{c,h}` — the scheme
 | Function | Kind | Role |
 |---|---|---|
-| `las_setup` | public | expand public parameters `A=[I\|A']` from a seed |
-| `las_keypair`, `las_keypair_seed` | public | `r←S₁`, `t=Ar`; seeded variant for KATs |
-| `las_signature`, `las_signature_det` | public | Fiat–Shamir-with-aborts signature; deterministic variant |
-| `las_verify` | public | ordinary verification (`Az−ct`, hash compare) |
-| `las_signature_internal`, `las_verify_internal`, `las_presign_internal`, `las_preverify_internal` | public (internal API) | seed-/bound-parameterised bodies shared by the random, deterministic and K-hop entry points — declared in `las.h` exactly as `sign.h` declares `crypto_sign_signature_internal`/`crypto_sign_verify_internal`; provenance chain `crypto_sign_*_internal → base_sign_*_internal → las_*_internal` |
+| `setup_public_params` | public | expand public parameters `A=[I\|A']` from a seed |
+| `base_keygen`, `base_keygen_seed` | public | `r←S₁`, `t=Ar`; seeded variant for KATs |
+| `base_sign`, `base_sign_det` | public | Fiat–Shamir-with-aborts signature; deterministic variant |
+| `base_verify` | public | ordinary verification (`Az−ct`, hash compare) |
+| `base_sign_internal`, `las_verify_internal`, `las_presign_internal`, `las_preverify_internal` | public (internal API) | seed-/bound-parameterised bodies shared by the random, deterministic and K-hop entry points — declared in `las.h` exactly as `sign.h` declares `crypto_sign_signature_internal`/`crypto_sign_verify_internal`; provenance chain `crypto_sign_*_internal → base_sign_*_internal → las_*_internal` |
 | `las_presign`, `las_presign_k`, `las_presign_det` | public | adaptor PreSign (`H(pk,w+Y,M)`, bound `γ−κ−1`; K-hop bound `γ−κ−K`; deterministic) |
 | `las_preverify`, `las_preverify_k` | public | adaptor PreVerify (single-hop / K-hop bound) |
 | `las_adapt` | public | `σ=(c, ẑ+y)` — completes a pre-signature |
@@ -89,27 +89,28 @@ mode-specific `K`, `L`, `TAU`, `GAMMA1`, … — so it builds identically under
 **`basesig.{c,h}` — the separate simplified-base signature (new; the fair-benchmark baseline).**
 A standalone simplified Dilithium-style signature kept deliberately **out of `las.{c,h}`**
 so the LAS protocol is never conflated or modified. Its API mirrors `sign.h` one-to-one
-(same seven slots, same order, same `int` returns) by the uniform prefix swap
-`crypto_sign* → base_sign*`: `base_sign_keypair`, `base_sign_signature_internal`,
-`base_sign_signature` (`c = H(pk, w, M)`, no statement `Y`), `base_sign`,
-`base_sign_verify_internal`, `base_sign_verify` (`c == H(pk, w', M)`), `base_sign_open`
-— plus the LAS twin chain `… → las_keypair / las_signature[_internal] /
-las_verify[_internal]`. It depends on
-`las.h` only for the shared parameter macros and the `las_pp/las_pk/las_sk/las_sig` struct
-layout, so both schemes use the same parameter set (a dimension-level match — `n,ℓ,κ` —
+(same slots, same order, same `int` returns) by the uniform prefix swap
+`crypto_sign* → base_*`: `base_keygen` (+ the seeded KAT slot `base_keygen_seed`),
+`base_sign_internal`, `base_sign` (`c = H(pk, w, M)`, no statement `Y`), `base_sign_det`,
+`base_verify_internal`, `base_verify` (`c == H(pk, w', M)`); the two zero-caller
+sm-wrappers (upstream `crypto_sign`/`crypto_sign_open`) are **deleted**, and the packed
+tier adds `base_keygen_packed`/`base_sign_packed`/`base_verify_packed`. It depends on
+`setup.h` (the shared parameter macros + `public_params`) and `las_types.h` (the object
+types `public_key`/`secret_key`/`signature`) — **not** on `las.h` — so both schemes use
+the same parameter set (a dimension-level match — `n,ℓ,κ` —
 not a formal bit-security claim; proofs are out of scope) and their keys/signatures are
 interchangeable — verified by `bench_levels`, where a LAS-`Adapt`-ed signature passes the
-independent `base_sign_verify`. Its static helpers (`b_Amul`, `b_polymul_prehat`, `b_challenge`,
+independent `base_verify`. Its static helpers (`b_Amul`, `b_polymul_prehat`, `b_challenge`,
 `b_hash_challenge`, `b_sample_Sgamma`, `b_sample_ternary`, `b_pack_poly_canon`,
 `b_poly_equal`, `b_chknorm_vec`) are behaviour-identical local copies of LAS's so the
 challenge hash matches bit-for-bit (including the identical NTT hoisting). **No upstream files modified.**
 
 ### 3.2 `serialize.{c,h}` — byte-level encoding (on-chain interface)
-`las_pack_pk`/`las_unpack_pk`, `las_pack_sk`/`las_unpack_sk`,
-`las_pack_sig`/`las_unpack_sig`, `las_verify_packed` (validating decoder + verify
+`pack_public_key`/`unpack_public_key`, `pack_secret_key`/`unpack_secret_key`,
+`pack_signature`/`unpack_signature`, `base_verify_packed` (validating decoder + verify
 from bytes). The `z` field width is parameter-derived (`LAS_Z_COEFF_BITS` = 18 bits for
 the paper/D2 sets, 19 for D3/D5), so every parameter set packs losslessly. Sizes
-(paper/D2): pk 2944 B, sk 512 B, sig 4672 B.
+(paper/D2): pk 2944 B, sk 512 B, sig 4640 B.
 
 ### 3.3 `amhl.{c,h}` — multi-hop locks (optional/bonus tier)
 `amhl_setup_gen` (cumulative statements `Y_j=A·(l₁+…+l_j)`), `amhl_norm`,

@@ -1,7 +1,7 @@
 # Benchmarking guide — Algorithm 1 vs Algorithm 2 (Rust port)
 
 How to run, read, and reproduce the Stage-1 benchmarks of this crate:
-the ordinary lattice-based signature (Algorithm 1, `src/las_basesig.rs`)
+the ordinary lattice-based signature (Algorithm 1, `src/basesig.rs`)
 versus the LAS adaptor signature (Algorithm 2, `src/las.rs`), both at the
 Simplified Dilithium-III setting `(n=6, ℓ=5, κ=49)`.
 
@@ -87,7 +87,7 @@ the statistical harness.
 
 ```sh
 cd rust/fips204-las
-cargo test --test las_kat -- --nocapture   # pinned digest 641a176c…5a19 == C value
+cargo test --test las_kat -- --nocapture   # pinned digest bb6ad0da…260c == C value
 cargo test --lib --tests                   # upstream suite + interlock + serde tests
 ```
 
@@ -153,7 +153,7 @@ cargo run --release --example size_report | tee size_report_rust.log
 ```
 
 Deterministic (no statistics needed): it packs live, contract-gated objects
-with `las_serialize.rs` and prints the component-level byte table — see
+with `serialize.rs` and prints the component-level byte table — see
 "Communication cost" below.
 
 ## Measured results (committed run)
@@ -202,7 +202,7 @@ languages.
 ## Communication cost — component sizes (measured, committed run)
 
 From `size_report_rust.log` (`cargo run --release --example size_report`),
-Simplified Dilithium-III setting, wire format `las_serialize.rs` — every value
+Simplified Dilithium-III setting, wire format `serialize.rs` — every value
 hard-asserted equal to the C evidence row
 (`evidence/latest/tables/communication_components.csv`, level L3):
 
@@ -212,16 +212,16 @@ hard-asserted equal to the C evidence row
 | secret key sk = r | 704 | 10.43 |
 | statement Y = t′ (adaptor lock) | 4416 | 65.40 |
 | witness r′ | 704 | 10.43 |
-| challenge c | 64 | 0.95 |
-| response z (= ẑ in the pre-signature) | 6688 | 99.05 |
-| signature (c, z) | 6752 | 100.00 |
-| pre-signature (c, ẑ) | 6752 | 100.00 |
-| adapted signature (c, z) | 6752 | 100.00 |
+| challenge c_tilde | 32 | 0.48 |
+| response z (= ẑ in the pre-signature) | 6688 | 99.52 |
+| signature (c, z) | 6720 | 100.00 |
+| pre-signature (c, ẑ) | 6720 | 100.00 |
+| adapted signature (c, z) | 6720 | 100.00 |
 
 The findings the supervisor asks to state explicitly (§13.2, §14.4):
 
-- **the response z drives the size** (99.05% of the signature); the challenge
-  is negligible (64 B);
+- **the response z drives the size** (99.52% of the signature); the challenge
+  is negligible (32 B);
 - **signature, pre-signature and adapted signature are byte-identical in
   size**: Adapt only adds the ternary witness (`‖y‖∞ ≤ 1`) to ẑ, so `‖z‖∞`
   grows by at most 1 and stays inside the same 19-bit packed field;
@@ -333,7 +333,7 @@ same way. There are **two** C drivers, matching the two Rust tools:
 
 | Methodology element | C protocol driver (`bench_levels.c`) | C Criterion mirror (`bench_criterion.c`) | Rust protocol driver (`bench_levels.rs`) | Rust Criterion (`las_bench.rs`) |
 | --- | --- | --- | --- | --- |
-| Two independent modules (Algorithm 1 vs Algorithm 2) | `basesig.c` vs `las.c` | same | `las_basesig.rs` vs `las.rs` | same |
+| Two independent modules (Algorithm 1 vs Algorithm 2) | `basesig.c` vs `las.c` | same | `basesig.rs` vs `las.rs` | same |
 | Success-path contract asserted before timing | yes | yes | yes | yes |
 | Pre-signature must FAIL ordinary Verify | asserted | asserted | asserted | asserted |
 | Sign-class statistic includes rejection restarts | yes (mean) | yes (mean + bootstrap CI) | yes (mean) | yes (mean + bootstrap CI) |

@@ -23,7 +23,7 @@ Three signature schemes on one lineage. Each arrow is a small, deliberate step.
         │            (no key compression, no hint vector)          paper §2.2
         ▼
    Simplified Dilithium signature          "Algorithm 1" in the paper — the ordinary signature
-        │                                   our files: ref/basesig.c · rust .../las_basesig.rs
+        │                                   our files: ref/basesig.c · rust .../basesig.rs
         │   step 2:  ADD a statement Y into the hash,
         │            tighten one bound, add 4 operations           paper Algorithm 2
         ▼
@@ -64,7 +64,7 @@ Start at A. Only open C/D if you want the line-level detail.
 
 - A. Protocol walkthroughs
   - [01 · Upstream ML-DSA](A-protocol-walkthroughs/01-upstream-ml-dsa.md) — how the vendored C and Rust standards do it
-  - [02 · Simplified Dilithium (our base signature)](A-protocol-walkthroughs/02-simplified-dilithium.md) — **how our `basesig.c` / `las_basesig.rs` do it**
+  - [02 · Simplified Dilithium (our base signature)](A-protocol-walkthroughs/02-simplified-dilithium.md) — **how our `basesig.c` / `basesig.rs` do it**
   - [03 · LAS adaptor (our adaptor scheme)](A-protocol-walkthroughs/03-las-adaptor.md) — **how our `las.c` / `las.rs` do it**
 - B. Modifications
   - [01 · ML-DSA → Simplified Dilithium](B-modifications/01-ml-dsa-to-simplified.md)

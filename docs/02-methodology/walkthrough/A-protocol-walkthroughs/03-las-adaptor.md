@@ -24,8 +24,8 @@ follows from that one change.
 
 ## KeyGen — identical to the base scheme, and it also makes statements
 
-> C: `las_keypair` ([las.c:109](../../../../ref/las.c#L109)) ·
-> Rust: `las_keypair` ([las.rs:213](../../../../rust/fips204-las/src/las.rs#L213))
+> C: `base_keygen` ([las.c:109](../../../../ref/las.c#L109)) ·
+> Rust: `base_keygen` ([las.rs:213](../../../../rust/fips204-las/src/las.rs#L213))
 
 Exactly the base KeyGen: `r ← S₁^{n+ℓ}`, `t = A·r`, `(pk, sk) = (t, r)`.
 
@@ -38,12 +38,12 @@ and a witness is another secret key. Nothing new to implement — the paper's
 
 ## Sign / Verify — reused verbatim
 
-> `las_signature` ([las.c:214](../../../../ref/las.c#L214)),
-> `las_verify` ([las.c:303](../../../../ref/las.c#L303))
+> `base_sign` ([las.c:214](../../../../ref/las.c#L214)),
+> `base_verify` ([las.c:303](../../../../ref/las.c#L303))
 
 These are the base signature's Sign/Verify (`c = H(pk, w, M)`), byte-for-byte.
 Proof that they really are the same scheme: an **adapted** LAS signature (below)
-verifies under the *independent* base verifier `base_sign_verify` — a test the
+verifies under the *independent* base verifier `base_verify` — a test the
 benchmark asserts on every run.
 
 ---

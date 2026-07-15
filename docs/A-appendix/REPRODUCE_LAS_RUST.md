@@ -109,20 +109,23 @@ The KAT digest is decided here. Each sampler must consume the XOF stream with
 | `las_challenge` | SHAKE256(seed32) | first 8 bytes = sign bits (LE u64); then Fisher–Yates-style positions with rejection `b > i`; weight `κ` per parameter set. |
 | `det_seed` | SHAKE256(tag ‖ sk ‖ [Y] ‖ M) → 64 B | `sk` absorbed 1 byte/coeff with `(uint8_t)(int8_t)` semantics (`−1 → 0xFF`); `Y` absorbed canonically (4 LE bytes/coeff in `[0,Q)`). |
 
-## Step 5 — Port the scheme functions (`src/las.rs`)
+## Step 5 — Port the scheme functions
 
-One-to-one map with `ref/las.c` (deterministic path — the KAT scope):
+One-to-one map, module by module (deterministic path — the KAT scope). Algorithm 1
+lives in `basesig`, Algorithm 2 in `las`; the C keeps a `las_`/`base_` prefix where
+Rust uses module paths:
 
-| C (`ref/las.c`) | Rust (`src/las.rs`) |
+| C | Rust |
 | --- | --- |
-| `las_setup` | `las_setup` |
-| `las_keypair` / `las_keypair_seed` | `las_keypair` (RNG-injected) / `las_keypair_seed` |
-| `las_signature_internal` / `las_signature` / `las_signature_det` | `las_signature_internal` / `las_signature` (RNG-injected) / `las_signature_det` |
-| `las_verify` | `las_verify` |
-| `las_presign_internal` / `las_presign` / `las_presign_det` | `las_presign_internal` / `las_presign` (RNG-injected) / `las_presign_det` |
-| `las_preverify` | `las_preverify` |
-| `las_adapt` | `las_adapt` (returns `Option`) |
-| `las_ext` | `las_ext` (returns `Option`) |
+| `setup_public_params` (`setup.c`) | `setup_public_params` (`setup.rs`) |
+| `relation_gen` / `relation_gen_seed` (`relation.c`) | `gen` (RNG-injected) / `gen_seed` (`relation.rs`) |
+| `base_keygen` / `base_keygen_seed` (`basesig.c`) | `keygen` (RNG-injected) / `keygen_seed` (`basesig.rs`) |
+| `base_sign_internal` / `base_sign` / `base_sign_det` | `sign_internal` / `sign` (RNG-injected) / `sign_det` |
+| `base_verify` | `verify` |
+| `las_presign_internal` / `las_presign` / `las_presign_det` (`las.c`) | `presign_internal` / `presign` (RNG-injected) / `presign_det` (`las.rs`) |
+| `las_preverify` | `preverify` |
+| `las_adapt` | `adapt` (returns `Option`) |
+| `las_ext` | `ext` (returns `Option`) |
 | `las_attempts` counter | `LAS_ATTEMPTS: AtomicU64` (measurement only) |
 | `pack_poly_canon`, `hash_challenge`, `chknorm_vec` | same names |
 
@@ -130,9 +133,10 @@ The randomised wrappers take `&mut impl CryptoRngCore` (Rust idiom: RNG
 injected by the caller) where C calls `randombytes` internally; the sampling and
 rejection logic is the shared core in both cases.
 
-**The independent Algorithm-1 baseline** is ported as `src/las_basesig.rs`
-(mirror of `ref/basesig.c`): `base_sign_keypair(_seed)` / `base_sign_signature` /
-`base_sign_verify` + `BASE_ATTEMPTS`, with **local copies** of all helpers (`b_*`)
+**The independent Algorithm-1 baseline** is ported as `src/basesig.rs`
+(mirror of `ref/basesig.c`): `keygen(_seed)` / `sign` / `sign_det` / `verify`
+(C twins `base_keygen(_seed)` / `base_sign` / `base_sign_det` / `base_verify`)
+plus `BASE_ATTEMPTS`, with **local copies** of all helpers (`b_*`)
 so the base path never calls `las.rs` code — the benchmark cannot time the
 adaptor module against itself, and keys/signatures stay interchangeable
 (an Adapted pre-signature passes this independent verifier).
@@ -146,20 +150,23 @@ Verify bound — the failure mode to watch).
 Not ported (out of Stage-1 scope by design): `las_presign_k`/AMHL and
 everything application-level — see the scope statement at the top.
 
-## Step 6 — Port the serialization (`src/las_serialize.rs`)
+## Step 6 — Port the serialization (`src/serialize.rs`)
 
-LSB-first bit writer/reader over a pre-zeroed buffer, identical field widths to
-`ref/serialize.c`: pk 23 bits/coeff canonical; sk 2-bit ternary (validating);
-signature = 2-bit ternary `c` + offset-encoded `z` of width
-`⌈log₂(2(γ−κ)+1)⌉` = 19 bits at this set. The **validating decoders**
-(`las_unpack_pk` rejects coeff ≥ Q; `las_unpack_sk`/`las_unpack_sig` reject the
-invalid 2-bit code 3 and out-of-band z) and the byte-interface verifier
-`las_verify_packed` (decode-with-validation, then ordinary Verify) are ported
-too. Compile-time anchors pin the sizes:
+Identical field layout to `ref/serialize.c`: pk 23 bits/coeff canonical
+(LSB-first); sk 2-bit ternary (validating); signature = a 32-byte challenge
+digest `c_tilde` followed by `BitPack(z)` — the response `z` packed with the
+reused upstream FIPS BitPack (`conversion::bit_pack`, Alg. 17) at width
+`⌈log₂(2(γ−κ)+1)⌉` = 19 bits, and the C side is a byte-identical equivalent. The
+validating decoders (`unpack_public_key` rejects coeff ≥ Q; `unpack_secret_key`
+rejects the invalid 2-bit code 3) still guard the key/witness fields, while
+`c_tilde` and `z` decode permissively (upstream-faithful: a tampered signature is
+caught at Verify, which byte-compares the recomputed challenge digest). The
+byte-interface verifier `base_verify_packed` (decode-with-validation, then
+ordinary Verify) is ported too. Compile-time anchors pin the sizes:
 
 ```rust
 const _: () = assert!(LAS_Z_COEFF_BITS == 19);
-const _: () = assert!(LAS_PK_BYTES == 4416 && LAS_SK_BYTES == 704 && LAS_SIG_BYTES == 6752);
+const _: () = assert!(PUBLIC_KEY_BYTES == 4416 && SECRET_KEY_BYTES == 704 && SIGNATURE_BYTES == 6720);
 ```
 
 ## Step 7 — The KAT gate (the proof of an accurate port)
@@ -184,7 +191,7 @@ cargo test --test las_kat -- --nocapture
 Verified result (2026-07-03, commit `4aeb3dd`):
 
 ```text
-KAT digest (Rust): 641a176c3eb2125098fdbb7ad16bfa38fb5744b52dd9696beeb7d07be1445a19
+KAT digest (Rust): bb6ad0dab998c1f90ca4d3cc0f5d3dfa723e89f79aff18fce2698a08c96e260c
 === KAT digest matches the C pinned expected value. ===
 ```
 
@@ -255,7 +262,7 @@ from `examples/bench_levels.rs` (auto-discovered example target — no
 manifest edit needed), mirroring the PRIMARY section of the C driver
 `ref/test/bench_levels.c`:
 
-- the two paths come from the two **separate** modules (`las_basesig.rs` vs
+- the two paths come from the two **separate** modules (`basesig.rs` vs
   `las.rs`), matched parameters, same primitives;
 - ONE consistent state per run; timing gated on the full success-path contract
   (ordinary verifies; pre-signature pre-verifies but **fails** the ordinary
@@ -311,7 +318,7 @@ cargo run --release --example bench_levels | tee bench_levels_rust.log
 Timing is only one of the two supervisor-mandated cost axes (§13.2c); the
 communication axis is covered by `examples/size_report.rs` — a deterministic
 measurement program (sizes have zero variance, so Criterion is deliberately
-not involved). It packs live, contract-gated objects with `las_serialize.rs`,
+not involved). It packs live, contract-gated objects with `serialize.rs`,
 prints the component-level table, and **hard-asserts every value equal to the
 C evidence row** (`evidence/latest/tables/communication_components.csv`,
 level L3):
@@ -322,8 +329,8 @@ cargo run --release --example size_report | tee size_report_rust.log
 
 **Measured (2026-07-05; raw log: `rust/fips204-las/size_report_rust.log`):**
 pk = t 4416 B · sk = r 704 B · statement Y = t′ 4416 B · witness r′ 704 B ·
-challenge c 64 B (0.95%) · response z 6688 B (**99.05% — the size driver**) ·
-signature = pre-signature = adapted signature = 6752 B each.
+challenge c_tilde 32 B (0.48%) · response z 6688 B (**99.52% — the size driver**) ·
+signature = pre-signature = adapted signature = 6720 B each.
 
 Key statements for the report (§13.2, §14.4): z drives the size; signature,
 pre-signature and adapted signature are byte-identical in size because Adapt
@@ -336,7 +343,7 @@ only adds the ternary witness (`‖y‖∞ ≤ 1`) to ẑ, which stays inside th
 
 ```sh
 cd rust/fips204-las
-cargo test --test las_kat -- --nocapture      # digest must be 641a176c…5a19
+cargo test --test las_kat -- --nocapture      # digest must be bb6ad0da…260c
 cargo test --lib --tests                       # upstream 34/34 + interlock + serde
 cargo bench --bench las_bench                  # Criterion micro-benchmark (BENCHMARKING.md)
 cargo run --release --example bench_levels     # overhead summary + rejection counters
