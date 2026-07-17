@@ -29,19 +29,28 @@ use std::hint::black_box;
 use std::sync::atomic::Ordering;
 use std::time::Instant;
 
-use fips204::basesig::{keygen, sign, verify, BASE_ATTEMPTS, BOUND_SIGN};
+use fips204::basesig::{
+    keygen, keygen_packed, sign, sign_packed, verify, verify_packed, BASE_ATTEMPTS, BOUND_SIGN,
+};
 use fips204::las::{
-    adapt, ext, las_expected_attempts, presign, preverify, LAS_ATTEMPTS, BOUND_PRESIGN,
+    adapt, adapt_packed, ext, ext_packed, las_expected_attempts, presign, presign_packed,
+    preverify, preverify_packed, LAS_ATTEMPTS, BOUND_PRESIGN,
 };
 use fips204::relation::gen;
 use fips204::serialize::{
-    pack_pre_signature, unpack_signature, PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES,
+    pack_pre_signature, pack_public_key, pack_secret_key, pack_signature, pack_statement,
+    pack_witness, unpack_signature, PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES,
 };
 use fips204::setup::{setup_public_params, ELL, GAMMA, KAPPA, N};
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
 const REPS: usize = 5; // outer repetitions -> mean +/- SD
+// Statistical-validity floor: >= 5 repetitions are required for a meaningful
+// mean +/- SD -- single shots are unreliable under machine-load and
+// rejection-sampling variance.  Enforced at COMPILE time (mirrors the C twin's
+// _Static_assert in bench_levels.c).
+const _: () = assert!(REPS >= 5, "benchmark validity requires >= 5 repetitions for a meaningful mean/SD");
 // Sign-class ops include the rejection restarts, so the attempt count must be
 // large enough for attempts/op to converge to the ~e design target on BOTH
 // paths; otherwise the PreSign-vs-Sign ratio is dominated by sampling luck.
@@ -61,7 +70,15 @@ fn time_us<F: FnMut()>(iters: usize, mut f: F) -> f64 {
 fn mean_sd(xs: &[f64]) -> (f64, f64) {
     let n = xs.len() as f64;
     let mean = xs.iter().sum::<f64>() / n;
-    let var = xs.iter().map(|x| (x - mean) * (x - mean)).sum::<f64>() / n;
+    // Sample SD (Bessel, n-1), matching the C driver's stats() (bench_levels.c)
+    // and bench_criterion.c, so C and Rust report dispersion by the identical
+    // estimator -- a population SD (/n) would print error bars ~10.6% smaller
+    // than C for the same data at n = REPS = 5.
+    let var = if n > 1.0 {
+        xs.iter().map(|x| (x - mean) * (x - mean)).sum::<f64>() / (n - 1.0)
+    } else {
+        0.0
+    };
     (mean, var.sqrt())
 }
 
@@ -253,6 +270,127 @@ fn main() {
          PreSign {presign_att_m:.1} +/- {presign_att_s:.1} us | overhead {:+.1}%",
         (presign_att_m - sign_att_m) / sign_att_m * 100.0,
     );
+    // ================= TIER 2: end-to-end packed (byte API) =================
+    // Full protocol cost INCLUDING packing/unpacking: each *_packed call does
+    // validating unpack -> core -> pack INSIDE the call -- the boundary a
+    // wire/on-chain consumer pays (mirrors C bench_levels.c TIER 2).  Pack the
+    // canonical state ONCE; producing ops write to fresh scratch so the canonical
+    // bytes are never overwritten.
+    let pk_b = pack_public_key(&pk);
+    let sk_b = pack_secret_key(&sk).expect("sk packs");
+    let y_b = pack_statement(&statement);
+    let w_b = pack_witness(&witness).expect("witness packs");
+    let sig_b = pack_signature(&sig_base).expect("sig packs");
+    let presig_b = pack_pre_signature(&presig).expect("presig packs");
+    let adapted_b = pack_signature(&adapted).expect("adapted packs");
+
+    // byte-level success contract, re-enforced before timing (mirrors the
+    // struct-level gate: the pre-signature must FAIL the ordinary verifier).
+    assert!(verify_packed(&sig_b, MSG, &pk_b, &pp), "gate: base signature verifies (bytes)");
+    assert!(preverify_packed(&presig_b, MSG, &y_b, &pk_b, &pp), "gate: pre-signature pre-verifies (bytes)");
+    assert!(!verify_packed(&presig_b, MSG, &pk_b, &pp), "gate: pre-signature FAILS the ordinary verifier (bytes)");
+    assert!(verify_packed(&adapted_b, MSG, &pk_b, &pp), "gate: adapted signature verifies (bytes)");
+    assert!(
+        ext_packed(&adapted_b, &presig_b, &y_b, &pp).as_ref() == Some(&w_b),
+        "gate: Ext recovers the witness bytes exactly"
+    );
+
+    let mut tp_keygen = vec![];
+    let mut tp_sign = vec![];
+    let mut tp_verify = vec![];
+    let mut tp_presign = vec![];
+    let mut tp_preverify = vec![];
+    let mut tp_adapt = vec![];
+    let mut tp_ext = vec![];
+    let mut base_ops_p = 0u64;
+    let mut base_att_p = 0u64;
+    let mut las_ops_p = 0u64;
+    let mut las_att_p = 0u64;
+
+    for _rep in 0..REPS {
+        tp_keygen.push(time_us(NITER_FAST, || {
+            black_box(keygen_packed(&pp, &mut rng));
+        }));
+
+        BASE_ATTEMPTS.store(0, Ordering::Relaxed);
+        tp_sign.push(time_us(NITER_SIGN, || {
+            black_box(sign_packed(black_box(MSG), &pk_b, &sk_b, &pp, &mut rng));
+        }));
+        base_att_p += BASE_ATTEMPTS.load(Ordering::Relaxed);
+        base_ops_p += NITER_SIGN as u64;
+
+        tp_verify.push(time_us(NITER_FAST, || {
+            black_box(verify_packed(black_box(&sig_b), MSG, &pk_b, &pp));
+        }));
+
+        LAS_ATTEMPTS.store(0, Ordering::Relaxed);
+        tp_presign.push(time_us(NITER_SIGN, || {
+            black_box(presign_packed(black_box(MSG), &y_b, &pk_b, &sk_b, &pp, &mut rng));
+        }));
+        las_att_p += LAS_ATTEMPTS.load(Ordering::Relaxed);
+        las_ops_p += NITER_SIGN as u64;
+
+        tp_preverify.push(time_us(NITER_FAST, || {
+            black_box(preverify_packed(black_box(&presig_b), MSG, &y_b, &pk_b, &pp));
+        }));
+        tp_adapt.push(time_us(NITER_FAST, || {
+            black_box(adapt_packed(black_box(&presig_b), MSG, &y_b, &w_b, &pk_b, &pp).is_some());
+        }));
+        tp_ext.push(time_us(NITER_FAST, || {
+            black_box(ext_packed(black_box(&adapted_b), &presig_b, &y_b, &pp).is_some());
+        }));
+    }
+
+    println!();
+    println!("=== TIER 2: end-to-end packed (validating unpack -> core -> pack inside each call) ===");
+    let rows_packed: [(&str, &Vec<f64>); 7] = [
+        ("Algorithm 1  KeyGen_packed", &tp_keygen),
+        ("Algorithm 1  Sign_packed", &tp_sign),
+        ("Algorithm 1  Verify_packed", &tp_verify),
+        ("Algorithm 2  PreSign_packed", &tp_presign),
+        ("Algorithm 2  PreVerify_packed", &tp_preverify),
+        ("Algorithm 2  Adapt_packed (incl. PreVerify)", &tp_adapt),
+        ("Algorithm 2  Extract_packed", &tp_ext),
+    ];
+    println!("{:<44} {:>12} {:>10}", "operation", "mean (us)", "SD (us)");
+    for (name, xs) in rows_packed {
+        let (m, s) = mean_sd(xs);
+        println!("{name:<44} {m:>12.1} {s:>10.1}");
+    }
+    println!();
+
+    let (psign_m, _) = mean_sd(&tp_sign);
+    let (pverify_m, _) = mean_sd(&tp_verify);
+    let (ppresign_m, _) = mean_sd(&tp_presign);
+    let (ppreverify_m, _) = mean_sd(&tp_preverify);
+    let (padapt_m, _) = mean_sd(&tp_adapt);
+    println!(
+        "packed adaptor overhead (per operation): PreSign vs Sign {:+.1}% | \
+         PreVerify vs Verify {:+.1}% | Adapt vs Verify {:+.1}%",
+        (ppresign_m - psign_m) / psign_m * 100.0,
+        (ppreverify_m - pverify_m) / pverify_m * 100.0,
+        (padapt_m - pverify_m) / pverify_m * 100.0,
+    );
+    // Codec boundary cost = packed - core (per op): the price of the byte
+    // boundary (validating unpack of the inputs + pack of the output).
+    let (keygen_m, _) = mean_sd(&t_keygen);
+    let (ext_m, _) = mean_sd(&t_ext);
+    let (pkeygen_m, _) = mean_sd(&tp_keygen);
+    let (pext_m, _) = mean_sd(&tp_ext);
+    println!(
+        "codec boundary cost (packed - core, us): KeyGen {:+.1} | Sign {:+.1} | Verify {:+.1} | \
+         PreSign {:+.1} | PreVerify {:+.1} | Adapt {:+.1} | Ext {:+.1}",
+        pkeygen_m - keygen_m,
+        psign_m - sign_m,
+        pverify_m - verify_m,
+        ppresign_m - presign_m,
+        ppreverify_m - preverify_m,
+        padapt_m - adapt_m,
+        pext_m - ext_m,
+    );
+    rejection_gate("Algorithm 1 Sign (packed tier)", base_att_p, base_ops_p, las_expected_attempts(BOUND_SIGN));
+    rejection_gate("Algorithm 2 PreSign (packed tier)", las_att_p, las_ops_p, las_expected_attempts(BOUND_PRESIGN));
+
     println!(
         "contract (asserted before timing): ordinary verifies; pre-signature FAILS the \
          ordinary verifier; adapted passes the independent base verifier; Ext recovers \

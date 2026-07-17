@@ -70,6 +70,11 @@
 #define CRIT_SAMPLES   300      /* .sample_size(300)                            */
 #define CRIT_RESAMPLES 100000   /* Criterion default bootstrap resample count   */
 
+/* Statistical-validity floor: each operation is summarised over >= 5 samples with
+ * mean +/- SD (here 300 samples, well above the floor).  Enforced at COMPILE time so
+ * the driver can never be built with a statistically meaningless sample count. */
+_Static_assert(CRIT_SAMPLES >= 5, "benchmark validity requires >= 5 samples for a meaningful mean/SD");
+
 static double now_us(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);

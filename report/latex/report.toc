@@ -37,8 +37,8 @@
 \contentsline {section}{\numberline {3.3}Cross-implementation check: C reference versus Rust port}{27}{section.3.3}%
 \contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{28}{section.3.4}%
 \contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{29}{subsection.3.4.1}%
-\contentsline {section}{\numberline {3.5}Application demonstration}{31}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Threats to validity}{31}{section.3.6}%
+\contentsline {section}{\numberline {3.5}Application demonstration}{30}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Threats to validity}{32}{section.3.6}%
 \contentsline {chapter}{\numberline {4}Evaluation and reflection}{35}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Evaluation against the objectives}{35}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Reflection on the approach}{36}{section.4.2}%

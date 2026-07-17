@@ -165,7 +165,7 @@ use crate::hashing::h256_xof;
 // expand_s / sample_in_ball are replaced by their named local twins
 // b_expand_mask / b_expand_s / b_sample_in_ball (bottom of this file).
 use crate::helpers::{
-    add_vector_ntt, center_mod, full_reduce32, infinity_norm, mont_reduce, partial_reduce32,
+    add_vector_ntt, center_mod, full_reduce32, mont_reduce, partial_reduce32,
     to_mont,
 };
 // ^[CHANGED] ml_dsa.rs:5-8: the same list plus mat_vec_mul.
@@ -184,9 +184,11 @@ use crate::types::{R, R0, T, T0};
 // below.  R0/T0 (the zero polys) are added because the local b_* twins need
 // them HERE -- the upstream originals import them where THEY live
 // (hashing.rs:5, helpers.rs:1).
-// [DELETED] ml_dsa.rs:12: use crate::{D, Q};
-// WHY: D only feeds Power2Round's 2^d shifts (ml_dsa.rs:111) and Q only feeds
-// make_hint's `Q - c_t_0[k].0[n]` (ml_dsa.rs:302) -- both deleted.
+use crate::Q; // RE-IMPORTED (see note below): b_chknorm_vec's `(Q-1)/8` guard needs Q
+// [CHANGED] ml_dsa.rs:12: use crate::{D, Q};
+// WHY: D only feeds Power2Round's 2^d shifts (ml_dsa.rs:111), deleted with it.
+// Q was originally deleted with make_hint, but is re-imported above for
+// b_chknorm_vec's `bound > (Q-1)/8` guard (mirrors C poly_chknorm).
 
 // <-> basesig.c: #include "setup.h": the shared system layer -- the
 // construction parameters and this module's OWN types (PublicKey / SecretKey /
@@ -222,6 +224,26 @@ const SHAKE256_RATE: usize = 136;
 /// Algorithm-1 rejection rule, so `basesig` OWNS it (the adaptor-only
 /// `BOUND_PRESIGN` lives in `las`).  C twin: `BOUND_SIGN` (basesig.h).
 pub const BOUND_SIGN: i32 = GAMMA - KAPPA + 1;
+
+/// Early-exit infinity-norm rejection check: reject (`true`) iff any coefficient
+/// has `|coeff| >= bound`.  Byte-for-byte the same algorithm as the C base path
+/// (`poly_chknorm`, early-exit at the first offending coeff) and the LAS path
+/// (`las.rs::chknorm_vec`) -- NOT the upstream full-scan `infinity_norm().max()`.
+/// FAIRNESS: this check runs inside the Sign rejection loop, so an
+/// early-exit-vs-full-scan mismatch would make a REJECTED attempt cost
+/// differently in the base path than in the LAS path (and than in C), biasing
+/// the PreSign-vs-Sign / PreVerify-vs-Verify benchmark overhead.  The decision
+/// is identical to `infinity_norm(z) >= bound` (`max|z| >= b` <=> `exists coeff
+/// |z| >= b`), so the fix is KAT-preserving.  Mirrors ref/poly.c `poly_chknorm`.
+fn b_chknorm_vec(z: &[R; N_PLUS_ELL], bound: i32) -> bool {
+    // C poly_chknorm guard: bounds above (Q-1)/8 are rejected outright.
+    if bound > (Q - 1) / 8 {
+        return true;
+    }
+    z.iter()
+        .flat_map(|p| p.0.iter())
+        .any(|&x| x.abs() >= bound)
+}
 
 /// Rejection-sampling attempt counter for the BASE path (measurement only;
 /// C twin: `base_attempts`, basesig.c:54; no ml_dsa.rs analogue).  Never read
@@ -590,16 +612,19 @@ pub(crate) fn sign_internal(
 
         // 23: if ||z||∞ ≥ Gamma1 − β or ||r0||∞ ≥ Gamma2 − β then (z, h) ← ⊥    ▷ Validity checks
         // [PAPER Alg.1] 11:     if ||z||∞ > γ − κ, then Restart
-        let z_norm = infinity_norm(&z);          // [REUSED] ml_dsa.rs:277: let z_norm = infinity_norm(&z);
-        if z_norm >= BOUND_SIGN {
-            // ^[CHANGED] ml_dsa.rs:280:
+        if b_chknorm_vec(&z, BOUND_SIGN) {
+            // ^[CHANGED] ml_dsa.rs:277-280:
+            //     let z_norm = infinity_norm(&z);
             //     if !CTEST && ((z_norm >= (gamma1 - beta)) || (r0_norm >= (gamma2 - beta))) {
-            // WHY: same reject-if-too-large test with the UNMODIFIED upstream
-            // infinity_norm, same bound SHAPE: upstream's beta = tau*eta; here
-            // eta = 1 (ternary secret), so beta = kappa and the bound is
-            // gamma - kappa + 1 (reject STRICTLY above gamma - kappa, paper
-            // Alg. 1 step 11).  The r0 half is gone with the decomposition,
-            // and there is no CTEST path (no constant-time measurements).
+            // WHY: same reject-if-too-large test at bound gamma - kappa + 1
+            // (beta = tau*eta with eta = 1 => beta = kappa; reject STRICTLY
+            // above gamma - kappa, paper Alg. 1 step 11).  The r0 half is gone
+            // with the decomposition, and there is no CTEST path.  The norm
+            // check itself is the EARLY-EXIT b_chknorm_vec (matches C
+            // poly_chknorm and las.rs chknorm_vec), NOT the full-scan upstream
+            // infinity_norm: identical decision, but the SAME rejection-loop
+            // work profile as the base C path and the LAS path, so the
+            // PreSign-vs-Sign benchmark overhead is measured fairly.
 
             // 31: κ ← κ + ℓ ▷ Increment counter
             mask_nonce += N_PLUS_ELL as u16; // [REUSED] ml_dsa.rs:281: kappa_ctr += u16::try_from(L)... (L -> n+ell)
@@ -705,15 +730,18 @@ pub(crate) fn verify_internal(
 
     // [PAPER Alg.1] 15:     Parse (c, z) := σ
     // [PAPER Alg.1] 16:     if ||z||∞ > γ − κ, then return 0
-    if infinity_norm(&sigma.z) >= BOUND_SIGN {
+    if b_chknorm_vec(&sigma.z, BOUND_SIGN) {
         return false;
     }
     // ^[CHANGED] ml_dsa.rs:433-434 (upstream tests this at the END):
     //     let left = infinity_norm(&z) < (gamma1 - beta);
-    // WHY: same norm gate with the UNMODIFIED upstream infinity_norm, bound
-    // gamma - kappa (= gamma1 - beta with eta = 1), moved to the top as the
-    // paper's Verify step 16 -- exactly where the C twin tests it
-    // (mirroring sign.c:314).
+    // WHY: same norm gate at bound gamma - kappa (= gamma1 - beta with eta = 1),
+    // moved to the top as the paper's Verify step 16 -- exactly where the C twin
+    // tests it (mirroring sign.c:314).  The check is the EARLY-EXIT
+    // b_chknorm_vec (matches C poly_chknorm and las.rs chknorm_vec), NOT the
+    // full-scan upstream infinity_norm: identical decision, same per-call work
+    // profile as the base C path and the LAS path (no extra center_mod/max),
+    // so the PreVerify-vs-Verify benchmark overhead is measured fairly.
 
     // 7: 𝜇 ← (H(BytesToBits(tr)||𝑀′, 64))    ▷ Compute message representative µ
     let mut t_tilde = [0u8; N * D * 4]; // packed pk: plays mu's role as the fixed hash prefix

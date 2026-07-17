@@ -1,6 +1,7 @@
 # Project STATUS & Test Checklist — single source of truth for "what's done / tested"
 
-*Living tracker. Updated 2026-06-27. Read this first to see, at a glance, every
+*Living tracker. Updated 2026-07-16 (Meeting-5 explainability/reproducibility package
+added — see §1). Read this first to see, at a glance, every
 deliverable, whether it is **built**, **tested**, and **documented**, plus the one
 command that reproduces each claim. Maps every item to the Meeting-2 objectives
 (`las-context-consolidated.md`) and to the report's assessment criteria (`CLAUDE.md`).*
@@ -80,6 +81,33 @@ captions). Now done:
   and invite Wang — supporting artefacts already exist (`dilithium-baseline` branch,
   `docs/02-methodology/CODE_DIFF_VIEW.md`, `docs/02-methodology/FUNCTION_MAP.md`).
 
+### Meeting-5 Stage-1 *explainability + reproducibility* package (2026-07-06 · core artefacts delivered 2026-07-17)
+
+Meeting 5 did not sign off Stage 1 either. The numbers/implementation are accepted;
+what's missing is a package that lets *another person understand, verify, and
+reproduce* the work (`las-context-consolidated.md §15`). Now built: the diagrams,
+the 1–2 slide summary, the C⇄Rust size/rejection tables, and the short-README split
+(rows below). `evidence/latest` + the report were refreshed on the fair Stage-1 run
+`20260717_084012`. Still open: classical-overhead columns (M5.9), figure-set trim
+(M5.10), and the machine statement pinned into every caption (M5.1).
+
+| M5 item | Status | What exists / what's missing |
+|---|:--:|---|
+| M5.1 Machine/env statement travelling *with* the figures (WSL OK) | 🟡 | CPU/OS/compiler/flags are in the methodology (§14.5 / `docs/LAS.md`); must be pinned into figure captions + the short README |
+| M5.2 High-level **API-flow diagram** (basic `KeyGen/Sign/Verify` → LAS `+PreSign/PreVerify/Adapt/Ext`, where `Y` is set up) | ✅ | **drawn** (Mermaid) in `docs/02-methodology/walkthrough/00-diagrams-and-summary.md` — base-sig flow + LAS flow with `Y` set up in `relation_gen` |
+| M5.3 **Repo-structure diagram** (base C / LAS C / **LAS Rust**; reused primitives marked) | ✅ | **drawn** (Mermaid, Diagram 3) in `00-diagrams-and-summary.md`; reused primitives boxed, C⇄Rust modules mirrored |
+| M5.4 Reused/modified/new components table, **high-level front** | ✅ | Table A (one-glance reused/new front) in `00-diagrams-and-summary.md`, over `FUNCTION_MAP.md`'s per-function detail |
+| M5.5 High-to-low written "what changed (simplified Dilithium → LAS)" summary | 🟡 | pieces in `UPSTREAM_TO_LAS_WALKTHROUGH.md` + `THEORY_IMPL_BRIDGE.md`; consolidate top-down |
+| M5.6 Benchmark methodology stated (Criterion samples/warm-up/SD; C repeated-run mean±SD) | ✅ | Rust criterion @300 + C driver mirror (see memory `benchmark-rejection-gate`); ensure it's written up in report §methodology |
+| M5.7 **C ⇄ Rust size cross-check** (pk/sig sizes match across implementations) | ✅ | Table B (size-equality, D3+paper sets) in `00-diagrams-and-summary.md`; `size_report.rs` hard-asserts C=Rust; KAT `bb6ad0da…260c` |
+| M5.8 Rejection sampling **theory + measured**, in own words | ✅ | Table C (theory vs measured) + plain-language justification in `00-diagrams-and-summary.md`; fresh L3 measured base 2.715 / PreSign 2.716 (run `20260717_084012`) |
+| M5.9 Classical-adaptor comparison as **overhead columns** in the compute + comms tables (refines M4.8 — pulled into Stage-1) | 🟡 | `bench_classical` numbers captured (D11); need the overhead/increase columns + security-level (≈ Dilithium L2) caveat |
+| M5.10 Reduce to the important figures (compute / comms / rejection / C-vs-Rust); rest → appendix | 🟡 | overlaps M4.6's 3–4-figure trim; add the C-vs-Rust figure to the keep-set |
+| M5.11 **Short README** (key commands) + extended README | ✅ | `README.md` = short quick-start; `README_EXTENDED.md` = full detail; per-language reproduce guides in `docs/A-appendix/` |
+| M5.12 **1–2 slide summary** with a diagram for the next meeting | ✅ | `report/slides/stage1_summary.html` (self-contained; published artifact) — slide 1 base→LAS API flow, slide 2 evidence tiles |
+| M5.13 Keep the **simplified** LAS (full ML-DSA LAS = future work only) | ✅ | already the settled scope; note in report as a deliberate decision |
+| M5.14 Stage-2 preview (Foundry local chain: classical adaptor workflow first, then swap in LAS) | ⬜ | deferred until Stage 1 is signed off; captured in `las-context-consolidated.md §15.14` |
+
 ---
 
 ## 2. Test inventory — what each test actually proves
@@ -110,13 +138,14 @@ Verify ≈163, PreSign ≈703, PreVerify ≈180, Adapt ≈186, Ext ≈58.
 Rejection sampling **measured directly**: Sign 2.72 attempts (36.8%), PreSign 2.81
 (35.6%) — matches `(1−κ/γ)^{(n+ℓ)N} ≈ e⁻¹ = 36.8%`.
 
-**Fair primary (bench_levels, evidence run `20260627_135247`) — Simplified
-Dilithium-III (target), µs mean±SD, 10×1000:** KeyGen 114±5, Sign 1270±28,
-Verify 280±7, PreSign 1355±62 (+6.7% vs Sign), PreVerify 288±2 (+3.1% vs Verify),
-Adapt 302±5 (+8.1% vs Verify), Ext 101±3. Acceptance ≈37%/attempt at every setting.
-Headline adaptor overhead ≤ ~8% across all four settings (paper/L2/L3/L5). These are
-the numbers now in `report/latex` (`tab:overhead`, `tab:overhead-levels`,
-`tab:complete-l3`).
+**Fair primary (bench_levels, evidence run `20260717_084012`) — Simplified
+Dilithium-III (target), core tier, µs mean±SD, 5×(500 sign / 1000 verify):**
+Setup 94±11, KeyGen 92±2, Sign 852±25, Verify 199±6, PreSign 866±41 (+1.6% vs Sign),
+PreVerify 210±9 (+5.1% vs Verify), Adapt 217±5 (+9.0% vs Verify), Ext 84±6.
+Acceptance ≈37%/attempt at every setting. Headline adaptor overhead ≤ ~9% across all
+four settings (paper/L2/L3/L5). These are the numbers now in `report/latex`
+(`tab:overhead`, `tab:overhead-levels`, `tab:complete-l3`), refreshed by
+`STAGE1_ONLY=1 scripts/run_benchmark_suite.sh` (Stage-2 targets skipped while stale).
 
 **Classical baseline (bench_classical, evidence run `20260627_135247`):** KeyGen 34,
 Sign 45, Verify 69, PreSign 207, PreVerify 268, Adapt 4, Ext 36; sizes pk 33, sk 32,
@@ -190,15 +219,28 @@ beat [60s]; (6) limitations + future work [30s]. Talking-head in corner.
 
 ## 6. Immediate next actions (in order)
 
-1. **Open the clean-Dilithium → LAS PR and invite Wang** (Meeting-4 named
+**Meeting-5 (2026-07-06) is the latest word: the single active priority is the Stage-1
+explainability + reproducibility package below — not application/Stage-2 code.**
+
+1. **Open the clean-Dilithium → LAS PR and invite Wang** (Meeting-4 + Meeting-5 named
    deliverable): artefacts ready (`dilithium-baseline` branch, `docs/02-methodology/CODE_DIFF_VIEW.md`,
    `docs/02-methodology/FUNCTION_MAP.md`).
-2. **Report polish** (`report/latex/`): the Stage-1 presentation tables, parameter
-   notation, and basic-vs-LAS comparisons are in (Meeting-4); next is a word-count pass
-   to 7–9k, embedding the regenerated `evidence/latest/paper_package` figures with the
-   parameter-rich captions, and a references pass. (`report/REPORT_DRAFT.md` is the
-   superseded v0.1.)
-3. **Video** per §5 storyboard.
-4. *(optional tier, only after draft is supervisor-approved)* D16 param migration to
+2. **Draw the two diagrams** (M5.2, M5.3): high-level API flow (basic → LAS) and the
+   repo-structure diagram covering base C / LAS C / LAS Rust with reused primitives
+   marked.
+3. **Build the 1–2 slide summary** (M5.12) around those diagrams + a 2–3 sentence
+   findings statement.
+4. **C ⇄ Rust size-equality table** (M5.7) and a high-level reused/modified/new front on
+   `FUNCTION_MAP.md` (M5.4).
+5. **Split the README** (M5.11): short quick-start (key commands) + keep the extended one.
+6. **Report polish** (`report/latex/`): fold in the classical-adaptor overhead columns
+   (M5.9), the rejection theory-vs-measured own-words write-up (M5.8), the C/Rust
+   cross-check, and the machine/env statement in captions (M5.1); word-count pass to
+   7–9k, embed the regenerated `evidence/latest/paper_package` figures, references pass.
+   (`report/REPORT_DRAFT.md` is the superseded v0.1.)
+7. **Video** per §5 storyboard.
+8. *(Stage 2 — only after Stage 1 is supervisor-signed-off)* Foundry local chain:
+   classical adaptor workflow first, then swap in LAS (M5.14).
+9. *(optional tier, only after draft is supervisor-approved)* D16 param migration to
    q≈2²⁴ / on-chain LAS *verification* (precompile or zk — the swap + gas floor are
    already done in D15) / a second LAS-family scheme.

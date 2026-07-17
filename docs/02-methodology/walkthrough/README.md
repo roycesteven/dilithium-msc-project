@@ -12,6 +12,14 @@ per-set `κ`.
 
 ---
 
+## The drawn diagrams (start here for the visual)
+
+**[00 · Diagrams & one-page summary](00-diagrams-and-summary.md)** — the three
+rendered Mermaid diagrams (base-signature API, LAS adaptor API with *where `Y` is set
+up*, and the base-C / LAS-C / LAS-Rust repository structure), plus the reused/new
+front table, the C ⇄ Rust size cross-check, and the rejection theory-vs-measured table.
+This is the source for the 1–2 slide summary.
+
 ## The one-picture summary
 
 Three signature schemes on one lineage. Each arrow is a small, deliberate step.

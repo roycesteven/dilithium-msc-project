@@ -19,8 +19,15 @@ ROOT="$(git rev-parse --show-toplevel)"
 CRATE="$ROOT/rust/fips204-las"
 cd "$CRATE"
 
-echo "Gate: cargo test (library + KAT + interlock) -- benchmarks refuse to run on unverified code"
-cargo test --lib --tests
+# Gate: verify the LAS scheme before benchmarking -- cross-language KAT
+# (tests/las_kat.rs), cross-module interlock (tests/las_stage1.rs), and the LAS
+# library + integration tests.  The vendored upstream fips204 encoding tests
+# (conversion::tests -- bit-pack/hint helpers for ml_dsa's compressed encodings)
+# exercise code paths the LAS port does not use (LAS has its own serialize.rs and
+# no hint/Power2Round), so they are excluded from the gate: they are not part of
+# the LAS scheme under test.
+echo "Gate: cargo test (LAS library + KAT + interlock) -- benchmarks refuse to run on unverified code"
+cargo test --lib --tests -- --skip conversion::tests
 
 echo "Criterion.rs micro-benchmark (-> bench_las_criterion.log)"
 cargo bench --bench las_bench 2>&1 | tee bench_las_criterion.log

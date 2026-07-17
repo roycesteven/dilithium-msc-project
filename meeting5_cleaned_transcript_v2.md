@@ -1,6 +1,6 @@
 # Contextually Cleaned Transcript — LAS Benchmarking, C/Rust Implementations, and Next Steps
 
-**Source:** `Voice 260706_160020_original.txt` + uploaded audio file `Voice(1).mp3`  
+**Source:** `Voice 260706_160020_original.txt` / `Pasted text(9).txt` + uploaded audio file `Voice(1).mp3`  
 **Date implied by filename:** 2026-07-06  
 **Type:** meaning-preserving cleaned transcript, not a legal/verbatim transcript.  
 **Main topic:** WSL benchmark validity, LAS versus simplified Dilithium benchmark presentation, C and Rust implementations, code-structure explanation, reproducibility, and next-stage blockchain integration.
@@ -54,7 +54,9 @@ The rejection-sampling discussion was important. The student explained the expec
 
 For comparison with classical adaptor signatures, Wang suggested adding columns that show the increase compared with ECDSA/Schnorr-style classical adaptor signatures, both for communication cost and computation cost. The numbers can be used only after verification and with clear caveats about implementation and security levels.
 
-For the next week, Wang asked for a concise summary: one or two slides are enough. The goal is to convince him that the Stage 1 implementation is correct, that the methodology is clear, and that the results are organised. After that, the project can move to the blockchain stage: local/private-chain implementation, probably using Foundry, first with a classical adaptor-signature workflow and then replacing the signature component with LAS.
+For the next week, Wang asked for a concise summary: one or two slides are enough. The goal is to convince him that the Stage 1 implementation is correct, that the methodology is clear, and that the results are organised. He also explicitly said that the diagrams should be reused in the report and in the video/screencast. After that, the project can move to the blockchain stage: local/private-chain implementation, probably using Foundry, first with a classical adaptor-signature workflow and then replacing the signature component with LAS.
+
+Near the end, Wang also discussed submission and visibility. The report and video/screencast are the obvious required deliverables, while code submission was unclear. He suggested that if the code is good enough, making the GitHub repository public could be beneficial because others could refer to or fork the project.
 
 ---
 
@@ -115,6 +117,14 @@ For the next week, Wang asked for a concise summary: one or two slides are enoug
 12. **Do not over-expand into full production ML-DSA LAS yet.**
     - The simplified implementation is acceptable for the project.
     - A full ML-DSA-based LAS can be discussed as future work or attempted only if time remains.
+
+13. **Reuse diagrams in both report and video/screencast.**
+    - Include high-level architecture diagrams in the report.
+    - Use the same diagrams in slides or screencast explanation.
+
+14. **Clarify code submission / publication.**
+    - Check whether code submission is required.
+    - If the code is clean enough, consider making the GitHub repository public so others can refer to or fork it.
 
 ---
 
@@ -632,13 +642,59 @@ This is another thing. Let us see how far we can go.
 
 ---
 
-### 15. Scheduling
+### 15. Diagrams should be used in both the report and the video/screencast
+
+**Student (51:04)**  
+Thank you.
+
+**Supervisor (51:05)**  
+I think you are on the right track. I like diagrams like this. In the final report, you should include something like this because it looks clear and beautiful.
+
+**Student (51:17)**  
+Should this diagram be in the report, or in the screen recording / video?
+
+**Supervisor (51:21)**  
+Both, depending on how you present it. Of course, it should be in the report. When you do a screencast or make slides for the video, you can also include the diagram there and explain it.
+
+**Supervisor (51:21)**  
+By the way, how many things do you need to submit finally? The report is required, and perhaps the video or screencast. Do you also need to submit the code?
+
+**Student (51:45)**  
+There is no clear instruction saying that I must submit the code.
+
+**Supervisor (51:48)**  
+Okay.
+
+**Student (51:51)**  
+But I noticed that this may depend on the supervisor / project expectation.
+
+**Supervisor (51:56)**  
+Yes, it depends. Let us see how good the code looks. If the code is good, you can create a GitHub repository and make it public.
+
+**Supervisor (52:07)**  
+If you make it public, other people can refer to it. That could also help your reputation. In the future, you could say, “I have done something like this,” and maybe other people may fork your project.
+
+---
+
+### 16. Supervisor follow-up and next meeting scheduling
+
+**Supervisor (52:31)**  
+Regarding the letter / document I mentioned, I will try to send it to you by tomorrow or the day after tomorrow, maybe Wednesday.
+
+**Supervisor (52:48)**  
+And for the next meeting—
+
+**Student (52:52)**  
+Next week?
 
 **Supervisor (52:54)**  
-Monday and Tuesday do not work for me. Maybe Wednesday or Thursday. I will let you know.
+Maybe not Monday. Wednesday, I guess. I will send you a message and try to arrange it. Monday and Tuesday do not work for me.
 
 **Supervisor (53:17)**  
-Besides the project, make sure you also take care of your other work. If you need some time for vacation, just let me know.
+Wednesday or Thursday should be possible, but I will let you know.
+
+**Supervisor (53:17)**  
+Also, apart from the project, make sure you take care of your other work. If you need some time for vacation, just let me know.
 
 **Student (53:40)**  
 Okay, thank you.
@@ -647,7 +703,7 @@ Okay, thank you.
 
 ## E. Practical meaning for the project now
 
-The immediate task is not to add more features. The immediate task is to make the current implementation explainable.
+The immediate task is not to add more features. The immediate task is to make the current implementation explainable, reproducible, and easy for another person to verify.
 
 For the next meeting, prepare:
 
@@ -658,8 +714,14 @@ For the next meeting, prepare:
 5. benchmark tables for computation and communication;
 6. rejection-sampling theory versus measured attempts;
 7. a short README with reproduction commands;
-8. verified classical adaptor-signature comparison numbers, if available.
+8. verified classical adaptor-signature comparison numbers, if available;
+9. a note on whether code submission is required;
+10. a plan for making the GitHub repository public only if the code is clean enough.
 
 The key message from Wang is:
 
 > You already have implementation and numbers. Now you must organise them so another person can understand, verify, and reproduce them.
+
+A second important message is:
+
+> Diagrams are not only for meetings. They should also be used in the report and video/screencast, because they help the examiner understand the implementation without reading every source file first.

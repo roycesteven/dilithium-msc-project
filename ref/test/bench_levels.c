@@ -140,6 +140,13 @@
 #define NITER_FAST 1000     /* inner iterations per repetition, verify-class        */
 #define NSIG  2000          /* signing calls sampled for the attempt distribution   */
 
+/* Statistical-validity floor: every operation is measured over >= 5 repetitions on
+ * the same machine and reported as mean +/- SD.  Single shots are unreliable because
+ * timing varies with machine load and rejection-sampling luck; >= 5 repetitions give
+ * a meaningful mean and dispersion.  Enforced at COMPILE time so this driver can
+ * never be built below the floor (mirrors the Rust twin's const assert). */
+_Static_assert(RUNS >= 5, "benchmark validity requires >= 5 repetitions for a meaningful mean/SD");
+
 static double now_us(void) {
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);

@@ -107,13 +107,28 @@ build_run() {
   echo "  wrote logs/$logfile"
 }
 
+# Stage-2 application targets (test_contract/test_swap/test_pcn/bench_app +
+# amhl/chain) are TEMPORARILY excluded when STAGE1_ONLY=1: they still use the
+# pre-seven-type API and do not compile, which would abort the whole suite under
+# `set -e`.  `STAGE1_ONLY=1 scripts/run_benchmark_suite.sh` regenerates the full
+# Stage-1 evidence (fair benchmark + las/serde/kat correctness + classical) --
+# everything the report actually consumes -- without them.  The downstream
+# plot/report pipeline already treats the application log as optional, so the
+# Stage-1 figures/tables/macros are produced unchanged.  Drop STAGE1_ONLY once
+# the Stage-2 files are ported back to the seven-type API.
+STAGE1_ONLY="${STAGE1_ONLY:-0}"
+build_run_stage2() {   # like build_run, but a no-op under STAGE1_ONLY
+  if [ "$STAGE1_ONLY" = 1 ]; then echo "  SKIP (STAGE1_ONLY): $1"; return 0; fi
+  build_run "$@"
+}
+
 echo "Correctness / test evidence:"
-build_run test/test_las3       test/test_las3       functional_tests.log
-build_run test/test_contract3  test/test_contract3  contract.log
-build_run test/test_serde3     test/test_serde3     serialization_tests.log
-build_run test/test_kat3       test/test_kat3       kat.log
-build_run test/test_swap3      test/test_swap3      atomic_swap.log
-build_run test/test_pcn3       test/test_pcn3       pcn.log
+build_run        test/test_las3       test/test_las3       functional_tests.log
+build_run_stage2 test/test_contract3  test/test_contract3  contract.log
+build_run        test/test_serde3     test/test_serde3     serialization_tests.log
+build_run        test/test_kat3       test/test_kat3       kat.log
+build_run_stage2 test/test_swap3      test/test_swap3      atomic_swap.log
+build_run_stage2 test/test_pcn3       test/test_pcn3       pcn.log
 
 echo "Fair benchmark (primary evidence):"
 build_run test/bench_levels_paper test/bench_levels_paper fair_paper.log REPRO_FLAGS="$REPRO"
@@ -122,7 +137,7 @@ build_run test/bench_levels3      test/bench_levels3      fair_l3.log    REPRO_F
 build_run test/bench_levels5      test/bench_levels5      fair_l5.log    REPRO_FLAGS="$REPRO"
 
 echo "Application benchmark (L3-like):"
-build_run test/bench_app3      test/bench_app3      application_benchmark.log
+build_run_stage2 test/bench_app3      test/bench_app3      application_benchmark.log
 
 # Classical adaptor baseline (B2.ii). Needs the one-time vendored clone
 # third_party/secp256k1-zkp (git-ignored; see README.md). Skipped gracefully

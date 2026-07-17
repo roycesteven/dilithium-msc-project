@@ -46,12 +46,18 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;
 
-use fips204::basesig::{keygen, sign, verify, BASE_ATTEMPTS, BOUND_SIGN};
+use fips204::basesig::{
+    keygen, keygen_packed, sign, sign_packed, verify, verify_packed, BASE_ATTEMPTS, BOUND_SIGN,
+};
 use fips204::las::{
-    adapt, ext, las_expected_attempts, presign, preverify, LAS_ATTEMPTS, BOUND_PRESIGN,
+    adapt, adapt_packed, ext, ext_packed, las_expected_attempts, presign, presign_packed,
+    preverify, preverify_packed, LAS_ATTEMPTS, BOUND_PRESIGN,
 };
 use fips204::relation::gen;
-use fips204::serialize::{pack_pre_signature, unpack_signature};
+use fips204::serialize::{
+    pack_pre_signature, pack_public_key, pack_secret_key, pack_signature, pack_statement,
+    pack_witness, unpack_signature,
+};
 use fips204::setup::setup_public_params;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -161,6 +167,79 @@ fn bench_stage1(c: &mut Criterion) {
         "Algorithm 2 PreSign",
         presign_attempts,
         presign_calls.get(),
+        las_expected_attempts(BOUND_PRESIGN),
+    );
+
+    // ==================== end-to-end packed tier (byte API) ====================
+    // Full protocol cost INCLUDING packing/unpacking: each *_packed call does
+    // validating unpack -> core -> pack INSIDE the call.  Pack the canonical
+    // state once and re-enforce the byte-level success contract before timing.
+    let pk_b = pack_public_key(&pk);
+    let sk_b = pack_secret_key(&sk).expect("sk packs");
+    let y_b = pack_statement(&statement);
+    let w_b = pack_witness(&witness).expect("witness packs");
+    let sig_b = pack_signature(&sig_base).expect("sig packs");
+    let presig_b = pack_pre_signature(&presig).expect("presig packs");
+    let adapted_b = pack_signature(&adapted).expect("adapted packs");
+    assert!(verify_packed(&sig_b, MSG, &pk_b, &pp), "gate: base sig verifies (bytes)");
+    assert!(preverify_packed(&presig_b, MSG, &y_b, &pk_b, &pp), "gate: presig pre-verifies (bytes)");
+    assert!(!verify_packed(&presig_b, MSG, &pk_b, &pp), "gate: presig FAILS ordinary Verify (bytes)");
+    assert!(verify_packed(&adapted_b, MSG, &pk_b, &pp), "gate: adapted verifies (bytes)");
+    assert!(
+        ext_packed(&adapted_b, &presig_b, &y_b, &pp).as_ref() == Some(&w_b),
+        "gate: ext recovers the witness bytes exactly"
+    );
+
+    // ---- Algorithm 1 packed (end-to-end) ----
+    let mut g3 = c.benchmark_group("Algorithm 1 - ordinary signature (packed / end-to-end)");
+    g3.bench_function("KeyGen_packed", |b| {
+        b.iter(|| black_box(keygen_packed(&pp, &mut rng)));
+    });
+    let sign_p_calls = Cell::new(0u64);
+    let sign_p_att0 = BASE_ATTEMPTS.load(Ordering::Relaxed);
+    g3.bench_function("Sign_packed", |b| {
+        b.iter(|| {
+            sign_p_calls.set(sign_p_calls.get() + 1);
+            black_box(sign_packed(black_box(MSG), &pk_b, &sk_b, &pp, &mut rng))
+        });
+    });
+    let sign_p_attempts = BASE_ATTEMPTS.load(Ordering::Relaxed) - sign_p_att0;
+    g3.bench_function("Verify_packed", |b| {
+        b.iter(|| black_box(verify_packed(black_box(&sig_b), MSG, &pk_b, &pp)));
+    });
+    g3.finish();
+    rejection_gate(
+        "Algorithm 1 Sign (packed tier)",
+        sign_p_attempts,
+        sign_p_calls.get(),
+        las_expected_attempts(BOUND_SIGN),
+    );
+
+    // ---- Algorithm 2 packed (end-to-end) ----
+    let mut g4 = c.benchmark_group("Algorithm 2 - LAS adaptor signature (packed / end-to-end)");
+    let presign_p_calls = Cell::new(0u64);
+    let presign_p_att0 = LAS_ATTEMPTS.load(Ordering::Relaxed);
+    g4.bench_function("PreSign_packed", |b| {
+        b.iter(|| {
+            presign_p_calls.set(presign_p_calls.get() + 1);
+            black_box(presign_packed(black_box(MSG), &y_b, &pk_b, &sk_b, &pp, &mut rng))
+        });
+    });
+    let presign_p_attempts = LAS_ATTEMPTS.load(Ordering::Relaxed) - presign_p_att0;
+    g4.bench_function("PreVerify_packed", |b| {
+        b.iter(|| black_box(preverify_packed(black_box(&presig_b), MSG, &y_b, &pk_b, &pp)));
+    });
+    g4.bench_function("Adapt_packed (including its internal PreVerify)", |b| {
+        b.iter(|| black_box(adapt_packed(black_box(&presig_b), MSG, &y_b, &w_b, &pk_b, &pp).is_some()));
+    });
+    g4.bench_function("Extract_packed", |b| {
+        b.iter(|| black_box(ext_packed(black_box(&adapted_b), &presig_b, &y_b, &pp).is_some()));
+    });
+    g4.finish();
+    rejection_gate(
+        "Algorithm 2 PreSign (packed tier)",
+        presign_p_attempts,
+        presign_p_calls.get(),
         las_expected_attempts(BOUND_PRESIGN),
     );
 }

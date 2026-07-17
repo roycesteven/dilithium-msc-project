@@ -1,0 +1,52 @@
+   Compiling fips204 v0.4.6 (/home/melly/dilithium-msc-project/rust/fips204-las)
+    Finished `test` profile [optimized + debuginfo] target(s) in 6.67s
+     Running unittests src/lib.rs (target/debug/deps/fips204-fa947d87d4c4f71e)
+
+running 10 tests
+test encodings::tests::test_pk_encode_decode_roundtrip1 ... ok
+test encodings::tests::test_pk_encode_decode_roundtrip2 ... ok
+test encodings::tests::test_sig_roundtrip ... ok
+test encodings::tests::test_pk_encode_decode_roundtrip3 ... ok
+test encodings::tests::test_sk_encode_decode_roundtrip1 ... ok
+test helpers::tests::test_partial_reduce64b ... ok
+test helpers::tests::check_zeta ... ok
+test ml_dsa_44::tests::smoke_test ... ok
+test ml_dsa_65::tests::smoke_test ... ok
+test ml_dsa_87::tests::smoke_test ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.53s
+
+     Running tests/integration.rs (target/debug/deps/integration-52c4f203003d8ef3)
+
+running 6 tests
+test forever ... ignored
+test bad_sig ... ok
+test test_44_no_verif ... ok
+test nist_vectors::test_sigver ... ok
+test nist_vectors::test_keygen ... ok
+test nist_vectors::test_siggen ... ok
+
+test result: ok. 5 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/las_kat.rs (target/debug/deps/las_kat-bfc296ef7732fe57)
+
+running 1 test
+test las_kat_matches_c_pinned_digest ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/las_stage1.rs (target/debug/deps/las_stage1-4edbcc73825390ed)
+
+running 2 tests
+test serde_round_trip_and_validation ... ok
+test cross_module_interlock ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/messages.rs (target/debug/deps/messages-e960c52052c72a5a)
+
+running 1 test
+test test_browser_message ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

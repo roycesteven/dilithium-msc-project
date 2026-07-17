@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  6 JUL 2026 15:24
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  17 JUL 2026 10:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -924,20 +924,20 @@ Chapter 3.
 [24
 
 ]
-<figures/fig_timing.pdf, id=444, 581.16936pt x 345.9258pt>
+<figures/fig_timing.pdf, id=444, 587.55257pt x 345.9258pt>
 File: figures/fig_timing.pdf Graphic file (type pdf)
 <use figures/fig_timing.pdf>
 Package pdftex.def Info: figures/fig_timing.pdf  used on input line 80.
-(pdftex.def)             Requested size: 412.56496pt x 245.57208pt.
- [25] [26] (./generated/tab_rust.tex) [27]
-<figures/fig_components.pdf, id=470, 724.55379pt x 362.423pt>
+(pdftex.def)             Requested size: 412.56496pt x 242.90648pt.
+ [25] [26] (./generated/tab_rust.tex) [27] [28]
+<figures/fig_components.pdf, id=475, 724.55379pt x 362.423pt>
 File: figures/fig_components.pdf Graphic file (type pdf)
 <use figures/fig_components.pdf>
-Package pdftex.def Info: figures/fig_components.pdf  used on input line 199.
+Package pdftex.def Info: figures/fig_components.pdf  used on input line 214.
 (pdftex.def)             Requested size: 412.56496pt x 206.36758pt.
- [28]
-(./generated/tab_classical.tex) [29] [30]) (./chapters/04-evaluation.tex
-[31] [32] [33 <./figures/fig_timing.pdf>] [34 <./figures/fig_components.pdf>]
+ [29]
+(./generated/tab_classical.tex) [30] [31]) (./chapters/04-evaluation.tex
+[32] [33 <./figures/fig_timing.pdf>] [34 <./figures/fig_components.pdf>]
 Chapter 4.
 [35
 
@@ -1006,11 +1006,11 @@ Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 3D76F83B8B371A0DC2DCF2E49021CDA0;6915.
  ) 
 Here is how much of TeX's memory you used:
- 27640 strings out of 476182
- 505342 string characters out of 5795595
+ 27643 strings out of 476182
+ 505389 string characters out of 5795595
  2149975 words of memory out of 5000000
- 48579 multiletter control sequences out of 15000+600000
- 714229 words of font info for 288 fonts, out of 8000000 for 9000
+ 48582 multiletter control sequences out of 15000+600000
+ 714271 words of font info for 288 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,13n,87p,1003b,2166s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/ty
@@ -1026,10 +1026,10 @@ fonts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/type1/public/lm/lmri12
 /public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt12.pfb></usr/
 share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fo
 nts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (48 pages, 571722 bytes).
+Output written on report.pdf (48 pages, 572753 bytes).
 PDF statistics:
  1060 PDF objects out of 1200 (max. 8388607)
- 754 compressed objects within 8 object streams
+ 755 compressed objects within 8 object streams
  209 named destinations out of 1000 (max. 500000)
  84284 words of extra memory for PDF output out of 89155 (max. 10000000)
 

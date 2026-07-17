@@ -139,10 +139,32 @@ def parse_fair_protocol(path):
     return {"reps": m.group(1), "iters_sign": m.group(2), "iters_verify": m.group(3)}
 
 
+def parse_packed_overhead(path):
+    """End-to-end (packed) adaptor overhead --- incl. validating unpack + pack ---
+    from the fair log's TIER-2 packed-boundary section. This is the full-protocol
+    cost a wire / on-chain consumer pays: each adaptor op additionally decodes the
+    pk-sized statement Y, so it is larger than the core-tier overhead above (which
+    isolates the pure adaptor arithmetic). Returns {op: pct} for PreSign/PreVerify/
+    Adapt, or dies loudly if the packed tier is absent."""
+    if not path.exists():
+        die("missing %s" % path)
+    t = path.read_text(errors="replace")
+    out = {}
+    for rx, op in ((r"PreSign_packed\s+vs\s+Sign_packed", "PreSign"),
+                   (r"PreVerify_packed\s+vs\s+Verify_packed", "PreVerify"),
+                   (r"Adapt_packed\s+vs\s+Verify_packed", "Adapt")):
+        m = re.search(rx + r"[^()]*\(([+-][0-9.]+)%\)", t)
+        if not m:
+            die("could not parse the packed (end-to-end) overhead '%s' from %s "
+                "(TIER-2 packed boundary)" % (op, path))
+        out[op] = float(m.group(1))
+    return out
+
+
 def parse_tamper(path):
     if not path.exists():
         die("missing %s" % path)
-    m = re.search(r"tamper: all (\d+) single-byte flips rejected",
+    m = re.search(r"tamper: low-bit flip of all (\d+) bytes rejected",
                   path.read_text(errors="replace"))
     if not m:
         die("could not parse the tamper-test count from %s" % path)
@@ -216,8 +238,8 @@ def parse_rust_driver(path):
             die("operation '%s' missing from the Rust driver log" % op)
 
     m = re.search(r"adaptor overhead \(per operation\): PreSign vs Sign "
-                  r"\+([0-9.]+)% \| PreVerify vs Verify \+([0-9.]+)% \| "
-                  r"Adapt vs Verify \+([0-9.]+)%", t)
+                  r"([+-][0-9.]+)% \| PreVerify vs Verify ([+-][0-9.]+)% \| "
+                  r"Adapt vs Verify ([+-][0-9.]+)%", t)
     if not m:
         die("could not parse the Rust overhead summary from %s" % path)
     over = {"PreSign vs Sign": float(m.group(1)),
@@ -323,7 +345,7 @@ def header(sources, meta):
 
 def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
-                rust_proto, rust_kat, crit, crit_samples, tamper):
+                rust_proto, rust_kat, crit, crit_samples, tamper, packed_over):
     t = timing[TARGET]
     o = over[TARGET]
     c = comm[TARGET]
@@ -359,6 +381,12 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     m.append(("ovPreVerify", pct(o["PreVerify vs Verify"])))
     m.append(("ovAdapt", pct(o["Adapt vs Verify"])))
     m.append(("ovMaxAll", pct(ov_max_all)))
+    # full-protocol (packed / end-to-end) overhead: incl. validating unpack + pack.
+    # Larger than the core figures because each adaptor op decodes the pk-sized
+    # statement Y -- the serialization cost, not the adaptor arithmetic.
+    m.append(("packedOvPreSign", pct(packed_over["PreSign"])))
+    m.append(("packedOvPreVerify", pct(packed_over["PreVerify"])))
+    m.append(("packedOvAdapt", pct(packed_over["Adapt"])))
     m.append(("extMean", num(t["Ext"][0])))
     m.append(("setupMin", "%.0f" % min(setup_means)))
     m.append(("setupMax", "%.0f" % max(setup_means)))
@@ -584,6 +612,7 @@ def main(argv=None):
     params, timing, over, rej, comm = load_c_evidence(ev / "tables")
     meta = parse_metadata(ev / "metadata.txt")
     proto = parse_fair_protocol(ev / "logs" / ("fair_%s.log" % TARGET.lower()))
+    packed_over = parse_packed_overhead(ev / "logs" / ("fair_%s.log" % TARGET.lower()))
     tamper = parse_tamper(ev / "logs" / "serialization_tests.log")
     classical = parse_classical(ev / "logs" / "classical.log")
     (rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
@@ -612,7 +641,7 @@ def main(argv=None):
 
     emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
-                rust_proto, rust_kat, crit, crit_samples, tamper)
+                rust_proto, rust_kat, crit, crit_samples, tamper, packed_over)
     emit_tab_timing(out, meta, params, timing)
     emit_tab_overhead_target(out, meta, timing, over)
     emit_tab_components(out, meta, params, comm)

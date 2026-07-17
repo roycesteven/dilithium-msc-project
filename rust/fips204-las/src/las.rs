@@ -102,6 +102,13 @@ use crate::Q;
 use crate::relation::{Statement, Witness};
 use crate::las_types::{PublicKey, SecretKey, Signature};
 use crate::setup::{PublicParams, D, ELL, GAMMA, KAPPA, N, N_PLUS_ELL, LAS_CTILDEBYTES, LAS_SEEDBYTES};
+// Validating byte codecs for the end-to-end packed tier (mirrors basesig.rs's
+// serialize imports for its *_packed twins).
+use crate::serialize::{
+    pack_pre_signature, pack_signature, pack_witness, unpack_pre_signature, unpack_public_key,
+    unpack_secret_key, unpack_signature, unpack_statement, unpack_witness, PRE_SIGNATURE_BYTES,
+    PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES, STATEMENT_BYTES, WITNESS_BYTES,
+};
 // Owner re-export: the Algorithm-2 pre-signature type belongs to THIS module
 // (physical home is las_types.rs) — callers import it from its owner:
 // `use fips204::las::PreSignature`.
@@ -372,6 +379,95 @@ pub fn ext(
     // [PAPER Alg.2] 32:     return s
     Some(Witness::from_relation_vector(s))
     // [PAPER Alg.2] 33: end procedure
+}
+
+/* ==================== end-to-end packed tier (byte API) ====================
+ * Validating byte-boundary wrappers around the four core Algorithm-2 ops:
+ * decode every input (statement Y, keys, (pre-)signatures, witness) with the
+ * validating serialize.rs codecs, run the core op, pack the output.  These are
+ * the *_packed twins the benchmark's TIER-2 measures and what a wire/on-chain
+ * consumer pays.  C twins: las_presign_packed / las_preverify_packed /
+ * las_adapt_packed / las_ext_packed (las.c). */
+
+/// `presign_packed` (end-to-end tier of [`presign`]); C twin `las_presign_packed`
+/// (las.c).  Validating decode of the statement Y, public and secret keys, then
+/// core PreSign (c = H(pk, w + Y, M)), then pack the pre-signature.  `None` if
+/// any input fails validating decode.
+pub fn presign_packed(
+    m: &[u8],                              // paper M: message
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    pk_b: &[u8; PUBLIC_KEY_BYTES],         // packed public key (bytes)
+    sk_b: &[u8; SECRET_KEY_BYTES],         // packed secret key (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+    rng: &mut impl CryptoRngCore,          // CSPRNG for the mask seed
+) -> Option<[u8; PRE_SIGNATURE_BYTES]> {
+    let statement = unpack_statement(y_b)?;
+    let pk = unpack_public_key(pk_b)?;
+    let sk = unpack_secret_key(sk_b)?;
+    let presig = presign(m, &statement, &pk, &sk, pp, rng);
+    pack_pre_signature(&presig) // in-band by the norm gate: always Some
+}
+
+/// `preverify_packed` (end-to-end tier of [`preverify`]); C twin
+/// `las_preverify_packed` (las.c).  Validating decode of Y, pk and the
+/// pre-signature, then core PreVerify (c == H(pk, w' + Y, M)).  Returns `true`
+/// iff the bytes decode AND the pre-signature pre-verifies.
+pub fn preverify_packed(
+    presig_b: &[u8; PRE_SIGNATURE_BYTES],  // packed pre-signature (bytes)
+    m: &[u8],                              // paper M: message
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    pk_b: &[u8; PUBLIC_KEY_BYTES],         // packed public key (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+) -> bool {
+    let Some(statement) = unpack_statement(y_b) else {
+        return false; // malformed statement
+    };
+    let Some(pk) = unpack_public_key(pk_b) else {
+        return false; // malformed pk
+    };
+    let Some(presig) = unpack_pre_signature(presig_b) else {
+        return false; // malformed pre-signature
+    };
+    preverify(&presig, m, &statement, &pk, pp)
+}
+
+/// `adapt_packed` (end-to-end tier of [`adapt`]); C twin `las_adapt_packed`
+/// (las.c).  Validating decode of the pre-signature, statement, honest witness
+/// r' and public key; core Adapt (which pre-verifies first); pack the adapted
+/// (fully ordinary) signature.  `None` on any decode failure or invalid
+/// pre-signature.
+pub fn adapt_packed(
+    presig_b: &[u8; PRE_SIGNATURE_BYTES],  // packed pre-signature (bytes)
+    m: &[u8],                              // paper M: message
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    r_prime_b: &[u8; WITNESS_BYTES],       // packed honest witness r' (bytes)
+    pk_b: &[u8; PUBLIC_KEY_BYTES],         // packed public key (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+) -> Option<[u8; SIGNATURE_BYTES]> {
+    let statement = unpack_statement(y_b)?;
+    let witness = unpack_witness(r_prime_b)?;
+    let pk = unpack_public_key(pk_b)?;
+    let presig = unpack_pre_signature(presig_b)?;
+    let sigma = adapt(&presig, m, &statement, &witness, &pk, pp)?;
+    pack_signature(&sigma)
+}
+
+/// `ext_packed` (end-to-end tier of [`ext`]); C twin `las_ext_packed` (las.c).
+/// Validating decode of both signatures and the statement; core Ext
+/// (s = z − ẑ, checked against A s == Y); pack the recovered witness s.  This is
+/// the on-chain leak made byte-real: the two byte strings anyone can fetch from
+/// the chain yield the witness.  `None` on any decode failure or invalid input.
+pub fn ext_packed(
+    sig_b: &[u8; SIGNATURE_BYTES],         // packed adapted signature (bytes)
+    presig_b: &[u8; PRE_SIGNATURE_BYTES],  // packed pre-signature (bytes)
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+) -> Option<[u8; WITNESS_BYTES]> {
+    let statement = unpack_statement(y_b)?;
+    let sigma = unpack_signature(sig_b)?;
+    let presig = unpack_pre_signature(presig_b)?;
+    let s = ext(&sigma, &presig, &statement, pp)?;
+    pack_witness(&s)
 }
 
 /* ============================ helpers ============================

@@ -120,6 +120,18 @@ parameter choice, the same base-versus-adaptor comparison was repeated at four p
 sets (the LAS-paper dimensions and the Simplified Dilithium-II/III/V dimensions); the
 adaptor premium stays in the single digits at every one (\cref{fig:overhead}, appendix).
 
+The figures so far are the \emph{core} operations --- structures in, structures out ---
+which isolate the adaptor arithmetic. Measured \emph{end-to-end}, unpacking every input
+and packing every output as a wire or on-chain verifier must, the adaptor premium is
+substantially larger: $+\packedOvPreSign\%$ for PreSign, $+\packedOvPreVerify\%$ for
+PreVerify, and $+\packedOvAdapt\%$ for Adapt. This gap is not adaptor arithmetic but
+serialization: each adaptor operation must additionally decode the pk-sized statement
+$Y$ (\stmtBytesTarget~B), and Adapt also re-packs the completed signature. The object
+that dominates the \emph{communication} cost (\cref{sec:res-comm}) therefore reappears
+as the dominant \emph{computation} cost once the byte boundary is included, so a
+deployment that verifies from bytes should budget for the end-to-end figures rather than
+the core ones.
+
 Signing and pre-signing are dearer than verification because they use rejection
 sampling. The acceptance rate was measured directly, by counting rejection-loop
 attempts rather than estimating from a timing ratio: at the target setting
@@ -171,14 +183,17 @@ Timing agreement is necessarily looser, since the two builds go through differen
 compilers (GCC versus rustc/LLVM), but it is close: \cref{tab:rust} shows every
 operation agreeing within about \rustCMaxDev\% (the largest gap is
 \rustCMaxDevOp), with the Rust port slightly faster on the verify-class operations
-and slightly slower on key generation. More importantly, every \emph{conclusion}
-reproduces. The Rust port measures the adaptor overhead at
-$+\rustOvPreSign\%$ (PreSign vs Sign), $+\rustOvPreVerify\%$ (PreVerify vs Verify),
-and $+\rustOvAdapt\%$ (Adapt vs Verify) --- single digits, like the C values of
-$+\ovPreSign\%$, $+\ovPreVerify\%$, and $+\ovAdapt\%$ --- and its directly counted
-rejection rates (\rustAttBase{} attempts per signature, \rustAttLas{} per
-pre-signature) pass the same five-standard-deviation gate against the closed-form
-prediction. The Criterion harness, with a wholly independent measurement protocol,
+and slightly slower on key generation. More importantly, the central conclusion --- that the adaptor layer is cheap ---
+reproduces in both languages. The Rust port measures the per-operation overhead at
+$+\rustOvPreSign\%$ (PreSign vs Sign) and $+\rustOvPreVerify\%$ (PreVerify vs Verify),
+and $\rustOvAdapt\%$ for Adapt vs Verify, all single-digit in magnitude alongside the
+small C values of $+\ovPreSign\%$, $+\ovPreVerify\%$, and $+\ovAdapt\%$. The Rust Adapt
+figure is slightly \emph{negative}: at this scale the genuine adaptor overhead is smaller
+than the cost gap between the base and LAS verify paths, which are separate (duplicated)
+helpers that compile to marginally different code, so the measurement floor --- not a
+real speed-up --- fixes its sign. Both ports' directly counted rejection rates
+(\rustAttBase{} attempts per signature, \rustAttLas{} per pre-signature) pass the same
+five-standard-deviation gate against the closed-form prediction. The Criterion harness, with a wholly independent measurement protocol,
 gives lower absolute times but the same ordering and the same
 sign-class-versus-verify-class shape. The headline results of this chapter are
 therefore properties of the algorithm, not artefacts of one codebase, one compiler,

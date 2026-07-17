@@ -5,8 +5,8 @@
 \contentsline {table}{\numberline {2.3}{\ignorespaces Security and scheme parameter notation}}{23}{table.2.3}%
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract}}{25}{table.3.1}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces Per-operation timing: C reference vs Rust port}}{27}{table.3.2}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{30}{table.3.3}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Per-operation timing: C reference vs Rust port}}{28}{table.3.2}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{31}{table.3.3}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
