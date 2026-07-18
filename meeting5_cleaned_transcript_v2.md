@@ -34,7 +34,11 @@
 | easy DSA / ECD S.A. | ECDSA |
 | automatic swamp / autonomic swab | atomic swap |
 | ck proof / Samsung proof | ZK proof / proof that witness is valid and small |
+| ZKPS16 / zkep … +9 plus secure | (likely) Groth16 ZK-SNARK — "Groth16 is not post-quantum secure" |
 | Foundry / private | local EVM / private chain using Foundry |
+| screen cast / seat's forecas | screencast |
+| Cologne | column |
+| samurai the differences | summarise the differences |
 
 ---
 
@@ -80,15 +84,18 @@ Near the end, Wang also discussed submission and visibility. The report and vide
 4. **Summarise what changed from simplified Dilithium to LAS.**
    - Do this at a high level first.
    - Then add file/function details only after the conceptual flow is clear.
+   - Also summarise the **challenges met during the modification** (14:55) — this belongs in the report.
 
 5. **Explain the benchmark methodology clearly.**
-   - For Rust/Criterion: report sample count, warm-up, mean, median, SD, and confidence intervals if available.
+   - For Rust/Criterion: report sample count, warm-up (~3 s), mean, median, SD, and confidence intervals if available.
    - For C: either use an equivalent repeated-run setup or script repeated executions and calculate mean ± SD.
+   - The Criterion distribution/statistics output itself is reportable material — "better than what you would write yourself" — and should also appear in the **screencast/video** (27:39–27:45).
 
 6. **Report rejection sampling properly.**
    - Explain the expected attempt count, e.g. around 2.7 attempts.
    - Explain the acceptance rate, e.g. around 36.8%.
    - Show the measured attempts from implementation, not only the theoretical value.
+   - Run **enough samples** that the measured attempt counts for both Sign and PreSign converge to the theoretical expectation (28:49) — this doubles as the sample-size validity argument for the timing numbers.
 
 7. **Reduce and organise results.**
    - Do not show every figure at once.
@@ -99,6 +106,7 @@ Near the end, Wang also discussed submission and visibility. The report and vide
    - Include ECDSA/Schnorr adaptor-signature numbers if verified.
    - Add columns showing overhead relative to the classical baseline.
    - State security-level and implementation caveats clearly.
+   - Present both cost comparisons as **tables** (36:27–36:31, 38:39): the student proposed a table, Wang agreed, and his closing ask is "a table for computation and a table for communication".
 
 9. **Improve reproducibility documentation.**
    - Write a short README with only the key commands.
@@ -300,6 +308,12 @@ Okay, from the high level.
 **Supervisor (14:29)**  
 Yes. You already have the details, but the question is how to present them better and more efficiently.
 
+**Supervisor (14:55)**  
+Imagine you will do the same in your final report. People will ask how you modified the existing implementation. You also need to summarise the **challenges you met during the modification**. For example, if I ask you to draw a picture showing how the repository looks, you should be able to do that.
+
+**Supervisor (15:37)**  
+So next time you can show me a diagram, or draw me a diagram, to show how they look.
+
 ---
 
 ### 5. What “perfect benchmark/implementation” means
@@ -411,8 +425,11 @@ I think this one has around 300 samples.
 **Supervisor (27:39)**  
 That is good. You can report this. It may be better than a simple manual benchmark if it gives proper statistics.
 
+**Supervisor (27:45)**  
+You can report this — I think this is better than what you would write yourself. And can you also do the screencast with something like this? [i.e.\ the Criterion distribution/statistics output is material for the report **and** the screencast/video.]
+
 **Student (28:00)**  
-I tried to make it similar to the C implementation. It has a warm-up time.
+I tried to make it similar to the C implementation. It has a warm-up time (around three seconds).
 
 **Supervisor (28:10)**  
 Good. For the C version, if you cannot use the same framework, the worst case is that you write a script to run it many times and record the numbers.
@@ -425,7 +442,7 @@ That is still fine. You can also generate figures from it.
 ### 8. Rejection sampling: theory versus measurement
 
 **Student (28:49)**  
-Theoretically, from the paper and the rejection-sampling calculation, I think it needs about 2.7 attempts for a pre-signature.
+Theoretically, from the paper and the rejection-sampling calculation, I think it needs about 2.7 attempts for a pre-signature. So I am making sure that I run **enough samples** [so the measured attempt count converges to that theoretical expectation].
 
 **Supervisor (29:12)**  
 How did you get this number? Did you derive it from the paper?
@@ -468,7 +485,7 @@ Last time you asked me to summarise in a few points. I think the computation ove
 Yes, and communication?
 
 **Student (33:19)**  
-The main issue is communication size. Even for the adaptor signature, we have the public statement. The final signature does not grow much, but the statement is additional.
+The main issue is communication size. Even for the adaptor signature, we have the public statement (around 4416 bytes). The final signature does not grow much, but the statement is additional.
 
 **Student (33:43)**  
 The final signature is still around several thousand bytes. The remaining thing is the blockchain-level comparison, which I have not done yet.
@@ -502,6 +519,12 @@ That is okay. Assume the numbers are correct for now, but verify them. Add anoth
 
 **Supervisor (36:17)**  
 Show the overhead or increase compared with the classical baseline.
+
+**Student (36:27)**  
+So you prefer it to be a table? I think this one should be a table.
+
+**Supervisor (36:31)**  
+Yes [a table is preferred — it carries the exact detail].
 
 **Student (36:34)**  
 I also have another diagram comparing ECDSA and LAS.
@@ -635,7 +658,7 @@ For the party extracting the witness, do they need some proof that the witness i
 That may require additional components. We can start from something standard first.
 
 **Supervisor (50:14)**  
-If we implement the full atomic swap in that way, then yes, we may need ZK proofs. But then we should also consider whether the ZK proof is post-quantum secure. That is another component.
+If we implement the full atomic swap in that way, then yes, we may need ZK proofs. The ZK proof is similar to what I shared with you in the AI Security \& Privacy context — but the question is that we may need a post-quantum-secure one: [likely] Groth16 is **not** post-quantum secure. That is another component.
 
 **Supervisor (50:58)**  
 This is another thing. Let us see how far we can go.
@@ -711,12 +734,14 @@ For the next meeting, prepare:
 2. a high-level diagram of the base signature implementation;
 3. a high-level diagram of the LAS implementation;
 4. a table of reused, modified, and newly added components;
-5. benchmark tables for computation and communication;
-6. rejection-sampling theory versus measured attempts;
+5. benchmark **tables** for computation and for communication (36:27, 38:39 — Wang's verbatim ask);
+6. rejection-sampling theory versus measured attempts (with the enough-samples convergence argument);
 7. a short README with reproduction commands;
 8. verified classical adaptor-signature comparison numbers, if available;
 9. a note on whether code submission is required;
-10. a plan for making the GitHub repository public only if the code is clean enough.
+10. a plan for making the GitHub repository public only if the code is clean enough;
+11. a summary of the challenges met during the modification (for the report);
+12. the Criterion distribution/statistics output, reused in the report and the screencast/video.
 
 The key message from Wang is:
 

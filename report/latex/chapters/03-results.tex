@@ -62,7 +62,11 @@ primitives, so any difference is purely the price of adding adaptor functionalit
 one party signs or pre-signs while another verifies and later adapts, so a single
 end-to-end figure would be unrealistic.
 
-\Cref{fig:timing} is the primary result. Each LAS adaptor operation (orange) is drawn
+\Cref{tab:overhead-l3} is the primary result, and it reports the comparison at
+\emph{both} measurement boundaries of \cref{sec:benchmethod}: the core tier, which
+isolates the adaptor arithmetic, and the full-protocol tier, which includes the
+validating decode and encode a wire or on-chain consumer pays. \Cref{fig:timing}
+visualises the core tier: each LAS adaptor operation (orange) is drawn
 beside the basic operation it mirrors (blue), with the overhead printed above the orange
 bar, so the headline is read directly off the figure rather than inferred from two distant
 groups: at the target setting, \emph{Simplified Dilithium-III}, every adaptor operation
@@ -70,10 +74,30 @@ stays within single digits of its basic counterpart, and Extract --- which has n
 analogue --- is the cheapest operation of all. Plotting on an absolute $\mu$s scale also
 makes the shape visible --- every operation completes in well under two milliseconds, and
 signing and pre-signing dominate because of rejection sampling, while the verify-class
-operations and Extract are far cheaper. The exact means and standard deviations behind the
-figure are tabulated in \cref{tab:overhead-l3} (appendix). The same base-versus-adaptor
+operations and Extract are far cheaper. The same base-versus-adaptor
 comparison repeated across all four parameter sets is a scaling check, deferred to
 \cref{fig:overhead} (appendix).
+
+\begin{table}[t]
+  \centering
+  \caption[Adaptor overhead at the target setting, both timing tiers]{The primary
+  computation result: per-operation adaptor overhead at the target setting
+  \emph{Simplified Dilithium-III} ($n{=}6$, $\ell{=}5$, $\kappa{=}49$,
+  $\gamma{=}137\,984$, $d{=}256$), at \emph{both} measurement boundaries of
+  \cref{sec:benchmethod}. Each LAS adaptor operation is paired with the basic
+  operation it mirrors; ``Overhead'' is the extra cost as a percentage of that
+  basic operation, within the same tier. Timings are $\mu$s per operation (mean
+  $\pm$ sample standard deviation over \benchReps{} repetitions $\times$
+  \benchItersSign{}/\benchItersVerify{} iterations; machine of record in
+  \cref{sec:benchmethod}). KeyGen, Sign, and Verify are reused unchanged by LAS;
+  Extract has no basic analogue. The full-protocol overheads are larger because
+  each adaptor operation additionally decodes the public-key-sized statement
+  $Y$ (\stmtBytesTarget~B) --- serialization, not adaptor arithmetic. Absolute
+  core-tier timings at every parameter set are in \cref{tab:timing} (appendix).}
+  \label{tab:overhead-l3}
+  \small
+  \input{generated/tab_overhead_target}
+\end{table}
 
 \begin{figure}[t]
   \centering
@@ -82,8 +106,8 @@ comparison repeated across all four parameter sets is a scaling check, deferred 
   result, shown visually: each LAS adaptor operation (orange) paired beside the basic
   operation it mirrors (blue), at the target setting \emph{Simplified Dilithium-III} (its
   parameters are annotated above the plot). The percentage above each orange bar is the
-  adaptor overhead over its blue partner; exact means and standard deviations are in
-  \cref{tab:overhead-l3} (appendix). KeyGen, Sign, and Verify are reused unchanged by LAS, so KeyGen is
+  adaptor overhead over its blue partner; exact means and standard deviations, and the
+  full-protocol tier, are in \cref{tab:overhead-l3}. KeyGen, Sign, and Verify are reused unchanged by LAS, so KeyGen is
   shown once (shared) and Sign/Verify are the blue partners of PreSign/PreVerify/Adapt;
   Extract has no basic analogue and is shown LAS-only. The absolute $\mu$s scale also shows
   the shape: every operation is sub-two-milliseconds and the rejection-sampling operations
@@ -120,32 +144,40 @@ parameter choice, the same base-versus-adaptor comparison was repeated at four p
 sets (the LAS-paper dimensions and the Simplified Dilithium-II/III/V dimensions); the
 adaptor premium stays in the single digits at every one (\cref{fig:overhead}, appendix).
 
-The figures so far are the \emph{core} operations --- structures in, structures out ---
-which isolate the adaptor arithmetic. Measured \emph{end-to-end}, unpacking every input
-and packing every output as a wire or on-chain verifier must, the adaptor premium is
-substantially larger: $+\packedOvPreSign\%$ for PreSign, $+\packedOvPreVerify\%$ for
+The structural argument above concerns the core tier. The full-protocol block of
+\cref{tab:overhead-l3} shows what changes when the measurement boundary moves to
+packed bytes, as a wire or on-chain verifier must operate: the adaptor premium
+grows to $+\packedOvPreSign\%$ for PreSign, $+\packedOvPreVerify\%$ for
 PreVerify, and $+\packedOvAdapt\%$ for Adapt. This gap is not adaptor arithmetic but
 serialization: each adaptor operation must additionally decode the pk-sized statement
 $Y$ (\stmtBytesTarget~B), and Adapt also re-packs the completed signature. The object
 that dominates the \emph{communication} cost (\cref{sec:res-comm}) therefore reappears
 as the dominant \emph{computation} cost once the byte boundary is included, so a
-deployment that verifies from bytes should budget for the end-to-end figures rather than
-the core ones.
+deployment that verifies from bytes should budget for the full-protocol row rather than
+the core one. Presenting the two tiers side by side, with the boundary of each stated,
+is deliberate: reported lattice-signature timings are notoriously sensitive to where
+the measurement boundary is drawn \cite{riou2026apples}.
 
 Signing and pre-signing are dearer than verification because they use rejection
-sampling. The acceptance rate was measured directly, by counting rejection-loop
-attempts rather than estimating from a timing ratio: at the target setting
-\rejAccBase\% of Sign attempts and \rejAccLas\% of PreSign attempts are accepted, so a
-signature takes about \rejAttBase{} attempts on average (\rejAttLas{} for a
-pre-signature), and the other settings behave alike. This matches the closed-form
-prediction: one attempt is accepted only if
-all $(n+\ell)\cdot d$ response coefficients fall within the bound, giving a per-attempt
-acceptance of $(1-\kappa/\gamma)^{(n+\ell)d}\approx e^{-1}\approx 36.8\%$. Every
-benchmark run asserts the measured attempt count against this prediction (within five
-standard deviations) before any timing is reported, so a broken sampler cannot
-silently produce plausible-looking numbers. Rejection
-sampling is intrinsic to the Fiat--Shamir-with-aborts family, not a defect of this
-implementation.
+sampling, and the attempt counters measured during the timed calls explain the
+Sign-versus-PreSign timing gap. The closed-form expectation of \cref{eq:rejacc}
+predicts 2.719 attempts per Sign and 2.775 per PreSign at the target setting ---
+PreSign is expected to restart about $2\%$ more often, because its bound is
+tighter by exactly one. Measured directly, by counting rejection-loop attempts
+rather than estimating from a timing ratio, the run of record observed
+\rejAttBase{} attempts per Sign (\rejAccBase\% acceptance) and \rejAttLas{} per
+PreSign (\rejAccLas\%): both sit comfortably inside the five-standard-error
+gate of \cref{sec:benchmethod}, which every run must pass before any timing is
+reported, so a broken sampler cannot silently produce plausible-looking numbers.
+At the drivers' 2500 timed calls the gate band ($\pm\!\sim\!8\%$) is wider than
+the $2\%$ theoretical separation, so the two measured counts are statistically
+indistinguishable at this sample size --- which is exactly why the core-tier
+PreSign-versus-Sign overhead ($+\ovPreSign\%$) should be read as ``of the same
+order as the attempt-count prediction'', not as a precise constant; the
+$\approx\!10^5$-call Criterion harness, whose band is $\pm\!\sim\!1\%$, resolves
+the separation (measured 2.725 per Sign against its 2.719 prediction, 2.777 per
+PreSign against 2.775). Rejection sampling is intrinsic to
+the Fiat--Shamir-with-aborts family, not a defect of this implementation.
 
 \section{Cross-implementation check: C reference versus Rust port}
 \label{sec:res-rust}
@@ -191,39 +223,65 @@ small C values of $+\ovPreSign\%$, $+\ovPreVerify\%$, and $+\ovAdapt\%$. The Rus
 figure is slightly \emph{negative}: at this scale the genuine adaptor overhead is smaller
 than the cost gap between the base and LAS verify paths, which are separate (duplicated)
 helpers that compile to marginally different code, so the measurement floor --- not a
-real speed-up --- fixes its sign. Both ports' directly counted rejection rates
+real speed-up --- fixes its sign. The full-protocol tier reproduces as well: at the
+packed boundary the Rust port measures $+\rustPackedOvPreSign\%$ for PreSign,
+$+\rustPackedOvPreVerify\%$ for PreVerify, and $+\rustPackedOvAdapt\%$ for Adapt ---
+all positive and in the same order as the C full-protocol figures
+(Adapt $>$ PreVerify $>$ PreSign), confirming that once the statement-decoding cost
+is included the adaptor premium is a robust cross-language signal, not a compiler
+artefact. Both ports' directly counted rejection rates
 (\rustAttBase{} attempts per signature, \rustAttLas{} per pre-signature) pass the same
 five-standard-deviation gate against the closed-form prediction. The Criterion harness, with a wholly independent measurement protocol,
 gives lower absolute times but the same ordering and the same
-sign-class-versus-verify-class shape. The headline results of this chapter are
+sign-class-versus-verify-class shape; \cref{fig:criterion} shows its raw output for
+PreSign, the sampling distribution behind one cell of \cref{tab:rust}. The headline results of this chapter are
 therefore properties of the algorithm, not artefacts of one codebase, one compiler,
 or one timing harness.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_criterion_presign}
+  \caption[Criterion.rs sampling distribution for PreSign]{The statistical harness's
+  own report for PreSign at the target setting, reproduced unmodified from
+  Criterion.rs (its SVG output converted to PDF): \critSamples{} timed samples
+  (dots), the kernel-density estimate of the sampling distribution (shaded), the mean
+  (vertical blue line), and Criterion's automatic outlier classification (mild /
+  severe, orange / red). This is the evidence behind the Criterion column of
+  \cref{tab:rust}: a well-formed, single-mode distribution whose spread comes from
+  rejection sampling and scheduling noise, with only a handful of classified
+  outliers.}
+  \label{fig:criterion}
+\end{figure}
 
 \section{Communication cost and component breakdown}
 \label{sec:res-comm}
 
 The computation results show the adaptor layer is cheap. The size results show where
-the real cost lies. \Cref{fig:components} decomposes every LAS object into bytes at the
+the real cost lies. \Cref{tab:complete-l3} decomposes every LAS object into bytes at the
 target setting; the aim is to explain \emph{which} component drives the size, not merely
-to state that signatures are large. The exact bytes at every parameter set are tabulated
-in \cref{tab:components} (appendix), and an object-by-object reference for the target
-setting in \cref{tab:complete-l3} (appendix).
+to state that signatures are large. Communication sizes are fixed by the encoding, so
+they are reported once, as a table of exact bytes with no dispersion
+(\cref{sec:benchmethod}); the same decomposition at every parameter set is tabulated
+in \cref{tab:components} (appendix).
 
-\begin{figure}[t]
+\begin{table}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig_components}
   \caption[Serialized size of every LAS object]{Serialized size of every LAS object at
-  the \emph{Simplified Dilithium-III} (target) setting (wire bytes, not on-chain gas).
+  the \emph{Simplified Dilithium-III} (target) setting, in packed wire bytes (not
+  on-chain gas), with its paper notation. ``In the basic signature?'' marks which
+  objects LAS shares with the base scheme and which it adds.
   Three facts read off directly: the signature, pre-signature, and adapted signature are
   byte-identical (adaptation changes the \emph{value} of the response, not its size); the
   response $z$ dominates every signature; and the only extra \emph{public} object LAS
   adds over a basic signature is the statement $Y$, the size of a public key. Sizes at
   every parameter set: \cref{tab:components} (appendix).}
-  \label{fig:components}
-\end{figure}
+  \label{tab:complete-l3}
+  \small
+  \input{generated/tab_complete_target}
+\end{table}
 
 Two points follow, and together they give the sharp conclusion of the evaluation
-(\cref{fig:components}):
+(\cref{tab:complete-l3}):
 \begin{itemize}
   \item \textbf{The response $z$ is essentially the entire signature} --- \zPctTwo\% at
         Simplified Dilithium-II, rising to \zPctFive\% at Simplified Dilithium-V. The
@@ -272,7 +330,17 @@ classical adaptor against LAS at the Simplified Dilithium-III or -V settings wou
 it against a deliberately stronger post-quantum configuration and would understate the
 classical scheme, so the higher settings are reserved for the parameter-sensitivity
 study of \cref{sec:res-compute} and not used here. \Cref{tab:classical} reports both
-schemes at their adaptor operations.
+schemes at their adaptor operations. Following the tier rule of
+\cref{sec:benchmethod}, LAS appears at both of its measurement boundaries, while the
+classical scheme has exactly one measurable boundary --- its native API, which
+serializes the 162-byte pre-signature inside the timed calls but keeps the public-key
+and final-signature wire codecs outside --- so its column is that single tier, which
+sits between the two LAS tiers in scope. The comparison is therefore read
+conservatively: against LAS's \emph{core} tier it slightly flatters LAS on the adaptor
+operations (the classical numbers carry pre-signature codec work the LAS core numbers
+do not), and against LAS's \emph{full-protocol} tier it flatters the classical scheme.
+Either way the conclusions below survive, because they rest on order-of-magnitude
+gaps, not on percent-level differences.
 
 \begin{table}[t]
   \centering
@@ -285,7 +353,11 @@ schemes at their adaptor operations.
   the parameter-sensitivity study (\cref{sec:res-compute}) and would overstate the
   post-quantum cost here. Timings $\mu$s/op (classical: mean $\pm$ SD over \clReps{} runs
   $\times$ \clIters{} iterations; LAS: \benchReps{} repetitions $\times$
-  \benchItersSign{}/\benchItersVerify{} iterations; same machine); sizes in bytes. KeyGen
+  \benchItersSign{}/\benchItersVerify{} iterations; same machine); sizes in bytes.
+  Measurement boundaries (\cref{sec:benchmethod}): the classical column is the library's
+  single native-API tier (its 162-byte pre-signature is packed/unpacked \emph{inside}
+  the timed calls; public-key and final-ECDSA-signature wire codecs are outside); LAS is
+  shown at both its core and full-protocol tiers. KeyGen
   also produces the statement/witness, which take the public-key/secret-key size. The
   classical pre-signature is a syntactically distinct object (an ECDSA signature plus a
   discrete-logarithm-equality proof), whereas the LAS pre-signature shares the signature
@@ -306,7 +378,8 @@ $\clRatioTimeMax\times$, against a classical operation that is nearly free) cost
 under a tenth of a millisecond in absolute terms. Second, the two schemes
 pay their
 \emph{adaptor} overhead in opposite ways. The classical ECDSA adaptor must attach a
-discrete-logarithm-equality proof, so its PreSign and PreVerify are several times its
+discrete-logarithm-equality proof \cite{fournier2019adaptor}, so its PreSign and
+PreVerify are several times its
 own basic sign and verify; LAS folds the statement into a hash it already computes, so
 its adaptor operations stay within a few percent of its base operations. In
 computation, then, the lattice adaptor layer is relatively cheaper to add than the

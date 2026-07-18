@@ -391,11 +391,19 @@ Write this **this week**. Conceptual flow first, file/function detail after. Thi
 know where to start verifying it. There are too many details. Start from the high level."
 You need not master every ML-DSA math/impl detail, but you must be able to say, at a high
 level, what each component does and **why you left it unmodified or changed it**.
+Additionally (14:55, recovered from the original transcript): the report must also
+**summarise the challenges met during the modification** — not only what changed, but
+what was hard about changing it.
 
 **15.6 Benchmark methodology, stated explicitly.**
 - **Rust / Criterion is accepted and encouraged** — report **sample count (~300)**,
-  **warm-up**, **mean**, **median**, **SD**, and confidence intervals if available.
+  **warm-up (~3 s)**, **mean**, **median**, **SD**, and confidence intervals if available.
   Proper statistics from Criterion may be *better* than a manual benchmark.
+- **The Criterion distribution/statistics output itself is presentation material**
+  (27:39–27:45, recovered from the original transcript): Wang, on seeing the PreSign
+  distribution plot — "You can report this, I think this is better than what you write
+  yourself… can you do the screencast?" I.e. the Criterion visuals (distribution +
+  mean/CI) go **in the report and in the screencast/video**, not just in logs.
 - **C:** if the same framework is unavailable, an **equivalent repeated-run harness or a
   script that runs many times and records the numbers** is fine; compute **mean ± SD**.
 - **Communication sizes are fixed** — report once, no dispersion. **Timing must carry
@@ -418,6 +426,11 @@ counters), not just the theoretical value. Frame it as an interesting report ins
 rejection sampling is the hard part of benchmarking lattice signatures because it drives
 the timing/variance. (This is the direct-counter figure already produced; M5 wants both
 numbers side by side with a plain-language justification.)
+Recovered nuance (28:49): the student's stated method is to run **enough samples that
+the measured attempt counts for BOTH Sign and PreSign converge to the theoretical
+expectation** — i.e. the theory-vs-measured attempts check is not only an insight but
+the **sample-size validity argument** for the timing benchmark itself (if the counters
+match theory, the run was long enough and the sampler is healthy). Present it that way.
 
 **15.9 Classical adaptor-signature comparison — pulled into the Stage-1 tables
 (refines M4.8).** M4 deferred the classical comparison; **M5 asks to bring it in now as
@@ -432,6 +445,10 @@ Stage 2). Concretely:
 - Ensure **corresponding operations** are compared — highlight the correspondence even
   where the two are not exactly the same object.
 - **Include standard deviation.** An ECDSA-vs-LAS diagram is also welcome.
+- **Presentation form — tables** (36:27–36:31, 38:39 recovered): the student asked
+  "so you prefer it to be a table? I think this one should be a table" and Wang agreed;
+  his closing ask is verbatim "**a table for computation and a table for
+  communication**". Follow that: both cost comparisons are presented as tables.
 
 **15.10 Reduce & organise the figures.** Do not dump every figure. Keep the **most
 important**: **computation cost, communication cost, rejection attempts, and the
@@ -467,7 +484,10 @@ A **post-quantum-secure atomic swap = the basic requirement met**; beyond it, co
 **functional adaptor signatures** or other blockchain applications. Open question raised:
 a *real* atomic swap may need a **ZK proof that the extracted witness is valid/small**,
 and that ZK proof would itself need to be **post-quantum secure** (a further component) —
-"start from something standard first… let us see how far we can go."
+"start from something standard first… let us see how far we can go." (Recovered detail,
+50:14: the ZKP Wang referenced from his AI Security & Privacy material — likely
+**Groth16** — "is not post-quantum secure", which is exactly why the PQ-ZKP question
+arises; transcribed as "ZKPS16", so treat the name as probable, not certain.)
 
 **Meeting-5 next-meeting deliverables (verbatim intent) — the checklist:**
 1. A **1–2 slide summary** built around a **diagram**.
@@ -481,6 +501,8 @@ and that ZK proof would itself need to be **post-quantum secure** (a further com
 9. **Short README** with reproduction commands (plus the extended README).
 10. **Verified classical adaptor-signature comparison columns** (if available), with security-level + implementation caveats.
 11. The **machine/environment statement** travelling *with* the figures.
+12. **Summary of the challenges met during the modification** (14:55, recovered) — report material.
+13. **Criterion distribution/statistics visuals** reused in the report and the screencast/video (27:39–27:45, recovered).
 
 ## 16. Reference links
 

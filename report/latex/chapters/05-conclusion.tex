@@ -17,15 +17,23 @@ two-chain atomic swap.
 
 The evaluation answers the project's central question --- what does adaptor
 functionality cost over a plain signature, and what does post-quantum operation cost
-over a classical one --- with measured data. The primary fair comparison, LAS against
-its own simplified base, shows the adaptor layer is almost free in computation: PreSign,
+over a classical one --- with measured data, at explicitly declared measurement
+boundaries. At the core boundary, which isolates the adaptor arithmetic, the primary
+fair comparison of LAS against its own simplified base shows the adaptor layer is
+almost free in computation: PreSign,
 PreVerify, and Adapt each add only single-digit overhead (at most $+\ovMaxAll\%$)
 over the basic operation they mirror, at every parameter set --- a conclusion both
 implementations reproduce independently --- and this is relatively
 cheaper than the classical ECDSA
-adaptor, whose discrete-logarithm-equality proof dominates its adaptor cost. The real
-cost is communication: the signature is \zPctTwo--\zPctFive\% lattice response vector, and an
-adaptor swap additionally transmits a public-key-sized statement. The contextual
+adaptor, whose discrete-logarithm-equality proof dominates its adaptor cost. At the
+full-protocol boundary, where every input is decoded from and every output encoded to
+wire bytes, the adaptor premium rises to $+\packedOvPreSign$--$\packedOvAdapt\%$ ---
+not because the adaptor arithmetic grows, but because each adaptor operation must
+additionally decode the public-key-sized statement $Y$. The real
+cost is therefore communication, and it is visible on both axes: the signature is
+\zPctTwo--\zPctFive\% lattice response vector, an
+adaptor swap additionally transmits a public-key-sized statement, and that same
+statement dominates the byte-boundary compute cost. The contextual
 comparison against the optimised CRYSTALS-Dilithium reference --- not algorithm-matched
 --- shows that the remaining size gap is one of packing and production optimisation,
 not of security level.

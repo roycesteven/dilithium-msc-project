@@ -33,8 +33,11 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         parameters, and primitives fixed between LAS and its own simplified base, so the
         primary comparison isolates the adaptor overhead --- the base-signature path
         against the LAS adaptor path, every operation timed independently. The adaptor
-        overhead is reported per operation as the headline (\cref{tab:overhead-l3}), with
-        the absolute timings and a parameter-sensitivity check across four settings shown
+        overhead is reported per operation as the headline (\cref{tab:overhead-l3}),
+        at \emph{both} declared measurement boundaries --- the core tier and the
+        full-protocol tier --- so no reported speed reflects an undocumented
+        benchmarking scope (\cref{sec:benchmethod}); the absolute timings and a
+        parameter-sensitivity check across four settings are shown
         as supporting context (\cref{fig:timing,fig:overhead}, exact
         mean\,$\pm$\,standard-deviation figures in \cref{tab:timing}); computation and
         communication are separated and broken down by component. The optimised CRYSTALS-Dilithium
@@ -52,16 +55,71 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         exist as bonus-tier evidence.
 \end{enumerate}
 
+\section{Challenges encountered during the modification}
+\label{sec:eval-challenges}
+
+Turning the existing simplified-Dilithium base into LAS was conceptually a small
+change --- four added operations and one extra term in a hash --- but four
+challenges consumed most of the engineering effort, and stating them explicitly is
+part of explaining how the results were produced.
+
+\begin{enumerate}
+  \item \textbf{The rejection-bound budget.} The single most delicate line of the
+        scheme is PreSign's bound $\gamma-\kappa-1$ (\cref{eq:signbound}). Setting it
+        one looser, at the base scheme's $\gamma-\kappa$, produces an implementation
+        that passes every local test --- pre-signatures pre-verify, extraction works
+        --- yet whose \emph{adapted} signatures can exceed the basic verifier's bound
+        and fail. The failure is silent, probabilistic, and appears two operations
+        away from its cause, so it had to be prevented by reasoning through the norm
+        budget ($\inftynorm{y}\le 1$, hence
+        $\inftynorm{\hat z + y}\le\gamma-\kappa$) rather than discovered by testing.
+  \item \textbf{The reference's optimisations fight the adaptor identity.} The
+        adaptor mechanism rests on the exact identity $A\vecz - c\,t = w + Y$. The
+        reference implementation deliberately breaks exactness for compactness ---
+        Power2Round, the hint vector, and high/low-bit decomposition all discard
+        low-order information. Understanding \emph{which} optimisations had to be
+        disabled, and why the identity fails with each of them enabled, was a
+        prerequisite to a working PreVerify at all; it is also why the simplified
+        scheme is a design requirement rather than a convenience
+        (\cref{sec:impl}).
+  \item \textbf{Living inside another scheme's namespace.} The reused reference
+        globally defines single-letter parameter macros --- its \texttt{N} is the ring
+        degree and its \texttt{K} the module rank --- while LAS needs its own,
+        different dimensions with the same natural names. An innocently named LAS
+        constant silently inherits the wrong value through the preprocessor instead
+        of failing to compile. This forced a strict naming discipline (prefixed LAS
+        parameters, a documented C--Rust--paper name map) and explains some
+        otherwise-surprising names in the code.
+  \item \textbf{Benchmarking a variable-time scheme fairly.} Rejection sampling makes
+        sign-class timings heavy-tailed, and two early artefacts showed how easily
+        this misleads: an acceptance rate first estimated from a timing ratio was
+        biased (it implied $\approx\!23\%$ where direct counting gives
+        \rejAccBase\%), and the two languages' base signing paths initially used
+        different norm-check strategies (full-scan versus early-exit) \emph{inside}
+        the timed loop --- functionally identical, KAT-invisible, but a work-profile
+        asymmetry that biased the primary overhead comparison. Both lessons are now
+        institutionalised in the methodology: attempts are counted directly and
+        gated against theory (\cref{sec:benchmethod}), the drivers mirror each other
+        line-for-line, and every measurement boundary is declared.
+\end{enumerate}
+
+A fifth, cross-cutting difficulty --- reproducing the C scheme byte-for-byte in Rust,
+down to sampler subtleties such as how each language's uniform sampler discards
+rejected blocks --- is discussed with the cross-validation results
+(\cref{sec:res-rust}); the pinned known-answer digest was the tool that turned that
+difficulty into a mechanical, checkable process.
+
 \section{Reflection on the approach}
 \label{sec:eval-reflection}
 
 Five reflections stand out. First, reuse was the right strategy: building additively
 on a standardised reference made the implementation tractable in the available time
 and produced an unusually strong trust story, since the security-critical arithmetic
-is exactly the audited upstream code. Second, the main engineering subtlety was the
-PreSign bound budget (\cref{eq:signbound}); getting it wrong does not crash the
-program but makes every adapted signature fail verification, so it had to be reasoned
-through rather than discovered by testing alone. Third, measuring the rejection rate
+is exactly the audited upstream code. Second, the deepest challenges
+(\cref{sec:eval-challenges}) were not the adaptor mathematics but its
+\emph{interactions} --- with the base scheme's norm budget, with the reference's
+optimisations, and with its namespace --- which is a useful general lesson about
+modifying cryptographic reference code. Third, measuring the rejection rate
 directly, by counting attempts, corrected an earlier figure that had been estimated
 from a biased timing ratio --- a concrete lesson in preferring direct measurement to a
 proxy; that lesson is now institutionalised as a gate every benchmark run must pass.

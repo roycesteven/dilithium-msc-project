@@ -3,24 +3,25 @@
 % Evidence run: 20260717_084012  (git b6afecb)
 % Source: evidence/latest/logs/classical.log
 % Source: evidence/latest/tables/primary_timing.csv
+% Source: evidence/latest/logs/fair_l2.log (TIER-2 packed section)
 % Source: evidence/latest/tables/communication_components.csv
-\begin{tabular}{@{}lrr@{}}
+\begin{tabular}{@{}lrrr@{}}
   \toprule
-  & ECDSA adaptor (classical) & LAS adaptor (post-quantum) \\
+  & \shortstack[r]{ECDSA adaptor\\ (classical,\\ native API)} & \shortstack[r]{LAS adaptor\\ (post-quantum,\\ core tier)} & \shortstack[r]{LAS adaptor\\ (post-quantum,\\ full protocol)} \\
   \midrule
-  \multicolumn{3}{@{}l}{\textit{Computation ($\mu$s/op)}} \\
-  KeyGen & $27.2 \pm 1.9$ & $61.7 \pm 0.8$ \\
-  Sign & $36.1 \pm 1.0$ & $570 \pm 20$ \\
-  Verify & $58.1 \pm 7.8$ & $131 \pm 3$ \\
-  PreSign & $171 \pm 10$ & $608 \pm 35$ \\
-  PreVerify & $219 \pm 7$ & $135 \pm 2$ \\
-  Adapt & $2.8 \pm 0.1$ & $144 \pm 7$ \\
-  Extract & $30.6 \pm 2.5$ & $55.6 \pm 4.2$ \\
+  \multicolumn{4}{@{}l}{\textit{Computation ($\mu$s/op)}} \\
+  KeyGen & $27.2 \pm 1.9$ & $61.7 \pm 0.8$ & $221 \pm 15$ \\
+  Sign & $36.1 \pm 1.0$ & $570 \pm 20$ & $893 \pm 27$ \\
+  Verify & $58.1 \pm 7.8$ & $131 \pm 3$ & $326 \pm 45$ \\
+  PreSign & $171 \pm 10$ & $608 \pm 35$ & $1136 \pm 56$ \\
+  PreVerify & $219 \pm 7$ & $135 \pm 2$ & $590 \pm 14$ \\
+  Adapt & $2.8 \pm 0.1$ & $144 \pm 7$ & $835 \pm 19$ \\
+  Extract & $30.6 \pm 2.5$ & $55.6 \pm 4.2$ & $641 \pm 12$ \\
   \midrule
-  \multicolumn{3}{@{}l}{\textit{Communication (bytes)}} \\
-  Public key / statement & 33 & 2944 \\
-  Secret key / witness   & 32 & 512 \\
-  Signature              & 64 & 4640 \\
-  Pre-signature          & 162 & 4640 \\
+  \multicolumn{4}{@{}l}{\textit{Communication (bytes)}} \\
+  Public key / statement & 33 & \multicolumn{2}{c}{2944} \\
+  Secret key / witness   & 32 & \multicolumn{2}{c}{512} \\
+  Signature              & 64 & \multicolumn{2}{c}{4640} \\
+  Pre-signature          & 162 & \multicolumn{2}{c}{4640} \\
   \bottomrule
 \end{tabular}

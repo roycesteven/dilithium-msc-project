@@ -161,6 +161,27 @@ def parse_packed_overhead(path):
     return out
 
 
+def parse_packed_timing(path):
+    """Per-operation mean +/- SD at the TIER-2 (full-protocol / packed) boundary
+    from a fair log: packed bytes in / packed bytes out, including the validating
+    decode and the encode.  Complements the core-tier numbers from
+    primary_timing.csv so the report tables can present BOTH measurement
+    boundaries side by side.  Returns {op: (mean_us, sd_us)}; dies loudly if any
+    operation's packed line is absent (the tier rule requires both tiers)."""
+    if not path.exists():
+        die("missing %s" % path)
+    t = path.read_text(errors="replace")
+    out = {}
+    for op in ["KeyGen", "Sign", "Verify", "PreSign", "PreVerify", "Adapt", "Ext"]:
+        m = re.search(r"^\s*%s_packed\s+([0-9.]+)\s*\+/-\s*([0-9.]+)\s*us"
+                      % re.escape(op), t, re.M)
+        if not m:
+            die("could not parse '%s_packed' from %s (TIER-2 section)"
+                % (op, path))
+        out[op] = (float(m.group(1)), float(m.group(2)))
+    return out
+
+
 def parse_tamper(path):
     if not path.exists():
         die("missing %s" % path)
@@ -264,6 +285,25 @@ def parse_rust_driver(path):
     return params, sizes, timing, over, rej, proto
 
 
+def parse_rust_packed_overhead(path):
+    """Rust protocol driver's TIER-2 (full-protocol / packed) adaptor overhead
+    line -- the Rust twin of parse_packed_overhead, so the report can state that
+    the full-protocol tier reproduces (positive, same ordering) under a second
+    compiler.  Returns {op: pct}."""
+    if not path.exists():
+        die("missing %s (run scripts/run_rust_bench_suite.sh)" % path)
+    t = path.read_text(errors="replace")
+    m = re.search(r"packed adaptor overhead \(per operation\): "
+                  r"PreSign vs Sign ([+-][0-9.]+)% \| "
+                  r"PreVerify vs Verify ([+-][0-9.]+)% \| "
+                  r"Adapt vs Verify ([+-][0-9.]+)%", t)
+    if not m:
+        die("could not parse the Rust packed adaptor overhead from %s "
+            "(TIER 2 section)" % path)
+    return {"PreSign": float(m.group(1)), "PreVerify": float(m.group(2)),
+            "Adapt": float(m.group(3))}
+
+
 def parse_rust_sizes(path):
     if not path.exists():
         die("missing %s (run scripts/run_rust_bench_suite.sh)" % path)
@@ -345,7 +385,8 @@ def header(sources, meta):
 
 def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
-                rust_proto, rust_kat, crit, crit_samples, tamper, packed_over):
+                rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
+                rust_packed_over):
     t = timing[TARGET]
     o = over[TARGET]
     c = comm[TARGET]
@@ -420,6 +461,11 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     m.append(("rustOvPreSign", pct(rust_over["PreSign vs Sign"])))
     m.append(("rustOvPreVerify", pct(rust_over["PreVerify vs Verify"])))
     m.append(("rustOvAdapt", pct(rust_over["Adapt vs Verify"])))
+    # Rust full-protocol (packed) tier: the robust cross-language signal --
+    # positive and same ordering as C (Adapt > PreVerify > PreSign).
+    m.append(("rustPackedOvPreSign", pct(rust_packed_over["PreSign"])))
+    m.append(("rustPackedOvPreVerify", pct(rust_packed_over["PreVerify"])))
+    m.append(("rustPackedOvAdapt", pct(rust_packed_over["Adapt"])))
     m.append(("rustAttBase", rust_rej["att_base"]))
     m.append(("rustAttLas", rust_rej["att_las"]))
     m.append(("rustAccBase", rust_rej["acc_base"]))
@@ -465,14 +511,24 @@ def emit_tab_timing(out, meta, params, timing):
     (out / "tab_timing.tex").write_text(b)
 
 
-def emit_tab_overhead_target(out, meta, timing, over):
+def emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over):
+    """Adaptor overhead at the target setting, at BOTH measurement boundaries:
+    the core tier (structures in/out; isolates the adaptor arithmetic) and the
+    full-protocol tier (packed bytes in/out; incl. the validating decode +
+    encode a wire/on-chain consumer pays).  The tier rule: whenever both tiers
+    are measured, both are presented."""
     t = timing[TARGET]
     o = over[TARGET]
+    p = packed_t
     b = header(["evidence/latest/tables/primary_timing.csv",
-                "evidence/latest/tables/adaptor_overhead.csv"], meta)
+                "evidence/latest/tables/adaptor_overhead.csv",
+                "evidence/latest/logs/fair_%s.log (TIER-2 packed section)"
+                % TARGET.lower()], meta)
     b += "\\begin{tabular}{@{}lrrr@{}}\n  \\toprule\n"
     b += ("  Operation (basic / adaptor) & Basic ($\\mu$s) & "
           "LAS adaptor ($\\mu$s) & Overhead \\\\\n  \\midrule\n")
+    b += ("  \\multicolumn{4}{@{}l}{\\textit{Core tier (structures in/out "
+          "--- isolates the adaptor arithmetic)}} \\\\\n")
     b += ("  KeyGen             & %s & %s (shared) & --- \\\\\n"
           % (mean_sd(t["KeyGen"]), mean_sd(t["KeyGen"])))
     b += ("  Sign / PreSign     & %s & %s & $+%s\\%%$ \\\\\n"
@@ -484,6 +540,22 @@ def emit_tab_overhead_target(out, meta, timing, over):
           % (mean_sd(t["Verify"]), mean_sd(t["Adapt"]), pct(o["Adapt vs Verify"])))
     b += ("  Extract            & --- & %s & (LAS only) \\\\\n"
           % mean_sd(t["Ext"]))
+    b += "  \\midrule\n"
+    b += ("  \\multicolumn{4}{@{}l}{\\textit{Full-protocol tier (packed bytes "
+          "in/out --- incl.\\ validating decode + encode)}} \\\\\n")
+    b += ("  KeyGen             & %s & %s (shared) & --- \\\\\n"
+          % (mean_sd(p["KeyGen"]), mean_sd(p["KeyGen"])))
+    b += ("  Sign / PreSign     & %s & %s & $+%s\\%%$ \\\\\n"
+          % (mean_sd(p["Sign"]), mean_sd(p["PreSign"]),
+             pct(packed_over["PreSign"])))
+    b += ("  Verify / PreVerify & %s & %s & $+%s\\%%$ \\\\\n"
+          % (mean_sd(p["Verify"]), mean_sd(p["PreVerify"]),
+             pct(packed_over["PreVerify"])))
+    b += ("  Verify / Adapt     & %s & %s & $+%s\\%%$ \\\\\n"
+          % (mean_sd(p["Verify"]), mean_sd(p["Adapt"]),
+             pct(packed_over["Adapt"])))
+    b += ("  Extract            & --- & %s & (LAS only) \\\\\n"
+          % mean_sd(p["Ext"]))
     b += "  \\bottomrule\n\\end{tabular}\n"
     (out / "tab_overhead_target.tex").write_text(b)
 
@@ -544,29 +616,39 @@ def emit_tab_complete_target(out, meta, comm):
     (out / "tab_complete_target.tex").write_text(b)
 
 
-def emit_tab_classical(out, meta, timing, comm, classical):
+def emit_tab_classical(out, meta, timing, comm, classical, packed_l2):
+    """Classical vs LAS at Simplified Dilithium-II.  The classical library
+    exposes exactly ONE measurement boundary (its native API: the 162-B
+    pre-signature codec runs INSIDE the timed calls; public-key and
+    final-ECDSA-signature wire codecs stay OUTSIDE -- verified against the
+    secp256k1-zkp sources), so the classical column is that single tier and
+    LAS is shown at both of its tiers, per the tier rule."""
     l2 = timing["L2"]
     cc = comm["L2"]
     b = header(["evidence/latest/logs/classical.log",
                 "evidence/latest/tables/primary_timing.csv",
+                "evidence/latest/logs/fair_l2.log (TIER-2 packed section)",
                 "evidence/latest/tables/communication_components.csv"], meta)
-    b += "\\begin{tabular}{@{}lrr@{}}\n  \\toprule\n"
-    b += ("  & ECDSA adaptor (classical) & LAS adaptor (post-quantum) \\\\\n"
-          "  \\midrule\n")
-    b += "  \\multicolumn{3}{@{}l}{\\textit{Computation ($\\mu$s/op)}} \\\\\n"
+    b += "\\begin{tabular}{@{}lrrr@{}}\n  \\toprule\n"
+    b += ("  & \\shortstack[r]{ECDSA adaptor\\\\ (classical,\\\\ native API)} & "
+          "\\shortstack[r]{LAS adaptor\\\\ (post-quantum,\\\\ core tier)} & "
+          "\\shortstack[r]{LAS adaptor\\\\ (post-quantum,\\\\ full protocol)} "
+          "\\\\\n  \\midrule\n")
+    b += "  \\multicolumn{4}{@{}l}{\\textit{Computation ($\\mu$s/op)}} \\\\\n"
     for op in ["KeyGen", "Sign", "Verify", "PreSign", "PreVerify", "Adapt", "Ext"]:
         label = "Extract" if op == "Ext" else op
-        b += ("  %s & %s & %s \\\\\n"
-              % (label, mean_sd(classical[op]), mean_sd(l2[op])))
+        b += ("  %s & %s & %s & %s \\\\\n"
+              % (label, mean_sd(classical[op]), mean_sd(l2[op]),
+                 mean_sd(packed_l2[op])))
     b += "  \\midrule\n"
-    b += "  \\multicolumn{3}{@{}l}{\\textit{Communication (bytes)}} \\\\\n"
-    b += ("  Public key / statement & %d & %d \\\\\n"
+    b += "  \\multicolumn{4}{@{}l}{\\textit{Communication (bytes)}} \\\\\n"
+    b += ("  Public key / statement & %d & \\multicolumn{2}{c}{%d} \\\\\n"
           % (classical["pk"], cc["pk = t"]))
-    b += ("  Secret key / witness   & %d & %d \\\\\n"
+    b += ("  Secret key / witness   & %d & \\multicolumn{2}{c}{%d} \\\\\n"
           % (classical["sk"], cc["sk = r"]))
-    b += ("  Signature              & %d & %d \\\\\n"
+    b += ("  Signature              & %d & \\multicolumn{2}{c}{%d} \\\\\n"
           % (classical["sig"], cc["signature (c,z)"]))
-    b += ("  Pre-signature          & %d & %d \\\\\n"
+    b += ("  Pre-signature          & %d & \\multicolumn{2}{c}{%d} \\\\\n"
           % (classical["presig"], cc["pre-signature (c,z_hat)"]))
     b += "  \\bottomrule\n\\end{tabular}\n"
     (out / "tab_classical.tex").write_text(b)
@@ -613,10 +695,13 @@ def main(argv=None):
     meta = parse_metadata(ev / "metadata.txt")
     proto = parse_fair_protocol(ev / "logs" / ("fair_%s.log" % TARGET.lower()))
     packed_over = parse_packed_overhead(ev / "logs" / ("fair_%s.log" % TARGET.lower()))
+    packed_t = parse_packed_timing(ev / "logs" / ("fair_%s.log" % TARGET.lower()))
+    packed_l2 = parse_packed_timing(ev / "logs" / "fair_l2.log")
     tamper = parse_tamper(ev / "logs" / "serialization_tests.log")
     classical = parse_classical(ev / "logs" / "classical.log")
     (rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
      rust_proto) = parse_rust_driver(rust / "bench_levels_rust.log")
+    rust_packed_over = parse_rust_packed_overhead(rust / "bench_levels_rust.log")
     rust_kat = parse_rust_sizes(rust / "size_report_rust.log")
     crit, crit_samples = parse_criterion(rust / "bench_las_criterion.log")
 
@@ -641,12 +726,13 @@ def main(argv=None):
 
     emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
-                rust_proto, rust_kat, crit, crit_samples, tamper, packed_over)
+                rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
+                rust_packed_over)
     emit_tab_timing(out, meta, params, timing)
-    emit_tab_overhead_target(out, meta, timing, over)
+    emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over)
     emit_tab_components(out, meta, params, comm)
     emit_tab_complete_target(out, meta, comm)
-    emit_tab_classical(out, meta, timing, comm, classical)
+    emit_tab_classical(out, meta, timing, comm, classical, packed_l2)
     emit_tab_rust(out, meta, timing, rust_timing, crit)
 
     o = over[TARGET]

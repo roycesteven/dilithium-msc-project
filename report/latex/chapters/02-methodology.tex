@@ -96,7 +96,8 @@ revealed.
 
 The guiding principle is that an exotic scheme equals a basic scheme plus extra
 functions, so the lattice arithmetic should be \emph{reused}, not rewritten. The
-implementation is therefore built additively on the CRYSTALS-Dilithium C reference;
+implementation is therefore built additively on the CRYSTALS-Dilithium C reference
+\cite{ducas2018crystals,pqcrystalsdilithium}, used at a pinned commit;
 the same strategy is later applied a second time, in Rust, on the Rust ML-DSA crate
 (\cref{sec:rustport}).
 
@@ -218,10 +219,50 @@ compiler diagnostics.
 The complete scheme --- the ordinary signature, the four adaptor operations, the wire
 encoding, and the deterministic known-answer interface --- was implemented a second
 time, in Rust. The port follows the same reuse principle as the C implementation: it
-is layered on a fixed version of the \texttt{fips204} crate, the Rust implementation
-of ML-DSA, reusing that crate's polynomial arithmetic, number-theoretic transform,
+is layered on a fixed version of the \texttt{fips204} crate, a Rust implementation
+of ML-DSA \cite{fips204crate}, reusing that crate's polynomial arithmetic,
+number-theoretic transform,
 and SHAKE-based sampling, and adding the LAS layer as new, self-contained modules.
 The wire format is byte-identical to the C encoder's by construction.
+\Cref{fig:repostructure} shows the resulting structure of the repository at a glance:
+two parallel implementations, each a new LAS layer over an unmodified base of reused
+primitives, tied together by the shared known-answer digest.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      font=\footnotesize,
+      lay/.style={draw, rounded corners, align=center, inner sep=4pt,
+                  minimum width=5.2cm, minimum height=9mm},
+      new/.style={lay, fill=orange!15},
+      old/.style={lay, fill=blue!8},
+      note/.style={font=\scriptsize\itshape, align=center},
+      >={Stealth[]}]
+    \node[note] (chead) {C implementation (\texttt{ref/})\\ base: CRYSTALS-Dilithium reference};
+    \node[new, below=2mm of chead] (capp) {tests $\cdot$ benchmarks $\cdot$ swap demo\\ \texttt{ref/test/*} (new)};
+    \node[new, below=2.5mm of capp] (clas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ relation $\cdot$ basesig}\\ \texttt{las $\cdot$ serialize}};
+    \node[old, below=2.5mm of clas] (cprim) {\textbf{reused primitives (unchanged)}\\ NTT $\cdot$ polynomial arithmetic\\ SHAKE/FIPS-202 $\cdot$ \texttt{randombytes}};
+    \node[note, right=12mm of chead] (rhead) {Rust implementation (\texttt{rust/fips204-las/})\\ base: \texttt{fips204} crate (ML-DSA)};
+    \node[new, below=2mm of rhead] (rapp) {KAT $\cdot$ Criterion $\cdot$ protocol drivers\\ \texttt{tests/ benches/ examples/} (new)};
+    \node[new, below=2.5mm of rapp] (rlas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ relation $\cdot$ basesig}\\ \texttt{las $\cdot$ serialize}};
+    \node[old, below=2.5mm of rlas] (rprim) {\textbf{reused primitives (unchanged)}\\ NTT $\cdot$ polynomial arithmetic\\ SHAKE $\cdot$ sampling};
+    \draw[->] (capp) -- (clas);
+    \draw[->] (clas) -- (cprim);
+    \draw[->] (rapp) -- (rlas);
+    \draw[->] (rlas) -- (rprim);
+    \draw[<->, dashed] (clas.east) -- node[note, above=0.5mm, align=center]
+      {same module names\\ same wire bytes\\ same KAT digest} (rlas.west);
+  \end{tikzpicture}
+  \caption[Repository structure: two implementations over reused primitives]{Repository
+  structure. Both implementations have the same shape: a new, self-contained LAS layer
+  (orange) --- the same five modules under the same names --- built on an
+  \emph{unmodified} base of reused lattice primitives (blue), with the tests and
+  benchmarks on top. The two columns are tied together by construction: identical wire
+  bytes and the shared pinned known-answer digest
+  (\texttt{\katDigestHead\ldots\katDigestTail}). This is the high-level map for reading
+  the code; the per-file classification is \cref{tab:reuse}.}
+  \label{fig:repostructure}
+\end{figure}
 
 The port serves three methodological purposes. First, \emph{cross-validation}: the
 strongest practical argument that a cryptographic implementation is correct, short of
@@ -231,7 +272,8 @@ implementations reproduce the same known-answer digest --- a single SHAKE256 has
 folded over the packed bytes of every object of four deterministic vectors --- so
 their samplers, algebra, and encoders agree exactly (\cref{sec:res-rust}). Second,
 \emph{an independent benchmark methodology}: the Rust ecosystem's standard
-statistical harness, Criterion.rs (warm-up, \critSamples{} samples per operation,
+statistical harness, Criterion.rs \cite{criterionrs} (warm-up, \critSamples{} samples
+per operation,
 outlier classification, bootstrap confidence intervals), measures the same operations
 without sharing a line of timing code with the hand-rolled C harness, so agreement
 between the two defends the C numbers against harness artefacts. Third,
@@ -253,12 +295,50 @@ The evaluation separates two distinct costs and never conflates them:
 \emph{computation} cost (wall-clock time per operation) and \emph{communication}
 cost (bytes transmitted or stored). Each is measured as follows.
 
+\paragraph{Measurement boundaries: two timing tiers.}
+Reported timings depend critically on where the measurement boundary is drawn ---
+undocumented boundaries are a recognised benchmarking pitfall for lattice
+signatures \cite{riou2026apples}. Every timing in this report therefore belongs
+to one of two explicitly defined tiers, and comparisons are only ever made
+within a tier:
+\begin{itemize}
+  \item the \textbf{core tier}: in-memory structures in, structures out. This
+        boundary isolates the cryptographic arithmetic (sampling, NTT products,
+        hashing, rejection) and is the right tier for asking what the adaptor
+        \emph{algebra} costs;
+  \item the \textbf{full-protocol tier}: packed wire bytes in, packed wire bytes
+        out, including the validating decode of every input and the encode of
+        every output (\cref{sec:serialize}). This is the cost a wire or on-chain
+        consumer actually pays.
+\end{itemize}
+Both tiers are measured for the base signature and for LAS, in C and in Rust,
+and wherever a timing comparison between the base scheme and LAS is presented,
+\emph{both tiers are shown}. The classical baseline is the exception, because
+its library admits only one boundary: the \texttt{secp256k1-zkp} adaptor API
+serializes and deserializes its 162-byte pre-signature \emph{inside} the timed
+calls (the pre-signature exists only in packed form at the API), while public
+keys and completed ECDSA signatures cross the API as parsed structs whose wire
+codecs (\texttt{ec\_pubkey\_parse/serialize},
+\texttt{ecdsa\_signature\_parse/serialize}) run \emph{outside} the timed calls
+--- the library documents these structs as unsuitable for storage or
+transmission. The classical column is therefore reported at that single native
+boundary, which sits between the two LAS tiers, and this qualification
+accompanies the classical comparison (\cref{tab:classical}).
+
 \paragraph{Repeatability and machine of record.}
 Every timing is the mean over \benchReps{} independent repetitions of
 \benchItersSign{} iterations per sign-class operation and \benchItersVerify{}
 iterations per verify-class operation, single-threaded, compiled at \texttt{-O3}.
 Results are reported as mean $\pm$ sample standard deviation so that machine and
-scheduling noise are visible. Two validity gates precede every timing: the full
+scheduling noise are visible. All non-random inputs are fixed and stated, so
+that run-to-run variability comes only from rejection sampling and machine
+noise, never from input selection \cite{riou2026apples}: a fixed 33-byte
+message, a fixed public-parameter seed, and one consistent key/statement state
+per run, identical between the C and Rust drivers. The \emph{randomised}
+signing paths are the ones timed --- fresh masking randomness is drawn inside
+every timed call, for the base scheme and LAS alike, so randomness generation
+sits inside the boundary symmetrically; the deterministic API exists only for
+the known-answer tests and is never benchmarked. Two validity gates precede every timing: the full
 correctness contract of \cref{sec:testing} is asserted on the very objects about to
 be timed (so no failure path is ever measured), and the directly counted
 rejection-loop attempt rate is asserted against its closed-form prediction within
@@ -303,6 +383,60 @@ operation it mirrors algorithmically:
         then adds the witness;
   \item \textsc{Extract} is reported separately, having no base-operation analogue.
 \end{itemize}
+
+\paragraph{Rejection sampling: the expected attempt count, derived.}
+The sign-class operations restart until the response passes its norm bound, so
+their cost is a random multiple of one attempt's cost, and no timing claim about
+them is meaningful without the attempt statistics. The expectation follows from
+the construction \cite{esgin2020post}. Each coefficient of the mask $y$ is
+uniform on $[-\gamma,\gamma]$, i.e.\ on $2\gamma+1$ values; the secret-dependent
+term $c\,r$ satisfies $\inftynorm{c\,r}\le\kappa$ (the challenge has $\kappa$
+nonzero coefficients of $\pm1$ and the secret is ternary), so each response
+coefficient $z_i = y_i + (c\,r)_i$ is uniform on a window of $2\gamma+1$
+consecutive integers whose centre is offset by at most $\kappa$. The acceptance
+interval $[-( \gamma-\kappa),\gamma-\kappa]$ then always lies inside that
+window, so each coefficient is accepted with probability exactly
+$\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$, \emph{independently of the
+secret} --- which is precisely why rejection sampling makes the response
+simulatable. An attempt succeeds only if all $(n+\ell)\,d$ coefficients pass:
+\begin{equation}
+  \label{eq:rejacc}
+  p_{\mathrm{acc}}
+  = \left(\frac{2(\gamma-\kappa)+1}{2\gamma+1}\right)^{(n+\ell)d}
+  \approx \left(1-\frac{\kappa}{\gamma}\right)^{(n+\ell)d}
+  \approx e^{-\kappa (n+\ell) d/\gamma} = e^{-1}\approx 36.8\%,
+\end{equation}
+where the last step uses the design choice $\gamma=\kappa\,d\,(n+\ell)$ --- made
+in the original construction exactly so that the expected number of restarts is
+``about $e<3$'' \cite{esgin2020post}. The attempt count is geometric, so the
+expected attempts per call are $1/p_{\mathrm{acc}}$: at the target setting,
+\textbf{2.719 for Sign} (bound $\gamma-\kappa$) and \textbf{2.775 for PreSign}
+(the tighter bound $\gamma-\kappa-1$, whose window is smaller by two values per
+coefficient). PreSign is therefore \emph{expected} to take about $2\%$ more
+attempts than Sign at identical sample sizes --- so a PreSign-vs-Sign timing
+gap of this order is predicted by the bounds themselves, before any adaptor
+arithmetic is counted, and the measured attempt counters are reported next to
+the timings so the reader can separate the two effects.
+
+\paragraph{Rejection sampling: the run-validity gate (sample-size argument).}
+Because the attempt count is geometric, per-call timings are heavy-tailed, and
+averages over too few calls can drift by several percent on rejection luck
+alone --- a documented pitfall of lattice-signature benchmarking
+\cite{riou2026apples}. The drivers therefore treat the attempt statistics as a
+\emph{validity gate} rather than a curiosity: over the $n_{\mathrm{calls}}$
+timed sign-class calls of a run, the measured mean attempts per call must match
+the closed-form expectation $E=1/p_{\mathrm{acc}}$ of \cref{eq:rejacc} within
+five standard errors, $|\bar{A} - E| \le 5\,\sigma/\sqrt{n_{\mathrm{calls}}}$
+with $\sigma = E\sqrt{1-1/E}$ (the geometric standard deviation), separately
+for Sign \emph{and} PreSign, at both timing tiers, in C and in Rust; a run
+that fails the gate aborts instead of producing evidence. Passing the gate is
+the sample-size argument: it certifies both that the rejection loop behaves
+exactly as the theory prescribes (a broken sampler cannot produce
+plausible-looking timings) and that the run is long enough for its mean to sit
+inside a known, narrow band ($\pm\!\sim\!8\%$ at the C drivers'
+$2500$ calls; $\pm\!\sim\!1\%$ at the Criterion harness's $\approx\!10^5$ calls).
+The exact benchmark procedure, including the gate, is given as pseudocode in
+\cref{app:benchalg}.
 
 \paragraph{Parameter sensitivity.}
 To test whether the adaptor overhead depends on the security level, the same base/adaptor
@@ -378,8 +512,10 @@ pre-signature) so that the \emph{cause} of any size difference can be identified
 This breakdown is presented in \cref{ch:results}.
 
 \paragraph{Classical baseline (functionality-matched, not security-matched).}
-The second baseline is a classical secp256k1 ECDSA adaptor signature
-\cite{secp256k1zkp}. This is \emph{not} a same-security post-quantum comparison:
+The second baseline is a classical secp256k1 ECDSA adaptor signature: the
+\texttt{secp256k1-zkp} library's \texttt{ecdsa\_adaptor} module \cite{secp256k1zkp},
+which implements Fournier's one-time verifiably-encrypted-signature construction
+\cite{fournier2019adaptor}, used unmodified at a pinned commit. This is \emph{not} a same-security post-quantum comparison:
 secp256k1 provides approximately 128-bit \emph{classical} security, is not
 quantum-resistant, and therefore has no corresponding NIST post-quantum level.
 Instead it is a functionality-matched ``price of post-quantum'' baseline: both schemes

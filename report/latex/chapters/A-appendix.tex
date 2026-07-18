@@ -65,18 +65,63 @@ cargo run --release --example bench_levels  # protocol driver (mirrors the C dri
 cargo run --release --example size_report   # packed component sizes
 \end{lstlisting}
 
+\section{The timing-benchmark procedure}
+\label{app:benchalg}
+
+The pseudocode below is the procedure both protocol drivers implement
+(\texttt{ref/test/bench\_levels.c} and the Rust
+\texttt{examples/bench\_levels.rs}, deliberately line-for-line mirrors), backing
+the methodology of \cref{sec:benchmethod}. Ordering matters: correctness is
+asserted \emph{before} timing on the very objects about to be timed, so no
+failure path is ever measured, and the rejection gate runs over the \emph{timed}
+calls themselves, so the gate certifies the same data the tables report. The
+same procedure runs once per parameter set.
+
+\begin{lstlisting}[language={},caption={The timing-benchmark procedure (both
+tiers). $R=\benchReps$ repetitions; $N=\benchItersSign$ (sign-class) or
+$\benchItersVerify$ (verify-class) iterations; the rejection gate follows
+\cref{eq:rejacc}.},label={lst:benchalg}]
+Input: parameter set (n, l, kappa); fixed pp seed; fixed 33-byte message
+ 1  Setup: expand A from the fixed seed; KeyGen; relation Gen (Y, y)
+ 2  Gate 0 (correctness): run the full adaptor contract on the exact
+    objects about to be timed (PreVerify accepts; basic Verify rejects
+    the pre-signature; Adapt verifies; Extract returns y exactly);
+    abort the run on any failure
+ 3  for each operation op in {KeyGen, Sign, Verify, PreSign, PreVerify,
+    Adapt, Extract}:                          # core tier
+ 4      for r in 1..R:
+ 5          a0 <- attempt counter             # sign-class only
+ 6          t0 <- monotonic clock
+ 7          repeat N times: run op (structures in / structures out;
+              fresh masking randomness inside every sign-class call)
+ 8          run_r <- (clock - t0) / N
+ 9          att_r <- (attempt counter - a0)   # sign-class only
+10      report mean +/- sample SD over run_1..run_R
+11  Gate 1 (run validity): for Sign and for PreSign, the mean attempts
+    per call over ALL R*N timed calls must satisfy
+        |mean - E| <= 5 * E*sqrt(1-1/E) / sqrt(R*N)
+    where E = 1/p_acc is the closed-form expectation; abort on failure
+12  repeat steps 3-11 at the full-protocol boundary (packed bytes in /
+    packed bytes out, validating decode + encode inside the call)
+13  emit packed sizes (communication is fixed: measured once, no SD)
+\end{lstlisting}
+
+The Criterion.rs harness measures the same operations under its own protocol
+(3\,s warm-up, \critSamples{} samples per operation, outlier classification,
+bootstrap confidence intervals) and applies the same Gate~1; it shares no
+timing code with the drivers, which is what makes its agreement an independent
+check rather than a re-run.
+
 \section{Full benchmark data tables}
 \label{app:tables}
 
-The figures in \cref{ch:results} are the primary presentation of the benchmark results;
-this section gives the exact numbers behind them, produced by the commands above
-(\cref{lst:benchfair}). \Cref{tab:timing} lists every per-operation timing with its
-standard deviation (the data plotted in \cref{fig:timing}), and \cref{tab:overhead-l3}
-derives the per-operation adaptor overhead at the target setting from it --- the exact
-numbers behind \cref{fig:timing}; \cref{tab:components} gives the component byte sizes at
-every parameter set (the target setting is plotted in \cref{fig:components}); and
-\cref{tab:complete-l3} lists every communication object at the target setting with its
-paper notation.
+The tables in \cref{ch:results} carry the primary results; this section gives the
+supporting data at every parameter set, produced by the commands above
+(\cref{lst:benchfair}). \Cref{tab:timing} lists every core-tier per-operation timing
+with its standard deviation (the data plotted in \cref{fig:timing}, and the source of
+the core block of \cref{tab:overhead-l3}); \cref{tab:components} gives the component
+byte sizes at every parameter set (the target setting is the body table
+\cref{tab:complete-l3}).
 
 \Cref{fig:overhead} is the parameter-sensitivity check referred to in
 \cref{sec:res-compute}: it repeats the primary base-versus-adaptor comparison at all four
@@ -115,44 +160,14 @@ dimensions are scaled up, so the headline result is not specific to the target s
 
 \begin{table}[h]
   \centering
-  \caption[Adaptor overhead at the target setting]{The per-operation adaptor overhead at the
-  target setting \emph{Simplified Dilithium-III} --- the exact numbers behind
-  \cref{fig:timing}. Each LAS adaptor operation is paired with the basic operation it
-  mirrors, and ``Overhead'' is the extra cost as a percentage of that basic operation.
-  Timings are $\mu$s per operation (mean $\pm$ sample standard deviation over
-  \benchReps{} repetitions $\times$ \benchItersSign{}/\benchItersVerify{} iterations;
-  machine of record in \cref{sec:benchmethod}). KeyGen, Sign, and
-  Verify are reused unchanged by LAS, so their basic and adaptor costs are cycle-identical;
-  Extract has no basic analogue. Absolute timings at every parameter set are in
-  \cref{tab:timing}.}
-  \label{tab:overhead-l3}
-  \small
-  \input{generated/tab_overhead_target}
-\end{table}
-
-\begin{table}[h]
-  \centering
   \caption[LAS objects by component (packed bytes)]{LAS objects by component (packed bytes; \texttt{bench\_levels}). The
   LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The
   challenge $c$ is fixed; the response $z$ grows with $n+\ell$ and dominates the
-  signature at every setting.}
+  signature at every setting. The target-setting column is the body table
+  \cref{tab:complete-l3}.}
   \label{tab:components}
   \small
   \input{generated/tab_components}
-\end{table}
-
-\begin{table}[h]
-  \centering
-  \caption[Complete LAS object catalogue (target setting)]{Every communication object at
-  the \emph{Simplified Dilithium-III} (target) setting ($n{=}6$, $\ell{=}5$, $M{=}11$,
-  $\kappa{=}49$, $\gamma{=}137\,984$, $d{=}256$, $q{=}8\,380\,417$), in packed bytes, with
-  its paper notation. ``In the basic signature?'' marks which objects LAS shares with the
-  base scheme and which it adds. The adapted signature is itself a valid basic signature.
-  Per-operation timings for this setting are the body's primary table,
-  \cref{tab:overhead-l3}.}
-  \label{tab:complete-l3}
-  \small
-  \input{generated/tab_complete_target}
 \end{table}
 
 \section{Auditing the reuse claim}

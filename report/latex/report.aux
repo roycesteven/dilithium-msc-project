@@ -57,6 +57,8 @@
 \@writefile{toc}{\contentsline {section}{\numberline {2.1}The LAS construction}{14}{section.2.1}\protected@file@percent }
 \newlabel{sec:construction}{{2.1}{14}{The LAS construction}{section.2.1}{}}
 \newlabel{sec:construction@cref}{{[section][1][2]2.1}{[1][14][]14}}
+\citation{ducas2018crystals}
+\citation{pqcrystalsdilithium}
 \@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow}}{15}{figure.2.1}\protected@file@percent }
 \newlabel{fig:flow}{{2.1}{15}{The LAS adaptor data flow}{figure.2.1}{}}
 \newlabel{fig:flow@cref}{{[figure][1][2]2.1}{[1][15][]15}}
@@ -76,158 +78,190 @@
 \@writefile{toc}{\contentsline {section}{\numberline {2.3}Serialization and the on-chain interface}{17}{section.2.3}\protected@file@percent }
 \newlabel{sec:serialize}{{2.3}{17}{Serialization and the on-chain interface}{section.2.3}{}}
 \newlabel{sec:serialize@cref}{{[section][3][2]2.3}{[1][17][]17}}
+\citation{fips204crate}
 \@writefile{toc}{\contentsline {section}{\numberline {2.4}Testing methodology}{18}{section.2.4}\protected@file@percent }
 \newlabel{sec:testing}{{2.4}{18}{Testing methodology}{section.2.4}{}}
 \newlabel{sec:testing@cref}{{[section][4][2]2.4}{[1][18][]18}}
 \@writefile{toc}{\contentsline {section}{\numberline {2.5}An independent second implementation: the Rust port}{18}{section.2.5}\protected@file@percent }
 \newlabel{sec:rustport}{{2.5}{18}{An independent second implementation: the Rust port}{section.2.5}{}}
 \newlabel{sec:rustport@cref}{{[section][5][2]2.5}{[1][18][]18}}
-\@writefile{toc}{\contentsline {section}{\numberline {2.6}Benchmarking methodology and fair comparison}{19}{section.2.6}\protected@file@percent }
-\newlabel{sec:benchmethod}{{2.6}{19}{Benchmarking methodology and fair comparison}{section.2.6}{}}
-\newlabel{sec:benchmethod@cref}{{[section][6][2]2.6}{[1][19][]19}}
-\@writefile{toc}{\contentsline {paragraph}{Repeatability and machine of record.}{20}{section*.19}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Per-operation reporting, not cumulative.}{20}{section*.20}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Primary (fair) comparison: LAS vs.\ its own simplified base.}{20}{section*.21}\protected@file@percent }
+\citation{criterionrs}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces Repository structure: two implementations over reused primitives}}{19}{figure.2.2}\protected@file@percent }
+\newlabel{fig:repostructure}{{2.2}{19}{Repository structure: two implementations over reused primitives}{figure.2.2}{}}
+\newlabel{fig:repostructure@cref}{{[figure][2][2]2.2}{[1][19][]19}}
+\citation{riou2026apples}
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Benchmarking methodology and fair comparison}{20}{section.2.6}\protected@file@percent }
+\newlabel{sec:benchmethod}{{2.6}{20}{Benchmarking methodology and fair comparison}{section.2.6}{}}
+\newlabel{sec:benchmethod@cref}{{[section][6][2]2.6}{[1][20][]20}}
+\@writefile{toc}{\contentsline {paragraph}{Measurement boundaries: two timing tiers.}{20}{section*.19}\protected@file@percent }
+\citation{riou2026apples}
+\@writefile{toc}{\contentsline {paragraph}{Repeatability and machine of record.}{21}{section*.20}\protected@file@percent }
+\citation{esgin2020post}
+\@writefile{toc}{\contentsline {paragraph}{Per-operation reporting, not cumulative.}{22}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Primary (fair) comparison: LAS vs.\ its own simplified base.}{22}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Rejection sampling: the expected attempt count, derived.}{22}{section*.23}\protected@file@percent }
+\citation{esgin2020post}
+\citation{riou2026apples}
+\newlabel{eq:rejacc}{{2.2}{23}{Rejection sampling: the expected attempt count, derived}{equation.2.2}{}}
+\newlabel{eq:rejacc@cref}{{[equation][2][2]2.2}{[1][23][]23}}
+\@writefile{toc}{\contentsline {paragraph}{Rejection sampling: the run-validity gate (sample-size argument).}{23}{section*.24}\protected@file@percent }
 \citation{esgin2020post}
 \citation{esgin2020post}
+\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Parameter sets used in the evaluation}}{24}{table.2.2}\protected@file@percent }
+\newlabel{tab:params}{{2.2}{24}{Parameter sets used in the evaluation}{table.2.2}{}}
+\newlabel{tab:params@cref}{{[table][2][2]2.2}{[1][24][]24}}
+\@writefile{toc}{\contentsline {paragraph}{Parameter sensitivity.}{24}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Component-level size analysis.}{24}{section*.26}\protected@file@percent }
 \citation{secp256k1zkp}
-\@writefile{toc}{\contentsline {paragraph}{Parameter sensitivity.}{21}{section*.22}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Component-level size analysis.}{21}{section*.23}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Classical baseline (functionality-matched, not security-matched).}{21}{section*.24}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2.2}{\ignorespaces Parameter sets used in the evaluation}}{22}{table.2.2}\protected@file@percent }
-\newlabel{tab:params}{{2.2}{22}{Parameter sets used in the evaluation}{table.2.2}{}}
-\newlabel{tab:params@cref}{{[table][2][2]2.2}{[1][21][]22}}
-\@writefile{lot}{\contentsline {table}{\numberline {2.3}{\ignorespaces Security and scheme parameter notation}}{23}{table.2.3}\protected@file@percent }
-\newlabel{tab:notation}{{2.3}{23}{Security and scheme parameter notation}{table.2.3}{}}
-\newlabel{tab:notation@cref}{{[table][3][2]2.3}{[1][21][]23}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {3}Results and discussion}{24}{chapter.3}\protected@file@percent }
+\citation{fournier2019adaptor}
+\@writefile{lot}{\contentsline {table}{\numberline {2.3}{\ignorespaces Security and scheme parameter notation}}{25}{table.2.3}\protected@file@percent }
+\newlabel{tab:notation}{{2.3}{25}{Security and scheme parameter notation}{table.2.3}{}}
+\newlabel{tab:notation@cref}{{[table][3][2]2.3}{[1][24][]25}}
+\@writefile{toc}{\contentsline {paragraph}{Classical baseline (functionality-matched, not security-matched).}{25}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Results and discussion}{26}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:results}{{3}{24}{Results and discussion}{chapter.3}{}}
-\newlabel{ch:results@cref}{{[chapter][3][]3}{[1][24][]24}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.1}Correctness and robustness}{24}{section.3.1}\protected@file@percent }
-\newlabel{sec:res-correctness}{{3.1}{24}{Correctness and robustness}{section.3.1}{}}
-\newlabel{sec:res-correctness@cref}{{[section][1][3]3.1}{[1][24][]24}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract}}{25}{table.3.1}\protected@file@percent }
-\newlabel{tab:contract}{{3.1}{25}{The adaptor-signature correctness contract}{table.3.1}{}}
-\newlabel{tab:contract@cref}{{[table][1][3]3.1}{[1][24][]25}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.2}Computation cost}{25}{section.3.2}\protected@file@percent }
-\newlabel{sec:res-compute}{{3.2}{25}{Computation cost}{section.3.2}{}}
-\newlabel{sec:res-compute@cref}{{[section][2][3]3.2}{[1][24][]25}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.3}Cross-implementation check: C reference versus Rust port}{27}{section.3.3}\protected@file@percent }
-\newlabel{sec:res-rust}{{3.3}{27}{Cross-implementation check: C reference versus Rust port}{section.3.3}{}}
-\newlabel{sec:res-rust@cref}{{[section][3][3]3.3}{[1][27][]27}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Per-operation timing: C reference vs Rust port}}{28}{table.3.2}\protected@file@percent }
-\newlabel{tab:rust}{{3.2}{28}{Per-operation timing: C reference vs Rust port}{table.3.2}{}}
-\newlabel{tab:rust@cref}{{[table][2][3]3.2}{[1][27][]28}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{28}{section.3.4}\protected@file@percent }
-\newlabel{sec:res-comm}{{3.4}{28}{Communication cost and component breakdown}{section.3.4}{}}
-\newlabel{sec:res-comm@cref}{{[section][4][3]3.4}{[1][28][]28}}
+\newlabel{ch:results}{{3}{26}{Results and discussion}{chapter.3}{}}
+\newlabel{ch:results@cref}{{[chapter][3][]3}{[1][26][]26}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}Correctness and robustness}{26}{section.3.1}\protected@file@percent }
+\newlabel{sec:res-correctness}{{3.1}{26}{Correctness and robustness}{section.3.1}{}}
+\newlabel{sec:res-correctness@cref}{{[section][1][3]3.1}{[1][26][]26}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract}}{27}{table.3.1}\protected@file@percent }
+\newlabel{tab:contract}{{3.1}{27}{The adaptor-signature correctness contract}{table.3.1}{}}
+\newlabel{tab:contract@cref}{{[table][1][3]3.1}{[1][26][]27}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}Computation cost}{27}{section.3.2}\protected@file@percent }
+\newlabel{sec:res-compute}{{3.2}{27}{Computation cost}{section.3.2}{}}
+\newlabel{sec:res-compute@cref}{{[section][2][3]3.2}{[1][26][]27}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Adaptor overhead at the target setting, both timing tiers}}{28}{table.3.2}\protected@file@percent }
+\newlabel{tab:overhead-l3}{{3.2}{28}{Adaptor overhead at the target setting, both timing tiers}{table.3.2}{}}
+\newlabel{tab:overhead-l3@cref}{{[table][2][3]3.2}{[1][28][]28}}
+\citation{riou2026apples}
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}Cross-implementation check: C reference versus Rust port}{30}{section.3.3}\protected@file@percent }
+\newlabel{sec:res-rust}{{3.3}{30}{Cross-implementation check: C reference versus Rust port}{section.3.3}{}}
+\newlabel{sec:res-rust@cref}{{[section][3][3]3.3}{[1][30][]30}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.3}{\ignorespaces Per-operation timing: C reference vs Rust port}}{31}{table.3.3}\protected@file@percent }
+\newlabel{tab:rust}{{3.3}{31}{Per-operation timing: C reference vs Rust port}{table.3.3}{}}
+\newlabel{tab:rust@cref}{{[table][3][3]3.3}{[1][30][]31}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.4}{\ignorespaces Serialized size of every LAS object}}{32}{table.3.4}\protected@file@percent }
+\newlabel{tab:complete-l3}{{3.4}{32}{Serialized size of every LAS object}{table.3.4}{}}
+\newlabel{tab:complete-l3@cref}{{[table][4][3]3.4}{[1][32][]32}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{32}{section.3.4}\protected@file@percent }
+\newlabel{sec:res-comm}{{3.4}{32}{Communication cost and component breakdown}{section.3.4}{}}
+\newlabel{sec:res-comm@cref}{{[section][4][3]3.4}{[1][31][]32}}
 \citation{secp256k1zkp}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{29}{subsection.3.4.1}\protected@file@percent }
-\newlabel{sec:res-classical}{{3.4.1}{29}{The price of post-quantum: classical adaptor baseline}{subsection.3.4.1}{}}
-\newlabel{sec:res-classical@cref}{{[subsection][1][3,4]3.4.1}{[1][29][]29}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.5}Application demonstration}{30}{section.3.5}\protected@file@percent }
-\newlabel{sec:res-app}{{3.5}{30}{Application demonstration}{section.3.5}{}}
-\newlabel{sec:res-app@cref}{{[section][5][3]3.5}{[1][30][]30}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.3}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{31}{table.3.3}\protected@file@percent }
-\newlabel{tab:classical}{{3.3}{31}{Classical vs.\ post-quantum adaptor signature}{table.3.3}{}}
-\newlabel{tab:classical@cref}{{[table][3][3]3.3}{[1][30][]31}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.6}Threats to validity}{32}{section.3.6}\protected@file@percent }
-\newlabel{sec:res-validity}{{3.6}{32}{Threats to validity}{section.3.6}{}}
-\newlabel{sec:res-validity@cref}{{[section][6][3]3.6}{[1][32][]32}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{33}{figure.3.1}\protected@file@percent }
-\newlabel{fig:timing}{{3.1}{33}{Adaptor overhead per operation: basic signature vs LAS}{figure.3.1}{}}
-\newlabel{fig:timing@cref}{{[figure][1][3]3.1}{[1][25][]33}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Serialized size of every LAS object}}{34}{figure.3.2}\protected@file@percent }
-\newlabel{fig:components}{{3.2}{34}{Serialized size of every LAS object}{figure.3.2}{}}
-\newlabel{fig:components@cref}{{[figure][2][3]3.2}{[1][29][]34}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{33}{subsection.3.4.1}\protected@file@percent }
+\newlabel{sec:res-classical}{{3.4.1}{33}{The price of post-quantum: classical adaptor baseline}{subsection.3.4.1}{}}
+\newlabel{sec:res-classical@cref}{{[subsection][1][3,4]3.4.1}{[1][33][]33}}
+\citation{fournier2019adaptor}
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}Application demonstration}{34}{section.3.5}\protected@file@percent }
+\newlabel{sec:res-app}{{3.5}{34}{Application demonstration}{section.3.5}{}}
+\newlabel{sec:res-app@cref}{{[section][5][3]3.5}{[1][34][]34}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.6}Threats to validity}{35}{section.3.6}\protected@file@percent }
+\newlabel{sec:res-validity}{{3.6}{35}{Threats to validity}{section.3.6}{}}
+\newlabel{sec:res-validity@cref}{{[section][6][3]3.6}{[1][35][]35}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{37}{figure.3.1}\protected@file@percent }
+\newlabel{fig:timing}{{3.1}{37}{Adaptor overhead per operation: basic signature vs LAS}{figure.3.1}{}}
+\newlabel{fig:timing@cref}{{[figure][1][3]3.1}{[1][28][]37}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{38}{figure.3.2}\protected@file@percent }
+\newlabel{fig:criterion}{{3.2}{38}{Criterion.rs sampling distribution for PreSign}{figure.3.2}{}}
+\newlabel{fig:criterion@cref}{{[figure][2][3]3.2}{[1][31][]38}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.5}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{39}{table.3.5}\protected@file@percent }
+\newlabel{tab:classical}{{3.5}{39}{Classical vs.\ post-quantum adaptor signature}{table.3.5}{}}
+\newlabel{tab:classical@cref}{{[table][5][3]3.5}{[1][34][]39}}
 \citation{esgin2020post}
 \citation{buser2023survey}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}Evaluation and reflection}{35}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Evaluation and reflection}{40}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:evaluation}{{4}{35}{Evaluation and reflection}{chapter.4}{}}
-\newlabel{ch:evaluation@cref}{{[chapter][4][]4}{[1][35][]35}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Evaluation against the objectives}{35}{section.4.1}\protected@file@percent }
-\newlabel{sec:eval-objectives}{{4.1}{35}{Evaluation against the objectives}{section.4.1}{}}
-\newlabel{sec:eval-objectives@cref}{{[section][1][4]4.1}{[1][35][]35}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}Reflection on the approach}{36}{section.4.2}\protected@file@percent }
-\newlabel{sec:eval-reflection}{{4.2}{36}{Reflection on the approach}{section.4.2}{}}
-\newlabel{sec:eval-reflection@cref}{{[section][2][4]4.2}{[1][36][]36}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.3}Limitations}{37}{section.4.3}\protected@file@percent }
-\newlabel{sec:eval-limitations}{{4.3}{37}{Limitations}{section.4.3}{}}
-\newlabel{sec:eval-limitations@cref}{{[section][3][4]4.3}{[1][37][]37}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusion and future work}{38}{chapter.5}\protected@file@percent }
+\newlabel{ch:evaluation}{{4}{40}{Evaluation and reflection}{chapter.4}{}}
+\newlabel{ch:evaluation@cref}{{[chapter][4][]4}{[1][40][]40}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Evaluation against the objectives}{40}{section.4.1}\protected@file@percent }
+\newlabel{sec:eval-objectives}{{4.1}{40}{Evaluation against the objectives}{section.4.1}{}}
+\newlabel{sec:eval-objectives@cref}{{[section][1][4]4.1}{[1][40][]40}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Challenges encountered during the modification}{41}{section.4.2}\protected@file@percent }
+\newlabel{sec:eval-challenges}{{4.2}{41}{Challenges encountered during the modification}{section.4.2}{}}
+\newlabel{sec:eval-challenges@cref}{{[section][2][4]4.2}{[1][41][]41}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Reflection on the approach}{43}{section.4.3}\protected@file@percent }
+\newlabel{sec:eval-reflection}{{4.3}{43}{Reflection on the approach}{section.4.3}{}}
+\newlabel{sec:eval-reflection@cref}{{[section][3][4]4.3}{[1][43][]43}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}Limitations}{43}{section.4.4}\protected@file@percent }
+\newlabel{sec:eval-limitations}{{4.4}{43}{Limitations}{section.4.4}{}}
+\newlabel{sec:eval-limitations@cref}{{[section][4][4]4.4}{[1][43][]43}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Conclusion and future work}{45}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:conclusion}{{5}{38}{Conclusion and future work}{chapter.5}{}}
-\newlabel{ch:conclusion@cref}{{[chapter][5][]5}{[1][38][]38}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.1}Conclusions}{38}{section.5.1}\protected@file@percent }
-\newlabel{sec:conclusions}{{5.1}{38}{Conclusions}{section.5.1}{}}
-\newlabel{sec:conclusions@cref}{{[section][1][5]5.1}{[1][38][]38}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.2}Future work}{39}{section.5.2}\protected@file@percent }
-\newlabel{sec:future}{{5.2}{39}{Future work}{section.5.2}{}}
-\newlabel{sec:future@cref}{{[section][2][5]5.2}{[1][39][]39}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Code listings and reproduction}{40}{appendix.A}\protected@file@percent }
+\newlabel{ch:conclusion}{{5}{45}{Conclusion and future work}{chapter.5}{}}
+\newlabel{ch:conclusion@cref}{{[chapter][5][]5}{[1][45][]45}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Conclusions}{45}{section.5.1}\protected@file@percent }
+\newlabel{sec:conclusions}{{5.1}{45}{Conclusions}{section.5.1}{}}
+\newlabel{sec:conclusions@cref}{{[section][1][5]5.1}{[1][45][]45}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Future work}{46}{section.5.2}\protected@file@percent }
+\newlabel{sec:future}{{5.2}{46}{Future work}{section.5.2}{}}
+\newlabel{sec:future@cref}{{[section][2][5]5.2}{[1][46][]46}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Code listings and reproduction}{47}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:code}{{A}{40}{Code listings and reproduction}{appendix.A}{}}
-\newlabel{app:code@cref}{{[appendix][1][2147483647]A}{[1][40][]40}}
-\@writefile{toc}{\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{40}{section.A.1}\protected@file@percent }
-\newlabel{app:repro}{{A.1}{40}{Building and reproducing the benchmarks}{section.A.1}{}}
-\newlabel{app:repro@cref}{{[subappendix][1][2147483647,1]A.1}{[1][40][]40}}
-\newlabel{lst:benchfair}{{A.1}{40}{Fair benchmark and tests (first-stage evaluation). The suite script runs everything below, saves the logs and parsed tables as a timestamped evidence run, and regenerates every figure, table, and inline number of this report from that run}{lstlisting.A.1}{}}
-\newlabel{lst:benchfair@cref}{{[listing][1][2147483647,1]A.1}{[1][40][]40}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.1}Fair benchmark and tests (first-stage evaluation). The suite script runs everything below, saves the logs and parsed tables as a timestamped evidence run, and regenerates every figure, table, and inline number of this report from that run.}{40}{lstlisting.A.1}\protected@file@percent }
-\newlabel{lst:classical}{{A.2}{41}{Classical adaptor baseline (one-time clone)}{lstlisting.A.2}{}}
-\newlabel{lst:classical@cref}{{[listing][2][2147483647,1]A.2}{[1][41][]41}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.2}Classical adaptor baseline (one-time clone).}{41}{lstlisting.A.2}\protected@file@percent }
-\newlabel{lst:rust}{{A.3}{41}{Rust port: test gate, statistical benchmark, protocol driver, and size report (one suite script, or the four steps individually)}{lstlisting.A.3}{}}
-\newlabel{lst:rust@cref}{{[listing][3][2147483647,1]A.3}{[1][41][]41}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.3}Rust port: test gate, statistical benchmark, protocol driver, and size report (one suite script, or the four steps individually).}{41}{lstlisting.A.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {A.2}Full benchmark data tables}{42}{section.A.2}\protected@file@percent }
-\newlabel{app:tables}{{A.2}{42}{Full benchmark data tables}{section.A.2}{}}
-\newlabel{app:tables@cref}{{[subappendix][2][2147483647,1]A.2}{[1][41][]42}}
-\@writefile{lof}{\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{42}{figure.A.1}\protected@file@percent }
-\newlabel{fig:overhead}{{A.1}{42}{Adaptor overhead across the parameter sets (sensitivity check)}{figure.A.1}{}}
-\newlabel{fig:overhead@cref}{{[figure][1][2147483647,1]A.1}{[1][42][]42}}
-\@writefile{lot}{\contentsline {table}{\numberline {A.1}{\ignorespaces Per-operation timing across the parameter sets}}{43}{table.A.1}\protected@file@percent }
-\newlabel{tab:timing}{{A.1}{43}{Per-operation timing across the parameter sets}{table.A.1}{}}
-\newlabel{tab:timing@cref}{{[table][1][2147483647,1]A.1}{[1][42][]43}}
-\@writefile{toc}{\contentsline {section}{\numberline {A.3}Auditing the reuse claim}{43}{section.A.3}\protected@file@percent }
-\newlabel{app:diff}{{A.3}{43}{Auditing the reuse claim}{section.A.3}{}}
-\newlabel{app:diff@cref}{{[subappendix][3][2147483647,1]A.3}{[1][42][]43}}
-\newlabel{lst:diff}{{A.4}{43}{Branch diff proving the lattice core is untouched (no output means identical)}{lstlisting.A.4}{}}
-\newlabel{lst:diff@cref}{{[listing][4][2147483647,1]A.4}{[1][43][]43}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.4}Branch diff proving the lattice core is untouched (no output means identical).}{43}{lstlisting.A.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {A.4}Selected code listing: Adapt and Extract}{43}{section.A.4}\protected@file@percent }
-\newlabel{app:listing}{{A.4}{43}{Selected code listing: Adapt and Extract}{section.A.4}{}}
-\newlabel{app:listing@cref}{{[subappendix][4][2147483647,1]A.4}{[1][43][]43}}
-\newlabel{lst:lasc}{{A.5}{43}{\texttt {las\_adapt} and \texttt {las\_ext} from \texttt {ref/las.c}}{lstlisting.A.5}{}}
-\newlabel{lst:lasc@cref}{{[listing][5][2147483647,1]A.5}{[1][43][]43}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.5}\texttt  {las\_adapt} and \texttt  {las\_ext} from \texttt  {ref/las.c}.}{43}{lstlisting.A.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {A.2}{\ignorespaces Adaptor overhead at the target setting}}{44}{table.A.2}\protected@file@percent }
-\newlabel{tab:overhead-l3}{{A.2}{44}{Adaptor overhead at the target setting}{table.A.2}{}}
-\newlabel{tab:overhead-l3@cref}{{[table][2][2147483647,1]A.2}{[1][42][]44}}
+\newlabel{app:code}{{A}{47}{Code listings and reproduction}{appendix.A}{}}
+\newlabel{app:code@cref}{{[appendix][1][2147483647]A}{[1][47][]47}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{47}{section.A.1}\protected@file@percent }
+\newlabel{app:repro}{{A.1}{47}{Building and reproducing the benchmarks}{section.A.1}{}}
+\newlabel{app:repro@cref}{{[subappendix][1][2147483647,1]A.1}{[1][47][]47}}
+\newlabel{lst:benchfair}{{A.1}{47}{Fair benchmark and tests (first-stage evaluation). The suite script runs everything below, saves the logs and parsed tables as a timestamped evidence run, and regenerates every figure, table, and inline number of this report from that run}{lstlisting.A.1}{}}
+\newlabel{lst:benchfair@cref}{{[listing][1][2147483647,1]A.1}{[1][47][]47}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.1}Fair benchmark and tests (first-stage evaluation). The suite script runs everything below, saves the logs and parsed tables as a timestamped evidence run, and regenerates every figure, table, and inline number of this report from that run.}{47}{lstlisting.A.1}\protected@file@percent }
+\newlabel{lst:classical}{{A.2}{48}{Classical adaptor baseline (one-time clone)}{lstlisting.A.2}{}}
+\newlabel{lst:classical@cref}{{[listing][2][2147483647,1]A.2}{[1][48][]48}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.2}Classical adaptor baseline (one-time clone).}{48}{lstlisting.A.2}\protected@file@percent }
+\newlabel{lst:rust}{{A.3}{48}{Rust port: test gate, statistical benchmark, protocol driver, and size report (one suite script, or the four steps individually)}{lstlisting.A.3}{}}
+\newlabel{lst:rust@cref}{{[listing][3][2147483647,1]A.3}{[1][48][]48}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.3}Rust port: test gate, statistical benchmark, protocol driver, and size report (one suite script, or the four steps individually).}{48}{lstlisting.A.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{49}{section.A.2}\protected@file@percent }
+\newlabel{app:benchalg}{{A.2}{49}{The timing-benchmark procedure}{section.A.2}{}}
+\newlabel{app:benchalg@cref}{{[subappendix][2][2147483647,1]A.2}{[1][48][]49}}
+\newlabel{lst:benchalg}{{A.4}{49}{The timing-benchmark procedure (both tiers). $R=\benchReps $ repetitions; $N=\benchItersSign $ (sign-class) or $\benchItersVerify $ (verify-class) iterations; the rejection gate follows \cref {eq:rejacc}}{lstlisting.A.4}{}}
+\newlabel{lst:benchalg@cref}{{[listing][4][2147483647,1]A.4}{[1][49][]49}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.4}The timing-benchmark procedure (both tiers). $R=5$ repetitions; $N=500$ (sign-class) or $1000$ (verify-class) iterations; the rejection gate follows \cref  {eq:rejacc}.}{49}{lstlisting.A.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.3}Full benchmark data tables}{50}{section.A.3}\protected@file@percent }
+\newlabel{app:tables}{{A.3}{50}{Full benchmark data tables}{section.A.3}{}}
+\newlabel{app:tables@cref}{{[subappendix][3][2147483647,1]A.3}{[1][50][]50}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.1}{\ignorespaces Per-operation timing across the parameter sets}}{50}{table.A.1}\protected@file@percent }
+\newlabel{tab:timing}{{A.1}{50}{Per-operation timing across the parameter sets}{table.A.1}{}}
+\newlabel{tab:timing@cref}{{[table][1][2147483647,1]A.1}{[1][50][]50}}
+\@writefile{lof}{\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{51}{figure.A.1}\protected@file@percent }
+\newlabel{fig:overhead}{{A.1}{51}{Adaptor overhead across the parameter sets (sensitivity check)}{figure.A.1}{}}
+\newlabel{fig:overhead@cref}{{[figure][1][2147483647,1]A.1}{[1][50][]51}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.4}Auditing the reuse claim}{51}{section.A.4}\protected@file@percent }
+\newlabel{app:diff}{{A.4}{51}{Auditing the reuse claim}{section.A.4}{}}
+\newlabel{app:diff@cref}{{[subappendix][4][2147483647,1]A.4}{[1][50][]51}}
+\newlabel{lst:diff}{{A.5}{51}{Branch diff proving the lattice core is untouched (no output means identical)}{lstlisting.A.5}{}}
+\newlabel{lst:diff@cref}{{[listing][5][2147483647,1]A.5}{[1][51][]51}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.5}Branch diff proving the lattice core is untouched (no output means identical).}{51}{lstlisting.A.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A.5}Selected code listing: Adapt and Extract}{51}{section.A.5}\protected@file@percent }
+\newlabel{app:listing}{{A.5}{51}{Selected code listing: Adapt and Extract}{section.A.5}{}}
+\newlabel{app:listing@cref}{{[subappendix][5][2147483647,1]A.5}{[1][51][]51}}
+\@writefile{lot}{\contentsline {table}{\numberline {A.2}{\ignorespaces LAS objects by component (packed bytes)}}{52}{table.A.2}\protected@file@percent }
+\newlabel{tab:components}{{A.2}{52}{LAS objects by component (packed bytes)}{table.A.2}{}}
+\newlabel{tab:components@cref}{{[table][2][2147483647,1]A.2}{[1][50][]52}}
+\newlabel{lst:lasc}{{A.6}{52}{\texttt {las\_adapt} and \texttt {las\_ext} from \texttt {ref/las.c}}{lstlisting.A.6}{}}
+\newlabel{lst:lasc@cref}{{[listing][6][2147483647,1]A.6}{[1][52][]52}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.6}\texttt  {las\_adapt} and \texttt  {las\_ext} from \texttt  {ref/las.c}.}{52}{lstlisting.A.6}\protected@file@percent }
 \bibstyle{plain}
 \bibdata{refs}
-\@writefile{lot}{\contentsline {table}{\numberline {A.3}{\ignorespaces LAS objects by component (packed bytes)}}{45}{table.A.3}\protected@file@percent }
-\newlabel{tab:components}{{A.3}{45}{LAS objects by component (packed bytes)}{table.A.3}{}}
-\newlabel{tab:components@cref}{{[table][3][2147483647,1]A.3}{[1][42][]45}}
-\@writefile{lot}{\contentsline {table}{\numberline {A.4}{\ignorespaces Complete LAS object catalogue (target setting)}}{46}{table.A.4}\protected@file@percent }
-\newlabel{tab:complete-l3}{{A.4}{46}{Complete LAS object catalogue (target setting)}{table.A.4}{}}
-\newlabel{tab:complete-l3@cref}{{[table][4][2147483647,1]A.4}{[1][42][]46}}
 \bibcite{aumayr2021generalized}{1}
 \bibcite{secp256k1zkp}{2}
 \bibcite{buser2023survey}{3}
-\bibcite{ducas2018crystals}{4}
-\bibcite{esgin2020post}{5}
-\bibcite{kysil2025poqeth}{6}
-\bibcite{lyubashevsky2012lattice}{7}
-\@writefile{toc}{\contentsline {chapter}{Bibliography}{47}{appendix*.25}\protected@file@percent }
-\bibcite{malavolta2019anonymous}{8}
-\bibcite{1274601}{9}
-\bibcite{poelstra2017}{10}
-\bibcite{shor1999polynomial}{11}
-\gdef \@abspage@last{48}
+\bibcite{pqcrystalsdilithium}{4}
+\bibcite{ducas2018crystals}{5}
+\bibcite{esgin2020post}{6}
+\bibcite{fournier2019adaptor}{7}
+\bibcite{criterionrs}{8}
+\@writefile{toc}{\contentsline {chapter}{Bibliography}{54}{appendix*.28}\protected@file@percent }
+\bibcite{kysil2025poqeth}{9}
+\bibcite{lyubashevsky2012lattice}{10}
+\bibcite{malavolta2019anonymous}{11}
+\bibcite{1274601}{12}
+\bibcite{poelstra2017}{13}
+\bibcite{riou2026apples}{14}
+\bibcite{fips204crate}{15}
+\bibcite{shor1999polynomial}{16}
+\gdef \@abspage@last{55}

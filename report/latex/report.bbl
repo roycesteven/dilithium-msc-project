@@ -23,6 +23,12 @@ Maxime Buser, Rafael Dowsley, Muhammed Esgin, Cl{\'e}mentine Gritti, Shabnam
   and research directions.
 \newblock {\em ACM Computing Surveys}, 55(12):1--32, 2023.
 
+\bibitem{pqcrystalsdilithium}
+{CRYSTALS team}.
+\newblock {CRYSTALS-Dilithium} reference implementation.
+\newblock Software repository, 2023.
+\newblock \url{https://github.com/pq-crystals/dilithium}, commit 2374d22.
+
 \bibitem{ducas2018crystals}
 L{\'e}o Ducas, Eike Kiltz, Tancrede Lepoint, Vadim Lyubashevsky, Peter Schwabe,
   Gregor Seiler, and Damien Stehl{\'e}.
@@ -35,6 +41,18 @@ Muhammed~F Esgin, O{\u{g}}uzhan Ersoy, and Zekeriya Erkin.
 \newblock Post-quantum adaptor signatures and payment channel networks.
 \newblock In {\em European Symposium on Research in Computer Security}, pages
   378--397. Springer, 2020.
+
+\bibitem{fournier2019adaptor}
+Lloyd Fournier.
+\newblock One-time verifiably encrypted signatures a.k.a.\ adaptor signatures.
+\newblock Manuscript, 2019.
+\newblock \url{https://github.com/LLFourn/one-time-VES}.
+
+\bibitem{criterionrs}
+Brook Heisler, Jorge Aparicio, and contributors.
+\newblock {Criterion.rs}: statistics-driven micro-benchmarking for {Rust}.
+\newblock Software repository, 2025.
+\newblock \url{https://github.com/criterion-rs/criterion.rs}, version 0.8.2.
 
 \bibitem{kysil2025poqeth}
 Ruslan Kysil, Istv{\'a}n~Andr{\'a}s Seres, P{\'e}ter Kutas, and N{\'a}ndor
@@ -61,14 +79,27 @@ Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
 National~Institute of~Standards, Technology (NIST), Thinh Dang, Jacob
   Lichtinger, Yi-Kai Liu, Carl Miller, Dustin Moody, Rene Peralta, Ray Perlner,
   and Angela Robinson.
-\newblock Module-lattice-based digital signature standard, 2024-08-13 04:08:00
-  2024.
+\newblock Module-lattice-based digital signature standard, August 2024.
 
 \bibitem{poelstra2017}
 Andrew Poelstra.
 \newblock Scriptless scripts.
 \newblock Presentation, Milan Bitcoin meetup / Blockstream, 2017.
 \newblock \url{https://github.com/apoelstra/scriptless-scripts}.
+
+\bibitem{riou2026apples}
+Sebastien Riou, Jong-Yeon Park, Liga Anwar, Axel Poschmann, and Michael Hutter.
+\newblock Apples, oranges, and signatures: Pitfalls and methodology in {ML-DSA}
+  benchmarking.
+\newblock Cryptology ePrint Archive, Paper 2026/1333, 2026.
+\newblock \url{https://eprint.iacr.org/2026/1333}.
+
+\bibitem{fips204crate}
+Eric Schorn.
+\newblock {fips204}: {FIPS} 204 {ML-DSA} in pure {Rust}.
+\newblock Software repository, 2025.
+\newblock \url{https://github.com/integritychain/fips204}, vendored at commit
+  c948882.
 
 \bibitem{shor1999polynomial}
 Peter~W Shor.
