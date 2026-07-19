@@ -3,44 +3,44 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: report.aux
 The style file: plain.bst
 Database file #1: refs.bib
-You've used 16 entries,
+You've used 17 entries,
             2118 wiz_defined-function locations,
-            589 strings with 7687 characters,
-and the built_in function-call counts, 6134 in all, are:
-= -- 590
-> -- 356
+            593 strings with 7944 characters,
+and the built_in function-call counts, 6351 in all, are:
+= -- 612
+> -- 363
 < -- 5
-+ -- 143
-- -- 126
-* -- 400
-:= -- 1002
-add.period$ -- 57
-call.type$ -- 16
-change.case$ -- 110
++ -- 146
+- -- 128
+* -- 406
+:= -- 1039
+add.period$ -- 61
+call.type$ -- 17
+change.case$ -- 114
 chr.to.int$ -- 0
-cite$ -- 16
-duplicate$ -- 204
-empty$ -- 452
-format.name$ -- 126
-if$ -- 1302
+cite$ -- 17
+duplicate$ -- 211
+empty$ -- 474
+format.name$ -- 128
+if$ -- 1350
 int.to.chr$ -- 0
-int.to.str$ -- 16
+int.to.str$ -- 17
 missing$ -- 8
-newline$ -- 89
-num.names$ -- 32
-pop$ -- 155
+newline$ -- 95
+num.names$ -- 34
+pop$ -- 163
 preamble$ -- 1
-purify$ -- 94
+purify$ -- 97
 quote$ -- 0
-skip$ -- 164
+skip$ -- 170
 stack$ -- 0
-substring$ -- 282
-swap$ -- 66
+substring$ -- 287
+swap$ -- 67
 text.length$ -- 5
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 64
+type$ -- 68
 warning$ -- 0
-while$ -- 51
-width$ -- 18
-write$ -- 184
+while$ -- 53
+width$ -- 19
+write$ -- 196

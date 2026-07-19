@@ -79,6 +79,13 @@ public_key; a pre_signature is sig-shaped but NOT a signature — never cast/ali
 
 - setup: `setup_public_params` (both).
 - relation (Gen): `gen`/`gen_seed` ⇄ `relation_gen`/`relation_gen_seed`.
+- relation_zk (π, paper §4.1/Fig. 1; ADDED 2026-07-19): `relation_zk::prove`/
+  `relation_zk::proof_verify` (Rust relation_zk.rs) ⇄ `relation_prove`/
+  `relation_proof_verify` (C relation_zk.c). Bridge (C-only TU, FFI'd by Rust
+  build.rs): `relation_zk_lin_prove`/`relation_zk_lin_verify` (relation_zk_lazer.c).
+  Gate names — NEVER rename: `PI_ROWS`/`PI_COLS`/`PI_DEG`/`PI_PROOF_MAX_BYTES`
+  (both languages), params symbol `las_pi_params` (generated header
+  relation_zk_params.h ⇐ scripts/las_pi_params.py), cargo feature `relation-zk`.
 - basesig (Algorithm 1, Σ): `keygen`⇄`base_keygen`, `keygen_seed`⇄`base_keygen_seed`,
   `sign_internal`⇄`base_sign_internal`, `sign`⇄`base_sign`, `sign_det`⇄`base_sign_det`,
   `verify_internal`⇄`base_verify_internal`, `verify`⇄`base_verify`; packed
@@ -280,8 +287,25 @@ blockchain **atomic-swap** scenario, with everything benchmarked and documented.
 - ✅ **LAS implemented and tested** — `ref/las.{c,h}`, scheme **variant (B)** (the
   paper's Algorithm 2). `ref/test/test_las.c` passes 1000 iters (objectives' B1
   bar) on Dilithium modes 2/3/5, zero compiler warnings.
-- ✅ **Atomic-swap demo** — `ref/test/test_swap.c` (narrated two-party, two-chain
-  swap with assertions).
+- ✅ **Atomic-swap demo** — `ref/test/test_swap.c`, **rewritten 2026-07-19 to paper
+  §4.1 Fig. 1 VERBATIM**: witness holder u₁ (Alice) commits first, message order
+  `{Y, π, σ̂₁, tx₁}` → `{σ̂₂, tx₂}`, Bob's π+PreVerify abort gate, byte-level
+  tripwire via `pack_pre_signature`→`unpack_signature`, post-Ext asserts
+  `‖y′‖∞ ≤ 1 ∧ y′ = y`. Opt-in target (needs LaZer, not in `make all`).
+- ✅ **Fig. 1 proof of knowledge π (2026-07-19, Royce-directed)** —
+  `ref/relation_zk.{c,h}` (relation layer: `relation_prove`/`relation_proof_verify`,
+  non-ternary witnesses refused) + `ref/relation_zk_lazer.{c,h}` (the ONLY TU that
+  includes `lazer.h`) over the **vendored LaZer** library (`third_party/lazer`,
+  git-ignored, reused as-is — secp256k1-zkp posture). Ternary via binary
+  decomposition `[A|−A|0]·(r₊‖r₋‖e)=t′` (23rd dummy ℓ2 column: codegen requires
+  one ℓ2 partition). Params `ref/relation_zk_params.h` COMMITTED (generated from
+  `scripts/las_pi_params.py` by LaZer `sage lin-codegen.sage`; knowledge error
+  ≤2⁻¹²⁷ MSIS, ZK MLWE); measured π ≈30.7 KB, off-chain only. Tests
+  `test/test_zkp3` + rewritten `test_swap3` (both opt-in). **Rust twin**:
+  `src/relation_zk.rs` (`relation_zk::prove`/`proof_verify`) + `build.rs`, cargo
+  feature `relation-zk` (default off, KAT gate intact), FFI onto the SAME C
+  bridge; tests `las_zkp.rs`/`las_swap.rs`. Docs: `docs/LAS.md §7.6, §5.12, §6.5`,
+  `THEORY_IMPL_BRIDGE.md §12.6`, `FUNCTION_MAP.md §3.7`, STATUS D25.
 - ✅ **Realistic chain integration** — `ref/chain.{c,h}` (scriptless-HTLC ledger:
   accounts, block height, adaptor-locked contracts with claim + timeout-refund) +
   `ref/test/test_pcn.c` (atomic-swap happy path, timeout/refund, multi-hop PCN).
@@ -408,7 +432,10 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
   (precompile/zk; swap+gas floor already done), parameter migration to q≈2²⁴.
   **Focus: LAS only** — no alternative-PQ-scheme comparison in scope per Royce.
 - **Hard out-of-scope (supervisor):** Ethereum-consensus multisigs, blind/group
-  signatures, heavy ZKP/MPC — one related-work paragraph max.
+  signatures, heavy ZKP/MPC — one related-work paragraph max. **EXCEPTION
+  (Royce-directed, 2026-07-19): the Fig. 1 proof of knowledge π IS implemented**
+  (via the vendored LaZer library, not hand-rolled) — see the π status bullet;
+  do not re-flag it as out-of-scope.
 - **TODO: report draft** — supervisor-confirmed skeleton (B4): high-level design →
   function map (✅ `docs/02-methodology/FUNCTION_MAP.md`) → key decisions → benchmark results
   (both baselines) → critical analysis; code snippets only in appendix.

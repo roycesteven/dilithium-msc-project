@@ -35,7 +35,9 @@ make test/bench_levels5      && ./test/bench_levels5
 make test/test_las3   && ./test/test_las3
 make test/test_serde3 && ./test/test_serde3
 make test/test_kat3   && ./test/test_kat3
-# end-to-end atomic swap
+# end-to-end atomic swap incl. the proof of knowledge pi
+# (needs the one-time LaZer build below)
+make test/test_zkp3   && ./test/test_zkp3
 make test/test_swap3  && ./test/test_swap3
 \end{lstlisting}
 
@@ -44,6 +46,15 @@ clone).},label={lst:classical}]
 git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
     third_party/secp256k1-zkp        # tested at commit 95b9835
 cd ref && make test/bench_classical && ./test/bench_classical
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash,caption={Proof-of-knowledge library (one-time
+clone and build; see the repository README for the dependency recipe).},
+label={lst:lazer}]
+git clone https://github.com/lazer-crypto/lazer third_party/lazer
+cd third_party/lazer && make lazer.h liblazer.a
+# the generated proof parameters (ref/relation_zk_params.h) are committed,
+# so SageMath is needed only to REgenerate them, never to build
 \end{lstlisting}
 
 The Rust port is reproduced with the standard Cargo tooling; the test gate runs

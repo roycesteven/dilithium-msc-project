@@ -120,6 +120,12 @@ pub mod las_types;
 /// `Witness`.  Sits below both schemes: `las` consumes them, `basesig` never
 /// sees them.
 pub mod relation;
+/// The Fig.-1 proof of knowledge pi for `R_A` (eprint 2020/845 Section 4.1),
+/// via FFI to the same C bridge + vendored LaZer library the C build uses
+/// (Rust port of C `ref/relation_zk.{c,h}`).  OPT-IN: `--features relation-zk`
+/// (needs the one-time LaZer build, see the repo README "pi + atomic swap").
+#[cfg(feature = "relation-zk")]
+pub mod relation_zk;
 /// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
 pub mod serialize;
 /// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the

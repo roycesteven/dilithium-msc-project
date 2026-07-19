@@ -162,3 +162,19 @@ deterministic signing also removes the per-signature RNG dependency and the
 nonce-reuse failure mode that has repeatedly broken classical (EC)DSA deployments —
 a desirable property in a blockchain setting.
 
+
+### 5.12 The proof of knowledge π (`ref/relation_zk.{c,h}`, vendored LaZer)
+
+The Fig. 1 proof of knowledge π — knowledge of a ternary `r′` with `A·r′ = t′` —
+is implemented in the same reuse-not-reinvent posture as everything above: the
+vendored **LaZer** lattice-ZK library supplies the proof system, and a small
+two-file module supplies the statement. `relation_zk.c` (relation layer) turns
+`(pp, Y, r′)` into LaZer's flat statement buffers via binary decomposition
+`[A | −A | 0]·(r₊ ‖ r₋ ‖ e) = t′`; `relation_zk_lazer.c` is the single
+translation unit that includes `lazer.h` (ref headers and LaZer's cannot share
+one). The committed parameter set `ref/relation_zk_params.h` is generated from
+`scripts/las_pi_params.py`. Full design rationale, guarantees, and measured
+size: Section 7.6. Opt-in build (needs the one-time LaZer build): README
+"π + atomic swap". The Rust port mirrors the module as `relation_zk.rs` behind
+the `relation-zk` cargo feature, FFI-ing into the *same* C bridge so both
+languages run the identical proof system.

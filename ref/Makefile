@@ -25,11 +25,13 @@ REPRO_FLAGS ?=
 #   test/test_vectors5 \
 
 
+# test/test_swap3 and test/test_zkp3 are NOT in `all`: they need the vendored
+# LaZer library (one-time build, see the pi section below and README) -- the
+# same opt-in pattern as test/bench_classical (secp256k1-zkp).
 all: \
   test/test_las2 \
   test/test_las3 \
   test/test_las5 \
-  test/test_swap3 \
   test/bench_levels_paper \
   test/bench_levels2 \
   test/bench_levels3 \
@@ -111,10 +113,40 @@ test/test_las5: test/test_las.c basesig.c basesig.h relation.c relation.h las.c 
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=5 -DLAS_N=8 -DELL=7 -DKAPPA=60 \
 	  -o $@ $< basesig.c relation.c las.c setup.c serialize.c randombytes.c $(KECCAK_SOURCES)
 
-test/test_swap3: test/test_swap.c las.c las.h setup.c setup.h las_types.h serialize.c serialize.h randombytes.c $(KECCAK_SOURCES) \
-  $(KECCAK_HEADERS)
+# ---- pi targets (Fig. 1 proof of knowledge, eprint 2020/845 Section 4.1) ----
+# Need the vendored LaZer library (third_party/lazer, git-ignored) built once:
+#   git clone https://github.com/lazer-crypto/lazer third_party/lazer
+#   make lazer.h liblazer.a     (HEXL via cmake; MPFR/GMP headers required --
+#                                see README "pi / atomic swap" for the exact
+#                                no-sudo conda recipe used on this machine)
+# ref/relation_zk_params.h is COMMITTED (generated from scripts/las_pi_params.py
+# by LaZer's `sage lin-codegen.sage`), so sage is NOT needed to build these.
+LAZER_DIR ?= $(abspath ../third_party/lazer)
+LAZER_DEP_PREFIX ?= $(HOME)/micromamba/envs/lazer-build
+LAZER_LIBS = $(LAZER_DIR)/liblazer.a \
+  -L$(LAZER_DEP_PREFIX)/lib -Wl,-rpath,$(LAZER_DEP_PREFIX)/lib -lmpfr -lgmp -lm \
+  $(LAZER_DIR)/third_party/hexl-development/build/hexl/lib64/libhexl.a -lstdc++
+
+# The bridge is the ONLY TU that includes lazer.h; ref headers and lazer.h
+# cannot share a TU, so it is compiled separately with -I$(LAZER_DIR) and no
+# ref-specific flags (it is parameter-set independent: fixed D3 statement).
+relation_zk_lazer.o: relation_zk_lazer.c relation_zk_lazer.h relation_zk_params.h
+	$(CC) -Wall -Wextra -Wshadow -O3 -I$(LAZER_DIR) -c -o $@ relation_zk_lazer.c
+
+test/test_zkp3: test/test_zkp.c relation.c relation.h relation_zk.c relation_zk.h \
+  relation_zk_lazer.h relation_zk_lazer.o setup.c setup.h las_types.h randombytes.c \
+  $(KECCAK_SOURCES) $(KECCAK_HEADERS)
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
-	  -o $@ $< basesig.c relation.c las.c setup.c serialize.c randombytes.c $(KECCAK_SOURCES)
+	  -o $@ $< relation.c relation_zk.c setup.c randombytes.c $(KECCAK_SOURCES) \
+	  relation_zk_lazer.o $(LAZER_LIBS)
+
+test/test_swap3: test/test_swap.c basesig.c basesig.h relation.c relation.h \
+  relation_zk.c relation_zk.h relation_zk_lazer.h relation_zk_lazer.o las.c las.h \
+  setup.c setup.h las_types.h serialize.c serialize.h randombytes.c \
+  $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+	  -o $@ $< basesig.c relation.c relation_zk.c las.c setup.c serialize.c \
+	  randombytes.c $(KECCAK_SOURCES) relation_zk_lazer.o $(LAZER_LIBS)
 
 # NOTE: bench_las.c and bench_compare.c were REMOVED -- their outputs
 # (bench_las3 rejection rate; bench_compare3 LAS-vs-Dilithium-3) are not used as
@@ -310,6 +342,8 @@ clean:
 	rm -f test/test_las3
 	rm -f test/test_las5
 	rm -f test/test_swap3
+	rm -f test/test_zkp3
+	rm -f relation_zk_lazer.o
 	rm -f test/bench_levels_paper
 	rm -f test/bench_levels2
 	rm -f test/bench_levels3

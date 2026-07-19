@@ -116,6 +116,7 @@ the same strategy is later applied a second time, in Rust, on the Rust ML-DSA cr
                      & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
     Modified         & \texttt{Makefile} & compile new targets \\
     Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
+                     & \texttt{relation\_zk.\{c,h\}} (+ LaZer bridge), & \\
                      & \texttt{amhl}, \texttt{chain}, tests, benchmarks & \\
     \bottomrule
   \end{tabular}
@@ -125,7 +126,11 @@ the same strategy is later applied a second time, in Rust, on the Rust ML-DSA cr
 modified, so the security-critical lattice arithmetic is exactly the audited reference
 code, and every line specific to the adaptor scheme is new and isolated. This both
 reduces the surface for implementation error and makes the boundary between reused and
-new code unambiguous.
+new code unambiguous. The same posture extends to the two vendored third-party
+libraries: the classical baseline reuses \texttt{secp256k1-zkp}
+\cite{secp256k1zkp} unmodified, and the atomic swap's proof of knowledge $\pi$
+(\cref{sec:res-app}) reuses the LaZer lattice zero-knowledge library \cite{lazer}
+unmodified, behind a single-file bridge.
 
 \paragraph{Data types and the matrix product.}
 LAS is a self-contained module (\texttt{las.\{c,h\}}) over the reference's degree-$d$

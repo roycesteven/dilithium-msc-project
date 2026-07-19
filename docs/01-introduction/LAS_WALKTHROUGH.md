@@ -85,24 +85,32 @@ Alice has 1 coin on chain A; Bob has 1 coin on chain B. They want to trade with
 **no trusted middleman** and **no risk of one side running off with both**.
 
 ```
-   Bob invents a secret key  y  and its public "padlock"  Y.
+   Alice invents a secret key  y  and its public "padlock"  Y — plus a
+   RECEIPT π that proves, without revealing y, that the padlock is honestly
+   made (it has exactly one ordinary key).
 
-   1) Bob → Alice:  "here is the padlock Y"
-   2) Alice pre-signs "pay Bob on chain A", locked to Y      → σ̂_A  (not spendable yet)
-   3) Bob   pre-signs "pay Alice on chain B", locked to Y    → σ̂_B  (not spendable yet)
+   1) Alice → Bob:  "here is the padlock Y, the receipt π, and my half:
+        I pre-signed 'pay Bob on chain 1', locked to Y"     → σ̂_1  (not spendable yet)
+   2) Bob checks the receipt π and σ̂_1. If either fails he WALKS AWAY —
+        he has risked nothing yet. Otherwise he answers with his half:
+        pre-signs "pay Alice on chain 2", locked to Y       → σ̂_2  (not spendable yet)
         ── neither pre-signature can move any coin on its own ──
-   4) Bob knows y, so Bob ADAPTS σ̂_A → σ_A, a normal signature, and PUBLISHES it
-        → Bob gets Alice's coin on chain A.            (this is the only way for Bob to get paid)
-   5) Alice was watching chain A. From the published σ_A she EXTRACTS y.
-   6) Now Alice knows y too, so she ADAPTS σ̂_B → σ_B and publishes it
-        → Alice gets Bob's coin on chain B.
+   3) Alice knows y, so she ADAPTS σ̂_2 → σ_2, a normal signature, and PUBLISHES it
+        → Alice gets Bob's coin on chain 2.    (this is the only way for Alice to get paid)
+   4) Bob was watching chain 2. From the published σ_2 he EXTRACTS y.
+   5) Now Bob knows y too, so he ADAPTS σ̂_1 → σ_1 and publishes it
+        → Bob gets Alice's coin on chain 1.
 ```
 
-Why it's safe ("atomic"): the *same* padlock `Y` locks both sides. Bob can only
-take his coin by publishing something that **hands Alice the key** to take hers.
-Before that, Alice literally cannot finish her side. So **either both trades
-happen or neither does** — enforced by maths, not by trust. (This exact scenario
-runs and self-checks in `ref/test/test_swap.c`.)
+Why it's safe ("atomic"): the *same* padlock `Y` locks both sides. Alice can
+only take her coin by publishing something that **hands Bob the key** to take
+his. Before that, Bob literally cannot finish his side. So **either both trades
+happen or neither does** — enforced by maths, not by trust. And the receipt π
+closes the last loophole: without it, a cheating Alice could hand over a
+*defective* padlock whose leaked key turns out not to fit Bob's lock — π
+guarantees in advance that the key Bob will learn actually works. (This exact
+scenario — the paper's Fig. 1, receipt included — runs and self-checks in
+`ref/test/test_swap.c`; the receipt has its own check in `ref/test/test_zkp.c`.)
 
 We also built the richer version — **paying through several people in a chain**
 (a payment-channel network), where each hop has its *own* padlock so no
@@ -277,7 +285,8 @@ implementation behaves exactly as theory says.
 ```sh
 cd ref
 make test/test_las3   && ./test/test_las3     # core: 1000 trials, the 8-point contract
-make test/test_swap3  && ./test/test_swap3    # the Alice↔Bob atomic swap, narrated
+make test/test_zkp3   && ./test/test_zkp3     # the padlock receipt π (needs LaZer — see README)
+make test/test_swap3  && ./test/test_swap3    # the Alice↔Bob atomic swap incl. π, narrated (needs LaZer)
 make test/test_amhl3  && ./test/test_amhl3    # multi-hop: wormhole-resistance + norm growth
 make test/test_serde3 && ./test/test_serde3   # tamper test: all 4640 byte-flips rejected
 make test/test_kat3   && ./test/test_kat3     # reproducible fingerprint match

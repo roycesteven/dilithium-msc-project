@@ -56,3 +56,16 @@ the same vectors. The digest is reproduced on every run; the test passes.
 
 ---
 
+### 6.5 Proof-of-knowledge tests (`ref/test/test_zkp.c`; opt-in, needs LaZer)
+
+The π module of Section 7.6 has its own suite, hard-asserting: (i)
+**completeness** — an honest `Gen` witness proves and the proof verifies; (ii)
+**tamper** — a single-byte flip anywhere in the ≈30.7 KB proof (sampled stride)
+is rejected; (iii) **wrong statement** — the proof does not transfer to a
+different `Y`; (iv) **prover contract** — a non-ternary (Ext-style, `R′_A`)
+witness is refused before any proof is built. The rewritten `test_swap.c`
+additionally exercises π inside the Fig. 1 message flow (Bob's abort gate, plus
+a proof-against-wrong-statement rejection). Rust twins run the identical checks
+through the same C bridge (`cargo test --features relation-zk`); the
+non-ternary refusal lives as an in-crate unit test because outside the crate a
+non-ternary witness is unconstructible by design. All pass, zero warnings.

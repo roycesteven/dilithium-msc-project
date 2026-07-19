@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  18 JUL 2026 16:00
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  19 JUL 2026 15:34
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -913,55 +913,55 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <5> on input line 77.
  [15{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]
-Overfull \hbox (3.94708pt too wide) in paragraph at lines 141--150
+Overfull \hbox (3.94708pt too wide) in paragraph at lines 146--155
  []\T1/lmr/bx/n/12 (-20) Hash, chal-lenge, and sam-plers.[] \T1/lmr/m/n/12 (-20
 ) The ran-dom or-a-cle $\OML/lmm/m/it/12 H$ \T1/lmr/m/n/12 (-20) is built from 
 SHAKE256:
  []
 
 [16] [17] [18] [19] [20] [21] [22] [23{/usr/share/texmf/fonts/enc/dvips/lm/lm-m
-athex.enc}] [24]) (./chapters/03-results.tex
-Overfull \hbox (17.35081pt too wide) in paragraph at lines 515--1
+athex.enc}]) (./chapters/03-results.tex
+Overfull \hbox (17.35081pt too wide) in paragraph at lines 520--1
 \T1/lmr/m/n/12 (-20) sec-ond base-line is a clas-si-cal secp256k1 ECDSA adap-to
 r sig-na-ture: the \T1/lmtt/m/n/12 secp256k1-zkp
  []
 
 
-Overfull \hbox (10.71443pt too wide) in paragraph at lines 515--1
+Overfull \hbox (10.71443pt too wide) in paragraph at lines 520--1
 \T1/lmr/m/n/12 (-20) li-brary's \T1/lmtt/m/n/12 ecdsa_adaptor \T1/lmr/m/n/12 (-
 20) mod-ule [[]], which im-ple-ments Fournier's one-time verifiably-
  []
 
-[25]
+[24] [25] [26]
 Chapter 3.
-[26
+[27
 
-] [27] (./generated/tab_overhead_target.tex)
-<figures/fig_timing.pdf, id=506, 587.55257pt x 345.9258pt>
+] [28] (./generated/tab_overhead_target.tex)
+<figures/fig_timing.pdf, id=515, 587.55257pt x 345.9258pt>
 File: figures/fig_timing.pdf Graphic file (type pdf)
 <use figures/fig_timing.pdf>
 Package pdftex.def Info: figures/fig_timing.pdf  used on input line 104.
 (pdftex.def)             Requested size: 412.56496pt x 242.90648pt.
- [28] [29]
-(./generated/tab_rust.tex) [30]
-<figures/fig_criterion_presign.pdf, id=535, 963.6pt x 542.025pt>
+ [29] [30]
+(./generated/tab_rust.tex) [31]
+<figures/fig_criterion_presign.pdf, id=545, 963.6pt x 542.025pt>
 File: figures/fig_criterion_presign.pdf Graphic file (type pdf)
 <use figures/fig_criterion_presign.pdf>
 Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line 
 243.
 (pdftex.def)             Requested size: 412.56496pt x 232.06546pt.
- [31] (./generated/tab_complete_target.tex)
-[32] [33] (./generated/tab_classical.tex) [34]) (./chapters/04-evaluation.tex
-[35] [36] [37 <./figures/fig_timing.pdf>] [38 <./figures/fig_criterion_presign.
-pdf>] [39]
+ [32] (./generated/tab_complete_target.tex)
+[33] [34] (./generated/tab_classical.tex) [35] [36])
+(./chapters/04-evaluation.tex [37] [38 <./figures/fig_timing.pdf>] [39 <./figur
+es/fig_criterion_presign.pdf>] [40]
 Chapter 4.
-[40
+[41
 
-] [41] [42]) (./chapters/05-conclusion.tex [43] [44]
+] [42] [43]) (./chapters/05-conclusion.tex [44] [45]
 Chapter 5.
-[45
+[46
 
-]) (./chapters/A-appendix.tex [46]
+]) (./chapters/A-appendix.tex [47]
 Appendix A.
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
@@ -973,63 +973,61 @@ Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 23.
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/lmtt/b/n' tried instead on input line 28.
- [47
+ [48
 
-]
-Overfull \hbox (90.57379pt too wide) in paragraph at lines 71--79
+] [49]
+Overfull \hbox (90.57379pt too wide) in paragraph at lines 82--90
 \T1/lmr/m/n/12 (-20) The pseu-docode be-low is the pro-ce-dure both pro-to-col 
 drivers im-ple-ment (\T1/lmtt/m/n/12 ref/test/bench_levels.c
  []
 
-[48] [49]
-<figures/fig_overhead.pdf, id=823, 540.18272pt x 342.97716pt>
+[50]
+<figures/fig_overhead.pdf, id=834, 540.18272pt x 342.97716pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
-Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 133.
+Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 144.
 (pdftex.def)             Requested size: 379.55899pt x 241.00343pt.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-(./generated/tab_timing.tex) (./generated/tab_components.tex)
+(./generated/tab_timing.tex)
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[50] [51 <./figures/fig_overhead.pdf>]
-(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+(./generated/tab_components.tex)
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[51] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [52])
-(./report.bbl [53] [54
+) [52 <./figures/fig_overhead.pdf>] [53]) (./report.bbl [54] [55
 
 ]
-Underfull \hbox (badness 4366) in paragraph at lines 85--89
+Underfull \hbox (badness 4366) in paragraph at lines 93--97
 []\T1/lmr/m/n/12 (+20) Andrew Poel-stra.  Script-less scripts.  Pre-sen-ta-tion
 , Mi-lan Bit-
  []
 
-) [55] (./report.aux)
+[56]) [57] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 5542AAD38833EFAA64BFDF0225A96D71;7424.
  ) 
 Here is how much of TeX's memory you used:
- 27931 strings out of 476182
- 509234 string characters out of 5795595
- 2236975 words of memory out of 5000000
- 48798 multiletter control sequences out of 15000+600000
- 723247 words of font info for 303 fonts, out of 8000000 for 9000
+ 27951 strings out of 476182
+ 509472 string characters out of 5795595
+ 2175975 words of memory out of 5000000
+ 48806 multiletter control sequences out of 15000+600000
+ 723334 words of font info for 304 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,13n,87p,1003b,2159s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,87p,1003b,2166s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></
 usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></usr/share/texmf/fonts/type1/
@@ -1045,10 +1043,10 @@ hare/texmf/fonts/type1/public/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/publi
 c/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt12.pfb></usr/share/
 texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/ty
 pe1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (55 pages, 648303 bytes).
+Output written on report.pdf (57 pages, 655581 bytes).
 PDF statistics:
- 1135 PDF objects out of 1200 (max. 8388607)
- 877 compressed objects within 9 object streams
- 256 named destinations out of 1000 (max. 500000)
+ 1163 PDF objects out of 1200 (max. 8388607)
+ 902 compressed objects within 10 object streams
+ 266 named destinations out of 1000 (max. 500000)
  89420 words of extra memory for PDF output out of 106986 (max. 10000000)
 

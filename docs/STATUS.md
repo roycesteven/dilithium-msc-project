@@ -22,7 +22,7 @@ functions were written first, and why) →
 |---|---|:--:|:--:|:--:|---|
 | D1 | LAS scheme: KeyGen/Sign/Verify + PreSign/PreVerify/Adapt/Ext (variant B, simplified) | ✅ | ✅ | ✅ | `make test/test_las3 && ./test/test_las3` |
 | D2 | 8-point adaptor contract, 1000 iters, modes 2/3/5, 100% correct | ✅ | ✅ | ✅ | `./test/test_las2 ./test/test_las3 ./test/test_las5` |
-| D3 | Atomic swap (2-party, 2-chain), narrated + asserted | ✅ | ✅ | ✅ | `make test/test_swap3 && ./test/test_swap3` |
+| D3 | Atomic swap (2-party, 2-chain), narrated + asserted — **rewritten 2026-07-19 to paper §4.1 Fig. 1 verbatim** (witness holder commits first, π gate, byte-level tripwire) | ✅ | ✅ | ✅ | needs LaZer (README "π + atomic swap"); `make test/test_swap3 && ./test/test_swap3` |
 | D4 | Scriptless HTLC ledger: swap / timeout-refund / same-Y PCN | ✅ | ✅ | ✅ | `make test/test_pcn3 && ./test/test_pcn3` |
 | D5 | AMHL multi-hop (γ−κ−K, distinct Y_j, wormhole-resistant, refund) — *bonus* | ✅ | ✅ | ✅ | `make test/test_amhl3 && ./test/test_amhl3` |
 | D6 | Byte serialisation + validating decoder + `base_verify_packed`; swept across parameter sets (paper + D2/D3/D5, parameter-derived `z` width) | ✅ | ✅ | ✅ | `make test/test_serde3 test/test_serde_l2 test/test_serde_l3 test/test_serde_l5 && ./test/test_serde3 && ./test/test_serde_l2 && ./test/test_serde_l3 && ./test/test_serde_l5` |
@@ -38,6 +38,7 @@ functions were written first, and why) →
 | D20 | **Primary fair benchmark** (corrected 2026-06-22; base path modularised to `basesig.c` 2026-06-23): separate base path (`basesig.c`) vs LAS adaptor path (`las.c`) — adaptor overhead (PreSign/Sign, PreVerify/Verify, Adapt/Verify, Ext separate) + cross-verify contract; official Dilithium = CONTEXT only ("not algorithm-matched"); ≥5 runs mean±SD; component sizes | ✅ | ✅ | ✅ | `make test/bench_levels_paper test/bench_levels2 test/bench_levels3 test/bench_levels5 && ./test/bench_levels_paper …`; `docs/LAS.md §8.1` |
 | D23 | **Correctness-contract harness** (itemised 8-point PASS): PreSign→PreVerify, tripwire, Adapt→Verify, Ext exact, tampered msg/sig, malformed bytes, deterministic | ✅ | ✅ | ✅ | `make test/test_contract3 && ./test/test_contract3` |
 | D24 | **Base-signature correctness test** (`basesig.c`, **CHECK**-gated, 1000 iters × paper/2/3/5): honest verify, tamper/wrong-key rejection, cross-module equivalence with `las.c`, cross-path interlock (tripwire + adapted-verifies-under-base + exact Ext), + 4 negative tests (wrong statement, wrong witness, tampered pre-signature, tampered adapted signature) | 🟡 ready (build via `make`) | ⬜ run by Royce | ✅ | `make test/test_basesig_paper test/test_basesig2 test/test_basesig3 test/test_basesig5 && ./test/test_basesig_paper` |
+| D25 | **Fig. 1 proof of knowledge π** (2026-07-19; Royce-directed scope extension): `relation_zk.{c,h}` + `relation_zk_lazer.{c,h}` over vendored LaZer; binary decomposition `[A\|−A]`; knowledge error ≤ 2⁻¹²⁷; measured proof ≈ 30.7 KB off-chain; committed params `relation_zk_params.h`; Rust twin `relation_zk.rs` (`--features relation-zk`, same C bridge) | ✅ | ✅ | ✅ | needs LaZer (README "π + atomic swap"); `make test/test_zkp3 && ./test/test_zkp3`; Rust: `cargo test --offline --features relation-zk --test las_zkp --test las_swap` |
 | D21 | **Two-branch code-diff view** (Meeting-3): `dilithium-baseline` (pristine) vs `main`; 0 upstream sources changed | ✅ | n/a | ✅ | `git diff --name-status dilithium-baseline main -- ref/`; `docs/02-methodology/CODE_DIFF_VIEW.md` |
 | D22 | **LaTeX report scaffold** (Meeting-3): muthesis.cls, by chapter, official title, real benchmark tables, builds to PDF | 🟡 | n/a | ✅ | `cd report/latex && make` (TODOs: student id, figure, machine-of-record) |
 | D16 | Parameter migration to paper's q≈2²⁴ | ⬜ | ⬜ | documented as future work | — |
@@ -118,7 +119,8 @@ All run with zero compiler warnings under
 | Test binary | Iters / scope | Properties hard-asserted |
 |---|---|---|
 | `test_las{2,3,5}` | 1000 each, modes 2/3/5 | PreVerify accepts; **Verify rejects pre-sig (tripwire)**; adapted σ verifies; Ext recovers y **exactly**; Sign/Verify round-trip; bit-flip forgery rejected |
-| `test_swap3` | 1 narrated run | two-leg atomicity; pre-adaptation σ̂_B unspendable |
+| `test_swap3` | 1 narrated run | **Fig. 1 verbatim incl. π**: Bob's abort gate (π + PreVerify); π rejected against any other statement; raw pre-signature *bytes* unspendable (both legs); two-leg atomicity; post-Ext `‖y′‖∞ ≤ 1 ∧ y′ = y` |
+| `test_zkp3` | 1 statement + sweeps | π completeness; single-byte tamper sweep rejected; wrong-statement rejected; non-ternary (R′_A) witness refused by the prover. Rust twins: `las_zkp.rs`, `las_swap.rs` (same C bridge) |
 | `test_pcn3` | 3 scenarios | cross-chain swap; timeout-refund (no coins lost); same-Y multi-hop PCN |
 | `test_amhl3` | K=4 happy + K=2 refund | distinct Y_j; **wormhole resistance** (s_K can't open hop 1); ‖s_j‖∞≤j; exact cascade recovery; refund |
 | `test_serde3` | 256 random + exhaustive | round-trip pk/sk/sig; verify-from-bytes; tripwire survives packing; **all 4640 byte-flips rejected at Verify** (wire = `c_tilde ‖ BitPack(z)`); malformed pk/sk input rejected |

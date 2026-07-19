@@ -61,6 +61,14 @@ Ruslan Kysil, Istv{\'a}n~Andr{\'a}s Seres, P{\'e}ter Kutas, and N{\'a}ndor
 \newblock In {\em Proceedings of the 20th ACM Asia Conference on Computer and
   Communications Security}, pages 327--343, 2025.
 
+\bibitem{lazer}
+{Lazer-crypto project}.
+\newblock {LaZer}: a library for lattice-based zero-knowledge proofs.
+\newblock Software library, 2025.
+\newblock \url{https://github.com/lazer-crypto/lazer}; accompanies the CCS 2024
+  paper ``The LaZer Library: Lattice-Based Zero Knowledge and Succinct Proofs
+  for Quantum-Safe Privacy''.
+
 \bibitem{lyubashevsky2012lattice}
 Vadim Lyubashevsky.
 \newblock Lattice signatures without trapdoors.

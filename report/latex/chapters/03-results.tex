@@ -389,16 +389,41 @@ component analysis above.
 \section{Application demonstration}
 \label{sec:res-app}
 
-The implementation was demonstrated in an end-to-end post-quantum atomic swap. Two
-parties, Alice and Bob, swap coins across two ledgers with no trusted third party and
-no on-chain scripts. Bob draws a fresh statement/witness pair $(Y,y)$ and sends only
-$Y$. Each party pre-signs its outgoing transaction against the \emph{same} $Y$ and
-checks the other's pre-signature; at this point neither pre-signature is spendable.
-Bob, who knows $y$, adapts and publishes his signature to claim Alice's coin; the act
-of publishing reveals $y$, which Alice extracts and uses to adapt and publish her own
-signature, claiming Bob's coin. Either both legs settle or neither does. The demo
-prints this narrative and asserts every step, including the counterfactual that a
-pre-adaptation signature fails basic verification.
+The implementation was demonstrated in an end-to-end post-quantum atomic swap that
+follows the protocol of \cite{esgin2020post} (their Fig.~1) \emph{verbatim},
+including its proof of knowledge $\pi$. Two parties, Alice and Bob, swap coins
+across two ledgers with no trusted third party and no on-chain scripts. Alice, the
+witness holder, commits first: she draws a fresh statement/witness pair $(Y,y)$,
+produces a zero-knowledge proof $\pi$ that $Y$ has a \emph{ternary} preimage
+($\exists\, r' : \mathbf{A}r' = Y \wedge \inftynorm{r'} \le 1$), pre-signs the
+transaction spending her own coin, and sends $\{Y, \pi, \hat{\sigma}_1\}$ in one
+off-chain message. Bob pre-signs his own transaction against the \emph{same} $Y$
+only after both $\pi$ and Alice's pre-signature verify --- the protocol's abort
+gate; at this point neither pre-signature is spendable. Alice, who knows $y$,
+adapts and publishes her signature to claim Bob's coin; the act of publishing
+reveals $y$, which Bob extracts and uses to adapt and publish his own signature,
+claiming Alice's coin. Either both legs settle or neither does. The proof $\pi$ is
+what makes Bob's final step \emph{guaranteed} rather than merely expected: by the
+Module-SIS uniqueness argument of \cite{esgin2020post}, the extracted witness
+equals the proven ternary one, so Bob's adapted signature is certain to clear the
+verification bound --- without $\pi$, a malicious Alice could claim Bob's coin and
+leave him with an unadaptable pre-signature. The demo prints this narrative and
+asserts every step, including the counterfactuals that a pre-adaptation signature
+fails basic verification and that $\pi$ is rejected against any other statement.
+
+The proof $\pi$ is realised by reusing the LaZer lattice zero-knowledge library
+\cite{lazer} rather than implementing a proof system from scratch --- the same
+reuse posture applied throughout. Because LaZer proves per-partition binary
+coefficients or exact Euclidean norms, the ternary statement is encoded by binary
+decomposition, $[\mathbf{A} \mid -\mathbf{A}]\,(r_{+}\,\|\,r_{-}) = Y$ with both
+halves proven binary, which is equivalent to knowledge of a ternary preimage
+$r' = r_{+} - r_{-}$. The generated parameter set reports a knowledge error below
+$2^{-127}$ under Module-SIS and a proof size of approximately 31 kilobytes;
+proving and verifying each complete in well under a second. The proof is exchanged
+off-chain only, exactly as \cite{esgin2020post} note, so it adds nothing to the
+on-chain cost story. A dedicated test suite additionally asserts completeness,
+rejection of every sampled single-byte tamper, rejection against a wrong
+statement, and that the prover refuses a non-ternary witness.
 
 A small ledger abstraction takes this closer to a real chain: accounts with balances,
 a block height, and adaptor-locked contracts (the scriptless analogue of a

@@ -3,9 +3,9 @@
 \contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow}}{15}{figure.2.1}%
 \contentsline {figure}{\numberline {2.2}{\ignorespaces Repository structure: two implementations over reused primitives}}{19}{figure.2.2}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{37}{figure.3.1}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{38}{figure.3.2}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{38}{figure.3.1}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{39}{figure.3.2}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{51}{figure.A.1}%
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{52}{figure.A.1}%

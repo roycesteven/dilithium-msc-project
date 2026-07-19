@@ -127,7 +127,9 @@ Functional / KAT: `test_las` (1000-iter 8-point contract, modes 2/3/5),
 tamper/wrong-key rejection + cross-module equivalence with `las.c` + cross-path interlock
 + four negative tests — wrong statement, wrong witness, tampered pre-signature, tampered
 adapted signature; paper/2/3/5),
-`test_swap`, `test_pcn` (same-Y HTLC), `test_amhl` (multi-hop), `test_serde` (round-trip /
+`test_swap` (paper §4.1 Fig. 1 verbatim incl. π; opt-in, needs LaZer), `test_zkp`
+(π completeness / tamper / wrong-statement / non-ternary refusal; opt-in),
+`test_pcn` (same-Y HTLC), `test_amhl` (multi-hop), `test_serde` (round-trip /
 verify-from-bytes / tamper, swept across parameter sets — `test_serde3` paper dims plus
 `test_serde_l2/l3/l5`), `test_kat` (pinned SHAKE256 digest).
 Benchmarks: `bench_levels` (**primary fair** benchmark — base path `basesig.c` vs LAS
@@ -145,6 +147,18 @@ settling an atomic swap with either a classical ECDSA adapted signature
 produced by `serialize.c` (via `export_packed`), so it touches no C source.
 Measured gas: classical claim 75,709 vs LAS claim floor 208,400 — see
 `docs/LAS.md §8.4` and `evm/README.md`.
+
+### 3.7 `relation_zk.{c,h}` + `relation_zk_lazer.{c,h}` — Fig. 1 proof π (new; vendored LaZer reused as-is)
+The paper-§4.1 proof of knowledge π. New code: `relation_prove` /
+`relation_proof_verify` (statement building + witness decomposition, relation
+layer) and the bridge `relation_zk_lin_prove` / `relation_zk_lin_verify` (the
+single TU that includes `lazer.h`). The proof system itself is the vendored
+**LaZer** library (`third_party/lazer`, git-ignored) **called as-is, zero
+files modified** — the same posture as `secp256k1-zkp` in the classical
+baseline. `ref/relation_zk_params.h` is generated (LaZer `sage
+lin-codegen.sage` from `scripts/las_pi_params.py`) and committed. Rust twin:
+`relation_zk.rs` + `build.rs` (feature `relation-zk`), FFI onto the same
+bridge. See `docs/LAS.md §7.6` and `THEORY_IMPL_BRIDGE.md §12.6`.
 
 ---
 
