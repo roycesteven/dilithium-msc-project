@@ -4,35 +4,36 @@ pragma solidity ^0.8.20;
 /// @title LASVerifyCost — a gas-faithful cost probe for *native* on-chain LAS verification.
 ///
 /// WHY THIS EXISTS. `claimLAS` in AdaptorSwap.sol charges only the unavoidable on-chain
-/// FLOOR (calldata for the 4672-byte signature + one keccak) and deliberately does NOT
+/// FLOOR (calldata for the 6720-byte signature + one keccak) and deliberately does NOT
 /// verify the lattice signature, on the stated grounds that native verification is
 /// "infeasible in the EVM / exceeds the block gas limit". That claim was previously
 /// hand-waved. This contract turns it into a MEASURED number: it executes the exact
-/// arithmetic op-count of one `las_verify` (ref/las.c) so that `forge test --gas-report`
+/// arithmetic op-count of one `base_verify` (ref/basesig.c) so that `forge test --gas-report`
 /// prices it, and the test then compares the total against the block gas limit.
 ///
-/// WHY A COST PROBE IS FAITHFUL. EVM opcodes are fixed-cost regardless of operand *values*:
+/// WHAT THIS PROBE IS (AND IS NOT). EVM opcodes are fixed-cost regardless of operand *values*:
 /// `mulmod`/`addmod` are 8 gas each, `MLOAD`/`MSTORE` 3 gas, independent of the numbers
-/// involved. Therefore a kernel that reproduces the exact *structure* of las_verify — the
-/// same 12 forward NTTs, 8 inverse NTTs, 20 pointwise products and coefficient passes, over
-/// real 256-word memory arrays — costs the same gas as a correct verifier's arithmetic
-/// WITHOUT needing to be numerically correct. We measure cost, not a real challenge; a
-/// numerically-correct on-chain verifier is the documented future work. The twiddle values
-/// come from a runtime recurrence purely so the optimiser cannot constant-fold the loops.
+/// involved. This probe reproduces the OPERATION COUNT of the dominant polynomial arithmetic
+/// in base_verify_internal — 12 forward NTTs, 12 inverse NTTs, 36 pointwise products and 54
+/// coefficient passes, over real 256-word memory arrays. It reuses temporary memory and does
+/// NOT reproduce the verifier's exact values or exact memory-access pattern. Therefore the
+/// result is an arithmetic LOWER-BOUND ESTIMATE, not the exact gas cost of a complete and
+/// numerically correct Solidity verifier (which is the documented future work). The twiddle
+/// values come from a runtime recurrence purely so the optimiser cannot constant-fold the loops.
 ///
-/// SCOPE. This prices the ARITHMETIC of las_verify (w' = A z - c t). The SHAKE256 challenge
+/// SCOPE. This prices the ARITHMETIC of base_verify (w' = A z - c t). The SHAKE256 challenge
 /// hash is priced separately in the test, via the EVM's native keccak256 opcode — a strict
 /// LOWER bound, since a faithful SHAKE256 needs a hand-rolled Keccak-f[1600] in bytecode
 /// (the native opcode bakes in standard padding + a fixed 256-bit squeeze, so it cannot do
 /// LAS's incremental absorb / arbitrary squeeze / rejection sampling). See docs/LAS.md §8.4.
 ///
-/// Dimensions mirror ref/las.h and ref/params.h exactly:
-///   N = 256 (poly degree), LAS_N = 4 (rows of A), LAS_ELL = 4, Q = 8380417.
+/// Module dimensions mirror ref/setup.h; the probe is parametrised by (rowCount = n,
+/// columnCount = ell) so the same kernel prices every parameter set. D3 (n=6, ell=5) is the
+/// headline; verifyArithLevel2 (4,4) and verifyArithLevel5 (8,7) exist only to show how the
+/// arithmetic gas grows with parameter size. Ring degree N = 256, Q = 8380417 (params.h).
 contract LASVerifyCost {
     uint256 internal constant Q  = 8380417; // LAS/Dilithium modulus (params.h)
-    uint256 internal constant NN = 256;     // poly degree N
-    uint256 internal constant LN = 4;       // LAS_N
-    uint256 internal constant LL = 4;       // LAS_ELL
+    uint256 internal constant NN = 256;     // poly degree N (ring degree d)
 
     /// Forward negacyclic NTT, in place: 8 stages × 128 butterflies = 1024 butterflies,
     /// each = 1 modular multiply + 1 add + 1 subtract (mod Q). Structurally identical to
@@ -91,18 +92,32 @@ contract LASVerifyCost {
         unchecked { for (uint256 j = 0; j < NN; ++j) c[j] = addmod(a[j], b[j], Q); }
     }
 
-    /// Execute the full arithmetic of one `las_verify`: w' = A z − c t.
+    /// D3 (n=6, ell=5) is the headline setting; the level-2 (4,4) and level-5 (8,7) wrappers
+    /// let the test show how the arithmetic gas grows as the module parameters increase.
+    function verifyArithLevel2(uint256 seed) external pure returns (uint256) { return _verifyArith(seed, 4, 4); }
+    function verifyArithLevel3(uint256 seed) external pure returns (uint256) { return _verifyArith(seed, 6, 5); }
+    function verifyArithLevel5(uint256 seed) external pure returns (uint256) { return _verifyArith(seed, 8, 7); }
+
+    /// Execute the dominant polynomial arithmetic of one `base_verify`: w' = A z − c t, for a
+    /// module with `rowCount` rows (n) and `columnCount` columns (ell). This reproduces the
+    /// OPERATION COUNT of base_verify_internal; it reuses temporary memory and does not
+    /// reproduce the verifier's exact values or memory-access pattern, so the priced result is
+    /// an arithmetic LOWER-BOUND ESTIMATE, not the exact gas cost of a complete, numerically
+    /// correct Solidity verifier. A fixed set of scratch buffers is REUSED so the figure is not
+    /// inflated by memory-expansion artefacts; `seed` makes all operands runtime values (no
+    /// constant-folding) and `sink` stops the optimiser eliding the work.
     ///
-    /// A small fixed set of scratch buffers is REUSED (a real verifier samples A' on the fly,
-    /// keeping memory O(1) in the module dimensions) so the figure is not inflated by
-    /// memory-expansion artefacts. Returns a sink so the optimiser cannot elide the work;
-    /// `seed` makes all operands runtime values so nothing is constant-folded.
-    ///
-    /// Op budget reproduced (verified against ref/las.c las_verify):
-    ///   las_Amul : 4 fwd NTT (vhat) + 16 pointwise + 16 add + 4 inv NTT + 4 identity-add
-    ///   c·t loop : 8 fwd NTT + 4 pointwise + 4 inv NTT + 4 sub-pass
-    ///   total    : 12 fwd NTT, 8 inv NTT, 20 pointwise, ~40 coeff passes
-    function verifyArith(uint256 seed) external pure returns (uint256 sink) {
+    /// Op budget (counted from ref/basesig.c base_verify_internal), as a function of (n, ell):
+    ///   fwd NTT    = ell + 1 + n                     (z_bot, c, t)
+    ///   inv NTT    = 2·n                             (w', c·t)
+    ///   pointwise  = n·ell + n                       (A'·z, c·t)
+    ///   coeff pass = n·(ell−1) + 5·n                 (matrix accumulate-adds + 5 later ops)
+    ///     D2 (4,4) => 9 fwd, 8 inv, 20 pointwise, 32 passes
+    ///     D3 (6,5) => 12 fwd, 12 inv, 36 pointwise, 54 passes   <- headline
+    ///     D5 (8,7) => 16 fwd, 16 inv, 64 pointwise, 88 passes
+    function _verifyArith(uint256 seed, uint256 rowCount, uint256 columnCount)
+        internal pure returns (uint256 sink)
+    {
         uint256[256] memory zetas;
         unchecked {
             // runtime twiddle recurrence — values are irrelevant to gas, this only defeats
@@ -111,8 +126,8 @@ contract LASVerifyCost {
             for (uint256 i = 0; i < NN; ++i) { z = mulmod(z, 1753, Q); zetas[i] = z; }
         }
 
-        uint256[256] memory op1; // doubles as NTT(c)/vhat scratch
-        uint256[256] memory op2; // doubles as t[i] scratch
+        uint256[256] memory op1; // reused: z_bot / t[i] scratch
+        uint256[256] memory op2; // reused: A'[i][j] / c_hat scratch
         uint256[256] memory acc; // accumulator / w'[i]
         unchecked {
             for (uint256 j = 0; j < NN; ++j) {
@@ -121,27 +136,35 @@ contract LASVerifyCost {
             }
         }
 
-        // ---- las_Amul: A·z = z_top + A'·z_bot (A' is LN×LL polys) --------------------
-        for (uint256 c = 0; c < LL; ++c) { _ntt(op1, zetas); }      // 4 fwd NTT (vhat[j])
-        for (uint256 i = 0; i < LN; ++i) {
-            for (uint256 jc = 0; jc < LL; ++jc) {                    // LN·LL = 16 pointwise + add
-                _pointwise(acc, op1, op2);
-                _addpass(acc, acc, op2);
+        // ---- z_1_hat = NTT(z_bot): columnCount forward NTTs -------------------------
+        for (uint256 j = 0; j < columnCount; ++j) { _ntt(op1, zetas); }   // ell fwd NTT
+
+        // ---- w' = A'·z_1_hat : rowCount rows × (columnCount pointwise + (columnCount-1) add)
+        // First product writes acc directly (NO accumulator-zeroing pass); the remaining
+        // columnCount-1 products are added in. => n·ell pointwise, n·(ell-1) accumulate-adds.
+        for (uint256 i = 0; i < rowCount; ++i) {
+            _pointwise(acc, op1, op2);                                    // column 0 (direct write)
+            for (uint256 jc = 1; jc < columnCount; ++jc) {                // columns 1..ell-1
+                _pointwise(op1, op1, op2);
+                _addpass(acc, acc, op1);
             }
-            _invntt(acc, zetas);                                     // 4 inv NTT (one per row)
-            _addpass(acc, acc, op1);                                 // + identity block (v_top)
             sink ^= acc[i & 255];
         }
 
-        // ---- w' = A·z − c·t : 4× polymul(c, t[i]) -----------------------------------
-        for (uint256 i = 0; i < LN; ++i) {
-            _ntt(op1, zetas);          // NTT(c)        ── 2 fwd NTT per polymul ×4 = 8
-            _ntt(op2, zetas);          // NTT(t[i])
-            _pointwise(acc, op1, op2); // 4 pointwise
-            _invntt(acc, zetas);       // 4 inv NTT
-            _addpass(acc, acc, op2);   // sub/reduce/caddq pass
-            sink ^= acc[(i * 9) & 255];
-        }
+        // ---- NTT(c) ONCE (outside the row loop) + NTT(t): 1 + rowCount forward NTTs ---
+        _ntt(op2, zetas);                                                 // 1 fwd NTT (c_hat)
+        for (uint256 i = 0; i < rowCount; ++i) { _ntt(op1, zetas); }      // n fwd NTT (t_hat)
+
+        // ---- c·t : rowCount pointwise -----------------------------------------------
+        for (uint256 i = 0; i < rowCount; ++i) { _pointwise(acc, op2, op1); sink ^= acc[i & 255]; }
+
+        // ---- invntt(w') + invntt(c·t) : 2·rowCount inverse NTTs ---------------------
+        for (uint256 i = 0; i < rowCount; ++i) { _invntt(acc, zetas); }   // n inv NTT (w')
+        for (uint256 i = 0; i < rowCount; ++i) { _invntt(op1, zetas); }   // n inv NTT (c·t)
+
+        // ---- the 5 later per-row operations (reduce, +z_top, −c·t, reduce, caddq) ----
+        // 5 operations × rowCount rows = 5·n coefficient passes.
+        for (uint256 p = 0; p < 5 * rowCount; ++p) { _addpass(acc, acc, op1); sink ^= acc[p & 255]; }
     }
 
     /* --------- per-primitive probes: run one primitive `reps` times after a single setup, so
@@ -172,5 +195,13 @@ contract LASVerifyCost {
         (uint256[256] memory z, uint256[256] memory a) = _seedPair(seed);
         uint256[256] memory c;
         unchecked { for (uint256 r = 0; r < reps; ++r) { _pointwise(c, a, z); sink ^= c[r & 255]; } }
+    }
+
+    // one coefficient pass (256 addmod) — models the per-coeff O(N) cost of poly_reduce /
+    // poly_add / poly_sub / poly_caddq, the 54 coefficient passes in base_verify_internal.
+    function addpassReps(uint256 reps, uint256 seed) external pure returns (uint256 sink) {
+        (uint256[256] memory z, uint256[256] memory a) = _seedPair(seed);
+        uint256[256] memory c;
+        unchecked { for (uint256 r = 0; r < reps; ++r) { _addpass(c, a, z); sink ^= c[r & 255]; } }
     }
 }

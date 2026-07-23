@@ -1,3 +1,0 @@
-LAS (variant B, eprint 2020/845 Alg.2) OK: 1000/1000 iterations (100% correctness, 8-point adaptor contract)
-  params: n=6  ell=5  kappa=49  gamma=137984  d=256  Q=8380417
-  bounds: sign reject >=137936  presign reject >=137935   (Q-1)/8=1047552

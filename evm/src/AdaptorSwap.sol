@@ -14,16 +14,18 @@ pragma solidity ^0.8.20;
 ///     secp256k1 precompile `ecrecover`. This is cheap and is what a real EVM
 ///     atomic-swap (e.g. an ECDSA-adaptor DLC) settles with.
 ///
-///   • claimLAS — the adapted LAS signature is a 4672-byte packed lattice signature.
-///     Native lattice verification (NTT + SHAKE256 over the packed signature) is
-///     prohibitively expensive: MEASURED at ~12M gas (~158x this contract's classical
-///     claim, ~40% of a 30M block) by the LASVerifyCost cost probe; it does NOT exceed
-///     the block gas limit, but no one would pay it. Cf. poqeth, which needed
-///     dedicated machinery even for *basic* PQ verification. This entrypoint
-///     therefore measures the unavoidable on-chain FLOOR — paying calldata gas for the
-///     4672-byte signature plus one keccak256 pass over it — which is a strict LOWER
-///     BOUND on the true cost. It is deliberately NOT a real verification; see the
-///     report's evaluation section.
+///   • claimLAS — the adapted LAS signature is a 6720-byte packed lattice signature
+///     (D3 set: n=6, ell=5; wire = c_tilde || BitPack(z)). Native lattice verification
+///     (NTT + SHAKE256 over the packed signature) is NOT performed on-chain here. Its
+///     exact arithmetic op-budget — 12 forward + 12 inverse NTTs and 36 pointwise
+///     products, counted from base_verify at n=6,ell=5 (ref/basesig.c) — is priced
+///     separately by the LASVerifyCost cost probe, whose measured EVM gas total for the
+///     current parameter set is reported in docs/03-results/GAS_LIMIT_INVESTIGATION.md.
+///     Cf. poqeth, which needed dedicated machinery even for *basic* PQ verification.
+///     This entrypoint therefore measures the unavoidable on-chain FLOOR — paying
+///     calldata gas for the 6720-byte signature plus one keccak256 pass over it — a
+///     strict LOWER BOUND on the true settlement cost. It is deliberately NOT a real
+///     verification; see the report's evaluation section.
 ///
 /// fund*/refund are identical for both schemes, so a gas report attributes any
 /// difference to the verification step alone.
@@ -84,11 +86,11 @@ contract AdaptorSwap {
     }
 
     /// Settle with a published LAS adapted signature. Charges the on-chain FLOOR:
-    /// 4672 bytes of calldata + one keccak256 over them. NOT a lattice verification.
+    /// 6720 bytes of calldata + one keccak256 over them. NOT a lattice verification.
     function claimLAS(uint256 id, bytes calldata sigPacked) external {
         Swap storage sw = swaps[id];
         require(sw.state == State.OPEN, "not open");
-        require(sigPacked.length == 4672, "bad LAS sig length"); // LAS_SIG_BYTES
+        require(sigPacked.length == 6720, "bad LAS sig length"); // SIGNATURE_BYTES (D3: n=6, ell=5)
         bytes32 tag = keccak256(sigPacked); // minimal "touch every byte"; real verify is off-EVM
         sw.state = State.CLAIMED;
         emit Claimed(id, tag);

@@ -49,10 +49,10 @@ contract AdaptorSwapTest {
         require(BENEFICIARY.balance == b0 + 1 ether, "classical claim did not pay");
     }
 
-    /* ---- post-quantum leg: published LAS adapted signature (real 4672-byte blob) ---- */
+    /* ---- post-quantum leg: published LAS adapted signature (real 6720-byte blob) ---- */
     function test_LASSwap() public {
-        bytes memory sig = vm.readFileBinary("test/las_sig.bin"); // exported by ref/test/export_packed
-        require(sig.length == 4672, "expected 4672-byte packed LAS signature");
+        bytes memory sig = vm.readFileBinary("test/las_sig.bin"); // exported by ref/test/export_packed (D3)
+        require(sig.length == 6720, "expected 6720-byte packed LAS signature");
 
         uint256 id = swap.fundLAS{value: 1 ether}(BENEFICIARY, timeout);
 

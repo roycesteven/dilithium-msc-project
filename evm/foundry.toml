@@ -4,5 +4,8 @@ out = "out"
 test = "test"
 optimizer = true
 optimizer_runs = 200
+# LASVerifier.verify has many local arrays (NTT/pointwise/pack); the IR pipeline
+# is required to avoid "stack too deep" (also how ZKNox's own verifier builds).
+via_ir = true
 # allow the test to read the real packed LAS signature exported from the C side
 fs_permissions = [{ access = "read", path = "./test" }]

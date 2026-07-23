@@ -245,13 +245,16 @@ normal verify — folding `+Y` into a hash costs almost nothing. LAS's pre-verif
 even *absolutely faster* than the classical adaptor's. This is LAS's quiet win.
 
 **(c) On a real blockchain, the protocol runs but on-chain *verification* is the wall.**
-We deployed a real Solidity swap contract on a local Ethereum and settled it with
-each scheme (`evm/`). Settling with ECDSA costs **75,709 gas**. Just *publishing* a
-LAS signature (4,672 bytes of calldata) — before doing any checking — already costs
-**208,400 gas**, ~2.75× more; and fully verifying a lattice signature inside the
-EVM is **prohibitively expensive — a measured ≈12M gas, ≈40% of a 30M-gas block**
-(it *fits* within a block, but is economically absurd and needs SHAKE256 + a
-negacyclic NTT in EVM bytecode — it is *not* a hard block-limit failure). That's the
+We deployed a real Solidity swap contract on a local Ethereum (`evm/`). The two
+claim paths are not symmetric: the ECDSA path genuinely settles by cryptographic
+verification, at **75,709 gas**. The LAS path only measures an unconditional
+**floor** — publishing the 6,720-byte signature (calldata + one keccak) with **no**
+lattice check performed at all — and that floor alone already costs **289,930 gas**,
+~3.8× the complete ECDSA claim. The lattice check the floor omits is estimated
+separately: **≈16.7M gas (13.93M measured arithmetic + 2.76M calculated hash),
+≈55.6% of the adopted 30M-gas comparison threshold** (it *fits* under that
+threshold, but is economically absurd and needs SHAKE256 + a negacyclic NTT in EVM
+bytecode — it is *not* a hard block-limit failure). That's the
 honest frontier: the *swap works end-to-end*, but cheap on-chain verification needs future
 blockchain support (a precompile or a zero-knowledge proof) — the same wall the
 "poqeth" project hit for basic post-quantum signatures.

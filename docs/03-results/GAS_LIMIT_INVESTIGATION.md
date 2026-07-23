@@ -85,9 +85,9 @@ things:
    `A`, `ẑ`, `t` are vectors/matrices of **polynomials** (lists of 256 numbers each).
    Multiplying polynomials fast uses a standard trick called the **NTT** (Number
    Theoretic Transform — think "the integer cousin of the FFT"). By reading our C
-   code I counted the *exact* workload of one verification:
-   **12 forward NTTs + 8 inverse NTTs + 20 "pointwise" multiplications**, plus some
-   bookkeeping passes over the 256-number arrays.
+   code I counted the *exact* workload of one verification at the D3 parameter set
+   (n=6, ℓ=5): **12 forward NTTs + 12 inverse NTTs + 36 "pointwise" multiplications**,
+   plus **54 bookkeeping passes** (add/subtract/reduce) over the 256-number arrays.
 
 2. **One hash.** It feeds the result into **SHAKE256** (a hash function from the same
    family as Ethereum's built-in `keccak256`) and checks the output matches the
@@ -104,9 +104,12 @@ Here is the clever part, and the bit worth understanding.
 
 I wrote a small Ethereum program (`LASVerifyCost.sol`) that performs the **exact
 same number and type of operations** as a real LAS verifier — the same 12 forward
-NTTs, 8 inverse NTTs, 20 pointwise multiplications, the same array passes — but it
+NTTs, 12 inverse NTTs, 36 pointwise multiplications, 54 array passes — but it
 does **not** compute the cryptographically correct answer. It multiplies real
-256-number arrays in memory using `mulmod`, but with stand-in values.
+256-number arrays in memory using `mulmod`, but with stand-in values. Because it
+reproduces the operation *count* rather than the exact values and memory-access
+pattern, the figure it yields is an **arithmetic lower-bound estimate**, not the exact
+gas of a complete, numerically-correct verifier.
 
 Why is measuring a "fake" verifier still a *real* cost measurement? Because of one
 fact about the EVM:
@@ -138,24 +141,30 @@ benchmarks, these numbers don't wobble run-to-run.
 
 | What | Gas | How we got it |
 |---|---:|---|
-| The polynomial calculation (`A·ẑ − c·t`) | **10.08 million** | **measured on the EVM** |
-| The SHAKE256 hash (~64 permutations) | ~1.92 million | calculated (~30k gas each) |
-| **One full LAS verification** | **≈ 12 million** | measured + calculated |
+| The polynomial calculation (`A·ẑ − c·t`) | **13.93 million** | **measured on the EVM** (op-count reproduction) |
+| The SHAKE256 hash (~92 permutations) | ~2.76 million | calculated (~30k gas each, a model) |
+| **One native LAS verification (estimate)** | **≈ 16.7 million** | measured arithmetic + calculated hash |
 | For comparison: a normal (classical) signature check | 75,709 | measured |
 | For comparison: the block gas limit | 30,000,000 | Ethereum |
 
 Read those last rows together:
 
-- **≈ 12 million gas is about 40% of a 30-million-gas block.** It is *big*, but it
+- **≈ 16.7 million gas is about 55% of a 30-million-gas block.** It is *big*, but it
   **fits inside a block.**
-- **It is about 158× more expensive** than checking a normal signature.
+- **It is about 220× the entire classical claim.** Two things to be precise about here.
+  The ≈16.7M is the estimated cost of verifying the *adapted LAS signature* with
+  `base_verify` (Algorithm 1) — that verification **is** the simplified-Dilithium
+  ordinary signature check the adaptor settles into. The 75,709-gas baseline is the
+  *whole* classical `claimClassical` transaction — settlement **plus** its ECDSA
+  `ecrecover` verification, not the ~3k-gas `ecrecover` opcode on its own. So even that
+  one lattice-verification step costs ~220× a complete ECDSA-settled claim.
 
 So the original claim — *"exceeds the block gas limit / impossible"* — was an
 **overstatement, and I retracted it.** The truthful version is sharper and more
 interesting:
 
-> Native LAS verification on Ethereum is **prohibitively expensive** (≈160× a normal
-> signature check) and **a real engineering burden** (you'd have to hand-build
+> Native LAS verification on Ethereum is **prohibitively expensive** (≈220× a complete
+> classical claim) and **a real engineering burden** (you'd have to hand-build
 > SHAKE256 and the NTT in EVM code) — **but it does *not* exceed the block gas
 > limit.** The barrier is **economics and missing built-in support**, *not* a hard
 > physical ceiling.

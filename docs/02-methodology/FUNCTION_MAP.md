@@ -145,8 +145,8 @@ settling an atomic swap with either a classical ECDSA adapted signature
 (`claimClassical`, native `ecrecover`) or a real packed LAS adapted signature
 (`claimLAS`, the on-chain calldata+keccak floor). It consumes only the *bytes*
 produced by `serialize.c` (via `export_packed`), so it touches no C source.
-Measured gas: classical claim 75,709 vs LAS claim floor 208,400 — see
-`docs/LAS.md §8.4` and `evm/README.md`.
+Measured gas: classical claim 75,709 vs LAS claim (settle only, no lattice verify)
+289,930 — see `docs/LAS.md §8.4` and `evm/README.md`.
 
 ### 3.7 `relation_zk.{c,h}` + `relation_zk_lazer.{c,h}` — Fig. 1 proof π (new; vendored LaZer reused as-is)
 The paper-§4.1 proof of knowledge π. New code: `relation_prove` /
