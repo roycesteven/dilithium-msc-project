@@ -153,12 +153,19 @@ library LASVerify {
 
     // ---- helpers -------------------------------------------------------------
 
-    /// LSB-first bit reader (mirrors ref/serialize.c br_get).
-    function _readBits(bytes memory buf, uint256 bitpos, uint256 nbits) private pure returns (uint256 v) {
-        for (uint256 i = 0; i < nbits; i++) {
-            uint256 bp = bitpos + i;
-            if ((uint8(buf[bp >> 3]) >> (bp & 7)) & 1 == 1) v |= (uint256(1) << i);
-        }
+    /// Read one LSB-first 19-bit field at bit offset `bitpos` (mirrors br_get, but
+    /// by a byte window, not bit-by-bit). A 19-bit field with a 0..7 bit offset spans
+    /// at most 26 bits => 4 bytes; the 4th byte is guarded so the final field (whose
+    /// window would run one byte past the 6720-byte signature) does not read OOB —
+    /// those out-of-range bits are masked away by the 19-bit mask regardless.
+    function _readField(bytes memory buf, uint256 bitpos) private pure returns (uint256 f) {
+        uint256 byteOff = bitpos >> 3;
+        uint256 len = buf.length;
+        uint256 word = uint256(uint8(buf[byteOff]));
+        if (byteOff + 1 < len) word |= uint256(uint8(buf[byteOff + 1])) << 8;
+        if (byteOff + 2 < len) word |= uint256(uint8(buf[byteOff + 2])) << 16;
+        if (byteOff + 3 < len) word |= uint256(uint8(buf[byteOff + 3])) << 24;
+        f = (word >> (bitpos & 7)) & 0x7FFFF; // 19-bit mask
     }
 
     /// Decode the z region (after the 32-byte c_tilde) into canonical [0,Q).
@@ -169,9 +176,8 @@ library LASVerify {
         for (uint256 i = 0; i < N_PLUS_ELL; i++) {
             z[i] = new uint256[](N);
             for (uint256 k = 0; k < N; k++) {
-                uint256 field = _readBits(sig, bit, Z_BITS);
+                int256 zc = int256(Z_OFFSET) - int256(_readField(sig, bit));
                 bit += Z_BITS;
-                int256 zc = int256(Z_OFFSET) - int256(field);
                 z[i][k] = zc >= 0 ? uint256(zc) : uint256(int256(Q) + zc);
             }
         }

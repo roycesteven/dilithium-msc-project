@@ -246,18 +246,21 @@ even *absolutely faster* than the classical adaptor's. This is LAS's quiet win.
 
 **(c) On a real blockchain, the protocol runs but on-chain *verification* is the wall.**
 We deployed a real Solidity swap contract on a local Ethereum (`evm/`). The two
-claim paths are not symmetric: the ECDSA path genuinely settles by cryptographic
-verification, at **75,709 gas**. The LAS path only measures an unconditional
-**floor** — publishing the 6,720-byte signature (calldata + one keccak) with **no**
-lattice check performed at all — and that floor alone already costs **289,930 gas**,
-~3.8× the complete ECDSA claim. The lattice check the floor omits is estimated
-separately: **≈16.7M gas (13.93M measured arithmetic + 2.76M calculated hash),
-≈55.6% of the adopted 30M-gas comparison threshold** (it *fits* under that
-threshold, but is economically absurd and needs SHAKE256 + a negacyclic NTT in EVM
-bytecode — it is *not* a hard block-limit failure). That's the
-honest frontier: the *swap works end-to-end*, but cheap on-chain verification needs future
-blockchain support (a precompile or a zero-knowledge proof) — the same wall the
-"poqeth" project hit for basic post-quantum signatures.
+claim paths are not symmetric: the ECDSA path settles by cryptographic verification in a
+native precompile, at **75,751 gas**. The LAS path has two entrypoints. `claimLAS` measures
+only an unconditional **floor** — publishing the 6,720-byte signature (calldata + one
+keccak) with **no** lattice check — **289,930 gas**, ~3.8× the complete ECDSA claim.
+`claimLASVerified` performs the **complete** lattice verification: we **built it**
+(`evm/src/LASVerifier.sol`, reusing audited ZKNox primitives, validated end-to-end against
+the C reference — it *accepts* the real adapted signature and *rejects* tampered bytes) and
+**measured it at 56,538,682 gas**, ~746× the classical claim. That is now a *measured*
+number, superseding an earlier ≈16.7M op-count estimate; it is larger because a complete
+verifier also runs a real Solidity SHAKE256, unpacks `z`, and packs its inputs. At ≈56.5M
+it **exceeds Ethereum's per-transaction gas cap (16,777,216, EIP-7825)**, so it cannot run
+as one mainnet transaction (though it would fit inside a block). That's the honest frontier:
+the *swap works end-to-end* AND on-chain verification is now real, validated code — but a
+*deployable* path needs a precompile, a zero-knowledge proof, or an optimistic (Naysayer)
+scheme — the same wall the "poqeth" project charted for basic post-quantum signatures.
 
 Plus: rejection sampling accepts ~**37%** of attempts (~2.7 tries/signature),
 which matches the textbook prediction `(1 − κ/γ)^{2048} ≈ e⁻¹` — a small sign the
@@ -277,8 +280,10 @@ implementation behaves exactly as theory says.
 - **Simplified scheme.** We omit Dilithium's compression tricks (hints) so the
   adaptor algebra stays clean; the cost is larger signatures (~40% over the
   paper's optimised estimate). Honest trade for a transparent research artefact.
-- **On-chain verification** is not yet feasible natively (Section 7c) — flagged as
-  future work, not hidden.
+- **On-chain verification** is now **implemented and validated** natively (Section 7c),
+  but at ≈56.5M gas it exceeds Ethereum's per-transaction gas cap — so a *deployable* path
+  (a precompile, a zk proof, or an optimistic/Naysayer scheme) is future work, flagged not
+  hidden.
 - **Privacy & constant-time** hardening are out of scope.
 
 ---

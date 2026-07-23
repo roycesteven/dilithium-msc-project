@@ -341,22 +341,25 @@ differs, so a gas report isolates the price of post-quantum **on-chain**:
 - **Classical** (`claimClassical`): the adapted ECDSA signature is verified
   natively with the `ecrecover` precompile — how a real EVM ECDSA-adaptor swap
   settles.
-- **Post-quantum** (`claimLAS`): the adapted LAS signature is a **real 6720-byte
+- **Post-quantum** (`claimLAS`, floor): the adapted LAS signature is a **real 6720-byte
   packed lattice signature** (D3 set; `evm/test/las_sig.bin`, exported deterministically
-  from the C implementation by `ref/test/export_packed`). Native lattice
-  verification (NTT + SHAKE256 over the packed signature) is **prohibitively
-  expensive** (quantified in §8.4.1), so this charges only the unavoidable on-chain
-  **floor** — the whole claim transaction minus lattice verification — a strict
-  *lower bound* on the true settlement cost.
+  from the C implementation). This entrypoint charges only the unavoidable on-chain
+  **floor** — the whole claim transaction minus lattice verification — a strict *lower
+  bound* on the true settlement cost. A **second entrypoint `claimLASVerified` performs
+  the COMPLETE native lattice verification** (NTT + SHAKE256 + norm + challenge check):
+  now **implemented** (`evm/src/LASVerifier.sol`), validated end-to-end against the C
+  reference, and **measured** (§8.4.1) — no longer only estimated.
 
-**Measured gas (EVM gas is deterministic — not machine-dependent):**
+**Measured gas (EVM gas is deterministic — not machine-dependent; `via_ir`):**
 
 | Step | Classical (ECDSA-adaptor) | Post-quantum (LAS) |
 |---|---:|---:|
-| fund | 180,285 | 139,568 |
-| **claim** | **75,709** (settle + full ecrecover verify) | **289,930** (settle only; *no* lattice verify) |
-| refund | 39,330 | 39,330 |
-| deploy | 715,257 | — |
+| fund | 182,853 | 142,246 |
+| **claim** | **75,751** (settle + full ecrecover verify) | **289,930** (`claimLAS`, floor: settle only, *no* lattice verify) |
+| refund | 39,439 | 39,439 |
+
+The **full verified claim** (`claimLASVerified`, complete `base_verify`) is **56,538,682
+gas** — see reading 3.
 
 The two `claim` cells are not like-for-like: the classical 75,709 is the whole
 `claimClassical` transaction *including* ECDSA `ecrecover` verification, while the LAS
@@ -370,19 +373,23 @@ gas/non-zero byte, 4 gas/zero). Three readings for the report:
    own, *more than the entire classical claim* (75,709 gas, verification included).
 2. **Even the floor is ~3.8× the full classical claim** (289,930 vs 75,709), and
    that floor does **no** cryptographic verification.
-3. **True on-chain LAS verification is prohibitively expensive, but — estimated —
-   does *not* by itself exceed the adopted 30 M-gas comparison threshold.** An earlier
-   draft asserted that native verification "would dwarf the block gas limit". That
-   claim was never quantified, and on inspection it is an *overstatement*: the EVM has
-   native `mulmod`/`addmod` opcodes (8 gas each), so the modular arithmetic, while
-   large, is not astronomically so. Section 8.4.1 replaces the assertion with an actual
-   experiment (`evm/test/LASVerifyCost.t.sol`). The corrected, evidenced finding is
-   that one native `base_verify` — the simplified-Dilithium ordinary verification the
-   adapted LAS signature settles into — costs an estimated **≈16.7 M gas** (13.93 M
-   measured arithmetic + 2.76 M calculated SHAKE256): roughly **220× the entire
-   classical claim** and **≈55.6 % of the adopted 30 M-gas comparison threshold**. It
-   is *economically absurd* and an *implementation nightmare* (it needs
-   SHAKE256 and a negacyclic NTT in EVM bytecode), which is exactly why on-chain PQ
+3. **True on-chain LAS verification is prohibitively expensive and exceeds the
+   per-transaction gas cap — now MEASURED, not estimated.** An earlier draft asserted
+   native verification "would dwarf the block gas limit"; that was never quantified and
+   was an *overstatement* (the EVM has native `mulmod`/`addmod` at 8 gas each). It was
+   first replaced by an op-count *estimate* (`evm/test/LASVerifyCost.t.sol`: ≈16.7 M gas
+   = 13.93 M measured arithmetic + 2.76 M calculated SHAKE256). That estimate is now
+   **superseded by a complete, working verifier**: `claimLASVerified` runs the real
+   `base_verify` — the simplified-Dilithium ordinary verification the adapted LAS
+   signature settles into — and is **measured at 56,538,682 gas**, roughly **746× the
+   entire classical claim** (75,751). The measured figure is larger than the estimate
+   because a complete verifier also pays for the real Solidity SHAKE256, the BitPack₁₉
+   unpacking of `z`, canonical packing, and ABI/memory overhead. At ≈56.5 M gas it
+   **exceeds Ethereum's EIP-7825 per-transaction gas cap (16,777,216 = 2²⁴) by ≈3.4×**,
+   so it **cannot execute as one mainnet transaction** — though it *would* fit inside a
+   block (30 M target / 60 M max); the binding limit is the per-transaction cap, not the
+   block. It is *economically absurd* and an *implementation burden* (SHAKE256 and a
+   negacyclic NTT in EVM bytecode), which is exactly why on-chain PQ
    verification wants a dedicated precompile or a succinct (zk) proof of verification
    (the poqeth precedent for *basic* PQ) — but the honest barrier is **cost and
    missing precompiles, not the hard block ceiling**. The *protocol* works

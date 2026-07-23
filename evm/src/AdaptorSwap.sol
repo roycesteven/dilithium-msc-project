@@ -1,14 +1,23 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.25;
 
-/// @title AdaptorSwap — a signature-scheme-agnostic HTLC escrow for adaptor-signature
-///        atomic swaps, used to measure the *on-chain* cost of settling a swap with a
-///        CLASSICAL (ECDSA) adapted signature vs a POST-QUANTUM (LAS) adapted signature.
+import {LASVerify} from "./LASVerifier.sol";
+
+/// @title AdaptorSwap — a signature-scheme-agnostic SCRIPTLESS escrow for adaptor-
+///        signature atomic swaps, used to measure the *on-chain* cost of settling a swap
+///        with a CLASSICAL (ECDSA) adapted signature vs a POST-QUANTUM (LAS) adapted
+///        signature.
 ///
-/// An adaptor swap settles by publishing the *adapted* signature on-chain, where it is
-/// verified as an ORDINARY signature (the adaptor magic is off-chain). This contract
-/// models exactly that final settlement step, with two claim entrypoints differing
-/// only in the on-chain verification of the published signature:
+/// This is the SCRIPTLESS model, NOT a Hash-Time-Locked Contract: there is no hash-
+/// preimage check, and the chain never sees or checks the adaptor statement Y. On-chain,
+/// the contract only verifies the published *adapted* signature as an ORDINARY signature;
+/// the adaptor mechanism (Y and witness extraction) is entirely off-chain. Atomicity
+/// comes from that publication — a counterparty holding the pre-signature extracts the
+/// witness y off-chain once the adapted signature is on-chain — while the timeout is only
+/// a timelock for refund. The LAS paper (2020/845 §4.1) distinguishes classical HTLCs
+/// from this scriptless, adaptor-signature version. This contract models exactly that
+/// final settlement step, with claim entrypoints differing only in the on-chain
+/// verification of the published signature:
 ///
 ///   • claimClassical — the adapted ECDSA signature is verified with the native
 ///     secp256k1 precompile `ecrecover`. This is cheap and is what a real EVM
@@ -29,6 +38,18 @@ pragma solidity ^0.8.20;
 ///
 /// fund*/refund are identical for both schemes, so a gas report attributes any
 /// difference to the verification step alone.
+///
+/// TWO-TIMEOUT REFUND RULE (paper 2020/845 §4.1). A cross-chain swap has two legs, each an
+/// escrow created by a fund* call and reclaimable by `refund`. The paper mandates
+/// ASYMMETRIC timelocks t2 < t1: the leg CLAIMED FIRST — the coin the witness holder u1
+/// redeems, which reveals y — must carry the SHORTER timeout t2, and the leg CLAIMED
+/// SECOND — redeemed by the reacting party u2 — the LONGER timeout t1. The gap (t1 − t2)
+/// is u2's safety window: even if u1 claims the first leg at the last moment (≈ t2), u2
+/// still has until t1 > t2 to extract y and claim the second leg, so a stalling u1 cannot
+/// take one coin while the other's refund window lapses. This contract holds each leg
+/// independently (the two legs live on two chains), so enforcing t2 < t1 across legs is
+/// the funders' responsibility; `refund` itself only enforces a single leg's own timeout.
+/// See test/AdaptorSwap.t.sol::test_TwoTimeoutSafetyWindow.
 contract AdaptorSwap {
     enum State { EMPTY, OPEN, CLAIMED, REFUNDED }
 
@@ -40,6 +61,7 @@ contract AdaptorSwap {
         bytes32       claimHash;     // the pre-authorised claim "transaction" digest
         uint64        timeout;       // unix time after which the payer may refund
         State         state;
+        bytes32       lasContext;    // verified LAS: commitment to (A', t, M) fixed at fund time
     }
 
     uint256 public nextId;
@@ -59,18 +81,36 @@ contract AdaptorSwap {
     ) external payable returns (uint256 id) {
         require(msg.value > 0, "no value");
         id = nextId++;
-        swaps[id] = Swap(msg.sender, beneficiary, msg.value, funderSigner, claimHash, timeout, State.OPEN);
+        swaps[id] = Swap(msg.sender, beneficiary, msg.value, funderSigner, claimHash, timeout, State.OPEN, bytes32(0));
         emit Funded(id, msg.sender, beneficiary, msg.value);
     }
 
-    /// Escrow funds whose claim is gated on publishing the ADAPTED LAS signature bytes.
+    /// Escrow funds whose claim is gated on publishing the ADAPTED LAS signature bytes
+    /// (the FLOOR path — claimLAS does not verify).
     function fundLAS(
         address payable beneficiary,
         uint64  timeout
     ) external payable returns (uint256 id) {
         require(msg.value > 0, "no value");
         id = nextId++;
-        swaps[id] = Swap(msg.sender, beneficiary, msg.value, address(0), bytes32(0), timeout, State.OPEN);
+        swaps[id] = Swap(msg.sender, beneficiary, msg.value, address(0), bytes32(0), timeout, State.OPEN, bytes32(0));
+        emit Funded(id, msg.sender, beneficiary, msg.value);
+    }
+
+    /// Escrow funds for the VERIFIED LAS path. `lasContext` binds the verification
+    /// context at fund time: it MUST equal keccak256(abi.encode(AprimeHat, t, message)),
+    /// the public parameters A' (NTT domain), the funder public key t, and the claim
+    /// message the adapted signature is over. claimLASVerified re-derives this from its
+    /// arguments and rejects any mismatch, so a claimer cannot substitute their own
+    /// pk/params/message to force a bogus signature to verify.
+    function fundLASVerified(
+        address payable beneficiary,
+        uint64  timeout,
+        bytes32 lasContext
+    ) external payable returns (uint256 id) {
+        require(msg.value > 0, "no value");
+        id = nextId++;
+        swaps[id] = Swap(msg.sender, beneficiary, msg.value, address(0), bytes32(0), timeout, State.OPEN, lasContext);
         emit Funded(id, msg.sender, beneficiary, msg.value);
     }
 
@@ -97,7 +137,36 @@ contract AdaptorSwap {
         sw.beneficiary.transfer(sw.amount);
     }
 
-    /// Payer reclaims the escrow after the timeout if no one claimed.
+    /// Settle with FULL, numerically-correct on-chain LAS verification (LASVerify.verify,
+    /// reproducing ref/basesig.c base_verify): decode + norm gate + w' = z_top + A'·z_bot
+    /// − c·t + SHAKE256 challenge re-derivation. `AprimeHat` (the public parameters A' in
+    /// NTT domain), `t` (funder public key), and `message` are supplied by the claimer but
+    /// bound to the funded swap: they MUST hash to the `lasContext` committed at fund time,
+    /// so no substitution is possible. MEASURED at ≈56.5M gas — it exceeds EIP-7825's
+    /// per-transaction gas cap (16,777,216) by ≈3.4×, so it is not executable as a single
+    /// mainnet transaction and stands as concrete evidence that THIS evaluated native
+    /// Solidity LAS verifier (D3) needs a precompile, a Naysayer/optimistic scheme, or a
+    /// succinct proof to be on-chain-viable (cf. poqeth, 2025/091). Wired here to prove the
+    /// settlement path is numerically complete and securely bound, not to deploy.
+    function claimLASVerified(
+        uint256 id,
+        bytes calldata sigPacked,
+        uint256[][] calldata AprimeHat,
+        uint256[][] calldata t,
+        bytes calldata message
+    ) external {
+        Swap storage sw = swaps[id];
+        require(sw.state == State.OPEN, "not open");
+        require(keccak256(abi.encode(AprimeHat, t, message)) == sw.lasContext, "context mismatch");
+        require(LASVerify.verify(AprimeHat, t, message, sigPacked), "LAS verify failed");
+        sw.state = State.CLAIMED;
+        emit Claimed(id, keccak256(sigPacked));
+        sw.beneficiary.transfer(sw.amount);
+    }
+
+    /// Payer reclaims the escrow after THIS leg's own timeout if no one claimed. In a
+    /// two-leg swap the funders must set t2 < t1 across the legs (see the contract header);
+    /// this function enforces only the single timeout stored on the leg being refunded.
     function refund(uint256 id) external {
         Swap storage sw = swaps[id];
         require(sw.state == State.OPEN, "not open");

@@ -39,17 +39,21 @@ costs a lot more; hashing costs gas per byte; and so on. When you send a transac
 you pay for the total gas it burns.
 
 Crucially, Ethereum bundles transactions into **blocks**, and **each block has a
-hard ceiling on total gas** — the **block gas limit**. For years this was
-**30,000,000 gas** (it was nudged up toward ~36,000,000 during 2025). The rule is
-simple and absolute:
+hard ceiling on total gas** — the **block gas limit** (a 30M target / 60M maximum after
+the 2025 Pectra upgrade; for years it was a flat 30M). There is also a **second, tighter
+ceiling that a single transaction cannot exceed**: since **EIP-7825** (Pectra) any one
+transaction may use at most **16,777,216 gas (2²⁴)**, regardless of how much room the
+block has. The rule is simple and absolute:
 
-> If a single operation would cost **more gas than fits in one block**, it
-> **physically cannot run on-chain.** No amount of money fixes it — there is nowhere
-> to put it.
+> If a single operation would cost **more gas than the per-transaction cap** (or than
+> fits in one block), it **physically cannot run on-chain as one transaction.** No amount
+> of money fixes it — there is nowhere to put it.
 
-So "exceeds the block gas limit" is not a vague complaint about cost. It is a
-specific, *falsifiable* claim that means **"this is impossible on Ethereum, full
-stop."** That strength is exactly why it needs evidence.
+So "exceeds the gas limit" is not a vague complaint about cost. It is a specific,
+*falsifiable* claim that means **"this is impossible on Ethereum as a single transaction,
+full stop."** That strength is exactly why it needs evidence. (As §5 shows with a *measured*
+verifier, the real binding ceiling for LAS turns out to be the **per-transaction cap**, not
+the block limit.)
 
 ---
 
@@ -120,9 +124,17 @@ fact about the EVM:
 
 So gas depends only on **the structure of the work** (how many of each instruction),
 not on the **values**. A program with the identical instruction mix has the
-identical gas cost. We're measuring **price**, and price is value-blind. (Producing a
-numerically *correct* on-chain verifier is real engineering we list as future work —
-but it would cost the *same* gas, which is all we need here.)
+identical gas cost. We're measuring **price**, and price is value-blind.
+
+> **UPDATE (2026-07-23): the numerically-correct on-chain verifier was subsequently
+> built** — `evm/src/LASVerifier.sol` (`library LASVerify`), assembled from the vendored
+> ZKNox ETHDILITHIUM primitives (SHAKE256, NTT, SampleInBall) and validated end-to-end
+> against the C reference: it *accepts the real adapted signature and rejects tampered
+> bytes* (`evm/test/LASVerifier.t.sol`, 6/6). So the figure below is **no longer an
+> estimate** — see the measured row in §5. The real verifier costs **more** than the
+> op-budget probe, because the probe reproduced only the polynomial-arithmetic op *count*
+> and omitted what a correct verifier must also pay for: the real Solidity SHAKE256
+> permutations, the bit-unpacking of `z`, canonical packing, and ABI/memory overhead.
 
 To make sure the optimiser couldn't secretly delete my loops as "useless work," I
 fed the arrays from a runtime input and returned a value that depends on the result.
@@ -141,33 +153,43 @@ benchmarks, these numbers don't wobble run-to-run.
 
 | What | Gas | How we got it |
 |---|---:|---|
-| The polynomial calculation (`A·ẑ − c·t`) | **13.93 million** | **measured on the EVM** (op-count reproduction) |
-| The SHAKE256 hash (~92 permutations) | ~2.76 million | calculated (~30k gas each, a model) |
-| **One native LAS verification (estimate)** | **≈ 16.7 million** | measured arithmetic + calculated hash |
-| For comparison: a normal (classical) signature check | 75,709 | measured |
-| For comparison: the block gas limit | 30,000,000 | Ethereum |
+| **REAL: one full on-chain LAS verified settlement (`claimLASVerified`)** | **56,538,682** | **measured on the EVM** — the complete verifier `LASVerify.verify` |
+| For comparison: a complete classical claim (`claimClassical`, incl. `ecrecover`) | 75,751 | measured |
+| For comparison: **EIP-7825 per-transaction gas cap** | **16,777,216** | Ethereum (2²⁴) |
+| For comparison: the block gas limit (target / max) | 30M / 60M | Ethereum (post-Pectra) |
+| *historical op-budget estimate (superseded by the measured row above):* | | |
+| — the polynomial calculation (`A·ẑ − c·t`) | 13.93 million | measured (op-count reproduction) |
+| — the SHAKE256 hash (~92 permutations) | ~2.76 million | calculated (~30k gas each, a model) |
+| — one native LAS verification (estimate) | ≈ 16.7 million | measured arithmetic + calculated hash |
 
-Read those last rows together:
+Read those rows together:
 
-- **≈ 16.7 million gas is about 55% of a 30-million-gas block.** It is *big*, but it
-  **fits inside a block.**
-- **It is about 220× the entire classical claim.** Two things to be precise about here.
-  The ≈16.7M is the estimated cost of verifying the *adapted LAS signature* with
-  `base_verify` (Algorithm 1) — that verification **is** the simplified-Dilithium
-  ordinary signature check the adaptor settles into. The 75,709-gas baseline is the
-  *whole* classical `claimClassical` transaction — settlement **plus** its ECDSA
-  `ecrecover` verification, not the ~3k-gas `ecrecover` opcode on its own. So even that
-  one lattice-verification step costs ~220× a complete ECDSA-settled claim.
+- **The real, measured cost is ≈ 56.5 million gas** — the whole `claimLASVerified`
+  transaction, which runs the *complete* `base_verify` (Algorithm 1): the
+  simplified-Dilithium ordinary-signature check the adaptor settles into. This is the
+  honest headline; the ≈16.7M figure was an op-budget *lower-bound estimate* and is now
+  superseded. The real number is larger because it also pays for the real Solidity
+  SHAKE256, the bit-unpacking of `z`, canonical packing, and ABI/memory overhead.
+- **It is ≈ 746× the entire classical claim.** The 75,751-gas baseline is the *whole*
+  classical `claimClassical` transaction — settlement **plus** its ECDSA `ecrecover`
+  verification (which runs in a native precompile, not in EVM bytecode). LAS runs the
+  entire verifier in Solidity bytecode, hence the gulf.
+- **It exceeds the per-transaction gas cap, not the block.** Since EIP-7825 (Pectra), a
+  single Ethereum transaction may use at most **16,777,216 gas (2²⁴)**. At ≈56.5M,
+  `claimLASVerified` is **≈3.4× that cap**, so it **cannot execute as one mainnet
+  transaction.** It *would* fit inside a block (30M target / 60M max) — so the binding
+  ceiling is the **per-transaction cap**, not the block limit.
 
 So the original claim — *"exceeds the block gas limit / impossible"* — was an
-**overstatement, and I retracted it.** The truthful version is sharper and more
-interesting:
+**overstatement, and I retracted it.** The measured, precise version:
 
-> Native LAS verification on Ethereum is **prohibitively expensive** (≈220× a complete
-> classical claim) and **a real engineering burden** (you'd have to hand-build
-> SHAKE256 and the NTT in EVM code) — **but it does *not* exceed the block gas
-> limit.** The barrier is **economics and missing built-in support**, *not* a hard
-> physical ceiling.
+> The evaluated native **Solidity** LAS verifier (D3) is **prohibitively expensive**
+> (≈746× a complete classical claim, and a real engineering burden — a hand-built
+> SHAKE256 and NTT in EVM code) and **exceeds EIP-7825's per-transaction gas cap**, so it
+> is not executable as a single mainnet transaction — though it does *not* exceed the
+> block gas limit. The barrier is **economics, a per-transaction budget, and missing
+> built-in support**, *not* an impossibility. This is a result for *this* D3 LAS
+> instance in Solidity, not a claim about all post-quantum verification.
 
 That distinction matters: "impossible" and "possible but absurdly expensive" lead to
 different conclusions about the future. Our recommendation (use a dedicated

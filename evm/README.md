@@ -15,10 +15,26 @@ verification differs, so the gas difference is attributable to the signature:
 - `claimLAS` — the adapted LAS signature is a real 6720-byte packed lattice
   signature (`test/las_sig.bin`, exported from the C implementation at the D3 set,
   wire form `c_tilde ‖ BitPack(z)`; 6684 non-zero / 36 zero bytes → 107,088 gas of
-  calldata alone). A *numerically-correct* native lattice verifier (NTT + SHAKE256) in
-  the EVM is left as future work, so this charges only the unavoidable on-chain
-  **floor**: calldata for the 6720 bytes + one keccak256 pass. The reported gas is a
-  strict **lower bound** on the true settlement cost.
+  calldata alone). This entrypoint charges only the unavoidable on-chain **floor**:
+  calldata for the 6720 bytes + one keccak256 pass, **no** lattice verification. The
+  reported gas (289,930) is a strict **lower bound** on the true settlement cost.
+- `claimLASVerified` — settles with a **numerically-complete native lattice verifier**
+  (`src/LASVerifier.sol`, `library LASVerify`), which reproduces `ref/basesig.c
+  base_verify` exactly: BitPack₁₉ z-decode + norm gate, `SampleInBall`, `w' = z_top +
+  A'·z_bot − c·t`, and the `SHAKE256(pack(t)‖pack(w')‖M)` challenge re-derivation. It is
+  assembled from the **vendored ZKNox ETHDILITHIUM primitives** (`lib/zknox/`: SHAKE256,
+  NTT, SampleInBall — MIT, reused as-is) and validated end-to-end against C golden
+  vectors: it **ACCEPTS the real adapted signature** and rejects tampered bytes
+  (`test/LASVerifier.t.sol`, 6/6). `A'` (NTT domain) and `t` are bound to the swap by a
+  `keccak256(abi.encode(A', t, M))` commitment fixed at fund time, so no substitution is
+  possible. **Measured: ≈56.5M gas** for the verified claim. A single Ethereum
+  transaction is capped at **16,777,216 gas (2²⁴) by EIP-7825**, so this claim — ≈3.4×
+  that cap — **cannot execute as one mainnet transaction**; the binding limit is the
+  per-transaction gas cap, not the block (currently 30M target / 60M max, which 56.5M
+  would fit). This is now a *measured* figure and **supersedes** the earlier op-budget
+  *estimate* (≈16.7M, below): that estimate already included a ~2.76M *calculated* SHAKE
+  model, but omitted the real Solidity SHAKE256 cost, the z-decode, packing, ABI/memory
+  and settlement overhead.
 
 The *cost* of that native verification — the thing the floor leaves out — is then
 measured separately by `src/LASVerifyCost.sol` + `test/LASVerifyCost.t.sol`, a probe
@@ -33,6 +49,16 @@ block, but NOT over the block gas limit**. This *quantifies and corrects* the ea
 (and an engineering burden), not literally impossible. The probe is parametrised
 (`verifyArithLevel2/3/5`); D3 is the headline, D2/D5 only show how the cost grows with
 the parameter set. See `docs/LAS.md §8.4.1`.
+
+## Two-timeout refund rule (paper §4.1)
+The `fund*`/`refund` escrow is the swap's refund timelock. A cross-chain swap has two such
+legs, and the paper mandates asymmetric timeouts **`t2 < t1`**: the leg **claimed first**
+(the coin the witness holder redeems, revealing `y`) carries the shorter `t2`; the leg
+**claimed second** carries the longer `t1`, so the reacting party keeps a `t1 − t2` safety
+window. `refund` enforces only a single leg's own timeout — the cross-leg ordering is the
+funders' responsibility — and this is exercised by
+`test/AdaptorSwap.t.sol::test_TwoTimeoutSafetyWindow` (u1 redeems the first leg at ≈`t2`,
+and the second leg is shown to remain claimable, not yet refundable, until `t1`).
 
 ## Reproduce
 ```sh
@@ -54,10 +80,22 @@ forge-std/network install is required.
 ## Result (this machine; gas is deterministic for the EVM, not machine-dependent)
 | Step | Classical (ECDSA-adaptor) | Post-quantum (LAS) |
 |---|---:|---:|
-| fund | 180,285 | 139,568 |
-| **claim** | **75,709** (settle + full ecrecover verify) | **289,930** (settle only; **no** lattice verify) |
-| refund | 39,330 | 39,330 |
-| deploy AdaptorSwap | 715,257 | — |
+| fund | 182,853 | 142,246 |
+| **claim** | **75,751** (settle + full ecrecover verify) | **289,930** (`claimLAS`, floor: settle only, **no** lattice verify) |
+| refund | 39,439 | 39,439 |
+
+**Full-verification comparison (apples-to-apples).** Both paths settle *and* fully verify
+the published signature; the difference is that ECDSA verifies via the native `ecrecover`
+**precompile**, whereas LAS runs entirely in **Solidity bytecode**. Classical
+`claimClassical` (75,751) already performs complete verification; its post-quantum
+equivalent is `claimLASVerified` = **56,538,682 gas** — a real, validated,
+numerically-complete on-chain LAS `base_verify` (norm check, `w' = Az − ct`
+reconstruction, and challenge verification). So the like-for-like price of on-chain
+verification for this D3 LAS instance is **75,751 → 56,538,682 gas (≈746×)**. That figure
+exceeds EIP-7825's per-transaction gas cap (16,777,216) by ≈3.4×, so it cannot execute as
+a single mainnet transaction — measured evidence that **the evaluated native Solidity LAS
+verifier (D3)** needs a precompile, an optimistic (Naysayer) scheme, or a succinct proof
+to be on-chain-viable.
 
 The two `claim` cells are not like-for-like: the classical 75,709 *includes* full
 ecrecover verification, whereas the LAS 289,930 is the whole `claimLAS` transaction —
