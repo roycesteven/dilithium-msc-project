@@ -1,0 +1,175 @@
+\chapter{Evaluation and reflection}
+\label{ch:evaluation}
+
+This chapter evaluates the work against the objectives set out in \cref{sec:aims} and
+reflects on the soundness of the approach, building on the validity discussion in
+\cref{sec:res-validity}.
+
+\section{Evaluation against the objectives}
+\label{sec:eval-objectives}
+
+Each objective from \cref{sec:aims} is judged in turn against the evidence in
+\cref{ch:results}.
+
+\begin{enumerate}
+  \item \emph{Literature and scheme selection --- met.} The adaptor signature was
+        selected as a representative exotic scheme with high blockchain value, and
+        LAS \cite{esgin2020post} as the design with the clearest path from a standardised
+        lattice signature, following the survey's framing of the gap
+        \cite{buser2023survey} and the supervisor's steer toward the simplest viable
+        construction.
+  \item \emph{Additive implementation --- met.} The lattice core is reused
+        byte-for-byte (\cref{tab:reuse}); zero upstream functions were modified, which
+        the two-branch diff makes auditable. The adaptor layer, wire encoding, and
+        application are new code.
+  \item \emph{Validation --- met.} Functional, serialization, tamper, and
+        known-answer tests all pass (\cref{sec:res-correctness}), establishing the
+        adaptor contract, wire-encoding integrity, and reproducibility. Beyond the
+        single-codebase tests, an independent Rust implementation reproduces the wire
+        format and the pinned known-answer digest byte-for-byte
+        (\cref{sec:res-rust}), the strongest correctness evidence available short of
+        a formal proof.
+  \item \emph{Fair benchmarking --- met.} The primary comparison holds algorithm,
+        parameters, and primitives fixed between LAS and its own simplified base, so the
+        primary comparison isolates the adaptor overhead --- the base-signature path
+        against the LAS adaptor path, every operation timed independently. The adaptor
+        overhead is reported per operation as the headline (\cref{tab:overhead-l3}),
+        at \emph{both} declared measurement boundaries --- the core tier and the
+        packed tier --- so no reported speed reflects an undocumented
+        benchmarking scope (\cref{sec:benchmethod}); the absolute timings and a
+        parameter-sensitivity check across four settings are shown
+        as supporting context (\cref{fig:timing,fig:overhead}, exact
+        mean\,$\pm$\,standard-deviation figures in \cref{tab:timing}); computation and
+        communication are separated and broken down by component. The optimised CRYSTALS-Dilithium
+        reference is included only as context (not algorithm-matched), and a classical
+        ECDSA adaptor as a functionality-matched ``price of post-quantum'' baseline,
+        each with the standard five metrics. The measurements themselves are defended
+        two ways: every run gates on a directly counted rejection rate matching its
+        closed-form prediction, and the Rust port re-measures the same operations
+        under a different compiler and an independent statistical harness, reproducing
+        every relative conclusion (\cref{tab:rust}).
+  \item \emph{Atomic-swap demonstration --- met at the simulated-ledger level.} An
+        end-to-end two-party, two-chain swap settles both legs and asserts
+        unspendability before adaptation (\cref{sec:res-app}). A full deployment on a
+        live testnet was not in scope; instead, on a local EVM both an on-chain settlement
+        floor and a \emph{complete}, validated native LAS verification are measured
+        (\cref{sec:res-app}; \cref{tab:onchain}), the latter at approximately 56.5 million
+        gas --- above the
+        EIP-7825 per-transaction gas cap, and thus concrete evidence for why deployment
+        needs a precompile, a succinct proof, or an optimistic verification scheme.
+\end{enumerate}
+
+\section{Challenges encountered during the modification}
+\label{sec:eval-challenges}
+
+Turning the existing simplified-Dilithium base into LAS was conceptually a small
+change --- four added operations and one extra term in a hash --- but four
+challenges consumed most of the engineering effort, and a fifth arose later in taking
+the verifier on-chain. Stating them explicitly is part of explaining how the results
+were produced.
+
+\begin{enumerate}
+  \item \textbf{The rejection-bound budget.} The single most delicate line of the
+        scheme is PreSign's bound $\gamma-\kappa-1$ (\cref{eq:signbound}). Setting it
+        one looser, at the base scheme's $\gamma-\kappa$, produces an implementation
+        that passes every local test --- pre-signatures pre-verify, extraction works
+        --- yet whose \emph{adapted} signatures can exceed the basic verifier's bound
+        and fail. The failure is silent, probabilistic, and appears two operations
+        away from its cause, so it had to be prevented by reasoning through the norm
+        budget ($\inftynorm{y}\le 1$, hence
+        $\inftynorm{\hat z + y}\le\gamma-\kappa$) rather than discovered by testing.
+  \item \textbf{The reference's optimisations fight the adaptor identity.} The
+        adaptor mechanism rests on the exact identity $A\vecz - c\,t = w + Y$. The
+        reference implementation deliberately breaks exactness for compactness ---
+        Power2Round, the hint vector, and high/low-bit decomposition all discard
+        low-order information. Understanding \emph{which} optimisations had to be
+        disabled, and why the identity fails with each of them enabled, was a
+        prerequisite to a working PreVerify at all; it is also why the simplified
+        scheme is a design requirement rather than a convenience
+        (\cref{sec:impl}).
+  \item \textbf{Living inside another scheme's namespace.} The reused reference
+        globally defines single-letter parameter macros --- its \texttt{N} is the ring
+        degree and its \texttt{K} the module rank --- while LAS needs its own,
+        different dimensions with the same natural names. An innocently named LAS
+        constant silently inherits the wrong value through the preprocessor instead
+        of failing to compile. This forced a strict naming discipline (prefixed LAS
+        parameters, a documented C--Rust--paper name map) and explains some
+        otherwise-surprising names in the code.
+  \item \textbf{Benchmarking a variable-time scheme fairly.} Rejection sampling makes
+        sign-class timings heavy-tailed, and two early artefacts showed how easily
+        this misleads: an acceptance rate first estimated from a timing ratio was
+        biased (it implied $\approx\!23\%$ where direct counting gives
+        \rejAccBase\%), and the two languages' base signing paths initially used
+        different norm-check strategies (full-scan versus early-exit) \emph{inside}
+        the timed loop --- functionally identical, KAT-invisible, but a work-profile
+        asymmetry that biased the primary overhead comparison. Both lessons are now
+        institutionalised in the methodology: attempts are counted directly and
+        gated against theory (\cref{sec:benchmethod}), the drivers mirror each other
+        line-for-line, and every measurement boundary is declared.
+  \item \textbf{Verifying on-chain, and why the reference is the only arbiter.} Porting
+        \texttt{base\_verify} to Solidity to \emph{measure} the on-chain gas
+        (\cref{sec:res-app}) surfaced a trap sharper than any arithmetic bug. The public
+        matrix $A'$ is stored by the reference \emph{already in the NTT domain} --- its
+        uniform sampler emits the transformed matrix directly --- and a first verifier
+        transformed it a second time. The error was \emph{self-consistent}: the recomputed
+        commitment $w'$ and the recomputed challenge hash agreed \emph{with each other}, so
+        every primitive checked in isolation passed, yet the whole disagreed with the C
+        reference, and was found only by an end-to-end check that recomputes the challenge
+        digest against the reference's. The lesson shaped the port's whole testing method:
+        for a cryptographic re-implementation, a shared cross-implementation golden value is
+        the only reliable arbiter and internal self-consistency is \emph{not} correctness,
+        which is why the verifier was validated in stages against vectors exported from the
+        C code --- each primitive (SHAKE256, the NTT, SampleInBall, the response decode),
+        then the assembled verifier, must match --- rather than merely made to run. A
+        second, related mismatch --- the reference NTT is Montgomery-domain whereas the
+        reused third-party transform is normal-domain, so the two cannot share transformed
+        data --- had to be resolved by recovering the normal-domain matrix before reuse.
+        One caveat belongs with the figure: those reused primitives come from an
+        experimental, self-described non-production library, so the reported gas is a
+        faithful cost of \emph{a} numerically-correct verifier, not an endorsement of that
+        library for deployment.
+\end{enumerate}
+
+A sixth, cross-cutting difficulty --- reproducing the C scheme byte-for-byte in Rust,
+down to sampler subtleties such as how each language's uniform sampler discards
+rejected blocks --- is discussed with the cross-validation results
+(\cref{sec:res-rust}); the pinned known-answer digest was the tool that turned that
+difficulty into a mechanical, checkable process.
+
+\section{Reflection on the approach}
+\label{sec:eval-reflection}
+
+Five reflections stand out. First, reuse was the right strategy: building additively
+on a standardised reference made the implementation tractable in the available time
+and produced an unusually strong trust story, since the security-critical arithmetic
+is exactly the audited upstream code. Second, the deepest challenges
+(\cref{sec:eval-challenges}) were not the adaptor mathematics but its
+\emph{interactions} --- with the base scheme's norm budget, with the reference's
+optimisations, and with its namespace --- which is a useful general lesson about
+modifying cryptographic reference code. Third, measuring the rejection rate
+directly, by counting attempts, corrected an earlier figure that had been estimated
+from a biased timing ratio --- a concrete lesson in preferring direct measurement to a
+proxy; that lesson is now institutionalised as a gate every benchmark run must pass.
+Fourth, the second implementation repaid its cost: because the reuse strategy
+transfers across languages, the Rust port was comparatively cheap to build, yet it
+upgraded the correctness argument from ``one tested codebase'' to ``two independent
+codebases that agree byte-for-byte'' and exposed the timing conclusions to an
+independent harness. Finally, confronting the fairness problem honestly, by stating
+every scheme's
+parameters and comparing LAS to a parameter-matched base, strengthens the conclusions
+rather than weakening them: the size gap to optimised Dilithium is shown to be a
+packing gap, not a dimension gap.
+
+\section{Limitations}
+\label{sec:eval-limitations}
+
+The limitations follow from the validity discussion in \cref{sec:res-validity} and
+are restated compactly here. There is no formal security analysis of the chosen
+parameter set, by design. The modulus is $q\approx 2^{23}$ rather than the
+$2^{24}$ specified in \cite{esgin2020post}. The witness is extracted exactly,
+sidestepping the relaxed,
+noisy-witness setting of \cite{esgin2020post} and the witness growth it implies for long channels. And the
+simplified, hint-free scheme produces larger keys and signatures than optimised
+Dilithium. Each of these is a deliberate scope choice that trades cryptographic
+optimisation for a transparent, testable artefact, and each maps directly to an item
+of future work in \cref{sec:future}.

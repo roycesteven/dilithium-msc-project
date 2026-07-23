@@ -1,0 +1,154 @@
+\chapter{Introduction}
+\label{ch:intro}
+
+This chapter sets out why post-quantum exotic signatures matter for blockchains, what
+this project builds, and how the dissertation is organised. It first establishes the
+context, then reviews the necessary literature, then states the aim and objectives.
+
+\section{Context and motivation}
+\label{sec:motivation}
+
+Public blockchains authorise every transaction with a digital signature, almost
+always the Elliptic Curve Digital Signature Algorithm (ECDSA), Schnorr, or
+Boneh--Lynn--Shacham (BLS) signatures over an elliptic curve. The security of all three rests
+on the hardness of the elliptic-curve discrete logarithm problem. Shor's algorithm
+solves that problem in polynomial time on a sufficiently large quantum computer
+\cite{shor1999polynomial}, so a future quantum adversary could forge signatures and spend other
+users' funds. ``Post-quantum'' (PQ) cryptography replaces these assumptions with
+problems believed hard even for quantum computers, such as those over lattices.
+
+The U.S. National Institute of Standards and Technology (NIST) has standardised
+\emph{basic} PQ signatures, notably ML-DSA (the Module-Lattice-Based Digital Signature
+Algorithm), derived from CRYSTALS-Dilithium
+\cite{1274601,ducas2018crystals}. A basic signature authenticates a message and nothing
+more. Blockchains, however, depend on \emph{exotic} signatures that add functionality
+on top of a basic scheme: multi-signatures, aggregate signatures, threshold
+signatures, and \emph{adaptor signatures}. These exotic schemes are what give
+blockchains scalable consensus, compact multi-party authorisation, and advanced
+payment protocols. A recent survey documents that, while basic PQ signatures are
+maturing, their exotic counterparts largely lack efficient, practical implementations
+in a blockchain setting \cite{buser2023survey}. Closing that gap --- turning paper designs
+into tested, measured, blockchain-facing artefacts --- is the problem this project
+addresses.
+
+This dissertation focuses on the \emph{adaptor signature} as its exotic scheme. An
+adaptor signature ties the act of publishing a valid signature to the simultaneous
+revelation of a secret witness \cite{poelstra2017,aumayr2021generalized}. This single primitive
+underpins ``scriptless'' atomic swaps and payment-channel networks: it lets two
+parties exchange assets, even across different chains, so that either both transfers
+happen or neither does, without trusted intermediaries or heavy on-chain scripts. In
+the classical setting these constructions are mature and deployed; in the
+post-quantum setting they are mostly paper-only, which makes the adaptor signature a
+representative and high-value exotic scheme to implement and evaluate.
+
+The adaptor signature is best understood through the history of the atomic swap.
+A cross-chain exchange first relied on custodial intermediaries; hash-time-locked
+contracts (HTLCs) removed the custodian by locking both transfers under the
+preimage of one hash, so that claiming one leg reveals the preimage that unlocks
+the other. HTLCs, however, need explicit on-chain script support, place the
+common hash on both chains --- publicly linking the two legs and, in multi-hop
+payments, every hop of a path --- and enlarge the transactions. The adaptor
+signature answers these limitations \cite{poelstra2017,aumayr2021generalized}: it moves the
+lock \emph{into the signature itself}, so settlement transactions look like
+ordinary single-signer payments --- no script beyond signature verification,
+no on-chain linkage between the legs, no extra on-chain bytes --- while
+retaining the atomicity guarantee, and revealing the witness only to the
+counterparty who holds the matching pre-signature.
+
+\section{Subject area and related work}
+\label{sec:relatedwork}
+
+This section reviews only the work needed to understand the problem and justify the
+approach; it is deliberately not an exhaustive survey, in line with the report
+guidance to favour depth over breadth.
+
+\paragraph{Exotic signatures for post-quantum blockchains.}
+The motivating survey \cite{buser2023survey} catalogues exotic signature families ---
+multi-, aggregate, threshold, ring, blind, and adaptor signatures --- and identifies
+the shortage of efficient PQ-secure blockchain implementations as an open challenge.
+This project contributes one such implementation and evaluation.
+
+\paragraph{Lattice signatures and Dilithium.}
+CRYSTALS-Dilithium is a lattice signature in the ``Fiat--Shamir with aborts'' family
+\cite{ducas2018crystals,lyubashevsky2012lattice}. Its security reduces to the Module Learning With
+Errors (Module-LWE) and Module Short Integer Solution (Module-SIS) problems. The
+scheme samples a masked commitment, derives a challenge by hashing, computes a
+response, and \emph{rejects and retries} when the response would leak the secret ---
+the rejection-sampling step that characterises the family. Its reference
+implementation provides the polynomial arithmetic, number-theoretic transform (NTT),
+and SHAKE-based sampling (SHAKE is an extendable-output hash function) that this
+project reuses.
+
+\paragraph{Adaptor signatures.}
+Adaptor signatures were introduced informally as ``scriptless scripts''
+\cite{poelstra2017} and later formalised, with applications to channels and swaps
+\cite{aumayr2021generalized}. The abstraction adds four algorithms to a base signature ---
+\textsc{PreSign}, \textsc{PreVerify}, \textsc{Adapt}, \textsc{Extract} --- relative
+to a hard relation $(Y,y)$: a pre-signature can be \emph{adapted} into a full
+signature by anyone who knows the witness $y$, and publishing the full signature lets
+anyone holding the pre-signature \emph{extract} $y$. Anonymous multi-hop locks
+generalise this to payment paths \cite{malavolta2019anonymous}.
+
+\paragraph{Post-quantum adaptor signatures.}
+Esgin, Ersoy and Erkin proposed LAS, a lattice-based adaptor signature built on a
+Dilithium-style base, together with PQ payment-channel constructions
+\cite{esgin2020post}. LAS is the design this project implements. Their work is primarily
+theoretical (definitions, a construction, and security proofs); a practical,
+benchmarked, blockchain-facing implementation is what this dissertation contributes.
+Recent work such as poqeth studies how PQ primitives can be integrated and costed on
+Ethereum \cite{kysil2025poqeth}, providing a template for the on-chain side.
+
+\paragraph{Classical baseline.}
+The natural answer to ``what does post-quantum cost'' is a comparison with a
+\emph{classical adaptor} signature --- not merely plain ECDSA. Mature ECDSA-adaptor
+implementations exist \cite{secp256k1zkp}; this project benchmarks against one, and
+against Dilithium itself, taking care (see \cref{ch:methodology}) to state security
+parameters explicitly so that the comparisons are fair.
+
+\section{Project category, aim, and objectives}
+\label{sec:aims}
+
+\paragraph{Category.}
+This is a \emph{systems implementation and evaluation} project grounded in existing
+research, not a proposal of a new cryptographic protocol. Its emphasis, following the
+project brief, is practical implementation and benchmarking rather than theoretical
+design. The contribution is a reliable, tested, and benchmarked realisation of an
+existing exotic scheme (LAS, \cite{esgin2020post}) and its demonstration in a blockchain
+atomic-swap application --- comparable in spirit to releasing a working signature
+library rather than inventing a new scheme. A genuinely new research question would
+require adding new functionality on top of adaptor signatures (for example,
+functional adaptor signatures); that is noted as future work but is out of scope here.
+
+\paragraph{Aim.}
+To implement and evaluate a post-quantum exotic signature scheme --- a lattice-based
+adaptor signature reusing the CRYSTALS-Dilithium primitives --- and to demonstrate it
+in a post-quantum blockchain atomic-swap application.
+
+\paragraph{Objectives.}
+\begin{enumerate}
+  \item Review post-quantum and exotic-signature literature sufficiently to justify
+        selecting the adaptor signature LAS and the Dilithium primitives.
+  \item Implement LAS additively on the Dilithium reference, reusing the lattice core
+        unchanged and adding the adaptor operations and a byte-level wire encoding.
+  \item Validate correctness and robustness through functional, serialization,
+        tamper, and known-answer tests, including cross-validation by a second,
+        independent implementation checked against the same known-answer digest.
+  \item Benchmark LAS fairly --- at explicitly stated parameters, with repeated runs
+        and reported variance --- against a simplified Dilithium baseline at
+        identical parameters, the NIST-optimised Dilithium, and a classical
+        ECDSA-adaptor baseline, separating computation from communication cost and
+        reporting key-generation time, public-key size, signature size, signing time,
+        and verification time.
+  \item Demonstrate an end-to-end post-quantum atomic swap using the implementation
+        --- following the protocol of \cite{esgin2020post} verbatim, including its
+        zero-knowledge proof of knowledge $\pi$ --- and discuss its feasibility.
+\end{enumerate}
+
+\section{Dissertation structure}
+\label{sec:structure}
+
+\Cref{ch:methodology} describes the methods: the LAS construction, the reuse-based
+implementation strategy, the testing approach, and the benchmarking methodology.
+\Cref{ch:results} reports the test and benchmark results and discusses their
+validity. \Cref{ch:evaluation} evaluates the work against the objectives and reflects
+on the approach. \Cref{ch:conclusion} concludes and proposes future work.

@@ -1,0 +1,98 @@
+% =====================================================================
+%  MSc Dissertation — master file
+%  Lattice-based adaptor signatures on CRYSTALS-Dilithium primitives
+%  Class: muthesis (University of Manchester, Dept. of Computer Science)
+%  Build:  make            (see Makefile) — pdflatex + bibtex + pdflatex x2
+% =====================================================================
+%
+% Structure follows research_writing_guide.md (rubric-aligned):
+%   Abstract / Contents / 1 Introduction (incl. brief lit review) /
+%   2 Methodology / 3 Results and discussion / 4 Evaluation and Reflection /
+%   5 Conclusion & future work / References.
+% NOTE (deliberate): there is NO separate Background chapter — the literature
+% review folds into the Introduction, as the assessment rubric requires.
+%
+% Use `singlespace` ONLY for drafts; remove before submission.
+\documentclass[12pt,MSc]{muthesis}
+
+% ---- packages (keep minimal; add as needed) ----
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}        % \toprule \midrule \bottomrule
+\usepackage{array}           % ragged-right fixed-width columns (see \newcolumntype L below)
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned wrapping column
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{listings}        % code snippets (appendix only)
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}        % \cref / \Cref — load AFTER hyperref
+
+% number figures/tables/equations by section (rubric requirement)
+\numberwithin{equation}{chapter}
+\numberwithin{figure}{chapter}
+\numberwithin{table}{chapter}
+
+% a lightweight TODO marker so gaps are visible while drafting
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+% \textcite for the numeric plain style: renders as a plain \cite.
+% (biblatex-style name+cite is unavailable under \bibliographystyle{plain}.)
+\providecommand{\textcite}[1]{\cite{#1}}
+
+% consistent maths shorthands used across chapters
+\newcommand{\Rq}{R_q}
+\newcommand{\vecz}{\mathbf{z}}
+\newcommand{\inftynorm}[1]{\lVert #1 \rVert_\infty}
+
+% Measured benchmark numbers -- AUTO-GENERATED from the latest evidence run by
+% scripts/gen_report_data.py (via scripts/sync_report.sh). Chapters must cite
+% measured values ONLY through these macros (and the generated/tab_*.tex
+% tables), never as hand-typed literals, so the report always reflects the
+% latest run.
+\input{generated/benchmacros}
+
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,
+        columns=fullflexible,showstringspaces=false}
+
+\begin{document}
+
+% ---------- front matter ----------
+% Official project title (confirmed by supervisor). The specific instantiation
+% (a lattice adaptor signature on Dilithium, demonstrated in an atomic swap) is
+% stated in the abstract and introduction.
+\title{Implementing Post-Quantum Secure\\
+       Exotic Signature Schemes in Blockchains}
+\author{Royce Steven}
+\stuid{\TODO{student id --- only you can fill this}}
+\submitdate{2026}
+
+\beforeabstract          % title page, table of contents, list of tables/figures
+\prefacesection{Abstract}
+\abstracttitle
+\input{chapters/00-abstract}
+\afterabstract           % declaration + copyright pages (auto-generated)
+
+% (Acknowledgements, if wanted, go here — out of scope for now)
+
+\afterpreface            % begin body; continue page numbering; running headings
+
+% ---------- body chapters ----------
+\input{chapters/01-introduction}
+\input{chapters/02-methodology}
+\input{chapters/03-results}
+\input{chapters/04-evaluation}
+\input{chapters/05-conclusion}
+
+% ---------- back matter ----------
+\appendix
+\input{chapters/A-appendix}
+
+\bibliographystyle{plain}      % numeric [1] style; ships with TeX Live (IEEEtran.bst not installed)
+\bibliography{refs}
+
+\end{document}
