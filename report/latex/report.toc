@@ -39,23 +39,23 @@
 \contentsline {chapter}{\numberline {3}Results and discussion}{29}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Correctness and robustness}{29}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Computation cost}{30}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Cross-implementation check: C implementation versus Rust port}{33}{section.3.3}%
-\contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{35}{section.3.4}%
+\contentsline {section}{\numberline {3.3}Cross-implementation check: C implementation versus Rust port}{34}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{36}{section.3.4}%
 \contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{37}{subsection.3.4.1}%
 \contentsline {section}{\numberline {3.5}Application demonstration}{38}{section.3.5}%
 \contentsline {section}{\numberline {3.6}Threats to validity}{40}{section.3.6}%
-\contentsline {chapter}{\numberline {4}Evaluation and reflection}{47}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Evaluation against the objectives}{47}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Challenges encountered during the modification}{48}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Reflection on the approach}{51}{section.4.3}%
-\contentsline {section}{\numberline {4.4}Limitations}{51}{section.4.4}%
-\contentsline {chapter}{\numberline {5}Conclusion and future work}{52}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Conclusions}{52}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Future work}{53}{section.5.2}%
-\contentsline {chapter}{\numberline {A}Code listings and reproduction}{54}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{54}{section.A.1}%
-\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{56}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Full benchmark data tables}{57}{section.A.3}%
-\contentsline {section}{\numberline {A.4}Auditing the reuse claim}{57}{section.A.4}%
-\contentsline {section}{\numberline {A.5}Selected code listing: Adapt and Extract}{58}{section.A.5}%
-\contentsline {chapter}{Bibliography}{61}{appendix*.30}%
+\contentsline {chapter}{\numberline {4}Evaluation and reflection}{48}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Evaluation against the objectives}{48}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Challenges encountered during the modification}{49}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Reflection on the approach}{52}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Limitations}{52}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Conclusion and future work}{53}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Conclusions}{53}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Future work}{54}{section.5.2}%
+\contentsline {chapter}{\numberline {A}Code listings and reproduction}{55}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{55}{section.A.1}%
+\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{57}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Full benchmark data tables}{58}{section.A.3}%
+\contentsline {section}{\numberline {A.4}Auditing the reuse claim}{58}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Selected code listing: Adapt and Extract}{59}{section.A.5}%
+\contentsline {chapter}{Bibliography}{62}{appendix*.30}%

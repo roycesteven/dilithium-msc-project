@@ -695,8 +695,13 @@ def rejection_model(p):
 
 def emit_tab_rejstats(out, meta, params, rej, gates_c, gates_rust, gates_crit):
     """Rejection-sampling statistics at the target setting: the closed-form
-    geometric model against every measured sample (C distribution sample with
-    percentiles, C timed-run gate, Rust driver gate, Criterion gate)."""
+    geometric model's mean-attempts / acceptance prediction against every
+    measured sample (C distribution sample, C timed-run gate, Rust driver gate,
+    Criterion gate).  Only Mean and Acceptance are reported here because they are
+    the two quantities every source records; the per-call dispersion (geometric
+    SD, percentiles, and the sampled maxima) is shown in the companion
+    distribution figure (\\cref{fig:rejdist}) rather than duplicated as mostly
+    empty table columns."""
     model = rejection_model(params[TARGET])
     csv_row = {"Sign": rej[TARGET]["Base Sign"],
                "PreSign": rej[TARGET]["LAS PreSign"]}
@@ -705,28 +710,24 @@ def emit_tab_rejstats(out, meta, params, rej, gates_c, gates_rust, gates_crit):
                 "rust/fips204-las/bench_levels_rust.log (rejection gate lines)",
                 "rust/fips204-las/bench_las_criterion.log (rejection gate lines)"],
                meta)
-    b += "\\begin{tabular}{@{}llrrrrrr@{}}\n  \\toprule\n"
-    b += ("  Operation & Source (calls) & Mean & SD & Accept. & $p_{50}$ & "
-          "$p_{95}$ & Max \\\\\n  \\midrule\n")
+    b += "\\begin{tabular}{@{}llrr@{}}\n  \\toprule\n"
+    b += "  Operation & Source (calls) & Mean & Accept. \\\\\n  \\midrule\n"
     for op in ("Sign", "PreSign"):
-        acc, exp, sd, p50, p95 = model[op]
+        acc, exp = model[op][0:2]
         c_calls, c_att, c_acc = gates_c[op]
         r_calls, r_att, r_acc = gates_rust[op]
         k_calls, k_att, k_acc = gates_crit[op]
         r = csv_row[op]
-        b += ("  %s & geometric model, \\cref{eq:rejacc} & %.3f & %.2f & "
-              "%.1f\\%% & %d & %d & --- \\\\\n"
-              % (op, exp, sd, 100.0 * acc, p50, p95))
-        b += ("     & C driver, distribution sample (2000) & %.3f & --- & "
-              "%.1f\\%% & %s & %s & %s \\\\\n"
-              % (float(r["avg_attempts"]), float(r["acceptance_pct"]),
-                 r["p50"], r["p95"], r["max"]))
-        b += ("     & C driver, timed-run gate (%d) & %.3f & --- & "
-              "%.1f\\%% & --- & --- & --- \\\\\n" % (c_calls, c_att, c_acc))
-        b += ("     & Rust driver, timed-run gate (%d) & %.3f & --- & "
-              "%.1f\\%% & --- & --- & --- \\\\\n" % (r_calls, r_att, r_acc))
-        b += ("     & Rust Criterion, gate (%d) & %.3f & --- & "
-              "%.1f\\%% & --- & --- & --- \\\\\n" % (k_calls, k_att, k_acc))
+        b += ("  %s & geometric model, \\cref{eq:rejacc} & %.3f & %.1f\\%% \\\\\n"
+              % (op, exp, 100.0 * acc))
+        b += ("     & C driver, distribution sample (2000) & %.3f & %.1f\\%% \\\\\n"
+              % (float(r["avg_attempts"]), float(r["acceptance_pct"])))
+        b += ("     & C driver, timed-run gate (%d) & %.3f & %.1f\\%% \\\\\n"
+              % (c_calls, c_att, c_acc))
+        b += ("     & Rust driver, timed-run gate (%d) & %.3f & %.1f\\%% \\\\\n"
+              % (r_calls, r_att, r_acc))
+        b += ("     & Rust Criterion, gate (%d) & %.3f & %.1f\\%% \\\\\n"
+              % (k_calls, k_att, k_acc))
         if op == "Sign":
             b += "  \\midrule\n"
     b += "  \\bottomrule\n\\end{tabular}\n"

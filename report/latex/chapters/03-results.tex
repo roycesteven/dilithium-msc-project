@@ -166,13 +166,14 @@ the measurement boundary is drawn \cite{riou2026apples}.
   \caption[Rejection-sampling statistics: model vs measurement]{Rejection-sampling
   statistics at the target setting \emph{Simplified Dilithium-III}: the closed-form
   geometric model of \cref{eq:rejacc} against every measured sample. ``Mean'' is
-  attempts per call; ``SD'' is the geometric standard deviation
-  $\sigma=E\sqrt{1-1/E}$ (per-call dispersion is recorded only as the percentiles
-  $p_{50}$/$p_{95}$ and the maximum, from the C driver's 2000-call distribution
-  sample); ``Accept.''\ is the per-attempt acceptance rate. The C driver is the
-  implementation of record; the Rust protocol driver and the Criterion harness
-  are the independent samples of \cref{sec:rustport}. Every measured
-  row passes the five-standard-error validity gate of \cref{sec:benchmethod}.}
+  attempts per call and ``Accept.''\ is the per-attempt acceptance rate --- the two
+  quantities every source records, and the ones the model predicts. The per-call
+  \emph{dispersion} (the geometric standard deviation $\sigma=E\sqrt{1-1/E}$, the
+  medians and 95th percentiles, and the sampled maxima) is shown in the companion
+  distribution of \cref{fig:rejdist} rather than repeated here. The C driver is the
+  implementation of record; the Rust protocol driver and the Criterion harness are
+  the independent samples of \cref{sec:rustport}. Every measured row passes the
+  five-standard-error validity gate of \cref{sec:benchmethod}.}
   \label{tab:rejstats}
   \small
   \input{generated/tab_rejstats}

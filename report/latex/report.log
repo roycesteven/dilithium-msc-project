@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  23 JUL 2026 21:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  24 JUL 2026 00:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -960,42 +960,39 @@ Package pdftex.def Info: figures/fig_timing.pdf  used on input line 106.
 (pdftex.def)             Requested size: 412.56496pt x 244.97496pt.
  [31]
 (./generated/tab_rejstats.tex)
-Overfull \hbox (24.93938pt too wide) in paragraph at lines 8--179
- [][] 
- []
-
-<figures/fig_rejection_dist.pdf, id=575, 554.54675pt x 340.02834pt>
+<figures/fig_rejection_dist.pdf, id=577, 554.54675pt x 340.02834pt>
 File: figures/fig_rejection_dist.pdf Graphic file (type pdf)
 <use figures/fig_rejection_dist.pdf>
-Package pdftex.def Info: figures/fig_rejection_dist.pdf  used on input line 183
+Package pdftex.def Info: figures/fig_rejection_dist.pdf  used on input line 184
 .
 (pdftex.def)             Requested size: 412.56496pt x 252.97638pt.
-[32] [33] (./generated/tab_rust.tex) [34]
-<figures/fig_criterion_presign.pdf, id=601, 963.6pt x 542.025pt>
+ [32] [33] (./generated/tab_rust.tex) [34]
+<figures/fig_criterion_presign.pdf, id=603, 963.6pt x 542.025pt>
 File: figures/fig_criterion_presign.pdf Graphic file (type pdf)
 <use figures/fig_criterion_presign.pdf>
 Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line 
-281.
+282.
 (pdftex.def)             Requested size: 412.56496pt x 232.06546pt.
- (./generated/tab_complete_target.tex) [35] [36] (./generated/tab_classical.tex
-) [37] [38] [39]
-<figures/fig_onchain.pdf, id=656, 697.76921pt x 222.11629pt>
+
+[35] (./generated/tab_complete_target.tex) [36] [37]
+(./generated/tab_classical.tex) [38] [39]
+<figures/fig_onchain.pdf, id=658, 697.76921pt x 222.11629pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
-Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 545.
+Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 546.
 (pdftex.def)             Requested size: 412.56496pt x 131.33215pt.
-)
-(./chapters/04-evaluation.tex [40] [41 <./figures/fig_timing.pdf>] [42 <./figur
-es/fig_rejection_dist.pdf>] [43 <./figures/fig_criterion_presign.pdf>] [44]
-[45] [46 <./figures/fig_onchain.pdf>]
+) (./chapters/04-evaluation.tex
+[40] [41] [42 <./figures/fig_timing.pdf>] [43 <./figures/fig_rejection_dist.pdf
+>] [44 <./figures/fig_criterion_presign.pdf>] [45] [46] [47 <./figures/fig_onch
+ain.pdf>]
 Chapter 4.
-[47
+[48
 
-] [48] [49] [50]) (./chapters/05-conclusion.tex [51]
+] [49] [50] [51]) (./chapters/05-conclusion.tex [52]
 Chapter 5.
-[52
+[53
 
-]) (./chapters/A-appendix.tex [53]
+]) (./chapters/A-appendix.tex [54]
 Appendix A.
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
@@ -1007,16 +1004,16 @@ Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 23.
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/lmtt/b/n' tried instead on input line 28.
- [54
+ [55
 
-] [55]
+] [56]
 Overfull \hbox (90.57379pt too wide) in paragraph at lines 82--90
 \T1/lmr/m/n/12 (-20) The pseu-docode be-low is the pro-ce-dure both pro-to-col 
 drivers im-ple-ment (\T1/lmtt/m/n/12 ref/test/bench_levels.c
  []
 
-[56]
-<figures/fig_overhead.pdf, id=1047, 543.34494pt x 348.09785pt>
+[57]
+<figures/fig_overhead.pdf, id=1053, 543.34494pt x 348.09785pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
 Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 144.
@@ -1033,12 +1030,12 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[57] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+[58] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [58 <./figures/fig_overhead.pdf>] [59]) (./report.bbl [60] [61
+) [59 <./figures/fig_overhead.pdf>] [60]) (./report.bbl [61] [62
 
 ]
 Underfull \hbox (badness 4366) in paragraph at lines 93--97
@@ -1046,7 +1043,7 @@ Underfull \hbox (badness 4366) in paragraph at lines 93--97
 , Mi-lan Bit-
  []
 
-[62]) [63] (./report.aux)
+[63]) [64] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1055,8 +1052,8 @@ Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 53CFB5435862624ACE69CCA38FCEC7E6;7449.
  ) 
 Here is how much of TeX's memory you used:
- 28147 strings out of 476182
- 513396 string characters out of 5795595
+ 28148 strings out of 476182
+ 513403 string characters out of 5795595
  2175975 words of memory out of 5000000
  48950 multiletter control sequences out of 15000+600000
  733147 words of font info for 321 fonts, out of 8000000 for 9000
@@ -1078,10 +1075,10 @@ c/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/
 texmf/fonts/type1/public/lm/lmtt12.pfb></usr/share/texmf/fonts/type1/public/lm/
 lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/
 msbm10.pfb>
-Output written on report.pdf (63 pages, 727669 bytes).
+Output written on report.pdf (64 pages, 727493 bytes).
 PDF statistics:
- 1381 PDF objects out of 1440 (max. 8388607)
- 992 compressed objects within 10 object streams
- 279 named destinations out of 1000 (max. 500000)
+ 1387 PDF objects out of 1440 (max. 8388607)
+ 996 compressed objects within 10 object streams
+ 280 named destinations out of 1000 (max. 500000)
  95574 words of extra memory for PDF output out of 106986 (max. 10000000)
 
