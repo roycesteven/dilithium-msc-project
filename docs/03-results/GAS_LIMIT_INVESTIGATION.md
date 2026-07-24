@@ -39,11 +39,10 @@ costs a lot more; hashing costs gas per byte; and so on. When you send a transac
 you pay for the total gas it burns.
 
 Crucially, Ethereum bundles transactions into **blocks**, and **each block has a
-hard ceiling on total gas** — the **block gas limit** (a 30M target / 60M maximum after
-the 2025 Pectra upgrade; for years it was a flat 30M). There is also a **second, tighter
-ceiling that a single transaction cannot exceed**: since **EIP-7825** (Pectra) any one
-transaction may use at most **16,777,216 gas (2²⁴)**, regardless of how much room the
-block has. The rule is simple and absolute:
+hard ceiling on total gas** — the **block gas limit**, currently **60 million** (raised by
+validator vote in late 2025; for years it was ~30M). There is also a **second, tighter
+ceiling that a single transaction cannot exceed**: **EIP-7825** caps any one transaction at
+**16,777,216 gas (2²⁴)**, regardless of how much room the block has. The rule is simple and absolute:
 
 > If a single operation would cost **more gas than the per-transaction cap** (or than
 > fits in one block), it **physically cannot run on-chain as one transaction.** No amount
@@ -156,7 +155,7 @@ benchmarks, these numbers don't wobble run-to-run.
 | **REAL: one full on-chain LAS verified settlement (`claimLASVerified`)** | **56,538,682** | **measured on the EVM** — the complete verifier `LASVerify.verify` |
 | For comparison: a complete classical claim (`claimClassical`, incl. `ecrecover`) | 75,751 | measured |
 | For comparison: **EIP-7825 per-transaction gas cap** | **16,777,216** | Ethereum (2²⁴) |
-| For comparison: the block gas limit (target / max) | 30M / 60M | Ethereum (post-Pectra) |
+| For comparison: the block gas limit | 60M | Ethereum (validator-set, late 2025) |
 | *historical op-budget estimate (superseded by the measured row above):* | | |
 | — the polynomial calculation (`A·ẑ − c·t`) | 13.93 million | measured (op-count reproduction) |
 | — the SHAKE256 hash (~92 permutations) | ~2.76 million | calculated (~30k gas each, a model) |
@@ -174,10 +173,10 @@ Read those rows together:
   classical `claimClassical` transaction — settlement **plus** its ECDSA `ecrecover`
   verification (which runs in a native precompile, not in EVM bytecode). LAS runs the
   entire verifier in Solidity bytecode, hence the gulf.
-- **It exceeds the per-transaction gas cap, not the block.** Since EIP-7825 (Pectra), a
+- **It exceeds the per-transaction gas cap, not the block.** Under EIP-7825, a
   single Ethereum transaction may use at most **16,777,216 gas (2²⁴)**. At ≈56.5M,
   `claimLASVerified` is **≈3.4× that cap**, so it **cannot execute as one mainnet
-  transaction.** It *would* fit inside a block (30M target / 60M max) — so the binding
+  transaction.** Its raw demand is below the 60-million block gas limit — so the binding
   ceiling is the **per-transaction cap**, not the block limit.
 
 So the original claim — *"exceeds the block gas limit / impossible"* — was an

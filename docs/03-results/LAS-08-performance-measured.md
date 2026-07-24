@@ -386,8 +386,8 @@ gas/non-zero byte, 4 gas/zero). Three readings for the report:
    because a complete verifier also pays for the real Solidity SHAKE256, the BitPack₁₉
    unpacking of `z`, canonical packing, and ABI/memory overhead. At ≈56.5 M gas it
    **exceeds Ethereum's EIP-7825 per-transaction gas cap (16,777,216 = 2²⁴) by ≈3.4×**,
-   so it **cannot execute as one mainnet transaction** — though it *would* fit inside a
-   block (30 M target / 60 M max); the binding limit is the per-transaction cap, not the
+   so it **cannot execute as one mainnet transaction** — its raw demand is below the
+   60-million block gas limit, so the binding limit is the per-transaction cap, not the
    block. It is *economically absurd* and an *implementation burden* (SHAKE256 and a
    negacyclic NTT in EVM bytecode), which is exactly why on-chain PQ
    verification wants a dedicated precompile or a succinct (zk) proof of verification

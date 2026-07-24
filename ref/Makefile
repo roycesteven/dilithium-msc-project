@@ -267,6 +267,14 @@ test/export_verify_vector: test/export_verify_vector.c serialize.c serialize.h b
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
 	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
 
+# Exports a PURE DIGEST-FAULT vector (tampered c_tilde, trace consistent with the tampered
+# challenge) for the optimistic Naysayer verifier test. Reuses pp_normal.bin/t.bin/msg.bin
+# from export_verify_vector (run that first).
+test/export_naysayer_vectors: test/export_naysayer_vectors.c serialize.c serialize.h basesig.c basesig.h relation.c relation.h las.c las.h setup.c setup.h las_types.h poly.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
+
 # Classical adaptor baseline (objectives B2.ii). Requires the vendored library:
 #   git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
 #       ../third_party/secp256k1-zkp
@@ -381,4 +389,5 @@ clean:
 	rm -f nistkat/PQCgenKAT_sign5
 	rm -f test/export_packed
 	rm -f test/export_verify_vector
+	rm -f test/export_naysayer_vectors
 	rm -f test/bench_classical
