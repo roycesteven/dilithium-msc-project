@@ -1,0 +1,37 @@
+# las-stark — hash-based FRI-STARK proof for on-chain LAS verification (eprint 2020/845).
+#
+# STANDALONE crate: it is NOT a member of the KAT-locked `fips204` package
+# (rust/fips204-las), so the LAS Rust port's KAT gate and MSRV 1.70 are entirely
+# untouched by anything here. This crate depends on a modern toolchain (Winterfell).
+#
+# Post-quantum posture: Winterfell is a transparent, hash-based FRI-STARK. Its
+# security rests on collision resistance of the hash (Blake3) only -- NO elliptic
+# curves, NO pairings, NO Groth16. This is the "fully post-quantum on-chain
+# verification path" the project's on-chain story requires (evm/README.md,
+# docs/LAS.md §8.4): native LAS verify is ~56.5M gas (> EIP-7825's 16.77M per-tx
+# cap); a succinct proof is the documented fix, and it must stay PQ.
+[package]
+name = "las-stark"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Hash-based FRI-STARK (post-quantum, no pairings) proof of the LAS on-chain verification relation (eprint 2020/845)."
+publish = false
+
+[dependencies]
+# Transparent hash-based STARK prover+verifier (FRI). Pinned to the audited 0.13
+# line whose exact API this crate is written against.
+winterfell = "0.13"
+
+[dev-dependencies]
+
+[[bin]]
+name = "prove"
+path = "src/bin/prove.rs"
+
+[[bin]]
+name = "verify"
+path = "src/bin/verify.rs"
+
+[profile.release]
+opt-level = 3

@@ -70,6 +70,32 @@ pub use crate::las_types::{Statement, Witness};
 
 const SHAKE256_RATE: usize = 136;
 
+/// `apply_a` — evaluate the public linear map `Y = A v` on a caller-supplied
+/// relation vector.
+///
+/// ADDITIVE, READ-ONLY, KAT-NEUTRAL (dilithium-msc-project, Stage 2): this
+/// introduces no new mathematics — it is a thin public wrapper over the existing
+/// private `amul`, which `gen_seed` already uses — and no existing code path is
+/// changed, so the pinned KAT digest is unaffected. There is deliberately **no
+/// C twin**: `ref/` has no caller, and adding one would put an unused function
+/// in the implementation of record.
+///
+/// WHY IT EXISTS. `A` is expanded into `PublicParams` in the NTT domain and is
+/// `pub(crate)`, so an external consumer cannot see the matrix. Stage 2's
+/// Groth16 backend must encode the relation `A r = t` as R1CS constraints with
+/// `A`'s coefficients as *public constants*, which means it has to recover the
+/// matrix. Because `v -> A v` is linear, evaluating it on the unit vectors
+/// recovers `A` column by column — this function is what makes that possible
+/// without exposing internals or duplicating `expand_a` outside the crate.
+///
+/// Callers get the canonical `[0,Q)` representative, exactly as `gen_seed` does.
+pub fn apply_a(
+    pp: &PublicParams,   // paper A: pp = A = [I | A']
+    v: &Witness,         // paper relation vector (need NOT be ternary)
+) -> Statement {         // paper t' = A v
+    Statement(amul(pp, v.as_relation_vector()))
+}
+
 /// `gen` — the paper's `Gen(1^lambda) -> (Y, y) in R_A` (Definition 3;
 /// Section 3: "runs exactly as KeyGen").  Random path: fresh seed, then the
 /// deterministic body.  Math-twin of `basesig::keygen` with relation types

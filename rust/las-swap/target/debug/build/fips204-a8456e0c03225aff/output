@@ -1,0 +1,2 @@
+cargo:rerun-if-env-changed=LAZER_DIR
+cargo:rerun-if-env-changed=LAZER_DEP_PREFIX
