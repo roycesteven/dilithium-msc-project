@@ -5,9 +5,10 @@ This chapter explains how the project work was done: the construction implemente
 the reuse-based implementation strategy, the testing regime, the independent Rust
 port that cross-validates the implementation, and --- importantly for
 a fair evaluation --- the benchmarking methodology and the parameter choices that
-make the comparisons defensible. The atomic-swap demonstration and its simulated-ledger
-model are methodologically light and are described together with their results in
-\cref{sec:res-app}.
+make the comparisons defensible. The narrated atomic-swap demonstration is
+methodologically light and is described together with its results in
+\cref{sec:res-app}; the \emph{measured} application study on a UTXO ledger, which
+carries real experimental design, is set out in \cref{sec:stage2method}.
 
 \section{The LAS construction}
 \label{sec:construction}
@@ -178,15 +179,18 @@ new NTT table and is treated as future work (\cref{sec:future}).
 
 A deployable scheme exchanges \emph{bytes}, not in-memory structs. A bit-packed wire
 encoding and a \emph{validating} decoder were implemented, together with a
-verify-from-bytes entry point (\texttt{las\_verify\_packed}) that an on-chain verifier
+verify-from-bytes entry point (\texttt{base\_verify\_packed}) that an on-chain verifier
 would consume. The packed field widths (used for the size analysis in
 \cref{ch:results}) are: public key / statement at 23 bits/coefficient, ternary secret
-/ witness at 2 bits/coefficient, and the response $z$ at 18 bits/coefficient.
+/ witness at 2 bits/coefficient, and the response $z$ at a width derived from the
+parameter set --- 18 bits at the LAS-2020/845 reference and Simplified Dilithium-II
+settings, and 19 bits at Simplified Dilithium-III (the target) and -V, since the field
+must hold $2(\gamma-\kappa)$ and $\gamma$ grows with $\kappa\,d\,(n+\ell)$.
 
 A verifier cannot trust its input, so the decoder is \emph{defensive}: it rejects a
 public-key coefficient $\ge q$, the invalid ternary code, and any response field
-outside the 18-bit band. The encoder is symmetric, rejecting a non-ternary secret or
-a response exceeding $\gamma-\kappa$. This is the realistic interface a
+outside the parameter set's band. The encoder is symmetric, rejecting a non-ternary
+secret or a response exceeding $\gamma-\kappa$. This is the realistic interface a
 Solidity, precompile, or zero-knowledge-circuit verifier would expose, and it is the
 object the tamper test in \cref{sec:res-correctness} attacks.
 
@@ -571,6 +575,136 @@ Rather than reporting only total object sizes, each key and signature is decompo
 into its components (challenge $c$, response $z$, statement $Y$, witness $y$,
 pre-signature) so that the \emph{cause} of any size difference can be identified.
 This breakdown is presented in \cref{ch:results}.
+
+\section{Application methodology: the UTXO swap study}
+\label{sec:stage2method}
+
+The narrated demonstration of \cref{sec:res-app} shows the protocol \emph{runs}. A
+second, separately designed study measures what it \emph{costs} and attributes that
+cost to a component. Because its conclusions depend entirely on what is held fixed,
+its design is stated here rather than alongside its results.
+
+\paragraph{The venue, and why it is modelled rather than deployed.}
+The construction \cite{esgin2020post} states its applications over ``an Unspent
+Transaction Output (UTXO)-based blockchain like Bitcoin \emph{where the signature
+algorithm is replaced with a lattice-based signature scheme}'', with spending
+conditions built from signature checks and timing conditions. That sentence is
+load-bearing, and it is implemented literally: a UTXO ledger was built in which an
+output carries an amount plus a spending condition (a signature check under a public
+key, with an optional timelocked refund branch), and in which \emph{the signature
+algorithm is a parameter}. One ledger implementation therefore serves every
+configuration below, so any measured difference between them is the cryptography and
+not the ledger.
+
+This is a model, not a node: no peer-to-peer layer, no mempool policy, no fee market,
+no reorganisations, no script interpreter. What it does provide is what the study
+needs --- real transaction objects with canonical serialisation, a signature-hash
+computed over the transaction rather than over an abstract message, and the public
+observability on which the protocol's atomicity depends: a settled transaction's
+signature can be read back off the ledger by anyone, which is exactly how the witness
+leaks. Deploying instead on a real Bitcoin node is not a matter of effort: Bitcoin
+Script cannot verify a lattice signature, so configurations 2 and 3 could not settle
+there without a consensus change --- which is precisely the assumption
+\cite{esgin2020post} makes, and the reason it is stated as an assumption.
+
+\paragraph{Three configurations.}
+Each runs the protocol of \cite{esgin2020post} (Fig.~1) end-to-end across two
+ledgers: (1) a classical ECDSA adaptor signature; (2) LAS with a Groth16 proof of the
+role-A statement; (3) LAS with a LaZer proof of the same statement. The
+\emph{role-A} proof is the proof of knowledge $\pi$ that Fig.~1 places on the wire
+immediately after the statement $Y$: its author is the party that ran $\mathrm{Gen}$,
+and its claim is that a witness to $Y$ exists and is short.
+
+\paragraph{Configuration 1 carries no role-A proof --- a finding, not an omission.}
+LAS needs $\pi$ because of its \emph{knowledge gap}: extraction returns a witness of
+the extended relation, which need not be ternary, so without $\pi$ a malicious
+$u_1$ could claim and leave $u_2$ holding an unadaptable pre-signature. A classical
+ECDSA adaptor has no such gap --- extraction recovers the discrete logarithm exactly,
+so adaptability is unconditional --- and deployed classical swaps accordingly carry no
+$\pi$. Adding one would have benchmarked a construction nobody runs, and would have
+inflated the baseline it is the baseline's job to represent.
+
+The DLEQ proof carried \emph{inside} a \texttt{secp256k1-zkp} adaptor pre-signature is
+a different object and is not counted as $\pi$: its author is the pre-signer, not the
+statement generator, and its claim is pre-signature well-formedness, not knowledge of
+a witness. Its cost is real and is reported where it belongs --- in the bytes by which
+a pre-signature exceeds a signature. The upstream header documents the pre-signature
+only as an opaque 162-byte object, so no split of those bytes into ``proof'' and
+``structure'' is asserted.
+
+\paragraph{What is controlled, and what is not.}
+Only the $2\to3$ step is a controlled comparison, and the design works to make it one.
+Both LAS configurations share a single expansion of the public matrix $A$; both prove
+the \emph{identical} relation
+$\exists\, r' : A r' = t' \wedge \inftynorm{r'} \le 1$ --- the hard relation of the
+statement/witness pair $(Y,y)=(t',r')$, \emph{not} the signer's key pair $(t,r)$ ---
+including the norm bound, since proving only $A r' = t'$ would be a weaker statement
+that fails to close the knowledge gap; and all key material --- both key pairs, the
+statement, the witness, and hence both transactions --- is derived deterministically
+from a single pinned master seed, so the two configurations receive byte-identical
+inputs. The implementation verifies this rather than trusting it: each scheme and each
+proof system reports a \emph{relation binding}, a digest computed by evaluating the
+scheme's own linear map on fixed probe vectors, and a configuration whose two halves
+disagree on relation or binding refuses to run. Deriving the binding through the
+scheme's own code, rather than from the seed it was built from, is deliberate: a seed
+would certify only that both halves were \emph{asked} for the same parameters, not
+that both are computing with them.
+
+The $1\to2$ step is not controlled, and is not presented as though it were: it changes
+the signature scheme, the relation, and whether a role-A proof exists at all. It is
+reported as a classical-baseline-versus-post-quantum-stack comparison. The
+signature-only question --- what LAS costs against a classical adaptor, per operation
+--- is answered by the Stage-1 result (\cref{sec:res-classical}), not here.
+
+\paragraph{The Groth16 circuit.}
+No pairing-based proof of this lattice statement was available to reuse, so the
+circuit is new. It is far cheaper than the statement suggests, for a reason worth
+recording: $r' \mapsto A r'$ is \emph{linear with public coefficients}, so it costs no
+multiplication constraint in a rank-one constraint system. Only two things need
+constraining --- the ternary bound, enforced as $r'^3 = r'$ per coefficient, and the
+reduction modulo $q$, enforced with a range-checked quotient per row --- giving a
+constraint count linear in the parameter set's dimensions rather than in their
+product. The same statement would have been intractable had it involved products of
+two \emph{secret} polynomials. Since the
+matrix is held in the number-theoretic-transform domain and is not exported by either
+implementation, it is recovered by evaluating the scheme's own linear map on unit
+vectors, so the circuit encodes the map the signature scheme actually computes with
+rather than a re-derivation that could drift from it.
+
+\paragraph{Measurement.}
+Because gas does not exist on a UTXO chain, the axes are execution time and
+communication cost, the latter counting \emph{off-chain} protocol messages and not
+only what reaches a ledger. Sizes are observed from the transmitted buffers rather
+than computed from a formula, which is why the whole backend interface is
+byte-oriented; the consequence is that these timings sit at the \textbf{packed tier}
+(every operation includes its wire encode and decode) and are therefore not
+comparable with the core-tier figures elsewhere in this report. Each configuration is
+run for \stageTwoRuns{} complete swaps and reported as mean $\pm$ sample standard
+deviation. Two
+invariants are enforced rather than assumed: a phase must be timed in \emph{every} run
+or in none, so that no mean is silently taken over the subset of swaps that reached it;
+and communication subtotals are computed within each run before being reduced across
+runs, since summing each message's minimum would describe a swap that never occurred.
+One-time costs --- expanding $A$, constructing the elliptic-curve context, and
+Groth16's trusted setup --- are performed before timing begins and reported
+separately, because they are amortised over every swap rather than paid per swap. The
+rejection-sampling gate of \cref{sec:benchmethod} applies here too, but on a dedicated
+batch of \cfgTwoRejCalls{} pre-signature calls rather than on the two per swap the
+protocol itself performs. The reason is the geometric attempt distribution: over so
+few calls the five-sigma band is wider than the distance from the expected attempt
+rate to a loop that never rejects at all, so a gate on that sample would have admitted
+a completely broken sampler while appearing to pass.
+
+\paragraph{One deliberate exception to reproducibility.}
+Every other input is derived from the pinned seed, but Groth16's trusted setup and
+each of its proofs draw fresh operating-system entropy. Both are security
+requirements rather than preferences: a reproducible setup would leave the toxic waste
+recoverable and void soundness, and reusing proof randomness across statements breaks
+zero-knowledge. The measurement consequence is stated rather than hidden --- proof
+\emph{size} is unaffected, since a Groth16 proof is three group elements regardless,
+but proving \emph{time} includes the entropy draw and so carries a little extra
+run-to-run variance, which is among the reasons timings are reported with a standard
+deviation.
 
 \paragraph{Classical baseline (functionality-matched, not security-matched).}
 The second baseline is a classical secp256k1 ECDSA adaptor signature: the

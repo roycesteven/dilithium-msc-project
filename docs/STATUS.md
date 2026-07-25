@@ -41,6 +41,7 @@ functions were written first, and why) →
 | D23 | **Correctness-contract harness** (itemised 8-point PASS): PreSign→PreVerify, tripwire, Adapt→Verify, Ext exact, tampered msg/sig, malformed bytes, deterministic | ✅ | ✅ | ✅ | `make test/test_contract3 && ./test/test_contract3` |
 | D24 | **Base-signature correctness test** (`basesig.c`, **CHECK**-gated, 1000 iters × paper/2/3/5): honest verify, tamper/wrong-key rejection, cross-module equivalence with `las.c`, cross-path interlock (tripwire + adapted-verifies-under-base + exact Ext), + 4 negative tests (wrong statement, wrong witness, tampered pre-signature, tampered adapted signature) | 🟡 ready (build via `make`) | ⬜ run by Royce | ✅ | `make test/test_basesig_paper test/test_basesig2 test/test_basesig3 test/test_basesig5 && ./test/test_basesig_paper` |
 | D25 | **Fig. 1 proof of knowledge π** (2026-07-19; Royce-directed scope extension): `relation_zk.{c,h}` + `relation_zk_lazer.{c,h}` over vendored LaZer; binary decomposition `[A\|−A]`; knowledge error ≤ 2⁻¹²⁷; measured proof ≈ 30.7 KB off-chain; committed params `relation_zk_params.h`; Rust twin `relation_zk.rs` (`--features relation-zk`, same C bridge) | ✅ | ✅ | ✅ | needs LaZer (README "π + atomic swap"); `make test/test_zkp3 && ./test/test_zkp3`; Rust: `cargo test --offline --features relation-zk --test las_zkp --test las_swap` |
+| D26 | **Stage-2 UTXO atomic swap, three configurations** (Meeting-7): `rust/las-swap/` — UTXO ledger per paper §4 (signature algorithm as a parameter), Fig. 1 driver verbatim, honest path + timeout/refund; (1) classical ECDSA adaptor, (2) LAS + Groth16 over `∃r: Ar=t ∧ ‖r‖∞≤1` (own R1CS circuit, arkworks 0.4/BN254), (3) LAS + LaZer. Measured on time + communication incl. off-chain messages; rejection gate wired | ✅ | ✅ | ✅ | `cd rust/las-swap && cargo run --release --bin bench_swap --features secp256k1,groth16,relation-zk`; evidence `evidence/stage2/20260725_202359/`; write-up `report/latex/chapters/03-results.tex` §3.6 |
 | D21 | **Two-branch code-diff view** (Meeting-3): `dilithium-baseline` (pristine) vs `main`; 0 upstream sources changed | ✅ | n/a | ✅ | `git diff --name-status dilithium-baseline main -- ref/`; `docs/02-methodology/CODE_DIFF_VIEW.md` |
 | D22 | **LaTeX report scaffold** (Meeting-3): muthesis.cls, by chapter, official title, real benchmark tables, builds to PDF | 🟡 | n/a | ✅ | `cd report/latex && make` (TODOs: student id, figure, machine-of-record) |
 | D16 | Parameter migration to paper's q≈2²⁴ | ⬜ | ⬜ | documented as future work | — |
@@ -164,30 +165,35 @@ sk 4032, sig 3309.
 2026-07-22 at the correct D3 set, n=6/ℓ=5, 6720-B sig):** classical claim (settle +
 ecrecover) 75,709; LAS claim (settle only, **no** lattice verify) 289,930 (calldata
 107,088 for the real 6720-B sig + keccak); fund 180k/140k; refund 39,330. LAS
-settlement = 3.8× the full classical claim. **Native verification cost — measured
-experiment (`evm/test/LASVerifyCost.t.sol`, `make`-free
-`forge test --match-contract LASVerifyCost -vv`):** the full `base_verify` arithmetic
-at D3 (12 fwd NTT + 12 inv NTT + 36 pointwise + 54 coefficient passes) is **13.93 M gas
-measured** on the EVM (rebuild from per-op figures: 13.83 M, within 0.7 %); the
-SHAKE256 challenge (92 Keccak-f permutations) adds **2.76 M calculated** ⇒ **≈16.7 M
-gas total ≈ 220× the classical claim ≈ 55.6 % of the adopted 30 M-gas threshold**.
-Correction (still holds at D3): native verification is *prohibitively expensive but
-does **not** exceed the threshold* (EVM-native `mulmod` is 8 gas) — the earlier
-"exceeds the block gas limit" wording was an overstatement and is retracted; the real
-barrier is cost + missing PQ precompiles. The probe is parametrised
-(`verifyArithLevel2/3/5`); D3 is the headline, arithmetic-only sweep D2 9.33 M / D3
-13.93 M / D5 20.04 M gas is supporting material.
+settlement = 3.8× the full classical claim. **Native verification cost — MEASURED
+end-to-end:** one full on-chain LAS verified settlement (`claimLASVerified`, running
+the complete `LASVerify.verify`) is **56,538,682 gas measured** — **≈746× a complete
+classical claim** and **≈3.4× the EIP-7825 per-transaction cap of 16,777,216**, so it
+cannot execute as a single mainnet transaction. It stays *below* the 60 M block gas
+limit, so the binding ceiling is the **per-transaction cap**, not the block.
+Authority: `docs/03-results/GAS_LIMIT_INVESTIGATION.md` §5.
+
+> **Superseded figure — do not reuse.** An earlier ≈16.7 M total (13.93 M measured
+> arithmetic + 2.76 M calculated SHAKE256, quoted as "≈55.6 % of a 30 M threshold, does
+> not exceed it") was an op-budget **lower-bound estimate**, not a measurement of the
+> transaction. The real cost is larger because it also pays for the Solidity SHAKE256,
+> bit-unpacking `z`, canonical packing, and ABI/memory overhead. The arithmetic-only
+> sweep (D2 9.33 M / D3 13.93 M / D5 20.04 M, `verifyArithLevel2/3/5`) remains valid
+> **as an arithmetic-only figure** and is supporting material.
 
 **Three headline findings** (the report's centrepieces): (i) price of PQ is
 *communication* (×29–89 sizes; on-chain calldata 107k gas > whole classical claim)
 not *computation* (sub-ms, ≤×20 time); (ii) LAS adaptor overhead ≈0 (PreSign≈Sign,
 PreVerify≈Verify) vs the classical adaptor's ~4× DLEQ overhead — LAS PreVerify even
-absolutely faster; (iii) on-chain, the swap protocol runs end-to-end, and native LAS
-*verification* is **an estimated ≈16.7 M gas (≈220× the classical claim, ≈55.6 % of
-the adopted 30 M-gas threshold)** — prohibitively expensive and needing a SHAKE/NTT
-precompile or zk proof, but **not** over that threshold (the earlier "exceeds the
-limit" claim was retracted after the `LASVerifyCost` experiment — the poqeth boundary
-is cost, not the ceiling).
+absolutely faster; (iii) on-chain, the swap protocol runs end-to-end, but native LAS
+*verification* costs **56,538,682 gas measured (≈746× a complete classical claim)** and
+**exceeds the EIP-7825 per-transaction cap (16,777,216) by ≈3.4×**, so it cannot run as
+one mainnet transaction — it stays under the 60 M *block* limit, so the binding ceiling
+is the per-transaction cap. It needs a SHAKE/NTT precompile or a zk proof. This is a
+*missing-precompile* gap, not an algorithmic defect of LAS: ECDSA is cheap on-chain
+precisely because Ethereum ships a subsidised native implementation of it. **This
+finding is what motivated the Meeting-7 pivot of Stage 2 to a UTXO chain**
+(`docs/02-methodology/STAGE2_UTXO_SWAP_PLAN.md`).
 
 > ⚠️ For the final report, re-run all four benchmarks **in one session** on the
 > submission machine and paste the verbatim output into Appendix B with CPU/OS/date.

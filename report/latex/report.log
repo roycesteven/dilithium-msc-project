@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  25 JUL 2026 14:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  25 JUL 2026 21:03
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -711,10 +711,11 @@ LaTeX Info: Redefining \labelcref on input line 2370.
 LaTeX Info: Redefining \labelcpageref on input line 2370.
 Package cleveref Info: `listings' support loaded on input line 3131.
 )
-(./generated/benchmacros.tex)
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 62
+(./generated/benchmacros.tex) (./generated/stage2macros.tex)
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 67
 .
- (/usr/share/texmf/tex/latex/lm/t1lmr.fd
+
+(/usr/share/texmf/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
@@ -725,37 +726,37 @@ File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
 (./report.aux)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 62.
-LaTeX Font Info:    ... okay on input line 62.
-LaTeX Info: Redefining \microtypecontext on input line 62.
-Package microtype Info: Applying patch `item' on input line 62.
-Package microtype Info: Applying patch `toc' on input line 62.
-Package microtype Info: Applying patch `eqnum' on input line 62.
-Package microtype Info: Applying patch `footnote' on input line 62.
-Package microtype Info: Applying patch `verbatim' on input line 62.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Info: Redefining \microtypecontext on input line 67.
+Package microtype Info: Applying patch `item' on input line 67.
+Package microtype Info: Applying patch `toc' on input line 67.
+Package microtype Info: Applying patch `eqnum' on input line 67.
+Package microtype Info: Applying patch `footnote' on input line 67.
+Package microtype Info: Applying patch `verbatim' on input line 67.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: Automatic font expansion enabled (level 2),
 (microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
 Package microtype Info: Using default expansion set `alltext-nott'.
-LaTeX Info: Redefining \showhyphens on input line 62.
+LaTeX Info: Redefining \showhyphens on input line 67.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
@@ -786,7 +787,7 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 \c@lstlisting=\count328
-Package hyperref Info: Link coloring OFF on input line 62.
+Package hyperref Info: Link coloring OFF on input line 67.
 
 (./report.out) (./report.out)
 \@outlinefile=\write4
@@ -868,7 +869,7 @@ Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/14.4'.
 (microtype)             Ignoring protrusion settings for this character.
  (./chapters/00-abstract.tex
-Underfull \hbox (badness 10000) in paragraph at lines 76--3
+Underfull \hbox (badness 10000) in paragraph at lines 81--3
 
  []
 
@@ -878,8 +879,8 @@ Underfull \hbox (badness 10000) in paragraph at lines 76--3
 /dvips/lm/lm-mathit.enc}] [8
 
 ]
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 7
-8.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 8
+3.
  (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -888,7 +889,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Overfull \hbox (2.21384pt too wide) in paragraph at lines 78--78
+Overfull \hbox (2.21384pt too wide) in paragraph at lines 83--83
 \T1/lmr/m/n/12 (-20) tions (see []$\T1/lmtt/m/n/12 http : / / www . library . m
 anchester . ac . uk / about / regulations/$[]\T1/lmr/m/n/12 (-20) )
  []
@@ -901,32 +902,33 @@ Chapter 1.
 
 ] [11] [12] [13]) (./chapters/02-methodology.tex [14]
 Chapter 2.
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
-3.
-(/usr/share/texmf/tex/latex/lm/ts1lmr.fd
-File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [15
+[15
 
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
+4.
+
+(/usr/share/texmf/tex/latex/lm/ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 67.
+(Font)              <10.95> on input line 68.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 77.
+(Font)              <10> on input line 78.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 77.
+(Font)              <7> on input line 78.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 77.
- [16{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]
-[17]
-Overfull \hbox (3.94708pt too wide) in paragraph at lines 150--159
+(Font)              <5> on input line 78.
+ [16{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}] [17]
+Overfull \hbox (3.94708pt too wide) in paragraph at lines 151--160
  []\T1/lmr/bx/n/12 (-20) Hash, chal-lenge, and sam-plers.[] \T1/lmr/m/n/12 (-20
 ) The ran-dom or-a-cle $\OML/lmm/m/it/12 H$ \T1/lmr/m/n/12 (-20) is built from 
 SHAKE256:
  []
 
 [18]
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 1
-97.
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 2
+01.
  (/usr/share/texmf/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -935,94 +937,100 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
  [19] [20] [21] [22] [23]
-[24] [25{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}] [26])
-(./chapters/03-results.tex
-Overfull \hbox (17.35081pt too wide) in paragraph at lines 576--1
+[24] [25{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}] [26] [27] [28]
+[29] [30]) (./chapters/03-results.tex
+Overfull \hbox (17.35081pt too wide) in paragraph at lines 710--1
 \T1/lmr/m/n/12 (-20) sec-ond base-line is a clas-si-cal secp256k1 ECDSA adap-to
 r sig-na-ture: the \T1/lmtt/m/n/12 secp256k1-zkp
  []
 
 
-Overfull \hbox (10.71443pt too wide) in paragraph at lines 576--1
+Overfull \hbox (10.71443pt too wide) in paragraph at lines 710--1
 \T1/lmr/m/n/12 (-20) li-brary's \T1/lmtt/m/n/12 ecdsa_adaptor \T1/lmr/m/n/12 (-
 20) mod-ule [[]], which im-ple-ments Fournier's one-time verifiably-
  []
 
-[27] [28]
+[31]
 Chapter 3.
-[29
+[32
 
-] [30] (./generated/tab_overhead_target.tex)
-<figures/fig_timing.pdf, id=569, 590.37563pt x 350.53972pt>
+] [33] (./generated/tab_overhead_target.tex)
+<figures/fig_timing.pdf, id=621, 590.37563pt x 350.53972pt>
 File: figures/fig_timing.pdf Graphic file (type pdf)
 <use figures/fig_timing.pdf>
 Package pdftex.def Info: figures/fig_timing.pdf  used on input line 106.
 (pdftex.def)             Requested size: 412.56496pt x 244.97496pt.
- [31]
+ [34]
 (./generated/tab_rejstats.tex)
-<figures/fig_rejection_cdf.pdf, id=597, 561.25934pt x 340.02834pt>
+<figures/fig_rejection_cdf.pdf, id=648, 561.25934pt x 340.02834pt>
 File: figures/fig_rejection_cdf.pdf Graphic file (type pdf)
 <use figures/fig_rejection_cdf.pdf>
 Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 184.
 
 (pdftex.def)             Requested size: 412.56496pt x 249.94635pt.
- [32] [33] (./generated/tab_rust.tex) [34]
-<figures/fig_criterion_presign.pdf, id=623, 963.6pt x 542.025pt>
+ [35] [36] (./generated/tab_rust.tex) [37]
+<figures/fig_criterion_presign.pdf, id=674, 963.6pt x 542.025pt>
 File: figures/fig_criterion_presign.pdf Graphic file (type pdf)
 <use figures/fig_criterion_presign.pdf>
 Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line 
 286.
 (pdftex.def)             Requested size: 412.56496pt x 232.06546pt.
 
-[35] (./generated/tab_complete_target.tex) [36] [37]
-(./generated/tab_classical.tex) [38] [39] [40]
-<figures/fig_onchain.pdf, id=684, 697.76921pt x 222.11629pt>
+[38] (./generated/tab_complete_target.tex) [39] [40]
+(./generated/tab_classical.tex) [41] [42] [43]
+<figures/fig_onchain.pdf, id=736, 697.76921pt x 222.11629pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
 Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 580.
 (pdftex.def)             Requested size: 412.56496pt x 131.33215pt.
-) (./chapters/04-evaluation.tex
-[41] [42] [43 <./figures/fig_timing.pdf>] [44 <./figures/fig_rejection_cdf.pdf>
-] [45 <./figures/fig_criterion_presign.pdf>] [46] [47] [48 <./figures/fig_oncha
-in.pdf>]
+ [44] [45] [46])
+(./chapters/04-evaluation.tex [47] [48] [49 <./figures/fig_timing.pdf>]
+[50 <./figures/fig_rejection_cdf.pdf>] [51 <./figures/fig_criterion_presign.pdf
+>] [52] [53] [54 <./figures/fig_onchain.pdf>] [55]
 Chapter 4.
-[49
+[56
 
-] [50] [51] [52]) (./chapters/05-conclusion.tex [53]
+] [57] [58] [59] [60]) (./chapters/05-conclusion.tex [61]
 Chapter 5.
-[54
+[62
 
 ]
 Overfull \hbox (30.12291pt too wide) has occurred while \output is active
 \T1/lmr/m/sl/12 CHAPTER 5.  CONCLUSION, CRITICAL REFLECTION, AND FUTURE WORK \T
-1/lmr/m/n/12 55
+1/lmr/m/n/12 63
  []
 
-[55]
+[63]
 Overfull \hbox (30.12291pt too wide) has occurred while \output is active
 \T1/lmr/m/sl/12 CHAPTER 5.  CONCLUSION, CRITICAL REFLECTION, AND FUTURE WORK \T
-1/lmr/m/n/12 56
+1/lmr/m/n/12 64
  []
 
-[56]
+[64]
 Overfull \hbox (30.12291pt too wide) has occurred while \output is active
 \T1/lmr/m/sl/12 CHAPTER 5.  CONCLUSION, CRITICAL REFLECTION, AND FUTURE WORK \T
-1/lmr/m/n/12 57
+1/lmr/m/n/12 65
  []
 
-[57]
+[65]
 Overfull \hbox (30.12291pt too wide) has occurred while \output is active
 \T1/lmr/m/sl/12 CHAPTER 5.  CONCLUSION, CRITICAL REFLECTION, AND FUTURE WORK \T
-1/lmr/m/n/12 58
+1/lmr/m/n/12 66
  []
 
-[58]) (./chapters/A-appendix.tex
+[66]
 Overfull \hbox (30.12291pt too wide) has occurred while \output is active
 \T1/lmr/m/sl/12 CHAPTER 5.  CONCLUSION, CRITICAL REFLECTION, AND FUTURE WORK \T
-1/lmr/m/n/12 59
+1/lmr/m/n/12 67
  []
 
-[59]
+[67]) (./chapters/A-appendix.tex
+Overfull \hbox (30.12291pt too wide) has occurred while \output is active
+\T1/lmr/m/sl/12 CHAPTER 5.  CONCLUSION, CRITICAL REFLECTION, AND FUTURE WORK \T
+1/lmr/m/n/12 68
+ []
+
+[68]
 Appendix A.
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
@@ -1034,16 +1042,16 @@ Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 23.
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/lmtt/b/n' tried instead on input line 28.
- [60
+ [69
 
-] [61]
+] [70]
 Overfull \hbox (90.57379pt too wide) in paragraph at lines 82--90
 \T1/lmr/m/n/12 (-20) The pseu-docode be-low is the pro-ce-dure both pro-to-col 
 drivers im-ple-ment (\T1/lmtt/m/n/12 ref/test/bench_levels.c
  []
 
-[62]
-<figures/fig_overhead.pdf, id=1105, 543.34494pt x 348.09785pt>
+[71]
+<figures/fig_overhead.pdf, id=1208, 543.34494pt x 348.09785pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
 Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 144.
@@ -1060,12 +1068,12 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[63] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+[72] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [64 <./figures/fig_overhead.pdf>] [65]) (./report.bbl [66] [67
+) [73 <./figures/fig_overhead.pdf>] [74]) (./report.bbl [75] [76
 
 ]
 Underfull \hbox (badness 4366) in paragraph at lines 93--97
@@ -1073,20 +1081,20 @@ Underfull \hbox (badness 4366) in paragraph at lines 93--97
 , Mi-lan Bit-
  []
 
-[68]) [69] (./report.aux)
+[77]) [78] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 9E214C071FE57BC187A9719AD5EA58D9;8119.
+(rerunfilecheck)             Checksum: D9D9D167C69760177036A65EF22670D6;9135.
  ) 
 Here is how much of TeX's memory you used:
- 28179 strings out of 476182
- 513871 string characters out of 5795595
+ 28430 strings out of 476182
+ 517730 string characters out of 5795595
  2175975 words of memory out of 5000000
- 48962 multiletter control sequences out of 15000+600000
- 733528 words of font info for 326 fonts, out of 8000000 for 9000
+ 49161 multiletter control sequences out of 15000+600000
+ 734368 words of font info for 334 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,13n,87p,1003b,2166s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1105,10 +1113,10 @@ c/lm/lmtk10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/
 texmf/fonts/type1/public/lm/lmtt12.pfb></usr/share/texmf/fonts/type1/public/lm/
 lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/
 msbm10.pfb>
-Output written on report.pdf (69 pages, 743276 bytes).
+Output written on report.pdf (78 pages, 778007 bytes).
 PDF statistics:
- 1442 PDF objects out of 1728 (max. 8388607)
- 1044 compressed objects within 11 object streams
- 289 named destinations out of 1000 (max. 500000)
- 95606 words of extra memory for PDF output out of 106986 (max. 10000000)
+ 1554 PDF objects out of 1728 (max. 8388607)
+ 1145 compressed objects within 12 object streams
+ 322 named destinations out of 1000 (max. 500000)
+ 95638 words of extra memory for PDF output out of 106986 (max. 10000000)
 

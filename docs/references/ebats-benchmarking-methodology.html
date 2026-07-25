@@ -1,0 +1,156 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style type="text/css">
+.C{display:inline-block;font-weight:bold;color:#000000;background-color:#ff9900}
+.T{display:inline-block;font-weight:bold;color:#000000;background-color:#ff3545}
+.measurements{padding:1px;border-radius:7px;background-color:#c0ffc0}
+.testresults{padding:1px;border-radius:7px;background-color:#ffe090}
+body,td,th{font-family:"Noto Sans","Droid Sans","DejaVu Sans","Arial",sans-serif;line-height:1.3}
+td,th{padding:1px}
+table{border-collapse:collapse}
+td,tt,pre{font-family:Consolas,Monaco,"Noto Sans Mono","DejaVu Sans Mono",monospace,sans-serif;font-size:1em;}
+.heading{font-size:1.2em;margin-top:1em;margin-bottom:1em;font-weight:bold;display:block;break-after:avoid}
+summary{color:#0000ff;text-decoration:underline;cursor:pointer}
+</style>
+<title>
+eBATS: ECRYPT Benchmarking of Asymmetric Systems
+</title>
+</head>
+<body>
+<table width="100%">
+<table width="100%">
+  <tr>
+    <th align=middle><img src="vampireLogo.gif" width="140" height="70"><br><a href="http://hyperelliptic.org/ECRYPTII/vampire/"><small>VAMPIRE</small></a></th>
+    <th align=middle><h1>eBACS: ECRYPT Benchmarking of Cryptographic Systems</h1></th>
+    <th align=middle><img src="ecrypt2-logo-trans.png" width="179" height="79"><br><a href="http://www.ecrypt.eu.org/"><small>ECRYPT II</small></a></th>
+  </tr>
+</table>
+<tr><td><table border width="100%" bgcolor="#EEEEEE">
+<tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>General information:</b></font></a></th>
+<td align=middle width="10%"><a href="index.html" style="text-decoration:none">Introduction</a></td>
+<td align=middle width="10%"><a href="ebash.html" style="text-decoration:none">eBASH</a></td>
+<td align=middle width="10%"><a href="ebasc.html" style="text-decoration:none">eBASC</a></td>
+<td align=middle width="10%"><a href="ebaead.html" style="text-decoration:none">eBAEAD</a></td>
+<td align=middle width="10%" bgcolor="#FFFF00"><b>eBATS</b></td>
+<td align=middle width="8%"><a href="supercop.html" style="text-decoration:none">SUPERCOP</a></td>
+<td align=middle width="7%"><a href="xbx.html" style="text-decoration:none">XBX</a></td>
+<td align=middle width="8%"><a href="computers.html" style="text-decoration:none">Computers</a></td>
+<td align=middle width="7%"><a href="archnotes.html" style="text-decoration:none">Arch</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="15%" bgcolor="#EEEEEE"><font color="#000000"><b>How to submit new software:</b></font></a></th>
+<td align=middle width="5%"><a href="tips.html" style="text-decoration:none">Tips</a></td>
+<td align=middle width="18%"><a href="call-hash.html" style="text-decoration:none">hash</a></td>
+<td align=middle width="11%"><a href="call-stream.html" style="text-decoration:none">stream</a></td>
+<td align=middle width="18%"><a href="call-aead.html" style="text-decoration:none">aead</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-dh.html" style="text-decoration:none">dh</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-kem.html" style="text-decoration:none">kem</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-encrypt.html" style="text-decoration:none">encrypt</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-sign.html" style="text-decoration:none">sign</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>List of primitives measured:</b></font></a></th>
+<td align=middle width="6%"><a href="primitives-nistlwc-hash.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="primitives-sha3.html" style="text-decoration:none">sha3</a></td>
+<td align=middle width="6%"><a href="primitives-hash.html" style="text-decoration:none">hash</a></td>
+<td align=middle width="11%"><a href="primitives-stream.html" style="text-decoration:none">stream</a></td>
+<td align=middle width="6%"><a href="primitives-nistlwc-aead.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="primitives-caesar.html" style="text-decoration:none">caesar</a></td>
+<td align=middle width="6%"><a href="primitives-aead.html" style="text-decoration:none">aead</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-dh.html" style="text-decoration:none">dh</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-kem.html" style="text-decoration:none">kem</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-encrypt.html" style="text-decoration:none">encrypt</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-sign.html" style="text-decoration:none">sign</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>Measurements:</b></font></a></th>
+<td align=middle width="6%"><a href="results-nistlwc-hash.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="results-sha3.html" style="text-decoration:none">sha3</a></td>
+<td align=middle width="6%"><a href="results-hash.html" style="text-decoration:none">hash</a></td>
+<td align=middle width="11%"><a href="results-stream.html" style="text-decoration:none">stream</a></td>
+<td align=middle width="6%"><a href="results-nistlwc-aead.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="results-caesar.html" style="text-decoration:none">caesar</a></td>
+<td align=middle width="6%"><a href="results-aead.html" style="text-decoration:none">aead</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-dh.html" style="text-decoration:none">dh</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-kem.html" style="text-decoration:none">kem</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-encrypt.html" style="text-decoration:none">encrypt</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-sign.html" style="text-decoration:none">sign</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>List of subroutines:</b></font></a></th>
+<td align=middle width="10%"><a href="primitives-verify.html" style="text-decoration:none">verify</a></td>
+<td align=middle width="10%"><a href="primitives-decode.html" style="text-decoration:none">decode</a></td>
+<td align=middle width="10%"><a href="primitives-encode.html" style="text-decoration:none">encode</a></td>
+<td align=middle width="10%"><a href="primitives-sort.html" style="text-decoration:none">sort</a></td>
+<td align=middle width="10%"><a href="primitives-core.html" style="text-decoration:none">core</a></td>
+<td align=middle width="10%"><a href="primitives-hashblocks.html" style="text-decoration:none">hashblocks</a></td>
+<td align=middle width="10%"><a href="primitives-xof.html" style="text-decoration:none">xof</a></td>
+<td align=middle width="10%" bgcolor="#FFFF00"><a href="primitives-scalarmult.html" style="text-decoration:none">scalarmult</a></td>
+</tr>
+</table>
+</td></tr>
+<tr><td>
+<h1>eBATS: ECRYPT Benchmarking of Asymmetric Systems</h1>
+The eBATS
+(<b>E</b>CRYPT <b>B</b>enchmarking
+of <b>A</b>symme<b>t</b>ric <b>S</b>ystems)
+project, part of <a href="index.html">eBACS</a>, measures public-key systems
+according to the following criteria:
+<ul>
+<li>Time to generate a key pair (a private key and a corresponding public key).
+<li>Length of the private key.
+<li>Length of the public key.
+<li>Time to generate a secret shared with another user,
+given a private key and the other user's public key.
+<li>Length of the shared secret.
+<li>Time to encrypt a message using a public key.
+<li>Length of the encrypted message.
+<li>Time to decrypt an encrypted message using a private key.
+<li>Time to sign a message using a private key.
+<li>Length of the signed message.
+<li>Time to verify a signed message using a public key.
+</ul>
+"Time" refers to time on real computers:
+time on an ARM Cortex-A8,
+time on an Intel Sandy Bridge,
+time on an Intel Haswell,
+etc.
+The point of these cost measures
+is that they are directly visible to the cryptographic user.
+eBATS times each system on a <a href="computers.html">wide variety of computers</a>,
+ensuring direct comparability of all systems
+on whichever computers are of interest to the users.
+<p>
+There are separate pages
+explaining how to submit
+<a href="call-dh.html">public-key Diffie&ndash;Hellman secret-sharing systems</a>,
+<a href="call-kem.html">key-encapsulation mechanisms</a>,
+<a href="call-encrypt.html">public-key cryptosystems</a>,
+and
+<a href="call-sign.html">public-key signature systems</a>
+to eBATS.
+There are also pages
+listing the
+<a href="primitives-dh.html">public-key Diffie&ndash;Hellman secret-sharing systems</a>,
+<a href="primitives-kem.html">key-encapsulation mechanisms</a>,
+<a href="primitives-encrypt.html">public-key cryptosystems</a>,
+and
+<a href="primitives-sign.html">public-key signature systems</a>
+already submitted to eBATS.
+There are also pages
+presenting the latest eBATS measurements for
+<a href="results-dh.html">public-key Diffie&ndash;Hellman secret-sharing systems</a>,
+<a href="results-kem.html">key-encapsulation mechanisms</a>,
+<a href="results-encrypt.html">public-key cryptosystems</a>,
+and
+<a href="results-sign.html">public-key signature systems</a>.
+<p>
+This web page supersedes
+<a href="http://www.ecrypt.eu.org/ebats/">http://www.ecrypt.eu.org/ebats</a>,
+the original eBATS web page.
+</td></tr>
+</table>
+<h2>Version</h2>
+This is version 2018.08.25 of the ebats.html web page.
+This web page is in the public domain.
+</body>
+</html>

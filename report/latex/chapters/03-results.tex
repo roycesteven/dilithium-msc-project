@@ -592,6 +592,179 @@ not displace the first-stage signature results.
   \label{fig:onchain}
 \end{figure}
 
+\section{The swap on a UTXO chain: three configurations compared}
+\label{sec:res-stage2}
+
+The demonstration above establishes that the protocol runs. This section measures
+what it \emph{costs}, and isolates which component is responsible. Following the
+venue assumed by \cite{esgin2020post} --- a UTXO chain ``where the signature
+algorithm is replaced with a lattice-based signature scheme'' (their Section~4) ---
+the swap was rebuilt over a UTXO ledger whose spending conditions are a signature
+check plus a timelock, and whose signature algorithm is a \emph{parameter}. Holding
+the ledger fixed and varying only the cryptography is what makes the comparison
+below attributable.
+
+Three configurations were measured, each running Fig.~1 of \cite{esgin2020post}
+end-to-end across two ledgers:
+
+\begin{enumerate}
+  \item \textbf{classical} --- an ECDSA adaptor signature (libsecp256k1-zkp);
+  \item \textbf{LAS + Groth16} --- the post-quantum signature with a
+        \emph{classical} pairing-based proof of the role-A statement;
+  \item \textbf{LAS + LaZer} --- the fully post-quantum stack.
+\end{enumerate}
+
+\subsection{Two points of method}
+\label{sec:stage2-method}
+
+\paragraph{Configuration~1 carries no role-A proof, and this is a result, not an
+omission.} An ECDSA adaptor has no knowledge gap: extraction recovers the discrete
+logarithm exactly, so pre-signature adaptability is unconditional and the proof of
+witness knowledge that \cite{esgin2020post} needs has nothing to rescue. Deployed
+classical swaps therefore do not carry $\pi$. The DLEQ proof \emph{inside} a
+secp256k1 adaptor pre-signature is a different object with a different author ---
+the pre-signer proving well-formedness, not the statement generator proving
+knowledge --- and is counted here under the signature's communication cost, in the
+\cfgOneBytesPreSigOverhead~B by which a pre-signature exceeds a signature. Reporting
+it as $\pi$ would credit the classical baseline with meeting a requirement it never
+faced.
+
+\paragraph{Only the $2\to3$ comparison is controlled.} Configurations~2 and~3 share
+one public matrix $\mathbf{A}$, prove the identical relation, and --- because all key
+material derives from one pinned seed --- receive byte-identical keys, statements,
+witnesses and transactions. The implementation verifies this rather than assuming it:
+both report the same relation binding (\texttt{\cfgTwoBinding}), a digest computed by
+evaluating the scheme's own linear map. Only the prover differs, so the difference
+between them is attributable to the proof system. The step from configuration~1,
+by contrast, changes the signature scheme, the relation, \emph{and} whether a proof
+exists at all; it is a whole-stack comparison and is reported as such.
+
+Timings are the mean $\pm$ sample standard deviation over \stageTwoRuns{} complete
+swaps, at the \emph{packed} tier (every operation includes wire encoding and
+decoding), and are therefore not comparable with the core-tier figures of
+\cref{sec:res-compute}. One-time costs --- expanding $\mathbf{A}$, building the
+library context, and Groth16's trusted setup --- are excluded from every phase and
+reported separately. Both LAS configurations passed the rejection-sampling gate,
+measuring \cfgTwoRejMeasured{} attempts per \textsc{PreSign} against the closed-form
+\cfgTwoRejExpected{} over \cfgTwoRejCalls{} calls.
+
+\begin{table}[t]
+  \centering
+  \caption[Per-phase execution time of the swap]{Per-phase execution time of one
+  complete Fig.~1 swap, mean $\pm$ sample SD over \stageTwoRuns{} swaps
+  ($\mu$s; run \stageTwoRunId{}, \stageTwoCpu{}). Dashes mark phases a
+  configuration does not have. End-to-end is context, not the headline.}
+  \label{tab:stage2-time}
+  \small
+  \begin{tabular}{@{}l r r r@{}}
+    \toprule
+    Phase & Classical & LAS + Groth16 & LAS + LaZer \\
+    \midrule
+    KeyGen $\times2$ + Gen & \cfgOneKeyMatMean{} & \cfgTwoKeyMatMean{} & \cfgThreeKeyMatMean{} \\
+    Prove ($\pi$)          & ---                 & \cfgTwoProveMean{}  & \cfgThreeProveMean{} \\
+    PreSign ($u_1$)        & \cfgOnePreSignAMean{} & \cfgTwoPreSignAMean{} & \cfgThreePreSignAMean{} \\
+    ProofVerify ($\pi$)    & ---                 & \cfgTwoProofVerifyMean{} & \cfgThreeProofVerifyMean{} \\
+    PreVerify (abort gate) & \cfgOnePreVerifyMean{} & \cfgTwoPreVerifyMean{} & \cfgThreePreVerifyMean{} \\
+    PreSign ($u_2$)        & \cfgOnePreSignBMean{} & \cfgTwoPreSignBMean{} & \cfgThreePreSignBMean{} \\
+    Adapt ($u_1$)          & \cfgOneAdaptAMean{} & \cfgTwoAdaptAMean{} & \cfgThreeAdaptAMean{} \\
+    Settle chain 2         & \cfgOneSettleBMean{} & \cfgTwoSettleBMean{} & \cfgThreeSettleBMean{} \\
+    Extract ($u_2$)        & \cfgOneExtMean{} & \cfgTwoExtMean{} & \cfgThreeExtMean{} \\
+    Adapt ($u_2$)          & \cfgOneAdaptBMean{} & \cfgTwoAdaptBMean{} & \cfgThreeAdaptBMean{} \\
+    Settle chain 1         & \cfgOneSettleAMean{} & \cfgTwoSettleAMean{} & \cfgThreeSettleAMean{} \\
+    \midrule
+    end-to-end             & \cfgOneTotalMean{} & \cfgTwoTotalMean{} & \cfgThreeTotalMean{} \\
+    \quad of which $\pi$   & ---                & \cfgTwoProofPct{}\% & \cfgThreeProofPct{}\% \\
+    \quad excluding $\pi$  & \cfgOneNonProofUs{} & \cfgTwoNonProofUs{} & \cfgThreeNonProofUs{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption[Communication cost of the swap]{Communication cost of one complete swap,
+  in bytes, observed from the transmitted buffers over \stageTwoRuns{} swaps. A
+  range indicates a message whose size varied between runs. Off-chain messages are
+  counted, not only what reaches a ledger.}
+  \label{tab:stage2-comm}
+  \small
+  \begin{tabular}{@{}l r r r@{}}
+    \toprule
+    Message & Classical & LAS + Groth16 & LAS + LaZer \\
+    \midrule
+    statement $Y$        & \cfgOneMsgY{} & \cfgTwoMsgY{} & \cfgThreeMsgY{} \\
+    proof $\pi$          & ---           & \cfgTwoMsgPi{} & \cfgThreeMsgPi{} \\
+    $\hat{\sigma}_1$     & \cfgOneMsgPreSigA{} & \cfgTwoMsgPreSigA{} & \cfgThreeMsgPreSigA{} \\
+    $\mathit{tx}_1$      & \cfgOneMsgTxA{} & \cfgTwoMsgTxA{} & \cfgThreeMsgTxA{} \\
+    $\hat{\sigma}_2$     & \cfgOneMsgPreSigB{} & \cfgTwoMsgPreSigB{} & \cfgThreeMsgPreSigB{} \\
+    $\mathit{tx}_2$      & \cfgOneMsgTxB{} & \cfgTwoMsgTxB{} & \cfgThreeMsgTxB{} \\
+    \midrule
+    off-chain subtotal   & \cfgOneBytesOffChain{} & \cfgTwoBytesOffChain{} & \cfgThreeBytesOffChain{} \\
+    on-chain subtotal    & \cfgOneBytesOnChain{} & \cfgTwoBytesOnChain{} & \cfgThreeBytesOnChain{} \\
+    \midrule
+    total per swap       & \cfgOneBytesTotal{} & \cfgTwoBytesTotal{} & \cfgThreeBytesTotal{} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{What the measurements show}
+\label{sec:stage2-findings}
+
+\paragraph{The proof, not the signature, is the cost of a post-quantum swap.}
+The role-A proof consumes \cfgTwoProofPct{}\% of end-to-end time in
+configuration~2 and \cfgThreeProofPct{}\% in configuration~3. Strip it out and the
+entire post-quantum signature workload --- two key generations, a statement, two
+pre-signatures, a pre-verification, two adaptations, an extraction and two
+settlements --- costs \cfgTwoNonProofUs{}\,$\mu$s, about
+\stageTwoCryptoRatio{}$\times$ the classical swap's
+\cfgOneNonProofUs{}\,$\mu$s. A factor of five on a millisecond-scale
+workload is unremarkable; a proof that takes half a second to a second is what
+determines whether the protocol feels instantaneous. This is the Stage-1 finding
+(\cref{sec:res-compute}) reproduced at the application level: the adaptor layer is
+close to free, and the post-quantum penalty is not where intuition puts it.
+
+\paragraph{The controlled comparison inverts the expected trade-off.} Replacing
+Groth16 with LaZer --- the same signature, the same $\mathbf{A}$, the same inputs ---
+makes the swap \emph{faster} by \cmpTimePctAbs{}\% while making it \emph{larger} by
+\cmpBytesPctAbs{}\%. The post-quantum proof system is roughly twice as quick to produce
+a proof yet emits one about \stageTwoProofSizeRatio{}$\times$ bigger
+(\cmpProofFrom{}\,B against \cmpProofTo{}\,B). Two structural facts drive this.
+Groth16 is \emph{succinct}: its proof is three group elements whatever the circuit,
+but producing it means a multi-scalar multiplication over the whole constraint
+system. LaZer is not succinct --- its proof grows with the statement --- but proving
+a lattice relation with lattice machinery avoids the mismatch of encoding modular
+arithmetic over a 23-bit modulus into a 254-bit pairing-friendly field. Verification
+runs the other way: Groth16 verifies in \cfgTwoProofVerifyMean{}\,$\mu$s
+against LaZer's \cfgThreeProofVerifyMean{}, succinctness paying off exactly where it
+is designed to.
+
+\paragraph{Configuration~2 is a hybrid, and its trade is worse than it looks.}
+Pairing security is broken by Shor, so configuration~2's proof is precisely the
+component a post-quantum adversary attacks; the post-quantum signature does not
+protect a swap whose fairness argument rests on a classical proof. Groth16 also
+requires a \emph{trusted, per-circuit} setup --- measured at
+\cfgTwoSetupTime{} here --- whose secret must be destroyed for soundness to hold,
+whereas LaZer's parameters are public and transparent (\cfgThreeSetupKind{}).
+Configuration~3 is thus not merely the post-quantum option: it is faster
+end-to-end, needs no trusted party, and removes a quantum vulnerability, paying only
+in bytes.
+
+\paragraph{Communication is again the real price.} A classical swap moves
+\cfgOneBytesTotal{}\,B in total; the fully post-quantum swap moves
+\cfgThreeBytesTotal{}\,B, about \stageTwoBytesRatioThree{}$\times$ more, and puts
+\stageTwoOnChainRatio{}$\times$ more on the ledgers. That on-chain multiple is the
+figure that matters economically, because a UTXO chain prices transactions by size.
+It is also the reason the venue was changed: the same objects that cost fees here
+cost prohibitive gas on the EVM (\cref{tab:onchain}).
+
+\paragraph{A usability consequence.} A fully post-quantum swap needs roughly half a
+second of computation and tens of kilobytes of off-chain messaging per exchange, the
+overwhelming majority of it the proof. That is comfortable on a laptop and plausible
+on a modern phone, but it is three orders of magnitude away from the classical
+baseline's sub-millisecond profile, so a naive port of a mobile wallet's UX
+assumptions would be misleading. This qualitative point should not be over-read: no
+mobile or low-power device was measured, and the figures here are from one desktop
+machine (\cref{sec:res-validity}).
+
 \section{Threats to validity}
 \label{sec:res-validity}
 
@@ -611,3 +784,17 @@ Fourth, the extracted witness is exact in this parameterisation, whereas the
 relaxed setting of \cite{esgin2020post} allows witness noise that can grow across long payment-channel paths;
 the exact-extraction choice sidesteps that growth for the demonstration but is a
 simplification worth noting.
+
+Fifth, and specific to \cref{sec:res-stage2}, the UTXO ledger is an in-process
+model, not a consensus implementation: it has no peer-to-peer layer, no mempool
+policy, no fee market, no reorganisations, and no script interpreter. It therefore
+yields real transaction objects, real serialised sizes, and the real leak channel on
+which the swap's atomicity depends, but it does not yield fees or confirmation
+latency; the on-chain byte counts are the honest proxy for cost and are reported as
+such. This is not laziness about the venue but a property of it: running
+configurations~2 and~3 against a real Bitcoin node is impossible without a consensus
+change, because Bitcoin Script cannot verify a lattice signature --- which is exactly
+why \cite{esgin2020post} states its application over a UTXO chain \emph{whose
+signature algorithm has been replaced}. Sixth, the Stage-2 timings come from a single
+desktop machine (\stageTwoCpu{}), so the usability discussion above is an
+extrapolation, not a measurement on constrained hardware.

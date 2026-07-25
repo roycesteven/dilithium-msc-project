@@ -38,11 +38,30 @@ comparison against the optimised CRYSTALS-Dilithium reference --- not algorithm-
 --- shows that the remaining size gap is one of packing and production optimisation,
 not of security level.
 
+Taking the protocol to a UTXO ledger --- the venue \cite{esgin2020post} actually
+assumes --- sharpens that conclusion rather than repeating it, because at the
+application level the signature turns out not to be the dominant cost at all. The
+role-A proof of knowledge consumes \cfgTwoProofPct\% of a swap under Groth16 and
+\cfgThreeProofPct\% under LaZer; strip it out and the entire post-quantum signature
+workload of a two-party, two-chain swap costs \cfgTwoNonProofUs~$\mu$s against the
+classical swap's \cfgOneNonProofUs~$\mu$s, a factor of about
+\stageTwoCryptoRatio. The controlled comparison then inverts the trade-off one would
+expect: holding the signature, the public matrix and every input fixed and changing
+only the proof system, the \emph{post-quantum} prover is \cmpTimePctAbs\% faster
+end-to-end while being \cmpBytesPctAbs\% larger, its proof about
+\stageTwoProofSizeRatio$\times$ bigger. Groth16 is succinct but pays for succinctness
+in proving work across the whole constraint system; the lattice prover is not succinct
+but avoids encoding arithmetic modulo a 23-bit prime into a 254-bit pairing-friendly
+field. It also needs no trusted setup, so the fully post-quantum configuration is at
+once the faster one, the one with the weaker trust assumption, and the only one Shor
+does not break --- paying for all three in bytes.
+
 Measured against the objectives, all five were met: the scheme was selected and
 justified, implemented by reuse, validated, benchmarked fairly against two baselines
-with the standard metrics, and demonstrated in an application. The principal
-qualification is scope: the parameter set's concrete security is not formally
-analysed, and the application runs on a simulated ledger rather than a live testnet.
+with the standard metrics, and demonstrated in an application that was then measured
+in three configurations. The principal qualification is scope: the parameter set's
+concrete security is not formally analysed, and both applications run on modelled
+ledgers rather than live networks.
 
 \section{Critical reflection}
 \label{sec:reflection}
@@ -92,15 +111,24 @@ the problem into a worst-case fraud proof that also exceeds the cap. The root ca
 structural rather than incidental --- SHAKE256 is not an EVM-native hash --- which is
 precisely why no amount of local optimisation closed it.
 
-Second, the application is an \textbf{exploratory demonstrator, not a product}. It
-settles both legs of a two-party swap over a simulated ledger and asserts the
-properties that matter, but it does not run against a live testnet, and the protocol
+Second, the applications are \textbf{exploratory demonstrators, not products}. Both
+the narrated swap and the measured UTXO study settle over modelled ledgers and assert
+the properties that matter, but neither runs against a live network, and the protocol
 path was deliberately left unoptimised where optimisation would not have changed any
 conclusion --- most visibly in serialization, which is reported as its own measurement
-tier rather than engineered away. Treating that as a limitation to be declared, rather
-than a gap to be quietly papered over, is the right posture for an exploration of
-feasibility; it does mean the reported application-level costs should be read as an
-upper bound on a tuned implementation rather than as a deployment figure.
+tier rather than engineered away. For the UTXO study this is partly forced rather than
+chosen: Bitcoin Script cannot verify a lattice signature, so the post-quantum
+configurations could not settle on a real node without a consensus change, which is
+exactly the assumption \cite{esgin2020post} makes when it states its applications over
+a UTXO chain \emph{whose signature algorithm has been replaced}. The model is faithful
+to that assumption and yields real transaction objects, real serialised sizes, and the
+real leak channel on which atomicity depends; what it omits is the network, consensus,
+fee and confirmation overhead a deployment would additionally pay. The reported
+application-level costs are therefore an \emph{implementation-level feasibility
+estimate rather than a deployment figure} --- and, because the omitted overheads add
+cost rather than remove it, they are certainly not an upper bound on one. Declaring
+that, rather than quietly papering over it, is the right posture for an exploration of
+feasibility.
 
 Third, the concrete security of the chosen parameter set is \textbf{unanalysed by
 design}, and the modulus differs from the one specified in \cite{esgin2020post}. This
@@ -119,10 +147,19 @@ prohibitive; the measurements that establish this are among the more useful resu
 here, but they also show that a smart-contract chain was the harder venue. Adaptor
 signatures are used in practice for atomic swaps on Bitcoin and other UTXO-based
 chains precisely because the heavy work stays off-chain and there is no per-block
-execution budget to exceed. Beginning on a UTXO chain would have produced a working,
-defensibly feasible application sooner, with the EVM measurement retained as the
-comparative argument for \emph{why} that venue was chosen --- which is the direction
-the work now takes (\cref{sec:future}).
+execution budget to exceed. The UTXO study (\cref{sec:res-stage2}) bears this out: on
+that venue the protocol is not merely feasible but unremarkable, and the interesting
+question turns out to be a different one --- the cost of the proof system, not of the
+signature. Beginning there would have reached that question sooner, with the EVM
+measurement retained, as it now is, for what it genuinely establishes: the
+comparative argument for \emph{why} the venue was changed.
+
+The correction also carries a warning about how the question was framed. The project
+spent its application effort asking ``can a post-quantum signature be verified on
+chain?'' when the measurement that mattered was ``what dominates a post-quantum
+swap?'' --- and the answer, once measured, was the proof of knowledge, a component
+that never touches a chain at all. Choosing the venue earlier would have exposed the
+real cost centre earlier.
 
 Second, \textbf{measurement discipline would come first, not second}. Both early
 measurement artefacts --- the biased acceptance estimate and the asymmetric timed
@@ -165,24 +202,41 @@ The results point to several well-motivated directions.
         row, a hash dispute that avoids a full SHAKE256 pass, a dedicated precompile, or a
         succinct (zero-knowledge) proof of verification --- after which a swap should be
         benchmarked on a live testnet.
-  \item \textbf{Retarget the application to a UTXO chain.} The gas results above make
-        the case for changing venue rather than continuing to optimise against the
-        EVM's execution budget. On Bitcoin and other UTXO-based chains --- which is
-        where adaptor signatures are actually used in practice, precisely because the
-        adaptor layer is confined to the off-chain protocol and the chain only ever
-        validates an ordinary signature --- there is no per-transaction execution cap to
-        exceed, so a swap's feasibility cannot be dismissed on cost grounds. The natural
-        next experiment is a three-way comparison at equal protocol structure: a
-        classical adaptor swap, the same swap with LAS substituted for the classical
-        signature, and the same swap with the proof of knowledge additionally moved to a
-        post-quantum system --- which isolates the cost of the post-quantum signature
-        from that of the post-quantum proof. Because gas does not exist in that setting,
-        the metrics become execution time and communication cost, the latter counting
-        off-chain messages, where the post-quantum premium actually concentrates. One
-        qualification must travel with such a result: Bitcoin Script cannot verify a
-        lattice signature, so the settlement signature would remain classical and it is
-        the swap's \emph{atomicity}, not the coin's authorisation, that becomes
-        post-quantum.
+  \item \textbf{Take the UTXO study to a live network --- as far as one allows.} The
+        retargeting itself is done: the three-configuration comparison on a modelled
+        UTXO ledger is reported in \cref{sec:res-stage2}, and it answers the question
+        the gas results posed. What remains is what the model cannot supply --- fees,
+        propagation, and confirmation latency --- and how far that can be recovered
+        differs sharply by configuration.
+
+        For the \emph{classical} configuration the path is clear and staged. A
+        \emph{regtest} deployment would validate the integration against a real node's
+        consensus rules --- transaction construction, signature-hash agreement, the
+        spend paths, the timelocked refund --- but can calibrate nothing economic,
+        since blocks are mined on command, there is no fee market, and there is no
+        network to propagate across. \emph{Signet} supplies those missing quantities
+        and would turn the classical column's byte counts into a genuine deployment
+        figure.
+
+        For configurations 2 and 3 no Bitcoin test network helps, and this is the
+        point rather than a caveat. Signet enforces the same script rules as mainnet,
+        so it can no more verify a lattice signature than regtest or mainnet can; a
+        deployment figure for the \emph{post-quantum} swap is blocked not on
+        engineering but on chain support, and would require either a chain with native
+        post-quantum signature verification or a consensus change to add it. That
+        asymmetry --- a classical swap that can be priced today against a
+        post-quantum one that cannot be deployed at all --- is itself a result, and it
+        mirrors on the UTXO side the missing-precompile conclusion reached on the EVM.
+  \item \textbf{Reduce the proof, not the signature.} The clearest optimisation
+        target the application study identifies is the role-A proof, which dominates a
+        post-quantum swap by an order of magnitude over everything else combined. Two
+        directions are worth measuring: a succinct \emph{post-quantum} proof system,
+        which would keep the transparency and quantum resistance of the lattice prover
+        while cutting the proof from tens of kilobytes toward Groth16's constant size;
+        and amortisation across swaps, since a party that performs many exchanges
+        proves knowledge of a fresh statement each time, and batching those proofs
+        would spread the dominant cost. Optimising the signature further, by contrast,
+        would move a number the measurements show is not the bottleneck.
   \item \textbf{A new research question.} Extend toward functional adaptor
         signatures, which would move the project from systems implementation toward a
         novel construction and a publishable contribution.

@@ -1,0 +1,1536 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style type="text/css">
+.C{display:inline-block;font-weight:bold;color:#000000;background-color:#ff9900}
+.T{display:inline-block;font-weight:bold;color:#000000;background-color:#ff3545}
+.measurements{padding:1px;border-radius:7px;background-color:#c0ffc0}
+.testresults{padding:1px;border-radius:7px;background-color:#ffe090}
+body,td,th{font-family:"Noto Sans","Droid Sans","DejaVu Sans","Arial",sans-serif;line-height:1.3}
+td,th{padding:1px}
+table{border-collapse:collapse}
+td,tt,pre{font-family:Consolas,Monaco,"Noto Sans Mono","DejaVu Sans Mono",monospace,sans-serif;font-size:1em;}
+.heading{font-size:1.2em;margin-top:1em;margin-bottom:1em;font-weight:bold;display:block;break-after:avoid}
+summary{color:#0000ff;text-decoration:underline;cursor:pointer}
+</style>
+<title>
+Measurements of public-key signature systems
+</title>
+</head>
+<body>
+<table width="100%">
+<table width="100%">
+  <tr>
+    <th align=middle><img src="vampireLogo.gif" width="140" height="70"><br><a href="http://hyperelliptic.org/ECRYPTII/vampire/"><small>VAMPIRE</small></a></th>
+    <th align=middle><h1>eBACS: ECRYPT Benchmarking of Cryptographic Systems</h1></th>
+    <th align=middle><img src="ecrypt2-logo-trans.png" width="179" height="79"><br><a href="http://www.ecrypt.eu.org/"><small>ECRYPT II</small></a></th>
+  </tr>
+</table>
+<tr><td><table border width="100%" bgcolor="#EEEEEE">
+<tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>General information:</b></font></a></th>
+<td align=middle width="10%"><a href="index.html" style="text-decoration:none">Introduction</a></td>
+<td align=middle width="10%"><a href="ebash.html" style="text-decoration:none">eBASH</a></td>
+<td align=middle width="10%"><a href="ebasc.html" style="text-decoration:none">eBASC</a></td>
+<td align=middle width="10%"><a href="ebaead.html" style="text-decoration:none">eBAEAD</a></td>
+<td align=middle width="10%" bgcolor="#FFFF00"><a href="ebats.html" style="text-decoration:none">eBATS</a></td>
+<td align=middle width="8%"><a href="supercop.html" style="text-decoration:none">SUPERCOP</a></td>
+<td align=middle width="7%"><a href="xbx.html" style="text-decoration:none">XBX</a></td>
+<td align=middle width="8%"><a href="computers.html" style="text-decoration:none">Computers</a></td>
+<td align=middle width="7%"><a href="archnotes.html" style="text-decoration:none">Arch</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="15%" bgcolor="#EEEEEE"><font color="#000000"><b>How to submit new software:</b></font></a></th>
+<td align=middle width="5%"><a href="tips.html" style="text-decoration:none">Tips</a></td>
+<td align=middle width="18%"><a href="call-hash.html" style="text-decoration:none">hash</a></td>
+<td align=middle width="11%"><a href="call-stream.html" style="text-decoration:none">stream</a></td>
+<td align=middle width="18%"><a href="call-aead.html" style="text-decoration:none">aead</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-dh.html" style="text-decoration:none">dh</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-kem.html" style="text-decoration:none">kem</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-encrypt.html" style="text-decoration:none">encrypt</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="call-sign.html" style="text-decoration:none">sign</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>List of primitives measured:</b></font></a></th>
+<td align=middle width="6%"><a href="primitives-nistlwc-hash.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="primitives-sha3.html" style="text-decoration:none">sha3</a></td>
+<td align=middle width="6%"><a href="primitives-hash.html" style="text-decoration:none">hash</a></td>
+<td align=middle width="11%"><a href="primitives-stream.html" style="text-decoration:none">stream</a></td>
+<td align=middle width="6%"><a href="primitives-nistlwc-aead.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="primitives-caesar.html" style="text-decoration:none">caesar</a></td>
+<td align=middle width="6%"><a href="primitives-aead.html" style="text-decoration:none">aead</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-dh.html" style="text-decoration:none">dh</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-kem.html" style="text-decoration:none">kem</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-encrypt.html" style="text-decoration:none">encrypt</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="primitives-sign.html" style="text-decoration:none">sign</a></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>Measurements:</b></font></a></th>
+<td align=middle width="6%"><a href="results-nistlwc-hash.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="results-sha3.html" style="text-decoration:none">sha3</a></td>
+<td align=middle width="6%"><a href="results-hash.html" style="text-decoration:none">hash</a></td>
+<td align=middle width="11%"><a href="results-stream.html" style="text-decoration:none">stream</a></td>
+<td align=middle width="6%"><a href="results-nistlwc-aead.html" style="text-decoration:none">lwc</a></td>
+<td align=middle width="6%"><a href="results-caesar.html" style="text-decoration:none">caesar</a></td>
+<td align=middle width="6%"><a href="results-aead.html" style="text-decoration:none">aead</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-dh.html" style="text-decoration:none">dh</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-kem.html" style="text-decoration:none">kem</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><a href="results-encrypt.html" style="text-decoration:none">encrypt</a></td>
+<td align=middle width="8%" bgcolor="#FFFF00"><b>sign</b></td>
+</tr></table><table border width="100%" bgcolor="#EEEEEE"><tr>
+<th align=middle width="20%" bgcolor="#EEEEEE"><font color="#000000"><b>List of subroutines:</b></font></a></th>
+<td align=middle width="10%"><a href="primitives-verify.html" style="text-decoration:none">verify</a></td>
+<td align=middle width="10%"><a href="primitives-decode.html" style="text-decoration:none">decode</a></td>
+<td align=middle width="10%"><a href="primitives-encode.html" style="text-decoration:none">encode</a></td>
+<td align=middle width="10%"><a href="primitives-sort.html" style="text-decoration:none">sort</a></td>
+<td align=middle width="10%"><a href="primitives-core.html" style="text-decoration:none">core</a></td>
+<td align=middle width="10%"><a href="primitives-hashblocks.html" style="text-decoration:none">hashblocks</a></td>
+<td align=middle width="10%"><a href="primitives-xof.html" style="text-decoration:none">xof</a></td>
+<td align=middle width="10%" bgcolor="#FFFF00"><a href="primitives-scalarmult.html" style="text-decoration:none">scalarmult</a></td>
+</tr>
+</table>
+</td></tr>
+<tr><td>
+<h1>Measurements of public-key signature systems</h1>
+<p>[Page version: 20260624 14:36:04]</p>
+<p>
+<a href="ebats.html">eBATS</a>
+(<b>E</b>CRYPT <b>B</b>enchm<b>a</b>rking
+of <b>A</b>symmetric <b>S</b>ystems)
+is a project
+to measure the performance of public-key systems.
+This page presents benchmark results collected in eBATS
+for public-key signature systems:
+</p>
+<ul>
+<li>Time (cycles) to generate a key pair:
+a secret key and a corresponding public key.
+<li>Time to sign a short message (59 bytes).
+<li>Time to open a signed short message,
+i.e., to verify a (larger) signed message and recover the original short message.
+<li>Space (bytes) for a secret key.
+<li>Space for a public key.
+<li>Space for a signature on a 0-byte message.
+<li>Space for a signature on a 23-byte message:
+i.e.,
+the signed-message length minus 23 bytes.
+<li>Space for a signature on a long message:
+i.e.,
+the signed-message length minus the message length.
+</ul>
+<p>
+For signature systems that support "message recovery",
+the space for a signature on a long message
+is shorter than the space for a signature on a short message.
+</ul>
+<p>
+Each table row lists
+the first quartile of many speed measurements (or StQ1 starting with <tt>supercop-20260214</tt>),
+the median of many speed measurements (or StQ2 starting with <tt>supercop-20260214</tt>),
+the third quartile of many speed measurements (or StQ3 starting with <tt>supercop-20260214</tt>), and
+the name of the primitive.
+Measurements with large interquartile range (or stabilized interquartile range) are indicated in red with question marks.
+The symbol
+<tt><span class=T>T:</span></tt>
+(starting with supercop-20200816)
+means that the SUPERCOP database
+at the time of benchmarking did not list constant time
+as a goal for this implementation.
+The symbol
+<tt><span class=T>T!!!</span></tt>
+means that constant time was listed as a goal for this implementation,
+but that the implementation failed TIMECOP.
+(TIMECOP failures are not necessarily security issues;
+they can sometimes be resolved by, e.g., declaring that a rejection-sampling condition is safe to declassify.)
+</p>
+<p>
+There is a
+<a href="primitives-sign.html">separate page</a>
+with more information about each signature system and each implementation.
+Designers and implementors
+interested in submitting new signature systems
+and new implementations of existing signature systems
+should read the <a href="call-sign.html">call for submissions</a>.
+</p>
+<span class=heading id=sizes>Sizes across machines</span>
+<table>
+<tr>
+<td>
+<table border>
+<tr><th colspan="2">Secret key</th></tr>
+<tr><th>bytes</th><th>system</th></tr>
+<tr><td align=right>16</td><td>bluegemss128v2</td></tr>
+<tr><td align=right>16</td><td>gemss128v2</td></tr>
+<tr><td align=right>16</td><td>redgemss128v2</td></tr>
+<tr><td align=right>24</td><td>bluegemss192v2</td></tr>
+<tr><td align=right>24</td><td>gemss192v2</td></tr>
+<tr><td align=right>24</td><td>redgemss192v2</td></tr>
+<tr><td align=right>29</td><td>hector</td></tr>
+<tr><td align=right>32</td><td>bluegemss256v2</td></tr>
+<tr><td align=right>32</td><td>crossrsdp128balanced</td></tr>
+<tr><td align=right>32</td><td>crossrsdp128fast</td></tr>
+<tr><td align=right>32</td><td>crossrsdp128small</td></tr>
+<tr><td align=right>32</td><td>crossrsdpg128balanced</td></tr>
+<tr><td align=right>32</td><td>crossrsdpg128fast</td></tr>
+<tr><td align=right>32</td><td>crossrsdpg128small</td></tr>
+<tr><td align=right>32</td><td>edons128k08n72nu8l4mu3</td></tr>
+<tr><td align=right>32</td><td>edons128ref</td></tr>
+<tr><td align=right>32</td><td>gemss256v2</td></tr>
+<tr><td align=right>32</td><td>luov4849242</td></tr>
+<tr><td align=right>32</td><td>luov6468330</td></tr>
+<tr><td align=right>32</td><td>luov8086399</td></tr>
+<tr><td align=right>32</td><td>luov8117404</td></tr>
+<tr><td align=right>32</td><td>luov863256</td></tr>
+<tr><td align=right>32</td><td>luov890351</td></tr>
+<tr><td align=right>32</td><td>mqdss48</td></tr>
+<tr><td align=right>32</td><td>redgemss256v2</td></tr>
+<tr><td align=right>48</td><td>aimer128f</td></tr>
+<tr><td align=right>48</td><td>aimer128s</td></tr>
+<tr><td align=right>48</td><td>crossrsdp192balanced</td></tr>
+<tr><td align=right>48</td><td>crossrsdp192fast</td></tr>
+<tr><td align=right>48</td><td>crossrsdp192small</td></tr>
+<tr><td align=right>48</td><td>crossrsdpg192balanced</td></tr>
+<tr><td align=right>48</td><td>crossrsdpg192fast</td></tr>
+<tr><td align=right>48</td><td>crossrsdpg192small</td></tr>
+<tr><td align=right>48</td><td>mqdss64</td></tr>
+<tr><td align=right>49</td><td>picnic2l1fs</td></tr>
+<tr><td align=right>49</td><td>picnicl1fs</td></tr>
+<tr><td align=right>49</td><td>picnicl1ur</td></tr>
+<tr><td align=right>52</td><td>picnic3l1</td></tr>
+<tr><td align=right>52</td><td>picnicl1full</td></tr>
+<tr><td align=right>60</td><td>ecdonaldp160</td></tr>
+<tr><td align=right>63</td><td>ecdonaldb163</td></tr>
+<tr><td align=right>63</td><td>ecdonaldk163</td></tr>
+<tr><td align=right>64</td><td>crossrsdp256balanced</td></tr>
+<tr><td align=right>64</td><td>crossrsdp256fast</td></tr>
+<tr><td align=right>64</td><td>crossrsdp256small</td></tr>
+<tr><td align=right>64</td><td>crossrsdpg256balanced</td></tr>
+<tr><td align=right>64</td><td>crossrsdpg256fast</td></tr>
+<tr><td align=right>64</td><td>crossrsdpg256small</td></tr>
+<tr><td align=right>64</td><td>ed25519</td></tr>
+<tr><td align=right>64</td><td>rainbow1acompres363232</td></tr>
+<tr><td align=right>64</td><td>rainbow3ccompres683248</td></tr>
+<tr><td align=right>64</td><td>rainbow5ccompres963664</td></tr>
+<tr><td align=right>64</td><td>sphincsf128harakarobust</td></tr>
+<tr><td align=right>64</td><td>sphincsf128harakasimple</td></tr>
+<tr><td align=right>64</td><td>sphincsf128sha256robust</td></tr>
+<tr><td align=right>64</td><td>sphincsf128sha256simple</td></tr>
+<tr><td align=right>64</td><td>sphincsf128shake256robust</td></tr>
+<tr><td align=right>64</td><td>sphincsf128shake256simple</td></tr>
+<tr><td align=right>64</td><td>sphincss128harakarobust</td></tr>
+<tr><td align=right>64</td><td>sphincss128harakasimple</td></tr>
+<tr><td align=right>64</td><td>sphincss128sha256robust</td></tr>
+<tr><td align=right>64</td><td>sphincss128sha256simple</td></tr>
+<tr><td align=right>64</td><td>sphincss128shake256robust</td></tr>
+<tr><td align=right>64</td><td>sphincss128shake256simple</td></tr>
+<tr><td align=right>72</td><td>aimer192f</td></tr>
+<tr><td align=right>72</td><td>aimer192s</td></tr>
+<tr><td align=right>72</td><td>ecdonaldp192</td></tr>
+<tr><td align=right>72</td><td>mqom2cat1gf2fastr3</td></tr>
+<tr><td align=right>72</td><td>mqom2cat1gf2fastr5</td></tr>
+<tr><td align=right>72</td><td>mqom2cat1gf2shortr3</td></tr>
+<tr><td align=right>72</td><td>mqom2cat1gf2shortr5</td></tr>
+<tr><td align=right>73</td><td>picnic2l3fs</td></tr>
+<tr><td align=right>73</td><td>picnic3l3</td></tr>
+<tr><td align=right>73</td><td>picnicl3fs</td></tr>
+<tr><td align=right>73</td><td>picnicl3full</td></tr>
+<tr><td align=right>73</td><td>picnicl3ur</td></tr>
+<tr><td align=right>84</td><td>donald512</td></tr>
+<tr><td align=right>84</td><td>ecdonaldp224</td></tr>
+<tr><td align=right>88</td><td>mqom2cat1gf16fastr3</td></tr>
+<tr><td align=right>88</td><td>mqom2cat1gf16fastr5</td></tr>
+<tr><td align=right>88</td><td>mqom2cat1gf16shortr3</td></tr>
+<tr><td align=right>88</td><td>mqom2cat1gf16shortr5</td></tr>
+<tr><td align=right>90</td><td>ecdonaldb233</td></tr>
+<tr><td align=right>90</td><td>ecdonaldk233</td></tr>
+<tr><td align=right>96</td><td>aimer256f</td></tr>
+<tr><td align=right>96</td><td>aimer256s</td></tr>
+<tr><td align=right>96</td><td>ecdonaldp256</td></tr>
+<tr><td align=right>96</td><td>sphincsf192harakarobust</td></tr>
+<tr><td align=right>96</td><td>sphincsf192harakasimple</td></tr>
+<tr><td align=right>96</td><td>sphincsf192sha256robust</td></tr>
+<tr><td align=right>96</td><td>sphincsf192sha256simple</td></tr>
+<tr><td align=right>96</td><td>sphincsf192shake256robust</td></tr>
+<tr><td align=right>96</td><td>sphincsf192shake256simple</td></tr>
+<tr><td align=right>96</td><td>sphincss192harakarobust</td></tr>
+<tr><td align=right>96</td><td>sphincss192harakasimple</td></tr>
+<tr><td align=right>96</td><td>sphincss192sha256robust</td></tr>
+<tr><td align=right>96</td><td>sphincss192sha256simple</td></tr>
+<tr><td align=right>96</td><td>sphincss192shake256robust</td></tr>
+<tr><td align=right>96</td><td>sphincss192shake256simple</td></tr>
+<tr><td align=right>97</td><td>picnic2l5fs</td></tr>
+<tr><td align=right>97</td><td>picnic3l5</td></tr>
+<tr><td align=right>97</td><td>picnicl5fs</td></tr>
+<tr><td align=right>97</td><td>picnicl5full</td></tr>
+<tr><td align=right>97</td><td>picnicl5ur</td></tr>
+<tr><td align=right>108</td><td>ecdonaldb283</td></tr>
+<tr><td align=right>108</td><td>ecdonaldk283</td></tr>
+<tr><td align=right>108</td><td>mqom2cat3gf2fastr3</td></tr>
+<tr><td align=right>108</td><td>mqom2cat3gf2fastr5</td></tr>
+<tr><td align=right>108</td><td>mqom2cat3gf2shortr3</td></tr>
+<tr><td align=right>108</td><td>mqom2cat3gf2shortr5</td></tr>
+<tr><td align=right>128</td><td>mqom2cat1gf256fastr3</td></tr>
+<tr><td align=right>128</td><td>mqom2cat1gf256fastr5</td></tr>
+<tr><td align=right>128</td><td>mqom2cat1gf256shortr3</td></tr>
+<tr><td align=right>128</td><td>mqom2cat1gf256shortr5</td></tr>
+<tr><td align=right>128</td><td>sphincsf256harakarobust</td></tr>
+<tr><td align=right>128</td><td>sphincsf256harakasimple</td></tr>
+<tr><td align=right>128</td><td>sphincsf256sha256robust</td></tr>
+<tr><td align=right>128</td><td>sphincsf256sha256simple</td></tr>
+<tr><td align=right>128</td><td>sphincsf256shake256robust</td></tr>
+<tr><td align=right>128</td><td>sphincsf256shake256simple</td></tr>
+<tr><td align=right>128</td><td>sphincss256harakarobust</td></tr>
+<tr><td align=right>128</td><td>sphincss256harakasimple</td></tr>
+<tr><td align=right>128</td><td>sphincss256sha256robust</td></tr>
+<tr><td align=right>128</td><td>sphincss256sha256simple</td></tr>
+<tr><td align=right>128</td><td>sphincss256shake256robust</td></tr>
+<tr><td align=right>128</td><td>sphincss256shake256simple</td></tr>
+<tr><td align=right>132</td><td>mqom2cat3gf16fastr3</td></tr>
+<tr><td align=right>132</td><td>mqom2cat3gf16fastr5</td></tr>
+<tr><td align=right>132</td><td>mqom2cat3gf16shortr3</td></tr>
+<tr><td align=right>132</td><td>mqom2cat3gf16shortr5</td></tr>
+<tr><td align=right>144</td><td>ecdonaldp384</td></tr>
+<tr><td align=right>144</td><td>ed448goldilocks</td></tr>
+<tr><td align=right>144</td><td>mqom2cat5gf2fastr3</td></tr>
+<tr><td align=right>144</td><td>mqom2cat5gf2fastr5</td></tr>
+<tr><td align=right>144</td><td>mqom2cat5gf2shortr3</td></tr>
+<tr><td align=right>144</td><td>mqom2cat5gf2shortr5</td></tr>
+<tr><td align=right>148</td><td>donald1024</td></tr>
+<tr><td align=right>20..148..276</td><td>donald2048</td></tr>
+<tr><td align=right>156</td><td>ecdonaldb409</td></tr>
+<tr><td align=right>156</td><td>ecdonaldk409</td></tr>
+<tr><td align=right>180</td><td>mqom2cat5gf16fastr3</td></tr>
+<tr><td align=right>180</td><td>mqom2cat5gf16fastr5</td></tr>
+<tr><td align=right>180</td><td>mqom2cat5gf16shortr3</td></tr>
+<tr><td align=right>180</td><td>mqom2cat5gf16shortr5</td></tr>
+<tr><td align=right>192</td><td>mqom2cat3gf256fastr3</td></tr>
+<tr><td align=right>192</td><td>mqom2cat3gf256fastr5</td></tr>
+<tr><td align=right>192</td><td>mqom2cat3gf256shortr3</td></tr>
+<tr><td align=right>192</td><td>mqom2cat3gf256shortr5</td></tr>
+<tr><td align=right>193</td><td>pass769</td></tr>
+<tr><td align=right>198</td><td>ecdonaldp521</td></tr>
+<tr><td align=right>216</td><td>ecdonaldb571</td></tr>
+<tr><td align=right>216</td><td>ecdonaldk571</td></tr>
+<tr><td align=right>216</td><td>pass863</td></tr>
+<tr><td align=right>256</td><td>lattisigns512</td></tr>
+<tr><td align=right>256</td><td>mqom2cat5gf256fastr3</td></tr>
+<tr><td align=right>256</td><td>mqom2cat5gf256fastr5</td></tr>
+<tr><td align=right>256</td><td>mqom2cat5gf256shortr3</td></tr>
+<tr><td align=right>256</td><td>mqom2cat5gf256shortr5</td></tr>
+<tr><td align=right>265</td><td>rwb0fuz1024</td></tr>
+<tr><td align=right>512</td><td>ronald512</td></tr>
+<tr><td align=right>768</td><td>ronald768</td></tr>
+<tr><td align=right>1024</td><td>ronald1024</td></tr>
+<tr><td align=right>1088</td><td>sphincs256</td></tr>
+<tr><td align=right>1281</td><td>falcon512dyn</td></tr>
+<tr><td align=right>1408</td><td>haetae2</td></tr>
+<tr><td align=right>1536</td><td>ronald1536</td></tr>
+<tr><td align=right>2048</td><td>ronald2048</td></tr>
+<tr><td align=right>2112</td><td>haetae3</td></tr>
+<tr><td align=right>2112</td><td>qtesla1</td></tr>
+<tr><td align=right>2112</td><td>qtesla128</td></tr>
+<tr><td align=right>2305</td><td>falcon1024dyn</td></tr>
+<tr><td align=right>2544</td><td>dilithium2</td></tr>
+<tr><td align=right>2544</td><td>dilithium2aes</td></tr>
+<tr><td align=right>2688</td><td>nccsign1</td></tr>
+<tr><td align=right>2688</td><td>nccsign1aes</td></tr>
+<tr><td align=right>2752</td><td>haetae5</td></tr>
+<tr><td align=right>2823</td><td>sflashv2</td></tr>
+<tr><td align=right>3072</td><td>ronald3072</td></tr>
+<tr><td align=right>3552</td><td>nccsign3</td></tr>
+<tr><td align=right>3552</td><td>nccsign3aes</td></tr>
+<tr><td align=right>4016</td><td>dilithium3</td></tr>
+<tr><td align=right>4016</td><td>dilithium3aes</td></tr>
+<tr><td align=right>4096</td><td>ronald4096</td></tr>
+<tr><td align=right>4160</td><td>qtesla3f</td></tr>
+<tr><td align=right>4160</td><td>qtesla3s</td></tr>
+<tr><td align=right>4880</td><td>dilithium5</td></tr>
+<tr><td align=right>4880</td><td>dilithium5aes</td></tr>
+<tr><td align=right>5184</td><td>qtesla1p</td></tr>
+<tr><td align=right>5550</td><td>pflash1</td></tr>
+<tr><td align=right>5568</td><td>nccsign5</td></tr>
+<tr><td align=right>5568</td><td>nccsign5aes</td></tr>
+<tr><td align=right>8256</td><td>qtesla192</td></tr>
+<tr><td align=right>8256</td><td>qtesla256</td></tr>
+<tr><td align=right>12352</td><td>qtesla3p</td></tr>
+<tr><td align=right>12768</td><td>3icp</td></tr>
+<tr><td align=right>13824</td><td>redgemss128</td></tr>
+<tr><td align=right>14520</td><td>gemss128</td></tr>
+<tr><td align=right>14664</td><td>bluegemss128</td></tr>
+<tr><td align=right>14985</td><td>gui184</td></tr>
+<tr><td align=right>16608</td><td>tts6440</td></tr>
+<tr><td align=right>23408</td><td>rainbowbinary256181212</td></tr>
+<tr><td align=right>40280</td><td>gemss192</td></tr>
+<tr><td align=right>40760</td><td>redgemss192</td></tr>
+<tr><td align=right>41720</td><td>bluegemss192</td></tr>
+<tr><td align=right>41755</td><td>gui312</td></tr>
+<tr><td align=right>57344</td><td>falcon512tree</td></tr>
+<tr><td align=right>65568</td><td>gravitysphincss</td></tr>
+<tr><td align=right>78096</td><td>bluegemss256</td></tr>
+<tr><td align=right>78408</td><td>redgemss256</td></tr>
+<tr><td align=right>83688</td><td>gemss256</td></tr>
+<tr><td align=right>86240</td><td>rainbow5640</td></tr>
+<tr><td align=right>94384</td><td>rainbowbinary16242020</td></tr>
+<tr><td align=right>94757</td><td>gui448</td></tr>
+<tr><td align=right>98304</td><td>pqrsa15</td></tr>
+<tr><td align=right>100209</td><td>rainbow1a</td></tr>
+<tr><td align=right>103648</td><td>rainbow1aclassic363232</td></tr>
+<tr><td align=right>103648</td><td>rainbow1acyclicc363232</td></tr>
+<tr><td align=right>114308</td><td>rainbow1b</td></tr>
+<tr><td align=right>122880</td><td>falcon1024tree</td></tr>
+<tr><td align=right>143385</td><td>rainbow1c</td></tr>
+<tr><td align=right>150512</td><td>rainbow6440</td></tr>
+<tr><td align=right>160881</td><td>mqsignlr2567246</td></tr>
+<tr><td align=right>276649</td><td>mqsignrr2567246</td></tr>
+<tr><td align=right>376141</td><td>rainbow4a</td></tr>
+<tr><td align=right>396840</td><td>luov863256pc</td></tr>
+<tr><td align=right>409463</td><td>rainbow3b</td></tr>
+<tr><td align=right>537781</td><td>rainbow3c</td></tr>
+<tr><td align=right>601249</td><td>mqsignlr25611272</td></tr>
+<tr><td align=right>626048</td><td>rainbow3cclassic683248</td></tr>
+<tr><td align=right>626048</td><td>rainbow3ccyclicc683248</td></tr>
+<tr><td align=right>892079</td><td>rainbow6a</td></tr>
+<tr><td align=right>1016868</td><td>rainbow6b</td></tr>
+<tr><td align=right>1044385</td><td>mqsignrr25611272</td></tr>
+<tr><td align=right>1048608</td><td>gravitysphincsl</td></tr>
+<tr><td align=right>1274317</td><td>rainbow5c</td></tr>
+<tr><td align=right>1400113</td><td>mqsignlr25614896</td></tr>
+<tr><td align=right>1408736</td><td>rainbow5cclassic963664</td></tr>
+<tr><td align=right>1408736</td><td>rainbow5ccyclicc963664</td></tr>
+<tr><td align=right>1506592</td><td>luov890351pc</td></tr>
+<tr><td align=right>2080112</td><td>luov8117404pc</td></tr>
+<tr><td align=right>2097184</td><td>gravitysphincsm</td></tr>
+<tr><td align=right>2436769</td><td>mqsignrr25614896</td></tr>
+</table>
+</td>
+<td>
+<table border>
+<tr><th colspan="2">Public key</th></tr>
+<tr><th>bytes</th><th>system</th></tr>
+<tr><td align=right>32</td><td>aimer128f</td></tr>
+<tr><td align=right>32</td><td>aimer128s</td></tr>
+<tr><td align=right>32</td><td>ed25519</td></tr>
+<tr><td align=right>32</td><td>gravitysphincsl</td></tr>
+<tr><td align=right>32</td><td>gravitysphincsm</td></tr>
+<tr><td align=right>32</td><td>gravitysphincss</td></tr>
+<tr><td align=right>32</td><td>sphincsf128harakarobust</td></tr>
+<tr><td align=right>32</td><td>sphincsf128harakasimple</td></tr>
+<tr><td align=right>32</td><td>sphincsf128sha256robust</td></tr>
+<tr><td align=right>32</td><td>sphincsf128sha256simple</td></tr>
+<tr><td align=right>32</td><td>sphincsf128shake256robust</td></tr>
+<tr><td align=right>32</td><td>sphincsf128shake256simple</td></tr>
+<tr><td align=right>32</td><td>sphincss128harakarobust</td></tr>
+<tr><td align=right>32</td><td>sphincss128harakasimple</td></tr>
+<tr><td align=right>32</td><td>sphincss128sha256robust</td></tr>
+<tr><td align=right>32</td><td>sphincss128sha256simple</td></tr>
+<tr><td align=right>32</td><td>sphincss128shake256robust</td></tr>
+<tr><td align=right>32</td><td>sphincss128shake256simple</td></tr>
+<tr><td align=right>33</td><td>picnic2l1fs</td></tr>
+<tr><td align=right>33</td><td>picnicl1fs</td></tr>
+<tr><td align=right>33</td><td>picnicl1ur</td></tr>
+<tr><td align=right>35</td><td>picnic3l1</td></tr>
+<tr><td align=right>35</td><td>picnicl1full</td></tr>
+<tr><td align=right>40</td><td>ecdonaldp160</td></tr>
+<tr><td align=right>42</td><td>ecdonaldb163</td></tr>
+<tr><td align=right>42</td><td>ecdonaldk163</td></tr>
+<tr><td align=right>48</td><td>aimer192f</td></tr>
+<tr><td align=right>48</td><td>aimer192s</td></tr>
+<tr><td align=right>48</td><td>ecdonaldp192</td></tr>
+<tr><td align=right>48</td><td>sphincsf192harakarobust</td></tr>
+<tr><td align=right>48</td><td>sphincsf192harakasimple</td></tr>
+<tr><td align=right>48</td><td>sphincsf192sha256robust</td></tr>
+<tr><td align=right>48</td><td>sphincsf192sha256simple</td></tr>
+<tr><td align=right>48</td><td>sphincsf192shake256robust</td></tr>
+<tr><td align=right>48</td><td>sphincsf192shake256simple</td></tr>
+<tr><td align=right>48</td><td>sphincss192harakarobust</td></tr>
+<tr><td align=right>48</td><td>sphincss192harakasimple</td></tr>
+<tr><td align=right>48</td><td>sphincss192sha256robust</td></tr>
+<tr><td align=right>48</td><td>sphincss192sha256simple</td></tr>
+<tr><td align=right>48</td><td>sphincss192shake256robust</td></tr>
+<tr><td align=right>48</td><td>sphincss192shake256simple</td></tr>
+<tr><td align=right>49</td><td>picnic2l3fs</td></tr>
+<tr><td align=right>49</td><td>picnic3l3</td></tr>
+<tr><td align=right>49</td><td>picnicl3fs</td></tr>
+<tr><td align=right>49</td><td>picnicl3full</td></tr>
+<tr><td align=right>49</td><td>picnicl3ur</td></tr>
+<tr><td align=right>52</td><td>mqom2cat1gf2fastr3</td></tr>
+<tr><td align=right>52</td><td>mqom2cat1gf2fastr5</td></tr>
+<tr><td align=right>52</td><td>mqom2cat1gf2shortr3</td></tr>
+<tr><td align=right>52</td><td>mqom2cat1gf2shortr5</td></tr>
+<tr><td align=right>54</td><td>crossrsdpg128balanced</td></tr>
+<tr><td align=right>54</td><td>crossrsdpg128fast</td></tr>
+<tr><td align=right>54</td><td>crossrsdpg128small</td></tr>
+<tr><td align=right>56</td><td>ecdonaldp224</td></tr>
+<tr><td align=right>56</td><td>ed448goldilocks</td></tr>
+<tr><td align=right>60</td><td>ecdonaldb233</td></tr>
+<tr><td align=right>60</td><td>ecdonaldk233</td></tr>
+<tr><td align=right>60</td><td>hector</td></tr>
+<tr><td align=right>60</td><td>mqom2cat1gf16fastr3</td></tr>
+<tr><td align=right>60</td><td>mqom2cat1gf16fastr5</td></tr>
+<tr><td align=right>60</td><td>mqom2cat1gf16shortr3</td></tr>
+<tr><td align=right>60</td><td>mqom2cat1gf16shortr5</td></tr>
+<tr><td align=right>62</td><td>mqdss48</td></tr>
+<tr><td align=right>64</td><td>aimer256f</td></tr>
+<tr><td align=right>64</td><td>aimer256s</td></tr>
+<tr><td align=right>64</td><td>donald512</td></tr>
+<tr><td align=right>64</td><td>ecdonaldp256</td></tr>
+<tr><td align=right>64</td><td>ronald512</td></tr>
+<tr><td align=right>64</td><td>sphincsf256harakarobust</td></tr>
+<tr><td align=right>64</td><td>sphincsf256harakasimple</td></tr>
+<tr><td align=right>64</td><td>sphincsf256sha256robust</td></tr>
+<tr><td align=right>64</td><td>sphincsf256sha256simple</td></tr>
+<tr><td align=right>64</td><td>sphincsf256shake256robust</td></tr>
+<tr><td align=right>64</td><td>sphincsf256shake256simple</td></tr>
+<tr><td align=right>64</td><td>sphincss256harakarobust</td></tr>
+<tr><td align=right>64</td><td>sphincss256harakasimple</td></tr>
+<tr><td align=right>64</td><td>sphincss256sha256robust</td></tr>
+<tr><td align=right>64</td><td>sphincss256sha256simple</td></tr>
+<tr><td align=right>64</td><td>sphincss256shake256robust</td></tr>
+<tr><td align=right>64</td><td>sphincss256shake256simple</td></tr>
+<tr><td align=right>65</td><td>picnic2l5fs</td></tr>
+<tr><td align=right>65</td><td>picnic3l5</td></tr>
+<tr><td align=right>65</td><td>picnicl5fs</td></tr>
+<tr><td align=right>65</td><td>picnicl5full</td></tr>
+<tr><td align=right>65</td><td>picnicl5ur</td></tr>
+<tr><td align=right>72</td><td>ecdonaldb283</td></tr>
+<tr><td align=right>72</td><td>ecdonaldk283</td></tr>
+<tr><td align=right>77</td><td>crossrsdp128balanced</td></tr>
+<tr><td align=right>77</td><td>crossrsdp128fast</td></tr>
+<tr><td align=right>77</td><td>crossrsdp128small</td></tr>
+<tr><td align=right>78</td><td>mqom2cat3gf2fastr3</td></tr>
+<tr><td align=right>78</td><td>mqom2cat3gf2fastr5</td></tr>
+<tr><td align=right>78</td><td>mqom2cat3gf2shortr3</td></tr>
+<tr><td align=right>78</td><td>mqom2cat3gf2shortr5</td></tr>
+<tr><td align=right>80</td><td>mqom2cat1gf256fastr3</td></tr>
+<tr><td align=right>80</td><td>mqom2cat1gf256fastr5</td></tr>
+<tr><td align=right>80</td><td>mqom2cat1gf256shortr3</td></tr>
+<tr><td align=right>80</td><td>mqom2cat1gf256shortr5</td></tr>
+<tr><td align=right>83</td><td>crossrsdpg192balanced</td></tr>
+<tr><td align=right>83</td><td>crossrsdpg192fast</td></tr>
+<tr><td align=right>83</td><td>crossrsdpg192small</td></tr>
+<tr><td align=right>88</td><td>mqdss64</td></tr>
+<tr><td align=right>90</td><td>mqom2cat3gf16fastr3</td></tr>
+<tr><td align=right>90</td><td>mqom2cat3gf16fastr5</td></tr>
+<tr><td align=right>90</td><td>mqom2cat3gf16shortr3</td></tr>
+<tr><td align=right>90</td><td>mqom2cat3gf16shortr5</td></tr>
+<tr><td align=right>96</td><td>ecdonaldp384</td></tr>
+<tr><td align=right>96</td><td>ronald768</td></tr>
+<tr><td align=right>104</td><td>ecdonaldb409</td></tr>
+<tr><td align=right>104</td><td>ecdonaldk409</td></tr>
+<tr><td align=right>104</td><td>mqom2cat5gf2fastr3</td></tr>
+<tr><td align=right>104</td><td>mqom2cat5gf2fastr5</td></tr>
+<tr><td align=right>104</td><td>mqom2cat5gf2shortr3</td></tr>
+<tr><td align=right>104</td><td>mqom2cat5gf2shortr5</td></tr>
+<tr><td align=right>106</td><td>crossrsdpg256balanced</td></tr>
+<tr><td align=right>106</td><td>crossrsdpg256fast</td></tr>
+<tr><td align=right>106</td><td>crossrsdpg256small</td></tr>
+<tr><td align=right>115</td><td>crossrsdp192balanced</td></tr>
+<tr><td align=right>115</td><td>crossrsdp192fast</td></tr>
+<tr><td align=right>115</td><td>crossrsdp192small</td></tr>
+<tr><td align=right>120</td><td>mqom2cat3gf256fastr3</td></tr>
+<tr><td align=right>120</td><td>mqom2cat3gf256fastr5</td></tr>
+<tr><td align=right>120</td><td>mqom2cat3gf256shortr3</td></tr>
+<tr><td align=right>120</td><td>mqom2cat3gf256shortr5</td></tr>
+<tr><td align=right>122</td><td>mqom2cat5gf16fastr3</td></tr>
+<tr><td align=right>122</td><td>mqom2cat5gf16fastr5</td></tr>
+<tr><td align=right>122</td><td>mqom2cat5gf16shortr3</td></tr>
+<tr><td align=right>122</td><td>mqom2cat5gf16shortr5</td></tr>
+<tr><td align=right>128</td><td>donald1024</td></tr>
+<tr><td align=right>128</td><td>ronald1024</td></tr>
+<tr><td align=right>128</td><td>rwb0fuz1024</td></tr>
+<tr><td align=right>132</td><td>ecdonaldp521</td></tr>
+<tr><td align=right>144</td><td>ecdonaldb571</td></tr>
+<tr><td align=right>144</td><td>ecdonaldk571</td></tr>
+<tr><td align=right>153</td><td>crossrsdp256balanced</td></tr>
+<tr><td align=right>153</td><td>crossrsdp256fast</td></tr>
+<tr><td align=right>153</td><td>crossrsdp256small</td></tr>
+<tr><td align=right>160</td><td>mqom2cat5gf256fastr3</td></tr>
+<tr><td align=right>160</td><td>mqom2cat5gf256fastr5</td></tr>
+<tr><td align=right>160</td><td>mqom2cat5gf256shortr3</td></tr>
+<tr><td align=right>160</td><td>mqom2cat5gf256shortr5</td></tr>
+<tr><td align=right>192</td><td>ronald1536</td></tr>
+<tr><td align=right>256</td><td>donald2048</td></tr>
+<tr><td align=right>256</td><td>ronald2048</td></tr>
+<tr><td align=right>384</td><td>ronald3072</td></tr>
+<tr><td align=right>512</td><td>ronald4096</td></tr>
+<tr><td align=right>840</td><td>edons128k08n72nu8l4mu3</td></tr>
+<tr><td align=right>897</td><td>falcon512dyn</td></tr>
+<tr><td align=right>897</td><td>falcon512tree</td></tr>
+<tr><td align=right>992</td><td>haetae2</td></tr>
+<tr><td align=right>1056</td><td>sphincs256</td></tr>
+<tr><td align=right>1312</td><td>dilithium2</td></tr>
+<tr><td align=right>1312</td><td>dilithium2aes</td></tr>
+<tr><td align=right>1472</td><td>haetae3</td></tr>
+<tr><td align=right>1504</td><td>qtesla1</td></tr>
+<tr><td align=right>1536</td><td>lattisigns512</td></tr>
+<tr><td align=right>1544</td><td>pass769</td></tr>
+<tr><td align=right>1760</td><td>nccsign1</td></tr>
+<tr><td align=right>1760</td><td>nccsign1aes</td></tr>
+<tr><td align=right>1776</td><td>pass863</td></tr>
+<tr><td align=right>1793</td><td>falcon1024dyn</td></tr>
+<tr><td align=right>1793</td><td>falcon1024tree</td></tr>
+<tr><td align=right>1952</td><td>dilithium3</td></tr>
+<tr><td align=right>1952</td><td>dilithium3aes</td></tr>
+<tr><td align=right>2080</td><td>haetae5</td></tr>
+<tr><td align=right>2336</td><td>nccsign3</td></tr>
+<tr><td align=right>2336</td><td>nccsign3aes</td></tr>
+<tr><td align=right>2576</td><td>edons128ref</td></tr>
+<tr><td align=right>2592</td><td>dilithium5</td></tr>
+<tr><td align=right>2592</td><td>dilithium5aes</td></tr>
+<tr><td align=right>2976</td><td>qtesla3s</td></tr>
+<tr><td align=right>3104</td><td>qtesla3f</td></tr>
+<tr><td align=right>3200</td><td>nccsign5</td></tr>
+<tr><td align=right>3200</td><td>nccsign5aes</td></tr>
+<tr><td align=right>4128</td><td>qtesla128</td></tr>
+<tr><td align=right>7536</td><td>luov4849242</td></tr>
+<tr><td align=right>8224</td><td>qtesla192</td></tr>
+<tr><td align=right>8224</td><td>qtesla256</td></tr>
+<tr><td align=right>14880</td><td>qtesla1p</td></tr>
+<tr><td align=right>15908</td><td>luov863256</td></tr>
+<tr><td align=right>19266</td><td>sflashv2</td></tr>
+<tr><td align=right>19973</td><td>luov6468330</td></tr>
+<tr><td align=right>30240</td><td>rainbowbinary256181212</td></tr>
+<tr><td align=right>32768</td><td>pqrsa15</td></tr>
+<tr><td align=right>35712</td><td>3icp</td></tr>
+<tr><td align=right>39712</td><td>qtesla3p</td></tr>
+<tr><td align=right>40248</td><td>luov8086399</td></tr>
+<tr><td align=right>44160</td><td>rainbow5640</td></tr>
+<tr><td align=right>46101</td><td>luov890351</td></tr>
+<tr><td align=right>57600</td><td>rainbow6440</td></tr>
+<tr><td align=right>57600</td><td>tts6440</td></tr>
+<tr><td align=right>60192</td><td>rainbow1acompres363232</td></tr>
+<tr><td align=right>60192</td><td>rainbow1acyclicc363232</td></tr>
+<tr><td align=right>72124</td><td>pflash1</td></tr>
+<tr><td align=right>100989</td><td>luov8117404</td></tr>
+<tr><td align=right>102912</td><td>rainbowbinary16242020</td></tr>
+<tr><td align=right>152097</td><td>rainbow1a</td></tr>
+<tr><td align=right>161600</td><td>rainbow1aclassic363232</td></tr>
+<tr><td align=right>163185</td><td>rainbow1b</td></tr>
+<tr><td align=right>192241</td><td>rainbow1c</td></tr>
+<tr><td align=right>264608</td><td>rainbow3ccompres683248</td></tr>
+<tr><td align=right>264608</td><td>rainbow3ccyclicc683248</td></tr>
+<tr><td align=right>322967</td><td>mqsignlr2567246</td></tr>
+<tr><td align=right>323031</td><td>mqsignrr2567246</td></tr>
+<tr><td align=right>352188</td><td>gemss128v2</td></tr>
+<tr><td align=right>363609</td><td>bluegemss128v2</td></tr>
+<tr><td align=right>375213</td><td>redgemss128v2</td></tr>
+<tr><td align=right>410880</td><td>luov863256pc</td></tr>
+<tr><td align=right>417408</td><td>gemss128</td></tr>
+<tr><td align=right>422122</td><td>gui184</td></tr>
+<tr><td align=right>430944</td><td>bluegemss128</td></tr>
+<tr><td align=right>444696</td><td>redgemss128</td></tr>
+<tr><td align=right>536136</td><td>rainbow5ccompres963664</td></tr>
+<tr><td align=right>536136</td><td>rainbow5ccyclicc963664</td></tr>
+<tr><td align=right>564535</td><td>rainbow3b</td></tr>
+<tr><td align=right>565489</td><td>rainbow4a</td></tr>
+<tr><td align=right>720793</td><td>rainbow3c</td></tr>
+<tr><td align=right>882080</td><td>rainbow3cclassic683248</td></tr>
+<tr><td align=right>1225441</td><td>mqsignlr25611272</td></tr>
+<tr><td align=right>1225505</td><td>mqsignrr25611272</td></tr>
+<tr><td align=right>1237964</td><td>gemss192v2</td></tr>
+<tr><td align=right>1264117</td><td>bluegemss192v2</td></tr>
+<tr><td align=right>1290543</td><td>redgemss192v2</td></tr>
+<tr><td align=right>1304192</td><td>gemss192</td></tr>
+<tr><td align=right>1331744</td><td>bluegemss192</td></tr>
+<tr><td align=right>1351361</td><td>rainbow6a</td></tr>
+<tr><td align=right>1359584</td><td>redgemss192</td></tr>
+<tr><td align=right>1456225</td><td>rainbow6b</td></tr>
+<tr><td align=right>1566448</td><td>luov890351pc</td></tr>
+<tr><td align=right>1723681</td><td>rainbow5c</td></tr>
+<tr><td align=right>1930600</td><td>rainbow5cclassic963664</td></tr>
+<tr><td align=right>1990045</td><td>gui312</td></tr>
+<tr><td align=right>2184048</td><td>luov8117404pc</td></tr>
+<tr><td align=right>2869441</td><td>mqsignlr25614896</td></tr>
+<tr><td align=right>2869505</td><td>mqsignrr25614896</td></tr>
+<tr><td align=right>3040700</td><td>gemss256v2</td></tr>
+<tr><td align=right>3046848</td><td>gemss256</td></tr>
+<tr><td align=right>3087963</td><td>bluegemss256v2</td></tr>
+<tr><td align=right>3094200</td><td>bluegemss256</td></tr>
+<tr><td align=right>3135591</td><td>redgemss256v2</td></tr>
+<tr><td align=right>3141912</td><td>redgemss256</td></tr>
+<tr><td align=right>5903405</td><td>gui448</td></tr>
+</table>
+</td>
+<td>
+<table border>
+<tr><th colspan="2">Signing 0 bytes</th></tr>
+<tr><th>bytes</th><th>system</th></tr>
+<tr><td align=right>32</td><td>rainbowbinary16242020</td></tr>
+<tr><td align=right>33</td><td>gemss128</td></tr>
+<tr><td align=right>33</td><td>gemss128v2</td></tr>
+<tr><td align=right>34</td><td>bluegemss128</td></tr>
+<tr><td align=right>34</td><td>bluegemss128v2</td></tr>
+<tr><td align=right>36</td><td>3icp</td></tr>
+<tr><td align=right>36</td><td>redgemss128</td></tr>
+<tr><td align=right>36</td><td>redgemss128v2</td></tr>
+<tr><td align=right>37</td><td>pflash1</td></tr>
+<tr><td align=right>37</td><td>rainbow5640</td></tr>
+<tr><td align=right>37</td><td>sflashv2</td></tr>
+<tr><td align=right>40</td><td>donald1024</td></tr>
+<tr><td align=right>40</td><td>donald2048</td></tr>
+<tr><td align=right>40</td><td>donald512</td></tr>
+<tr><td align=right>40</td><td>ecdonaldp160</td></tr>
+<tr><td align=right>42</td><td>ecdonaldb163</td></tr>
+<tr><td align=right>42</td><td>ecdonaldk163</td></tr>
+<tr><td align=right>42</td><td>rainbowbinary256181212</td></tr>
+<tr><td align=right>43</td><td>rainbow6440</td></tr>
+<tr><td align=right>43</td><td>tts6440</td></tr>
+<tr><td align=right>45</td><td>gui184</td></tr>
+<tr><td align=right>48</td><td>ecdonaldp192</td></tr>
+<tr><td align=right>52</td><td>gemss192</td></tr>
+<tr><td align=right>52</td><td>gemss192v2</td></tr>
+<tr><td align=right>53</td><td>bluegemss192</td></tr>
+<tr><td align=right>53</td><td>bluegemss192v2</td></tr>
+<tr><td align=right>55</td><td>redgemss192</td></tr>
+<tr><td align=right>55</td><td>redgemss192v2</td></tr>
+<tr><td align=right>56</td><td>ecdonaldp224</td></tr>
+<tr><td align=right>60</td><td>ecdonaldb233</td></tr>
+<tr><td align=right>60</td><td>ecdonaldk233</td></tr>
+<tr><td align=right>63</td><td>gui312</td></tr>
+<tr><td align=right>64</td><td>ecdonaldp256</td></tr>
+<tr><td align=right>64</td><td>ed25519</td></tr>
+<tr><td align=right>64</td><td>rainbow1a</td></tr>
+<tr><td align=right>64</td><td>ronald512</td></tr>
+<tr><td align=right>65</td><td>rwb0fuz1024</td></tr>
+<tr><td align=right>66</td><td>rainbow1aclassic363232</td></tr>
+<tr><td align=right>66</td><td>rainbow1acompres363232</td></tr>
+<tr><td align=right>66</td><td>rainbow1acyclicc363232</td></tr>
+<tr><td align=right>72</td><td>ecdonaldb283</td></tr>
+<tr><td align=right>72</td><td>ecdonaldk283</td></tr>
+<tr><td align=right>72</td><td>gemss256</td></tr>
+<tr><td align=right>72</td><td>gemss256v2</td></tr>
+<tr><td align=right>74</td><td>bluegemss256</td></tr>
+<tr><td align=right>74</td><td>bluegemss256v2</td></tr>
+<tr><td align=right>75</td><td>redgemss256</td></tr>
+<tr><td align=right>75</td><td>redgemss256v2</td></tr>
+<tr><td align=right>78</td><td>rainbow1b</td></tr>
+<tr><td align=right>83</td><td>gui448</td></tr>
+<tr><td align=right>87</td><td>hector</td></tr>
+<tr><td align=right>92</td><td>rainbow4a</td></tr>
+<tr><td align=right>96</td><td>ecdonaldp384</td></tr>
+<tr><td align=right>96</td><td>ronald768</td></tr>
+<tr><td align=right>104</td><td>ecdonaldb409</td></tr>
+<tr><td align=right>104</td><td>ecdonaldk409</td></tr>
+<tr><td align=right>104</td><td>rainbow1c</td></tr>
+<tr><td align=right>112</td><td>ed448goldilocks</td></tr>
+<tr><td align=right>112</td><td>rainbow3b</td></tr>
+<tr><td align=right>118</td><td>rainbow6a</td></tr>
+<tr><td align=right>128</td><td>ronald1024</td></tr>
+<tr><td align=right>132</td><td>ecdonaldp521</td></tr>
+<tr><td align=right>144</td><td>ecdonaldb571</td></tr>
+<tr><td align=right>144</td><td>ecdonaldk571</td></tr>
+<tr><td align=right>147</td><td>rainbow6b</td></tr>
+<tr><td align=right>150</td><td>mqsignlr2567246</td></tr>
+<tr><td align=right>150</td><td>mqsignrr2567246</td></tr>
+<tr><td align=right>156</td><td>rainbow3c</td></tr>
+<tr><td align=right>164</td><td>rainbow3cclassic683248</td></tr>
+<tr><td align=right>164</td><td>rainbow3ccompres683248</td></tr>
+<tr><td align=right>164</td><td>rainbow3ccyclicc683248</td></tr>
+<tr><td align=right>192</td><td>ronald1536</td></tr>
+<tr><td align=right>204</td><td>rainbow5c</td></tr>
+<tr><td align=right>212</td><td>rainbow5cclassic963664</td></tr>
+<tr><td align=right>212</td><td>rainbow5ccompres963664</td></tr>
+<tr><td align=right>212</td><td>rainbow5ccyclicc963664</td></tr>
+<tr><td align=right>216</td><td>mqsignlr25611272</td></tr>
+<tr><td align=right>216</td><td>mqsignrr25611272</td></tr>
+<tr><td align=right>232</td><td>edons128k08n72nu8l4mu3</td></tr>
+<tr><td align=right>256</td><td>ronald2048</td></tr>
+<tr><td align=right>276</td><td>mqsignlr25614896</td></tr>
+<tr><td align=right>276</td><td>mqsignrr25614896</td></tr>
+<tr><td align=right>304</td><td>edons128ref</td></tr>
+<tr><td align=right>319</td><td>luov863256</td></tr>
+<tr><td align=right>319</td><td>luov863256pc</td></tr>
+<tr><td align=right>384</td><td>ronald3072</td></tr>
+<tr><td align=right>441</td><td>luov890351</td></tr>
+<tr><td align=right>441</td><td>luov890351pc</td></tr>
+<tr><td align=right>512</td><td>ronald4096</td></tr>
+<tr><td align=right>521</td><td>luov8117404</td></tr>
+<tr><td align=right>521</td><td>luov8117404pc</td></tr>
+<tr><td align=right>659..659..660</td><td>falcon512dyn</td></tr>
+<tr><td align=right>659..659..660</td><td>falcon512tree</td></tr>
+<tr><td align=right>1184</td><td>lattisigns512</td></tr>
+<tr><td align=right>1275..1275..1276</td><td>falcon1024dyn</td></tr>
+<tr><td align=right>1275..1275..1276</td><td>falcon1024tree</td></tr>
+<tr><td align=right>1376</td><td>qtesla1</td></tr>
+<tr><td align=right>1474</td><td>haetae2</td></tr>
+<tr><td align=right>1602</td><td>pass769</td></tr>
+<tr><td align=right>1746</td><td>luov4849242</td></tr>
+<tr><td align=right>1790</td><td>pass863</td></tr>
+<tr><td align=right>2349</td><td>haetae3</td></tr>
+<tr><td align=right>2420</td><td>dilithium2</td></tr>
+<tr><td align=right>2420</td><td>dilithium2aes</td></tr>
+<tr><td align=right>2720</td><td>qtesla3s</td></tr>
+<tr><td align=right>2820</td><td>mqom2cat1gf2shortr5</td></tr>
+<tr><td align=right>2848</td><td>qtesla1p</td></tr>
+<tr><td align=right>2848</td><td>qtesla3f</td></tr>
+<tr><td align=right>2868</td><td>mqom2cat1gf2shortr3</td></tr>
+<tr><td align=right>2912</td><td>nccsign1</td></tr>
+<tr><td align=right>2912</td><td>nccsign1aes</td></tr>
+<tr><td align=right>2916</td><td>mqom2cat1gf16shortr5</td></tr>
+<tr><td align=right>2948</td><td>haetae5</td></tr>
+<tr><td align=right>3060</td><td>mqom2cat1gf16shortr3</td></tr>
+<tr><td align=right>3104</td><td>qtesla128</td></tr>
+<tr><td align=right>3144</td><td>mqom2cat1gf2fastr5</td></tr>
+<tr><td align=right>3156</td><td>mqom2cat1gf256shortr5</td></tr>
+<tr><td align=right>3184</td><td>luov6468330</td></tr>
+<tr><td align=right>3212</td><td>mqom2cat1gf2fastr3</td></tr>
+<tr><td align=right>3280</td><td>mqom2cat1gf16fastr5</td></tr>
+<tr><td align=right>3293</td><td>dilithium3</td></tr>
+<tr><td align=right>3293</td><td>dilithium3aes</td></tr>
+<tr><td align=right>3484</td><td>mqom2cat1gf16fastr3</td></tr>
+<tr><td align=right>3540</td><td>mqom2cat1gf256shortr3</td></tr>
+<tr><td align=right>3620</td><td>mqom2cat1gf256fastr5</td></tr>
+<tr><td align=right>3872</td><td>nccsign3</td></tr>
+<tr><td align=right>3872</td><td>nccsign3aes</td></tr>
+<tr><td align=right>4160</td><td>aimer128s</td></tr>
+<tr><td align=right>4164</td><td>mqom2cat1gf256fastr3</td></tr>
+<tr><td align=right>4595</td><td>dilithium5</td></tr>
+<tr><td align=right>4595</td><td>dilithium5aes</td></tr>
+<tr><td align=right>4850</td><td>luov8086399</td></tr>
+<tr><td align=right>5888</td><td>aimer128f</td></tr>
+<tr><td align=right>6080</td><td>nccsign5</td></tr>
+<tr><td align=right>6080</td><td>nccsign5aes</td></tr>
+<tr><td align=right>6176</td><td>qtesla192</td></tr>
+<tr><td align=right>6176</td><td>qtesla256</td></tr>
+<tr><td align=right>6176</td><td>qtesla3p</td></tr>
+<tr><td align=right>6280</td><td>mqom2cat3gf2shortr5</td></tr>
+<tr><td align=right>6388</td><td>mqom2cat3gf2shortr3</td></tr>
+<tr><td align=right>6496</td><td>mqom2cat3gf16shortr5</td></tr>
+<tr><td align=right>6820</td><td>mqom2cat3gf16shortr3</td></tr>
+<tr><td align=right>7036</td><td>mqom2cat3gf256shortr5</td></tr>
+<tr><td align=right>7414</td><td>mqom2cat3gf2fastr5</td></tr>
+<tr><td align=right>7576</td><td>mqom2cat3gf2fastr3</td></tr>
+<tr><td align=right>7738</td><td>mqom2cat3gf16fastr5</td></tr>
+<tr><td align=right>7900</td><td>mqom2cat3gf256shortr3</td></tr>
+<tr><td align=right>8080</td><td>sphincss128harakarobust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128harakasimple</td></tr>
+<tr><td align=right>8080</td><td>sphincss128sha256robust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128sha256simple</td></tr>
+<tr><td align=right>8080</td><td>sphincss128shake256robust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128shake256simple</td></tr>
+<tr><td align=right>8224</td><td>mqom2cat3gf16fastr3</td></tr>
+<tr><td align=right>8548</td><td>mqom2cat3gf256fastr5</td></tr>
+<tr><td align=right>8960</td><td>crossrsdpg128small</td></tr>
+<tr><td align=right>9120</td><td>aimer192s</td></tr>
+<tr><td align=right>9120</td><td>crossrsdpg128balanced</td></tr>
+<tr><td align=right>9844</td><td>mqom2cat3gf256fastr3</td></tr>
+<tr><td align=right>11564</td><td>mqom2cat5gf2shortr5</td></tr>
+<tr><td align=right>11764</td><td>mqom2cat5gf2shortr3</td></tr>
+<tr><td align=right>11980</td><td>crossrsdpg128fast</td></tr>
+<tr><td align=right>12014</td><td>mqom2cat5gf16shortr5</td></tr>
+<tr><td align=right>12326..12350..12375</td><td>picnic2l1fs</td></tr>
+<tr><td align=right>12432</td><td>crossrsdp128small</td></tr>
+<tr><td align=right>12439..12476..12497</td><td>picnic3l1</td></tr>
+<tr><td align=right>12664</td><td>mqom2cat5gf16shortr3</td></tr>
+<tr><td align=right>12964</td><td>mqom2cat5gf256shortr5</td></tr>
+<tr><td align=right>13056</td><td>aimer192f</td></tr>
+<tr><td align=right>13124</td><td>mqom2cat5gf2fastr5</td></tr>
+<tr><td align=right>13152</td><td>crossrsdp128balanced</td></tr>
+<tr><td align=right>13412</td><td>mqom2cat5gf2fastr3</td></tr>
+<tr><td align=right>13772</td><td>mqom2cat5gf16fastr5</td></tr>
+<tr><td align=right>14564</td><td>mqom2cat5gf256shortr3</td></tr>
+<tr><td align=right>14708</td><td>mqom2cat5gf16fastr3</td></tr>
+<tr><td align=right>15140</td><td>mqom2cat5gf256fastr5</td></tr>
+<tr><td align=right>15728</td><td>gravitysphincss</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128harakarobust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128harakasimple</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128sha256robust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128sha256simple</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128shake256robust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128shake256simple</td></tr>
+<tr><td align=right>17056</td><td>aimer256s</td></tr>
+<tr><td align=right>17064</td><td>sphincss192harakarobust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192harakasimple</td></tr>
+<tr><td align=right>17064</td><td>sphincss192sha256robust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192sha256simple</td></tr>
+<tr><td align=right>17064</td><td>sphincss192shake256robust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192shake256simple</td></tr>
+<tr><td align=right>17444</td><td>mqom2cat5gf256fastr3</td></tr>
+<tr><td align=right>18432</td><td>crossrsdp128fast</td></tr>
+<tr><td align=right>20452</td><td>crossrsdpg192small</td></tr>
+<tr><td align=right>22464</td><td>crossrsdpg192balanced</td></tr>
+<tr><td align=right>25120</td><td>aimer256f</td></tr>
+<tr><td align=right>26772</td><td>crossrsdpg192fast</td></tr>
+<tr><td align=right>27146..27184..27237</td><td>picnic2l3fs</td></tr>
+<tr><td align=right>27376..27440..27490</td><td>picnic3l3</td></tr>
+<tr><td align=right>28391</td><td>crossrsdp192small</td></tr>
+<tr><td align=right>29792</td><td>sphincss256harakarobust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256harakasimple</td></tr>
+<tr><td align=right>29792</td><td>sphincss256sha256robust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256sha256simple</td></tr>
+<tr><td align=right>29792</td><td>sphincss256shake256robust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256shake256simple</td></tr>
+<tr><td align=right>29853</td><td>crossrsdp192balanced</td></tr>
+<tr><td align=right>30813..30828..30842</td><td>picnicl1full</td></tr>
+<tr><td align=right>32800</td><td>pqrsa15</td></tr>
+<tr><td align=right>32860..32866..32884</td><td>picnicl1fs</td></tr>
+<tr><td align=right>32882</td><td>mqdss48</td></tr>
+<tr><td align=right>34064</td><td>gravitysphincsm</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192harakarobust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192harakasimple</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192sha256robust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192sha256simple</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192shake256robust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192shake256simple</td></tr>
+<tr><td align=right>36454</td><td>crossrsdpg256small</td></tr>
+<tr><td align=right>38768</td><td>gravitysphincsl</td></tr>
+<tr><td align=right>40100</td><td>crossrsdpg256balanced</td></tr>
+<tr><td align=right>41000</td><td>sphincs256</td></tr>
+<tr><td align=right>41406</td><td>crossrsdp192fast</td></tr>
+<tr><td align=right>46157..46212..46304</td><td>picnic2l5fs</td></tr>
+<tr><td align=right>48102</td><td>crossrsdpg256fast</td></tr>
+<tr><td align=right>48472..48533..48598</td><td>picnic3l5</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256harakarobust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256harakasimple</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256sha256robust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256sha256simple</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256shake256robust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256shake256simple</td></tr>
+<tr><td align=right>50818</td><td>crossrsdp256small</td></tr>
+<tr><td align=right>53527</td><td>crossrsdp256balanced</td></tr>
+<tr><td align=right>53965</td><td>picnicl1ur</td></tr>
+<tr><td align=right>67800</td><td>mqdss64</td></tr>
+<tr><td align=right>68515..68533..68568</td><td>picnicl3full</td></tr>
+<tr><td align=right>74118..74138..74166</td><td>picnicl3fs</td></tr>
+<tr><td align=right>74590</td><td>crossrsdp256fast</td></tr>
+<tr><td align=right>121569..121599..121655</td><td>picnicl5full</td></tr>
+<tr><td align=right>121849</td><td>picnicl3ur</td></tr>
+<tr><td align=right>128161..128195..128239</td><td>picnicl5fs</td></tr>
+<tr><td align=right>209510</td><td>picnicl5ur</td></tr>
+</table>
+</td>
+<td>
+<table border>
+<tr><th colspan="2">Signing 23 bytes</th></tr>
+<tr><th>bytes</th><th>system</th></tr>
+<tr><td align=right>32</td><td>rainbowbinary16242020</td></tr>
+<tr><td align=right>33</td><td>gemss128</td></tr>
+<tr><td align=right>33</td><td>gemss128v2</td></tr>
+<tr><td align=right>34</td><td>bluegemss128</td></tr>
+<tr><td align=right>34</td><td>bluegemss128v2</td></tr>
+<tr><td align=right>36</td><td>3icp</td></tr>
+<tr><td align=right>36</td><td>redgemss128</td></tr>
+<tr><td align=right>36</td><td>redgemss128v2</td></tr>
+<tr><td align=right>37</td><td>pflash1</td></tr>
+<tr><td align=right>37</td><td>rainbow5640</td></tr>
+<tr><td align=right>37</td><td>sflashv2</td></tr>
+<tr><td align=right>40</td><td>donald1024</td></tr>
+<tr><td align=right>40</td><td>donald2048</td></tr>
+<tr><td align=right>40</td><td>donald512</td></tr>
+<tr><td align=right>40</td><td>ecdonaldp160</td></tr>
+<tr><td align=right>41</td><td>ronald512</td></tr>
+<tr><td align=right>42</td><td>ecdonaldb163</td></tr>
+<tr><td align=right>42</td><td>ecdonaldk163</td></tr>
+<tr><td align=right>42</td><td>rainbowbinary256181212</td></tr>
+<tr><td align=right>43</td><td>rainbow6440</td></tr>
+<tr><td align=right>43</td><td>tts6440</td></tr>
+<tr><td align=right>45</td><td>gui184</td></tr>
+<tr><td align=right>48</td><td>ecdonaldp192</td></tr>
+<tr><td align=right>52</td><td>gemss192</td></tr>
+<tr><td align=right>52</td><td>gemss192v2</td></tr>
+<tr><td align=right>53</td><td>bluegemss192</td></tr>
+<tr><td align=right>53</td><td>bluegemss192v2</td></tr>
+<tr><td align=right>55</td><td>redgemss192</td></tr>
+<tr><td align=right>55</td><td>redgemss192v2</td></tr>
+<tr><td align=right>56</td><td>ecdonaldp224</td></tr>
+<tr><td align=right>60</td><td>ecdonaldb233</td></tr>
+<tr><td align=right>60</td><td>ecdonaldk233</td></tr>
+<tr><td align=right>63</td><td>gui312</td></tr>
+<tr><td align=right>64</td><td>ecdonaldp256</td></tr>
+<tr><td align=right>64</td><td>ed25519</td></tr>
+<tr><td align=right>64</td><td>rainbow1a</td></tr>
+<tr><td align=right>65</td><td>rwb0fuz1024</td></tr>
+<tr><td align=right>66</td><td>rainbow1aclassic363232</td></tr>
+<tr><td align=right>66</td><td>rainbow1acompres363232</td></tr>
+<tr><td align=right>66</td><td>rainbow1acyclicc363232</td></tr>
+<tr><td align=right>72</td><td>ecdonaldb283</td></tr>
+<tr><td align=right>72</td><td>ecdonaldk283</td></tr>
+<tr><td align=right>72</td><td>gemss256</td></tr>
+<tr><td align=right>72</td><td>gemss256v2</td></tr>
+<tr><td align=right>73</td><td>ronald768</td></tr>
+<tr><td align=right>74</td><td>bluegemss256</td></tr>
+<tr><td align=right>74</td><td>bluegemss256v2</td></tr>
+<tr><td align=right>75</td><td>redgemss256</td></tr>
+<tr><td align=right>75</td><td>redgemss256v2</td></tr>
+<tr><td align=right>78</td><td>rainbow1b</td></tr>
+<tr><td align=right>83</td><td>gui448</td></tr>
+<tr><td align=right>87</td><td>hector</td></tr>
+<tr><td align=right>92</td><td>rainbow4a</td></tr>
+<tr><td align=right>96</td><td>ecdonaldp384</td></tr>
+<tr><td align=right>104</td><td>ecdonaldb409</td></tr>
+<tr><td align=right>104</td><td>ecdonaldk409</td></tr>
+<tr><td align=right>104</td><td>rainbow1c</td></tr>
+<tr><td align=right>105</td><td>ronald1024</td></tr>
+<tr><td align=right>112</td><td>ed448goldilocks</td></tr>
+<tr><td align=right>112</td><td>rainbow3b</td></tr>
+<tr><td align=right>118</td><td>rainbow6a</td></tr>
+<tr><td align=right>132</td><td>ecdonaldp521</td></tr>
+<tr><td align=right>144</td><td>ecdonaldb571</td></tr>
+<tr><td align=right>144</td><td>ecdonaldk571</td></tr>
+<tr><td align=right>147</td><td>rainbow6b</td></tr>
+<tr><td align=right>150</td><td>mqsignlr2567246</td></tr>
+<tr><td align=right>150</td><td>mqsignrr2567246</td></tr>
+<tr><td align=right>156</td><td>rainbow3c</td></tr>
+<tr><td align=right>164</td><td>rainbow3cclassic683248</td></tr>
+<tr><td align=right>164</td><td>rainbow3ccompres683248</td></tr>
+<tr><td align=right>164</td><td>rainbow3ccyclicc683248</td></tr>
+<tr><td align=right>169</td><td>ronald1536</td></tr>
+<tr><td align=right>204</td><td>rainbow5c</td></tr>
+<tr><td align=right>212</td><td>rainbow5cclassic963664</td></tr>
+<tr><td align=right>212</td><td>rainbow5ccompres963664</td></tr>
+<tr><td align=right>212</td><td>rainbow5ccyclicc963664</td></tr>
+<tr><td align=right>216</td><td>mqsignlr25611272</td></tr>
+<tr><td align=right>216</td><td>mqsignrr25611272</td></tr>
+<tr><td align=right>232</td><td>edons128k08n72nu8l4mu3</td></tr>
+<tr><td align=right>233</td><td>ronald2048</td></tr>
+<tr><td align=right>276</td><td>mqsignlr25614896</td></tr>
+<tr><td align=right>276</td><td>mqsignrr25614896</td></tr>
+<tr><td align=right>304</td><td>edons128ref</td></tr>
+<tr><td align=right>319</td><td>luov863256</td></tr>
+<tr><td align=right>319</td><td>luov863256pc</td></tr>
+<tr><td align=right>361</td><td>ronald3072</td></tr>
+<tr><td align=right>441</td><td>luov890351</td></tr>
+<tr><td align=right>441</td><td>luov890351pc</td></tr>
+<tr><td align=right>489</td><td>ronald4096</td></tr>
+<tr><td align=right>521</td><td>luov8117404</td></tr>
+<tr><td align=right>521</td><td>luov8117404pc</td></tr>
+<tr><td align=right>659..659..660</td><td>falcon512tree</td></tr>
+<tr><td align=right>659..659..660</td><td>falcon512dyn</td></tr>
+<tr><td align=right>1184</td><td>lattisigns512</td></tr>
+<tr><td align=right>1275..1275..1276</td><td>falcon1024tree</td></tr>
+<tr><td align=right>1275..1275..1276</td><td>falcon1024dyn</td></tr>
+<tr><td align=right>1376</td><td>qtesla1</td></tr>
+<tr><td align=right>1474</td><td>haetae2</td></tr>
+<tr><td align=right>1602</td><td>pass769</td></tr>
+<tr><td align=right>1746</td><td>luov4849242</td></tr>
+<tr><td align=right>1790</td><td>pass863</td></tr>
+<tr><td align=right>2349</td><td>haetae3</td></tr>
+<tr><td align=right>2420</td><td>dilithium2</td></tr>
+<tr><td align=right>2420</td><td>dilithium2aes</td></tr>
+<tr><td align=right>2720</td><td>qtesla3s</td></tr>
+<tr><td align=right>2820</td><td>mqom2cat1gf2shortr5</td></tr>
+<tr><td align=right>2848</td><td>qtesla1p</td></tr>
+<tr><td align=right>2848</td><td>qtesla3f</td></tr>
+<tr><td align=right>2868</td><td>mqom2cat1gf2shortr3</td></tr>
+<tr><td align=right>2912</td><td>nccsign1</td></tr>
+<tr><td align=right>2912</td><td>nccsign1aes</td></tr>
+<tr><td align=right>2916</td><td>mqom2cat1gf16shortr5</td></tr>
+<tr><td align=right>2948</td><td>haetae5</td></tr>
+<tr><td align=right>3060</td><td>mqom2cat1gf16shortr3</td></tr>
+<tr><td align=right>3104</td><td>qtesla128</td></tr>
+<tr><td align=right>3144</td><td>mqom2cat1gf2fastr5</td></tr>
+<tr><td align=right>3156</td><td>mqom2cat1gf256shortr5</td></tr>
+<tr><td align=right>3184</td><td>luov6468330</td></tr>
+<tr><td align=right>3212</td><td>mqom2cat1gf2fastr3</td></tr>
+<tr><td align=right>3280</td><td>mqom2cat1gf16fastr5</td></tr>
+<tr><td align=right>3293</td><td>dilithium3</td></tr>
+<tr><td align=right>3293</td><td>dilithium3aes</td></tr>
+<tr><td align=right>3484</td><td>mqom2cat1gf16fastr3</td></tr>
+<tr><td align=right>3540</td><td>mqom2cat1gf256shortr3</td></tr>
+<tr><td align=right>3620</td><td>mqom2cat1gf256fastr5</td></tr>
+<tr><td align=right>3872</td><td>nccsign3</td></tr>
+<tr><td align=right>3872</td><td>nccsign3aes</td></tr>
+<tr><td align=right>4160</td><td>aimer128s</td></tr>
+<tr><td align=right>4164</td><td>mqom2cat1gf256fastr3</td></tr>
+<tr><td align=right>4595</td><td>dilithium5</td></tr>
+<tr><td align=right>4595</td><td>dilithium5aes</td></tr>
+<tr><td align=right>4850</td><td>luov8086399</td></tr>
+<tr><td align=right>5888</td><td>aimer128f</td></tr>
+<tr><td align=right>6080</td><td>nccsign5</td></tr>
+<tr><td align=right>6080</td><td>nccsign5aes</td></tr>
+<tr><td align=right>6176</td><td>qtesla192</td></tr>
+<tr><td align=right>6176</td><td>qtesla256</td></tr>
+<tr><td align=right>6176</td><td>qtesla3p</td></tr>
+<tr><td align=right>6280</td><td>mqom2cat3gf2shortr5</td></tr>
+<tr><td align=right>6388</td><td>mqom2cat3gf2shortr3</td></tr>
+<tr><td align=right>6496</td><td>mqom2cat3gf16shortr5</td></tr>
+<tr><td align=right>6820</td><td>mqom2cat3gf16shortr3</td></tr>
+<tr><td align=right>7036</td><td>mqom2cat3gf256shortr5</td></tr>
+<tr><td align=right>7414</td><td>mqom2cat3gf2fastr5</td></tr>
+<tr><td align=right>7576</td><td>mqom2cat3gf2fastr3</td></tr>
+<tr><td align=right>7738</td><td>mqom2cat3gf16fastr5</td></tr>
+<tr><td align=right>7900</td><td>mqom2cat3gf256shortr3</td></tr>
+<tr><td align=right>8080</td><td>sphincss128harakarobust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128harakasimple</td></tr>
+<tr><td align=right>8080</td><td>sphincss128sha256robust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128sha256simple</td></tr>
+<tr><td align=right>8080</td><td>sphincss128shake256robust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128shake256simple</td></tr>
+<tr><td align=right>8224</td><td>mqom2cat3gf16fastr3</td></tr>
+<tr><td align=right>8548</td><td>mqom2cat3gf256fastr5</td></tr>
+<tr><td align=right>8960</td><td>crossrsdpg128small</td></tr>
+<tr><td align=right>9120</td><td>aimer192s</td></tr>
+<tr><td align=right>9120</td><td>crossrsdpg128balanced</td></tr>
+<tr><td align=right>9844</td><td>mqom2cat3gf256fastr3</td></tr>
+<tr><td align=right>11564</td><td>mqom2cat5gf2shortr5</td></tr>
+<tr><td align=right>11764</td><td>mqom2cat5gf2shortr3</td></tr>
+<tr><td align=right>11980</td><td>crossrsdpg128fast</td></tr>
+<tr><td align=right>12014</td><td>mqom2cat5gf16shortr5</td></tr>
+<tr><td align=right>12323..12353..12385</td><td>picnic2l1fs</td></tr>
+<tr><td align=right>12432</td><td>crossrsdp128small</td></tr>
+<tr><td align=right>12443..12479..12502</td><td>picnic3l1</td></tr>
+<tr><td align=right>12664</td><td>mqom2cat5gf16shortr3</td></tr>
+<tr><td align=right>12964</td><td>mqom2cat5gf256shortr5</td></tr>
+<tr><td align=right>13056</td><td>aimer192f</td></tr>
+<tr><td align=right>13124</td><td>mqom2cat5gf2fastr5</td></tr>
+<tr><td align=right>13152</td><td>crossrsdp128balanced</td></tr>
+<tr><td align=right>13412</td><td>mqom2cat5gf2fastr3</td></tr>
+<tr><td align=right>13772</td><td>mqom2cat5gf16fastr5</td></tr>
+<tr><td align=right>14564</td><td>mqom2cat5gf256shortr3</td></tr>
+<tr><td align=right>14708</td><td>mqom2cat5gf16fastr3</td></tr>
+<tr><td align=right>15140</td><td>mqom2cat5gf256fastr5</td></tr>
+<tr><td align=right>15728</td><td>gravitysphincss</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128harakarobust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128harakasimple</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128sha256robust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128sha256simple</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128shake256robust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128shake256simple</td></tr>
+<tr><td align=right>17056</td><td>aimer256s</td></tr>
+<tr><td align=right>17064</td><td>sphincss192harakarobust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192harakasimple</td></tr>
+<tr><td align=right>17064</td><td>sphincss192sha256robust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192sha256simple</td></tr>
+<tr><td align=right>17064</td><td>sphincss192shake256robust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192shake256simple</td></tr>
+<tr><td align=right>17444</td><td>mqom2cat5gf256fastr3</td></tr>
+<tr><td align=right>18432</td><td>crossrsdp128fast</td></tr>
+<tr><td align=right>20452</td><td>crossrsdpg192small</td></tr>
+<tr><td align=right>22464</td><td>crossrsdpg192balanced</td></tr>
+<tr><td align=right>25120</td><td>aimer256f</td></tr>
+<tr><td align=right>26772</td><td>crossrsdpg192fast</td></tr>
+<tr><td align=right>27123..27186..27264</td><td>picnic2l3fs</td></tr>
+<tr><td align=right>27411..27453..27493</td><td>picnic3l3</td></tr>
+<tr><td align=right>28391</td><td>crossrsdp192small</td></tr>
+<tr><td align=right>29792</td><td>sphincss256harakarobust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256harakasimple</td></tr>
+<tr><td align=right>29792</td><td>sphincss256sha256robust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256sha256simple</td></tr>
+<tr><td align=right>29792</td><td>sphincss256shake256robust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256shake256simple</td></tr>
+<tr><td align=right>29853</td><td>crossrsdp192balanced</td></tr>
+<tr><td align=right>30807..30828..30841</td><td>picnicl1full</td></tr>
+<tr><td align=right>32800</td><td>pqrsa15</td></tr>
+<tr><td align=right>32852..32865..32881</td><td>picnicl1fs</td></tr>
+<tr><td align=right>32882</td><td>mqdss48</td></tr>
+<tr><td align=right>34064</td><td>gravitysphincsm</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192harakarobust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192harakasimple</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192sha256robust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192sha256simple</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192shake256robust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192shake256simple</td></tr>
+<tr><td align=right>36454</td><td>crossrsdpg256small</td></tr>
+<tr><td align=right>38768</td><td>gravitysphincsl</td></tr>
+<tr><td align=right>40100</td><td>crossrsdpg256balanced</td></tr>
+<tr><td align=right>41000</td><td>sphincs256</td></tr>
+<tr><td align=right>41406</td><td>crossrsdp192fast</td></tr>
+<tr><td align=right>46142..46222..46291</td><td>picnic2l5fs</td></tr>
+<tr><td align=right>48102</td><td>crossrsdpg256fast</td></tr>
+<tr><td align=right>48416..48516..48616</td><td>picnic3l5</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256harakarobust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256harakasimple</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256sha256robust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256sha256simple</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256shake256robust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256shake256simple</td></tr>
+<tr><td align=right>50818</td><td>crossrsdp256small</td></tr>
+<tr><td align=right>53527</td><td>crossrsdp256balanced</td></tr>
+<tr><td align=right>53965</td><td>picnicl1ur</td></tr>
+<tr><td align=right>67800</td><td>mqdss64</td></tr>
+<tr><td align=right>68529..68557..68573</td><td>picnicl3full</td></tr>
+<tr><td align=right>74117..74145..74167</td><td>picnicl3fs</td></tr>
+<tr><td align=right>74590</td><td>crossrsdp256fast</td></tr>
+<tr><td align=right>121599..121629..121657</td><td>picnicl5full</td></tr>
+<tr><td align=right>121849</td><td>picnicl3ur</td></tr>
+<tr><td align=right>128148..128200..128233</td><td>picnicl5fs</td></tr>
+<tr><td align=right>209510</td><td>picnicl5ur</td></tr>
+</table>
+</td>
+<td>
+<table border>
+<tr><th colspan="2">Signing many bytes</th></tr>
+<tr><th>bytes</th><th>system</th></tr>
+<tr><td align=right>32</td><td>rainbowbinary16242020</td></tr>
+<tr><td align=right>33</td><td>gemss128</td></tr>
+<tr><td align=right>33</td><td>gemss128v2</td></tr>
+<tr><td align=right>34</td><td>bluegemss128</td></tr>
+<tr><td align=right>34</td><td>bluegemss128v2</td></tr>
+<tr><td align=right>36</td><td>3icp</td></tr>
+<tr><td align=right>36</td><td>redgemss128</td></tr>
+<tr><td align=right>36</td><td>redgemss128v2</td></tr>
+<tr><td align=right>37</td><td>pflash1</td></tr>
+<tr><td align=right>37</td><td>rainbow5640</td></tr>
+<tr><td align=right>37</td><td>sflashv2</td></tr>
+<tr><td align=right>40</td><td>donald1024</td></tr>
+<tr><td align=right>40</td><td>donald2048</td></tr>
+<tr><td align=right>40</td><td>donald512</td></tr>
+<tr><td align=right>40</td><td>ecdonaldp160</td></tr>
+<tr><td align=right>42</td><td>ecdonaldb163</td></tr>
+<tr><td align=right>42</td><td>ecdonaldk163</td></tr>
+<tr><td align=right>42</td><td>rainbowbinary256181212</td></tr>
+<tr><td align=right>43</td><td>rainbow6440</td></tr>
+<tr><td align=right>43</td><td>ronald1024</td></tr>
+<tr><td align=right>43</td><td>ronald1536</td></tr>
+<tr><td align=right>43</td><td>ronald2048</td></tr>
+<tr><td align=right>43</td><td>ronald3072</td></tr>
+<tr><td align=right>43</td><td>ronald4096</td></tr>
+<tr><td align=right>43</td><td>ronald512</td></tr>
+<tr><td align=right>43</td><td>ronald768</td></tr>
+<tr><td align=right>43</td><td>tts6440</td></tr>
+<tr><td align=right>45</td><td>gui184</td></tr>
+<tr><td align=right>48</td><td>ecdonaldp192</td></tr>
+<tr><td align=right>52</td><td>gemss192</td></tr>
+<tr><td align=right>52</td><td>gemss192v2</td></tr>
+<tr><td align=right>53</td><td>bluegemss192</td></tr>
+<tr><td align=right>53</td><td>bluegemss192v2</td></tr>
+<tr><td align=right>55</td><td>redgemss192</td></tr>
+<tr><td align=right>55</td><td>redgemss192v2</td></tr>
+<tr><td align=right>56</td><td>ecdonaldp224</td></tr>
+<tr><td align=right>60</td><td>ecdonaldb233</td></tr>
+<tr><td align=right>60</td><td>ecdonaldk233</td></tr>
+<tr><td align=right>63</td><td>gui312</td></tr>
+<tr><td align=right>64</td><td>ecdonaldp256</td></tr>
+<tr><td align=right>64</td><td>ed25519</td></tr>
+<tr><td align=right>64</td><td>rainbow1a</td></tr>
+<tr><td align=right>65</td><td>rwb0fuz1024</td></tr>
+<tr><td align=right>66</td><td>rainbow1aclassic363232</td></tr>
+<tr><td align=right>66</td><td>rainbow1acompres363232</td></tr>
+<tr><td align=right>66</td><td>rainbow1acyclicc363232</td></tr>
+<tr><td align=right>72</td><td>ecdonaldb283</td></tr>
+<tr><td align=right>72</td><td>ecdonaldk283</td></tr>
+<tr><td align=right>72</td><td>gemss256</td></tr>
+<tr><td align=right>72</td><td>gemss256v2</td></tr>
+<tr><td align=right>74</td><td>bluegemss256</td></tr>
+<tr><td align=right>74</td><td>bluegemss256v2</td></tr>
+<tr><td align=right>75</td><td>redgemss256</td></tr>
+<tr><td align=right>75</td><td>redgemss256v2</td></tr>
+<tr><td align=right>78</td><td>rainbow1b</td></tr>
+<tr><td align=right>83</td><td>gui448</td></tr>
+<tr><td align=right>87</td><td>hector</td></tr>
+<tr><td align=right>92</td><td>rainbow4a</td></tr>
+<tr><td align=right>96</td><td>ecdonaldp384</td></tr>
+<tr><td align=right>104</td><td>ecdonaldb409</td></tr>
+<tr><td align=right>104</td><td>ecdonaldk409</td></tr>
+<tr><td align=right>104</td><td>rainbow1c</td></tr>
+<tr><td align=right>112</td><td>ed448goldilocks</td></tr>
+<tr><td align=right>112</td><td>rainbow3b</td></tr>
+<tr><td align=right>118</td><td>rainbow6a</td></tr>
+<tr><td align=right>132</td><td>ecdonaldp521</td></tr>
+<tr><td align=right>144</td><td>ecdonaldb571</td></tr>
+<tr><td align=right>144</td><td>ecdonaldk571</td></tr>
+<tr><td align=right>147</td><td>rainbow6b</td></tr>
+<tr><td align=right>150</td><td>mqsignlr2567246</td></tr>
+<tr><td align=right>150</td><td>mqsignrr2567246</td></tr>
+<tr><td align=right>156</td><td>rainbow3c</td></tr>
+<tr><td align=right>164</td><td>rainbow3cclassic683248</td></tr>
+<tr><td align=right>164</td><td>rainbow3ccompres683248</td></tr>
+<tr><td align=right>164</td><td>rainbow3ccyclicc683248</td></tr>
+<tr><td align=right>204</td><td>rainbow5c</td></tr>
+<tr><td align=right>212</td><td>rainbow5cclassic963664</td></tr>
+<tr><td align=right>212</td><td>rainbow5ccompres963664</td></tr>
+<tr><td align=right>212</td><td>rainbow5ccyclicc963664</td></tr>
+<tr><td align=right>216</td><td>mqsignlr25611272</td></tr>
+<tr><td align=right>216</td><td>mqsignrr25611272</td></tr>
+<tr><td align=right>232</td><td>edons128k08n72nu8l4mu3</td></tr>
+<tr><td align=right>276</td><td>mqsignlr25614896</td></tr>
+<tr><td align=right>276</td><td>mqsignrr25614896</td></tr>
+<tr><td align=right>304</td><td>edons128ref</td></tr>
+<tr><td align=right>319</td><td>luov863256</td></tr>
+<tr><td align=right>319</td><td>luov863256pc</td></tr>
+<tr><td align=right>441</td><td>luov890351</td></tr>
+<tr><td align=right>441</td><td>luov890351pc</td></tr>
+<tr><td align=right>521</td><td>luov8117404</td></tr>
+<tr><td align=right>521</td><td>luov8117404pc</td></tr>
+<tr><td align=right>659..659..660</td><td>falcon512dyn</td></tr>
+<tr><td align=right>659..659..660</td><td>falcon512tree</td></tr>
+<tr><td align=right>1184</td><td>lattisigns512</td></tr>
+<tr><td align=right>1275..1275..1276</td><td>falcon1024dyn</td></tr>
+<tr><td align=right>1275..1275..1276</td><td>falcon1024tree</td></tr>
+<tr><td align=right>1376</td><td>qtesla1</td></tr>
+<tr><td align=right>1474</td><td>haetae2</td></tr>
+<tr><td align=right>1602</td><td>pass769</td></tr>
+<tr><td align=right>1746</td><td>luov4849242</td></tr>
+<tr><td align=right>1790</td><td>pass863</td></tr>
+<tr><td align=right>2349</td><td>haetae3</td></tr>
+<tr><td align=right>2420</td><td>dilithium2</td></tr>
+<tr><td align=right>2420</td><td>dilithium2aes</td></tr>
+<tr><td align=right>2720</td><td>qtesla3s</td></tr>
+<tr><td align=right>2820</td><td>mqom2cat1gf2shortr5</td></tr>
+<tr><td align=right>2848</td><td>qtesla1p</td></tr>
+<tr><td align=right>2848</td><td>qtesla3f</td></tr>
+<tr><td align=right>2868</td><td>mqom2cat1gf2shortr3</td></tr>
+<tr><td align=right>2912</td><td>nccsign1</td></tr>
+<tr><td align=right>2912</td><td>nccsign1aes</td></tr>
+<tr><td align=right>2916</td><td>mqom2cat1gf16shortr5</td></tr>
+<tr><td align=right>2948</td><td>haetae5</td></tr>
+<tr><td align=right>3060</td><td>mqom2cat1gf16shortr3</td></tr>
+<tr><td align=right>3104</td><td>qtesla128</td></tr>
+<tr><td align=right>3144</td><td>mqom2cat1gf2fastr5</td></tr>
+<tr><td align=right>3156</td><td>mqom2cat1gf256shortr5</td></tr>
+<tr><td align=right>3184</td><td>luov6468330</td></tr>
+<tr><td align=right>3212</td><td>mqom2cat1gf2fastr3</td></tr>
+<tr><td align=right>3280</td><td>mqom2cat1gf16fastr5</td></tr>
+<tr><td align=right>3293</td><td>dilithium3</td></tr>
+<tr><td align=right>3293</td><td>dilithium3aes</td></tr>
+<tr><td align=right>3484</td><td>mqom2cat1gf16fastr3</td></tr>
+<tr><td align=right>3540</td><td>mqom2cat1gf256shortr3</td></tr>
+<tr><td align=right>3620</td><td>mqom2cat1gf256fastr5</td></tr>
+<tr><td align=right>3872</td><td>nccsign3</td></tr>
+<tr><td align=right>3872</td><td>nccsign3aes</td></tr>
+<tr><td align=right>4160</td><td>aimer128s</td></tr>
+<tr><td align=right>4164</td><td>mqom2cat1gf256fastr3</td></tr>
+<tr><td align=right>4595</td><td>dilithium5</td></tr>
+<tr><td align=right>4595</td><td>dilithium5aes</td></tr>
+<tr><td align=right>4850</td><td>luov8086399</td></tr>
+<tr><td align=right>5888</td><td>aimer128f</td></tr>
+<tr><td align=right>6080</td><td>nccsign5</td></tr>
+<tr><td align=right>6080</td><td>nccsign5aes</td></tr>
+<tr><td align=right>6176</td><td>qtesla192</td></tr>
+<tr><td align=right>6176</td><td>qtesla256</td></tr>
+<tr><td align=right>6176</td><td>qtesla3p</td></tr>
+<tr><td align=right>6280</td><td>mqom2cat3gf2shortr5</td></tr>
+<tr><td align=right>6388</td><td>mqom2cat3gf2shortr3</td></tr>
+<tr><td align=right>6496</td><td>mqom2cat3gf16shortr5</td></tr>
+<tr><td align=right>6820</td><td>mqom2cat3gf16shortr3</td></tr>
+<tr><td align=right>7036</td><td>mqom2cat3gf256shortr5</td></tr>
+<tr><td align=right>7414</td><td>mqom2cat3gf2fastr5</td></tr>
+<tr><td align=right>7576</td><td>mqom2cat3gf2fastr3</td></tr>
+<tr><td align=right>7738</td><td>mqom2cat3gf16fastr5</td></tr>
+<tr><td align=right>7900</td><td>mqom2cat3gf256shortr3</td></tr>
+<tr><td align=right>8080</td><td>sphincss128harakarobust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128harakasimple</td></tr>
+<tr><td align=right>8080</td><td>sphincss128sha256robust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128sha256simple</td></tr>
+<tr><td align=right>8080</td><td>sphincss128shake256robust</td></tr>
+<tr><td align=right>8080</td><td>sphincss128shake256simple</td></tr>
+<tr><td align=right>8224</td><td>mqom2cat3gf16fastr3</td></tr>
+<tr><td align=right>8548</td><td>mqom2cat3gf256fastr5</td></tr>
+<tr><td align=right>8960</td><td>crossrsdpg128small</td></tr>
+<tr><td align=right>9120</td><td>aimer192s</td></tr>
+<tr><td align=right>9120</td><td>crossrsdpg128balanced</td></tr>
+<tr><td align=right>9844</td><td>mqom2cat3gf256fastr3</td></tr>
+<tr><td align=right>11564</td><td>mqom2cat5gf2shortr5</td></tr>
+<tr><td align=right>11764</td><td>mqom2cat5gf2shortr3</td></tr>
+<tr><td align=right>11980</td><td>crossrsdpg128fast</td></tr>
+<tr><td align=right>12014</td><td>mqom2cat5gf16shortr5</td></tr>
+<tr><td align=right>12331..12356..12383</td><td>picnic2l1fs</td></tr>
+<tr><td align=right>12432</td><td>crossrsdp128small</td></tr>
+<tr><td align=right>12436..12467..12496</td><td>picnic3l1</td></tr>
+<tr><td align=right>12664</td><td>mqom2cat5gf16shortr3</td></tr>
+<tr><td align=right>12964</td><td>mqom2cat5gf256shortr5</td></tr>
+<tr><td align=right>13056</td><td>aimer192f</td></tr>
+<tr><td align=right>13124</td><td>mqom2cat5gf2fastr5</td></tr>
+<tr><td align=right>13152</td><td>crossrsdp128balanced</td></tr>
+<tr><td align=right>13412</td><td>mqom2cat5gf2fastr3</td></tr>
+<tr><td align=right>13772</td><td>mqom2cat5gf16fastr5</td></tr>
+<tr><td align=right>14564</td><td>mqom2cat5gf256shortr3</td></tr>
+<tr><td align=right>14708</td><td>mqom2cat5gf16fastr3</td></tr>
+<tr><td align=right>15140</td><td>mqom2cat5gf256fastr5</td></tr>
+<tr><td align=right>15728</td><td>gravitysphincss</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128harakarobust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128harakasimple</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128sha256robust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128sha256simple</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128shake256robust</td></tr>
+<tr><td align=right>16976</td><td>sphincsf128shake256simple</td></tr>
+<tr><td align=right>17056</td><td>aimer256s</td></tr>
+<tr><td align=right>17064</td><td>sphincss192harakarobust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192harakasimple</td></tr>
+<tr><td align=right>17064</td><td>sphincss192sha256robust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192sha256simple</td></tr>
+<tr><td align=right>17064</td><td>sphincss192shake256robust</td></tr>
+<tr><td align=right>17064</td><td>sphincss192shake256simple</td></tr>
+<tr><td align=right>17444</td><td>mqom2cat5gf256fastr3</td></tr>
+<tr><td align=right>18432</td><td>crossrsdp128fast</td></tr>
+<tr><td align=right>20452</td><td>crossrsdpg192small</td></tr>
+<tr><td align=right>22464</td><td>crossrsdpg192balanced</td></tr>
+<tr><td align=right>25120</td><td>aimer256f</td></tr>
+<tr><td align=right>26772</td><td>crossrsdpg192fast</td></tr>
+<tr><td align=right>27153..27197..27235</td><td>picnic2l3fs</td></tr>
+<tr><td align=right>27386..27442..27488</td><td>picnic3l3</td></tr>
+<tr><td align=right>28391</td><td>crossrsdp192small</td></tr>
+<tr><td align=right>29792</td><td>sphincss256harakarobust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256harakasimple</td></tr>
+<tr><td align=right>29792</td><td>sphincss256sha256robust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256sha256simple</td></tr>
+<tr><td align=right>29792</td><td>sphincss256shake256robust</td></tr>
+<tr><td align=right>29792</td><td>sphincss256shake256simple</td></tr>
+<tr><td align=right>29853</td><td>crossrsdp192balanced</td></tr>
+<tr><td align=right>30807..30820..30832</td><td>picnicl1full</td></tr>
+<tr><td align=right>32800</td><td>pqrsa15</td></tr>
+<tr><td align=right>32855..32870..32879</td><td>picnicl1fs</td></tr>
+<tr><td align=right>32882</td><td>mqdss48</td></tr>
+<tr><td align=right>34064</td><td>gravitysphincsm</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192harakarobust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192harakasimple</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192sha256robust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192sha256simple</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192shake256robust</td></tr>
+<tr><td align=right>35664</td><td>sphincsf192shake256simple</td></tr>
+<tr><td align=right>36454</td><td>crossrsdpg256small</td></tr>
+<tr><td align=right>38768</td><td>gravitysphincsl</td></tr>
+<tr><td align=right>40100</td><td>crossrsdpg256balanced</td></tr>
+<tr><td align=right>41000</td><td>sphincs256</td></tr>
+<tr><td align=right>41406</td><td>crossrsdp192fast</td></tr>
+<tr><td align=right>46150..46255..46327</td><td>picnic2l5fs</td></tr>
+<tr><td align=right>48102</td><td>crossrsdpg256fast</td></tr>
+<tr><td align=right>48401..48499..48602</td><td>picnic3l5</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256harakarobust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256harakasimple</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256sha256robust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256sha256simple</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256shake256robust</td></tr>
+<tr><td align=right>49216</td><td>sphincsf256shake256simple</td></tr>
+<tr><td align=right>50818</td><td>crossrsdp256small</td></tr>
+<tr><td align=right>53527</td><td>crossrsdp256balanced</td></tr>
+<tr><td align=right>53965</td><td>picnicl1ur</td></tr>
+<tr><td align=right>67800</td><td>mqdss64</td></tr>
+<tr><td align=right>68527..68548..68578</td><td>picnicl3full</td></tr>
+<tr><td align=right>74130..74152..74169</td><td>picnicl3fs</td></tr>
+<tr><td align=right>74590</td><td>crossrsdp256fast</td></tr>
+<tr><td align=right>121593..121624..121657</td><td>picnicl5full</td></tr>
+<tr><td align=right>121849</td><td>picnicl3ur</td></tr>
+<tr><td align=right>128154..128195..128231</td><td>picnicl5fs</td></tr>
+<tr><td align=right>209510</td><td>picnicl5ur</td></tr>
+</table>
+</td>
+</tr>
+</table>
+<span class=heading id="amd64-freshwrap,big">amd64; Raptor Cove (b06a2-40); 2024 Intel Core 5 210H, P cores; 4 x 2200MHz; <tt>freshwrap,big</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-freshwrap,big.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-freshwrap,big-crypto_sign.html>Test results</a></span><span class=heading id="amd64-freshwrap,little">amd64; Gracemont (b06a2-20); 2024 Intel Core 5 210H, E cores; 4 x 1600MHz; <tt>freshwrap,little</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-freshwrap,little.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-freshwrap,little-crypto_sign.html>Test results</a></span><span class=heading id="aarch64-pi5">aarch64; Cortex-A76 (414fd0b1); 2023 Broadcom BCM2712; 4 x 1500MHz; <tt>pi5</tt>, <tt>supercop-20251222</tt>
+</span>
+<span class=measurements><a href=results-sign/aarch64-pi5.html>Measurements</a></span> <span class=testresults><a href=web-impl/aarch64-pi5-crypto_sign.html>Test results</a></span><span class=heading id="amd64-meteor,big">amd64; Redwood Cove (a06a4-40); 2023 Intel Core Ultra 5 125H, P cores; 4 x 1200MHz; <tt>meteor,big</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-meteor,big.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-meteor,big-crypto_sign.html>Test results</a></span><span class=heading id="amd64-meteor,tiny">amd64; Crestmont (a06a4-20); 2023 Intel Core Ultra 5 125H, LPE cores; 2 x 700MHz; <tt>meteor,tiny</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-meteor,tiny.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-meteor,tiny-crypto_sign.html>Test results</a></span><span class=heading id="amd64-meteor,little">amd64; Crestmont (a06a4-20); 2023 Intel Core Ultra 5 125H, E cores; 8 x 700MHz; <tt>meteor,little</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-meteor,little.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-meteor,little-crypto_sign.html>Test results</a></span><span class=heading id="amd64-phoenix">amd64; Zen 4 (a70f41); 2023 AMD Ryzen 5 7640HS; 6 x 4300MHz; <tt>phoenix</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-phoenix.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-phoenix-crypto_sign.html>Test results</a></span><span class=heading id="amd64-hertz">amd64; Zen 4 (a60f12); 2023 AMD Ryzen 7 7700; 8 x 3800MHz; <tt>hertz</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-hertz.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-hertz-crypto_sign.html>Test results</a></span><span class=heading id="amd64-alder2,big">amd64; Golden Cove (906a4-40); 2022 Intel Core i3-1215U, P cores; 2 x 1600MHz; <tt>alder2,big</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-alder2,big.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-alder2,big-crypto_sign.html>Test results</a></span><span class=heading id="amd64-alder2,little">amd64; Gracemont (906a4-20); 2022 Intel Core i3-1215U, E cores; 4 x 1600MHz; <tt>alder2,little</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-alder2,little.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-alder2,little-crypto_sign.html>Test results</a></span><span class=heading id="amd64-alder">amd64; Golden Cove (90675-00); 2022 Intel Core i3-12100; 4 x 3300MHz; <tt>alder</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-alder.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-alder-crypto_sign.html>Test results</a></span><span class=heading id="amd64-renoir">amd64; Zen 2 (860f01); 2022 AMD Ryzen 5 4500U; 6 x 3600MHz; <tt>renoir</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-renoir.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-renoir-crypto_sign.html>Test results</a></span><span class=heading id="amd64-cezanne">amd64; Zen 3 (a50f00); 2021 AMD Ryzen 5 PRO 5650G; 6 x 3900MHz; <tt>cezanne</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-cezanne.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-cezanne-crypto_sign.html>Test results</a></span><span class=heading id="amd64-lucienne">amd64; Zen 2 (860f81); 2021 AMD Ryzen 3 5300U; 4 x 2600MHz; <tt>lucienne</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-lucienne.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-lucienne-crypto_sign.html>Test results</a></span><span class=heading id="amd64-jasper">amd64; Tremont (906c0); 2021 Intel Pentium Silver N6000; 4 x 1100MHz; <tt>jasper</tt>, <tt>supercop-20251222</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-jasper.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-jasper-crypto_sign.html>Test results</a></span><span class=heading id="amd64-jasper3">amd64; Tremont (906c0); 2021 Intel Celeron N5105; 4 x 2000MHz; <tt>jasper3</tt>, <tt>supercop-20250415</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-jasper3.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-jasper3-crypto_sign.html>Test results</a></span><span class=heading id="amd64-jasper2">amd64; Tremont (906c0); 2021 Intel Celeron N4500; 2 x 1100MHz; <tt>jasper2</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-jasper2.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-jasper2-crypto_sign.html>Test results</a></span><span class=heading id="amd64-dali">amd64; Zen (820f01); 2020 AMD Athlon Silver 3050e; 2 x 1400MHz; <tt>dali</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-dali.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-dali-crypto_sign.html>Test results</a></span><span class=heading id="amd64-panther">amd64; Tiger Lake (806c1); 2020 Intel Core i7-1165G7; 4 x 2800MHz; <tt>panther</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-panther.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-panther-crypto_sign.html>Test results</a></span><span class=heading id="aarch64-pi4b">aarch64; Cortex-A72 (410fd083); 2019 Broadcom BCM2711; 4 x 1500MHz; <tt>pi4b</tt>, <tt>supercop-20251114</tt>
+</span>
+<span class=measurements><a href=results-sign/aarch64-pi4b.html>Measurements</a></span> <span class=testresults><a href=web-impl/aarch64-pi4b-crypto_sign.html>Test results</a></span><span class=heading id="amd64-rome0">amd64; Zen 2 (830f10); 2019 AMD EPYC 7742; 64 x 2250MHz; <tt>rome0</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-rome0.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-rome0-crypto_sign.html>Test results</a></span><span class=heading id="amd64-comet">amd64; Comet Lake (806ec); 2019 Intel Core i3-10110U; 2 x 2100MHz; <tt>comet</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-comet.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-comet-crypto_sign.html>Test results</a></span><span class=heading id="amd64-cubi10">amd64; Comet Lake (806ec); 2019 Intel Core i3-10110U; 2 x 2100MHz; <tt>cubi10</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-cubi10.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-cubi10-crypto_sign.html>Test results</a></span><span class=heading id="amd64-know">amd64; Comet Lake (806ec); 2019 Intel Core i3-10110U; 2 x 2100MHz; <tt>know</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-know.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-know-crypto_sign.html>Test results</a></span><span class=heading id="amd64-gemini">amd64; Goldmont Plus (706a8); 2019 Intel Celeron N4020; 2 x 1100MHz; <tt>gemini</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-gemini.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-gemini-crypto_sign.html>Test results</a></span><span class=heading id="aarch64-pi3aplus">aarch64; Cortex-A53 (410fd034); 2018 Broadcom BCM2837B0; 4 x 1400MHz; <tt>pi3aplus</tt>, <tt>supercop-20251114</tt>
+</span>
+<span class=measurements><a href=results-sign/aarch64-pi3aplus.html>Measurements</a></span> <span class=testresults><a href=web-impl/aarch64-pi3aplus-crypto_sign.html>Test results</a></span><span class=heading id="aarch64-pi3bplus">aarch64; Cortex-A53 (410fd034); 2018 Broadcom BCM2837B0; 4 x 1400MHz; <tt>pi3bplus</tt>, <tt>supercop-20241022</tt>
+</span>
+<span class=measurements><a href=results-sign/aarch64-pi3bplus.html>Measurements</a></span> <span class=testresults><a href=web-impl/aarch64-pi3bplus-crypto_sign.html>Test results</a></span><span class=heading id="amd64-r24000">amd64; Coffee Lake (906ea); 2018 Intel Xeon E-2124; 4 x 3300MHz; <tt>r24000</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-r24000.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-r24000-crypto_sign.html>Test results</a></span><span class=heading id="amd64-like">amd64; Coffee Lake (806ea); 2018 Intel Core i3-8109U; 2 x 3000MHz; <tt>like</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-like.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-like-crypto_sign.html>Test results</a></span><span class=heading id="amd64-rumba7">amd64; Zen (800f11); 2017 AMD Ryzen 7 1700; 8 x 3000MHz; <tt>rumba7</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-rumba7.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-rumba7-crypto_sign.html>Test results</a></span><span class=heading id="amd64-rumba5">amd64; Zen (800f11); 2017 AMD Ryzen 5 1600; 6 x 3200MHz; <tt>rumba5</tt>, <tt>supercop-20241022</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-rumba5.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-rumba5-crypto_sign.html>Test results</a></span><span class=heading id="amd64-rumba3">amd64; Zen (800f11); 2017 AMD Ryzen 3 1200; 4 x 3100MHz; <tt>rumba3</tt>, <tt>supercop-20250415</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-rumba3.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-rumba3-crypto_sign.html>Test results</a></span><span class=heading id="amd64-kizomba">amd64; Kaby Lake (906e9); 2017 Intel Xeon E3-1220 v6; 4 x 3000MHz; <tt>kizomba</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-kizomba.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-kizomba-crypto_sign.html>Test results</a></span><span class=heading id="armeabi-berry2">armeabi; Cortex-A7 (410fc075); 2016 Broadcom BCM2836; 4 x 900MHz; <tt>berry2</tt>, <tt>supercop-20251222</tt>
+</span>
+<span class=measurements><a href=results-sign/armeabi-berry2.html>Measurements</a></span> <span class=testresults><a href=web-impl/armeabi-berry2-crypto_sign.html>Test results</a></span><span class=heading id="amd64-wooden">amd64; Goldmont (506c9); 2016 Intel Celeron J3455; 4 x 1500MHz; <tt>wooden</tt>, <tt>supercop-20251222</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-wooden.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-wooden-crypto_sign.html>Test results</a></span><span class=heading id="amd64-bolero">amd64; Broadwell+AES (406f1); 2016 Intel Xeon E5-2609 v4; 8 x 1700MHz; <tt>bolero</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-bolero.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-bolero-crypto_sign.html>Test results</a></span><span class=heading id="amd64-cherry">amd64; Silvermont (406c4); 2016 Intel Atom x5-Z8350; 4 x 1440MHz; <tt>cherry</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-cherry.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-cherry-crypto_sign.html>Test results</a></span><span class=heading id="amd64-samba">amd64; Skylake (506e3); 2015 Intel Xeon E3-1220 v5; 4 x 3000MHz; <tt>samba</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-samba.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-samba-crypto_sign.html>Test results</a></span><span class=heading id="amd64-thinksky">amd64; Skylake (506e3); 2015 Intel Core i5-6500T; 4 x 2500MHz; <tt>thinksky</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-thinksky.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-thinksky-crypto_sign.html>Test results</a></span><span class=heading id="amd64-skydell">amd64; Skylake (506e3); 2015 Intel Core i3-6100; 2 x 3700MHz; <tt>skydell</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-skydell.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-skydell-crypto_sign.html>Test results</a></span><span class=heading id="amd64-nucnuc">amd64; Airmont (406c3); 2015 Intel Pentium N3700; 4 x 1600MHz; <tt>nucnuc</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-nucnuc.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-nucnuc-crypto_sign.html>Test results</a></span><span class=heading id="amd64-shoe">amd64; Broadwell+AES (306d4); 2015 Intel Core i3-5005U; 2 x 1900MHz; <tt>shoe</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-shoe.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-shoe-crypto_sign.html>Test results</a></span><span class=heading id="armeabi-tinker">armeabi; Cortex-A17 (410fc0d1); 2014 Rockchip RK3288; 4 x 1800MHz; <tt>tinker</tt>, <tt>supercop-20241022</tt>
+</span>
+<span class=measurements><a href=results-sign/armeabi-tinker.html>Measurements</a></span> <span class=testresults><a href=web-impl/armeabi-tinker-crypto_sign.html>Test results</a></span><span class=heading id="amd64-titan0">amd64; Haswell+AES (306c3); 2013 Intel Xeon E3-1275 V3; 4 x 3500MHz; <tt>titan0</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-titan0.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-titan0-crypto_sign.html>Test results</a></span><span class=heading id="amd64-speed2supercop">amd64; Haswell+AES (306c3); 2013 Intel Core i7-4770; 4 x 3400MHz; <tt>speed2supercop</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-speed2supercop.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-speed2supercop-crypto_sign.html>Test results</a></span><span class=heading id="amd64-prodesk">amd64; Haswell+AES (306c3); 2013 Intel Core i7-4765T; 4 x 2000MHz; <tt>prodesk</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-prodesk.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-prodesk-crypto_sign.html>Test results</a></span><span class=heading id="armeabi-bblack">armeabi; Cortex-A8 (413fc082); 2012 TI Sitara XAM3359AZCZ100; 1 x 1000MHz; <tt>bblack</tt>, <tt>supercop-20251114</tt>
+</span>
+<span class=measurements><a href=results-sign/armeabi-bblack.html>Measurements</a></span> <span class=testresults><a href=web-impl/armeabi-bblack-crypto_sign.html>Test results</a></span><span class=heading id="amd64-saber214">amd64; Bulldozer (600f20); 2012 AMD FX-8350; 4 x 4000MHz; <tt>saber214</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-saber214.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-saber214-crypto_sign.html>Test results</a></span><span class=heading id="amd64-hydra8">amd64; Ivy Bridge+AES (306a9); 2012 Intel Xeon E3-1275 V2; 4 x 3500MHz; <tt>hydra8</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-hydra8.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-hydra8-crypto_sign.html>Test results</a></span><span class=heading id="amd64-hunsnivy">amd64; Ivy Bridge+AES (306a9); 2012 Intel Core i5-3427U; 2 x 1800MHz; <tt>hunsnivy</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-hunsnivy.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-hunsnivy-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h9ivy">amd64; Ivy Bridge+AES (306a9); 2012 Intel Core i5-3210M; 2 x 2500MHz; <tt>h9ivy</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h9ivy.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h9ivy-crypto_sign.html>Test results</a></span><span class=heading id="armeabi-h7panda">armeabi; Cortex-A9+NEON (411fc093); 2011 TI OMAP 4430; 2 x 1000MHz; <tt>h7panda</tt>, <tt>supercop-20250922</tt>
+</span>
+<span class=measurements><a href=results-sign/armeabi-h7panda.html>Measurements</a></span> <span class=testresults><a href=web-impl/armeabi-h7panda-crypto_sign.html>Test results</a></span><span class=heading id="armeabi-berry0">armeabi; ARM1176 (410fb767); 2011 Broadcom BCM2835; 1 x 1000MHz; <tt>berry0</tt>, <tt>supercop-20240909</tt>
+</span>
+<span class=measurements><a href=results-sign/armeabi-berry0.html>Measurements</a></span> <span class=testresults><a href=web-impl/armeabi-berry0-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h4e450">amd64; Bobcat (500f20); 2011 AMD E-450; 2 x 1650MHz; <tt>h4e450</tt>, <tt>supercop-20251114</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h4e450.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h4e450-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h8bobcat">amd64; Bobcat (500f10); 2011 AMD G-T56N; 2 x 1650MHz; <tt>h8bobcat</tt>, <tt>supercop-20241022</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h8bobcat.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h8bobcat-crypto_sign.html>Test results</a></span><span class=heading id="amd64-hydra5">amd64; K10 32nm (300f10); 2011 AMD A8-3850; 4 x 2900MHz; <tt>hydra5</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-hydra5.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-hydra5-crypto_sign.html>Test results</a></span><span class=heading id="amd64-hydra4">amd64; K10 32nm (300f10); 2011 AMD A6-3650; 4 x 2600MHz; <tt>hydra4</tt>, <tt>supercop-20250415</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-hydra4.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-hydra4-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h8atom">amd64; Bonnell (30661); 2011 Intel Atom D2500; 2 x 1866MHz; <tt>h8atom</tt>, <tt>supercop-20250415</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h8atom.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h8atom-crypto_sign.html>Test results</a></span><span class=heading id="amd64-hydra7">amd64; Sandy Bridge+AES (206a7); 2011 Intel Xeon E3-1225; 4 x 3100MHz; <tt>hydra7</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-hydra7.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-hydra7-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h6sandy">amd64; Sandy Bridge (206a7); 2011 Intel Core i3-2310M; 2 x 2100MHz; <tt>h6sandy</tt>, <tt>supercop-20241022</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h6sandy.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h6sandy-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h4atom">amd64; Bonnell (106ca); 2011 Intel Atom N435; 1 x 1330MHz; <tt>h4atom</tt>, <tt>supercop-20250922</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h4atom.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h4atom-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h3neo">amd64; K10 45nm (100f63); 2010 AMD Athlon II Neo K125; 1 x 1700MHz; <tt>h3neo</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h3neo.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h3neo-crypto_sign.html>Test results</a></span><span class=heading id="amd64-h2atom">amd64; Bonnell (106ca); 2010 Intel Atom N455; 1 x 1000MHz; <tt>h2atom</tt>, <tt>supercop-20251222</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-h2atom.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-h2atom-crypto_sign.html>Test results</a></span><span class=heading id="amd64-wolfdale">amd64; Core 2 45nm (1067a); 2009 Intel Core 2 Duo E7600; 2 x 3060MHz; <tt>wolfdale</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-wolfdale.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-wolfdale-crypto_sign.html>Test results</a></span><span class=heading id="amd64-margaux">amd64; Core 2 65nm (6fb); 2007 Intel Core 2 Quad Q6600; 4 x 2404MHz; <tt>margaux</tt>, <tt>supercop-20250922</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-margaux.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-margaux-crypto_sign.html>Test results</a></span><span class=heading id="amd64-trident">amd64; Core 2 65nm (6fb); 2007 Intel Core 2 Duo T7300; 2 x 2000MHz; <tt>trident</tt>, <tt>supercop-20260330</tt>
+</span>
+<span class=measurements><a href=results-sign/amd64-trident.html>Measurements</a></span> <span class=testresults><a href=web-impl/amd64-trident-crypto_sign.html>Test results</a></span></td></tr>
+</table>
+<h2>Version</h2>
+This is version 2026.06.24 of the results-sign.html web page.
+This web page is in the public domain.
+</body>
+</html>

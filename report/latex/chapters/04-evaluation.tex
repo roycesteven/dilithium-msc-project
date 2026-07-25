@@ -52,18 +52,31 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         closed-form prediction, and the Rust port re-measures the same operations
         under a different compiler and an independent statistical harness, reproducing
         every relative conclusion (\cref{tab:rust}).
-  \item \emph{Atomic-swap demonstration --- met at the simulated-ledger level.} An
-        end-to-end two-party, two-chain swap settles both legs and asserts
-        unspendability before adaptation (\cref{sec:res-app}). A full deployment on a
-        live testnet was not in scope; instead, on a local EVM both an on-chain settlement
-        floor and a \emph{complete}, validated native LAS verification are measured
-        (\cref{sec:res-app}; \cref{tab:onchain}), the latter at approximately 56.5 million
-        gas --- above the
-        EIP-7825 per-transaction gas cap, and thus concrete evidence for why deployment
-        needs a precompile or a succinct proof. An optimistic (Naysayer) scheme was
-        additionally implemented and measured: it makes honest settlement cheap, but its
-        worst-case fraud proof still exceeds the per-transaction cap in the evaluated
-        baseline (\cref{sec:res-app}), so it does not, on its own, resolve deployability.
+  \item \emph{Atomic-swap demonstration --- met, and extended to a measured
+        three-configuration study.} An end-to-end two-party, two-chain swap settles
+        both legs and asserts unspendability before adaptation (\cref{sec:res-app}).
+        Beyond that demonstration, the protocol was rebuilt over a UTXO ledger of the
+        kind \cite{esgin2020post} assumes and measured in three configurations ---
+        classical, LAS with a classical proof, and the fully post-quantum stack ---
+        on execution time and communication cost including off-chain messages
+        (\cref{sec:res-stage2}). The comparison that matters is controlled by
+        construction and verified at run time: the two LAS configurations share one
+        public matrix and receive byte-identical inputs, so the difference between
+        them is attributable to the proof system alone.
+
+        Deployment on a live network remains out of scope, and for the EVM the reason
+        is now quantified rather than assumed: on a local EVM both an on-chain
+        settlement floor and a \emph{complete}, validated native LAS verification are
+        measured (\cref{sec:res-app}; \cref{tab:onchain}), the latter at approximately
+        56.5 million gas --- above the EIP-7825 per-transaction gas cap, and thus
+        concrete evidence for why deployment there needs a precompile or a succinct
+        proof. An optimistic (Naysayer) scheme was additionally implemented and
+        measured: it makes honest settlement cheap, but its worst-case fraud proof
+        still exceeds the per-transaction cap in the evaluated baseline
+        (\cref{sec:res-app}), so it does not, on its own, resolve deployability. The
+        UTXO study is the constructive answer to that negative result, and the two
+        together --- why the EVM does not work, and what the alternative costs ---
+        are a stronger outcome than either alone.
 \end{enumerate}
 
 \section{Challenges encountered during the modification}
@@ -71,9 +84,9 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
 
 Turning the existing simplified-Dilithium base into LAS was conceptually a small
 change --- four added operations and one extra term in a hash --- but four
-challenges consumed most of the engineering effort, and a fifth arose later in taking
-the verifier on-chain. Stating them explicitly is part of explaining how the results
-were produced.
+challenges consumed most of the engineering effort, a fifth arose in taking the
+verifier on-chain, and a sixth in building a proof system for the application study.
+Stating them explicitly is part of explaining how the results were produced.
 
 \begin{enumerate}
   \item \textbf{The rejection-bound budget.} The single most delicate line of the
@@ -135,9 +148,24 @@ were produced.
         experimental, self-described non-production library, so the reported gas is a
         faithful cost of \emph{a} numerically-correct verifier, not an endorsement of that
         library for deployment.
+  \item \textbf{A constraint system that was asymptotically, not incidentally, wrong.}
+        The Groth16 circuit (\cref{sec:stage2method}) first accumulated each of its
+        dense rows with ordinary field-element arithmetic in the gadget layer. That is
+        the obvious way to write it, and it is quadratic: each addition clones and
+        extends the accumulated linear combination, so a row costs work proportional to
+        the \emph{square} of its width, and the circuit as a whole became intractable by
+        orders of magnitude. The symptom was not slowness but an apparent hang with no
+        output at all, because the work happens during setup, before the driver prints
+        anything --- a failure mode that looks like a deadlock and is in fact an
+        asymptotic mistake. Rebuilding each row once, as an explicit linear combination
+        against the low-level constraint-system interface, made the cost linear in the
+        row width, and setup now completes in \cfgTwoSetupTime{}. The lesson generalises
+        beyond this circuit: in constraint-system libraries the ergonomic interface and
+        the scalable interface are not the same interface, and constraint density
+        decides which one is usable.
 \end{enumerate}
 
-A sixth, cross-cutting difficulty --- reproducing the C scheme byte-for-byte in Rust,
+A seventh, cross-cutting difficulty --- reproducing the C scheme byte-for-byte in Rust,
 down to sampler subtleties such as how each language's uniform sampler discards
 rejected blocks --- is discussed with the cross-validation results
 (\cref{sec:res-rust}); the pinned known-answer digest was the tool that turned that
@@ -170,3 +198,15 @@ simplified, hint-free scheme produces larger keys and signatures than optimised
 Dilithium. Each of these is a deliberate scope choice that trades cryptographic
 optimisation for a transparent, testable artefact, and each maps directly to an item
 of future work in \cref{sec:future}.
+
+Three further limitations attach specifically to the UTXO application study
+(\cref{sec:res-stage2}). The ledger is a model rather than a node, so it yields real
+transaction objects, serialised sizes and the public leak channel, but no fees,
+propagation or confirmation latency; on-chain \emph{bytes} are the honest proxy for
+on-chain cost, and are reported as such. Its timings come from a single desktop
+machine, so the usability discussion is an extrapolation rather than a measurement on
+constrained hardware. And configuration~2 is a hybrid whose proof system is not
+post-quantum: it is included because it is the intermediate point that makes the
+proof-system comparison possible, not because it is a stack anyone should deploy ---
+a post-quantum signature does not protect a swap whose fairness argument rests on a
+pairing assumption.
