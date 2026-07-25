@@ -1,9 +1,13 @@
-\chapter{Evaluation and reflection}
+\chapter{Evaluation}
 \label{ch:evaluation}
 
-This chapter evaluates the work against the objectives set out in \cref{sec:aims} and
-reflects on the soundness of the approach, building on the validity discussion in
-\cref{sec:res-validity}.
+This chapter evaluates the work against the objectives set out in \cref{sec:aims},
+building on the validity discussion in \cref{sec:res-validity}: each objective is
+judged against the evidence, the engineering challenges that shaped the result are
+stated, and the limitations of what was measured are drawn together. The
+\emph{critical reflection} --- what was achieved, what fell short, and what would be
+done differently --- is deliberately held back to \cref{sec:reflection}, so that this
+chapter reports and judges the work while the next steps back from it.
 
 \section{Evaluation against the objectives}
 \label{sec:eval-objectives}
@@ -56,7 +60,10 @@ Each objective from \cref{sec:aims} is judged in turn against the evidence in
         (\cref{sec:res-app}; \cref{tab:onchain}), the latter at approximately 56.5 million
         gas --- above the
         EIP-7825 per-transaction gas cap, and thus concrete evidence for why deployment
-        needs a precompile, a succinct proof, or an optimistic verification scheme.
+        needs a precompile or a succinct proof. An optimistic (Naysayer) scheme was
+        additionally implemented and measured: it makes honest settlement cheap, but its
+        worst-case fraud proof still exceeds the per-transaction cap in the evaluated
+        baseline (\cref{sec:res-app}), so it does not, on its own, resolve deployability.
 \end{enumerate}
 
 \section{Challenges encountered during the modification}
@@ -136,29 +143,19 @@ rejected blocks --- is discussed with the cross-validation results
 (\cref{sec:res-rust}); the pinned known-answer digest was the tool that turned that
 difficulty into a mechanical, checkable process.
 
-\section{Reflection on the approach}
+\section{Reflection in brief}
 \label{sec:eval-reflection}
 
-Five reflections stand out. First, reuse was the right strategy: building additively
-on a standardised reference made the implementation tractable in the available time
-and produced an unusually strong trust story, since the security-critical arithmetic
-is exactly the audited upstream code. Second, the deepest challenges
-(\cref{sec:eval-challenges}) were not the adaptor mathematics but its
-\emph{interactions} --- with the base scheme's norm budget, with the reference's
-optimisations, and with its namespace --- which is a useful general lesson about
-modifying cryptographic reference code. Third, measuring the rejection rate
-directly, by counting attempts, corrected an earlier figure that had been estimated
-from a biased timing ratio --- a concrete lesson in preferring direct measurement to a
-proxy; that lesson is now institutionalised as a gate every benchmark run must pass.
-Fourth, the second implementation repaid its cost: because the reuse strategy
-transfers across languages, the Rust port was comparatively cheap to build, yet it
-upgraded the correctness argument from ``one tested codebase'' to ``two independent
-codebases that agree byte-for-byte'' and exposed the timing conclusions to an
-independent harness. Finally, confronting the fairness problem honestly, by stating
-every scheme's
-parameters and comparing LAS to a parameter-matched base, strengthens the conclusions
-rather than weakening them: the size gap to optimised Dilithium is shown to be a
-packing gap, not a dimension gap.
+One observation belongs with the results themselves, because it governs how they
+should be read. The measurements above are only as trustworthy as the boundary they
+were taken at, and two early artefacts in this project produced plausible-looking but
+wrong figures --- an acceptance rate inferred from a timing ratio, and two language
+drivers doing subtly different work inside the timed loop
+(\cref{sec:eval-challenges}). Both were caught by cross-checking against an
+independent source rather than by inspection, which is why every number reported here
+is tied to a declared measurement tier and gated against a closed-form prediction.
+The fuller reflection --- on the strategy, on what fell short, and on what a second
+attempt would change --- is developed in \cref{sec:reflection}.
 
 \section{Limitations}
 \label{sec:eval-limitations}

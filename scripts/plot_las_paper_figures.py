@@ -352,17 +352,22 @@ def fig_rejection(rej, params, levels, out_dir):
 
 
 # ---------------------------------------------------------------------------
-# Figure -- rejection-attempt distribution at the headline setting
+# MAIN figure -- cumulative probability of acceptance at the headline setting
 # ---------------------------------------------------------------------------
-# The attempt count per sign-class call is geometric (closed form from the
-# parameter set alone); the CSV contributes the MEASURED mean / p50 / p95 / max
-# of the C driver's distribution sample. Nothing here invents a number: the
-# curve is the model, every overlaid statistic is parsed from the CSV.
+# Meeting-7 ruling (Wang, 2026-07-24): the per-k probability-mass presentation
+# (fig_attempts_dist below) is misread by readers, because P(exactly k) is
+# HIGHEST at k=1 and decays -- which looks backwards to anyone who expects
+# "more attempts -> more likely to have succeeded". Report the CUMULATIVE
+# probability of acceptance within k attempts instead: it rises from the
+# single-attempt acceptance rate (~36.8% = 1/e at the target setting) and
+# flattens towards 100%, and the flattening is itself the message.
+#
+# The curve is the closed-form geometric model, derived from the parameter set
+# alone; every overlaid statistic is MEASURED and parsed from the CSV. Nothing
+# here invents a number.
 
-def fig_attempts_dist(params, rej_full, hl, out_dir):
-    import math
-    plt = _style()
-
+def _acc_per_attempt(params, hl):
+    """Single-attempt acceptance probability for (Sign bound, PreSign bound)."""
     p = params[hl]
     n, ell = int(p["n"]), int(p["ell"])
     kappa, gamma, d = int(p["kappa"]), int(p["gamma"]), int(p["N"])
@@ -370,11 +375,67 @@ def fig_attempts_dist(params, rej_full, hl, out_dir):
     def acc(bound):
         return ((2.0 * bound + 1.0) / (2.0 * gamma + 1.0)) ** ((n + ell) * d)
 
+    return acc(gamma - kappa), acc(gamma - kappa - 1)
+
+
+def fig_acceptance_cdf(params, rej_full, hl, out_dir):
+    plt = _style()
+
+    p = params[hl]
+    acc_sign, acc_presign = _acc_per_attempt(params, hl)
     series = [
-        ("basic Sign", acc(gamma - kappa), rej_full[hl]["Base Sign"],
-         BASE_COL, "o"),
-        ("LAS PreSign", acc(gamma - kappa - 1), rej_full[hl]["LAS PreSign"],
-         ADPT_COL, "s"),
+        ("basic Sign", acc_sign, rej_full[hl]["Base Sign"], BASE_COL, "o"),
+        ("LAS PreSign", acc_presign, rej_full[hl]["LAS PreSign"], ADPT_COL, "s"),
+    ]
+    ks = list(range(1, 16))
+    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+
+    for lbl, pa, row, col, mk in series:
+        cdf = [100.0 * (1.0 - (1.0 - pa) ** k) for k in ks]
+        ax.plot(ks, cdf, color=col, linewidth=2.0, marker=mk, markersize=6,
+                label="%s: geometric model (%.1f%% on the first attempt, "
+                      "mean %.3f attempts)" % (lbl, 100.0 * pa, 1.0 / pa))
+
+    # measured statistics (C driver distribution sample, straight from the CSV)
+    for i, (lbl, _, row, col, _) in enumerate(series):
+        ax.text(0.98, 0.34 - 0.07 * i,
+                "%s: measured mean %s, p50 %s, p95 %s, max %s (2000 calls)"
+                % (lbl, row["avg_attempts"], row["p50"], row["p95"], row["max"]),
+                transform=ax.transAxes, ha="right", va="top", fontsize=10,
+                color=col)
+    ax.text(0.98, 0.41, "measured (C implementation):", transform=ax.transAxes,
+            ha="right", va="top", fontsize=10, color="#444444")
+
+    ax.set_xticks(ks)
+    ax.set_ylim(0, 104)
+    ax.set_xlabel("attempts allowed (k)")
+    ax.set_ylabel("probability of acceptance within k attempts (percent)")
+    ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, κ=%s, γ=%s, d=%s"
+            % (SHORT.get(hl, hl), p["n"], p["ell"], p["kappa"], p["gamma"],
+               p["N"]),
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
+            color="#444444")
+    ax.legend(loc="lower right")
+    ax.grid(axis="y", alpha=0.3)
+    _save(fig, out_dir, "rejection_acceptance_cdf_paper")
+
+
+# ---------------------------------------------------------------------------
+# APPENDIX figure -- per-attempt probability mass at the headline setting
+# ---------------------------------------------------------------------------
+# Superseded as a BODY figure by fig_acceptance_cdf (Meeting-7 ruling above).
+# Retained for the appendix: it is the distribution the measured tail
+# statistics (p50/p95/max) actually describe, and it shows the geometric decay
+# directly. Body text must cite the cumulative figure, not this one.
+
+def fig_attempts_dist(params, rej_full, hl, out_dir):
+    plt = _style()
+
+    p = params[hl]
+    acc_sign, acc_presign = _acc_per_attempt(params, hl)
+    series = [
+        ("basic Sign", acc_sign, rej_full[hl]["Base Sign"], BASE_COL, "o"),
+        ("LAS PreSign", acc_presign, rej_full[hl]["LAS PreSign"], ADPT_COL, "s"),
     ]
     ks = list(range(1, 16))
     fig, ax = plt.subplots(figsize=(9.0, 5.0))
@@ -480,11 +541,19 @@ def write_manifest(out_dir, generated):
         rows.append(["rejection_sampling_paper.pdf/.png",
                      "appendix (optional, supporting)", "rejection_sampling.csv",
                      "acceptance per attempt", "all settings", "percent", S])
+    if "acceptance_cdf" in generated:
+        rows.append(["rejection_acceptance_cdf_paper.pdf/.png",
+                     "main (cumulative acceptance within k attempts; "
+                     "Meeting-7 replacement for the per-attempt mass figure)",
+                     "parameter_sets.csv + rejection_sampling.csv",
+                     "P(accepted within k) model; measured mean/p50/p95/max annotated",
+                     "Simplified Dilithium-III (headline)", "percent", S])
     if "attempts_dist" in generated:
         rows.append(["rejection_attempts_distribution_paper.pdf/.png",
-                     "main (rejection-attempt distribution: geometric model + measured stats)",
+                     "appendix (per-attempt mass function; superseded in the body "
+                     "by rejection_acceptance_cdf_paper)",
                      "parameter_sets.csv + rejection_sampling.csv",
-                     "P(k attempts) model; measured mean/p50/p95/max overlaid",
+                     "P(exactly k attempts) model; measured mean/p50/p95/max overlaid",
                      "Simplified Dilithium-III (headline)", "percent", S])
     rows.append(["KEY_FINDINGS.md", "main (text summary)",
                  "adaptor_overhead.csv + communication_components.csv + primary_timing.csv",
@@ -596,8 +665,11 @@ def main(argv=None):
             fig_rejection(rej, params, levels, app_dir)   # optional appendix figure
             generated.add("rejection")
         if rej_full and hl in rej_full:
-            # attempt-distribution curve (model + measured stats), headline setting
-            fig_attempts_dist(params, rej_full, hl, out_dir)
+            # MAIN: cumulative acceptance within k attempts (Meeting-7 ruling)
+            fig_acceptance_cdf(params, rej_full, hl, out_dir)
+            generated.add("acceptance_cdf")
+            # APPENDIX: the per-attempt mass function it supersedes
+            fig_attempts_dist(params, rej_full, hl, app_dir)
             generated.add("attempts_dist")
     except ImportError as e:
         print("WARNING: matplotlib unavailable (%s); wrote .tex/.md and will write "
@@ -611,7 +683,9 @@ def main(argv=None):
     print("Headline      : %s" % SHORT.get(hl, hl))
     print("Settings      : %s" % ", ".join(SHORT.get(l, l) for l in levels))
     print("Main package  : parameter_sets_paper.tex (Table 1); "
-          "per_operation_timing_paper (Fig 1); communication_components_paper (Fig 2)")
+          "per_operation_timing_paper (Fig 1); communication_components_paper (Fig 2)"
+          + ("; rejection_acceptance_cdf_paper (cumulative acceptance)"
+             if "acceptance_cdf" in generated else ""))
     print("Appendix      : adaptor_overhead_paper (multi-setting sweep) -> %s%s"
           % (app_dir,
              ("; rejection_sampling_paper" if rej

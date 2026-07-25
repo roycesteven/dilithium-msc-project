@@ -1,5 +1,10 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 7)
 
+> Meeting-6 directives are held separately in
+> `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`, not in this file.
+> **Meeting 7 (§16) retargets Stage 2 from the EVM to Bitcoin/UTXO — read it before
+> planning any further application work.**
+>
 > **THE canonical objectives/context file** (merges Meetings 1, 2, 3, 4 and 5). As of
 > 2026-06-13 the older `LAS_OBJECTIVES_FOR_TOP_MARK.md`, `las-objectives-meeting2.md`
 > and `docs/archive/LAS_PROJECT_HANDOFF.md` have been **deleted** — their content is
@@ -504,7 +509,111 @@ arises; transcribed as "ZKPS16", so treat the name as probable, not certain.)
 12. **Summary of the challenges met during the modification** (14:55, recovered) — report material.
 13. **Criterion distribution/statistics visuals** reused in the report and the screencast/video (27:39–27:45, recovered).
 
-## 16. Reference links
+## 16. Meeting-7 directives [M7, 2026-07-24 — retarget Stage 2 from the EVM to Bitcoin/UTXO]
+
+Source: `meeting7_cleaned_transcript.md` (merged from the Teams/Stream transcript and the
+phone recording). Meeting-6 directives are recorded separately in
+`docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`.
+
+### 16.1 THE DECISION — Stage 2 moves off the EVM
+
+**Stage 2's application target changes from a smart-contract chain to Bitcoin / a
+UTXO-based chain.** Wang's reasoning, in his own terms: full native on-chain LAS
+verification "is a bit impossible" against the per-block/per-transaction gas limit, and
+it is well known that adaptor signatures are used for atomic swaps on Bitcoin and other
+UTXO-based chains **rather than** on smart-contract chains. Bitcoin has no gas limit —
+only transaction fees — and the expensive work stays off-chain, so a Bitcoin-side demo
+cannot be attacked as infeasible in practice: *"people won't argue that your solution is
+not feasible."*
+
+This supersedes the EVM-first framing of §5/§10 for the *application*. It does **not**
+retract the EVM work already done: the measured ≈56.5 M gas native verifier and the
+Naysayer variant become the **evidence for why** the UTXO venue was chosen, and are
+retained as results. The EVM path is deferred to "if we have time".
+
+Corroborating desk survey: `docs/04-evaluation/CLASSICAL_ADAPTOR_ONCHAIN_SURVEY.md`
+(finds no classical Solidity adaptor verifier exists, because in a scriptless swap the
+chain only ever sees an ordinary signature).
+
+### 16.2 The three configurations to build and benchmark
+
+Reuse an existing, actively-maintained classical atomic-swap repository's architecture
+and replace its cryptography. Wang explicitly ordered the two substitutions:
+**signatures first, ZKP second.**
+
+| # | Signature | ZKP | Purpose |
+|---|---|---|---|
+| 1 | classical adaptor (ECDSA) | Groth16 | the classical reference point |
+| 2 | **LAS** (post-quantum) | Groth16 | isolates the cost of the PQ *signature* |
+| 3 | **LAS** (post-quantum) | **LaZer** (post-quantum) | the fully post-quantum stack |
+
+Each is evaluated for performance; (3) is the goal, (2) is the intermediate step that
+makes the signature's contribution separable from the proof system's.
+
+### 16.3 Metrics — gas is replaced by time + communication
+
+Because Bitcoin has no gas metric, the comparison axes become **execution time** and
+**communication cost**, and Wang required communication to include **off-chain**
+protocol messages, not just what lands on chain. He also asked for the *usability*
+consequence to be discussed: heavy pre-transaction computation may not be feasible on a
+phone and may need a dedicated PC — that is a reportable finding, not an aside.
+
+### 16.4 Simplifications explicitly permitted
+
+- **No real sockets/ports.** Assume messages can be passed directly between the two
+  parties; a two-port simulation is future work, not now.
+- **π stays off-chain.** The parties may be assumed to share a secure channel before
+  the exchange, so the proof of knowledge never needs to go on chain.
+- **Refund / timeout are edge cases.** Implement the honest path first, on the
+  understanding that a dishonest counterparty must not cause the honest party to lose
+  funds.
+- **Packing/unpacking in the swap path is optional.** If it is not efficient enough,
+  omit it and record it as a limitation in the critical reflection. Wang's framing:
+  *"it's just the exploration… you don't need to build a product."*
+- **Calling LaZer's C from Rust is acceptable.** Get a working version first; optimise
+  later.
+
+### 16.5 Report rulings
+
+- **Evaluation is its own chapter**, kept separate from methodology — a reader should
+  not have to understand the method before seeing the results.
+- **Critical reflection goes in Chapter 5** with the conclusion, as at least its own
+  subsection: what was achieved (theory + evaluation), what failed, and what would be
+  done differently given another chance. A short reflective paragraph may remain in the
+  evaluation chapter. (Applied: `04-evaluation.tex` → "Evaluation" + a brief reflection
+  section; `05-conclusion.tex` → §Critical reflection with those three subsections.)
+- **The rejection figure must change.** Plotting P(*exactly* k attempts) misleads,
+  because it peaks at k=1 and decays — backwards to a reader who expects "more attempts
+  → more likely to have succeeded". Plot the **cumulative probability of acceptance
+  within k attempts** over k = 1…15 instead: it rises from ≈36.8 % and flattens toward
+  100 %, and the flattening is itself the message. (Applied:
+  `fig_acceptance_cdf` in `scripts/plot_las_paper_figures.py`; the mass function is
+  demoted to the appendix.)
+- **Overleaf:** share the project with Wang's Manchester address once a reasonably
+  complete version exists.
+
+### 16.6 Meeting-7 deliverable list
+
+1. Choose the base repo (maintained; avoid Monero's privacy complexity — prefer two
+   similar UTXO chains).
+2. Configuration 1 — classical adaptor + Groth16 — built and benchmarked.
+3. Configuration 2 — LAS + Groth16 — built and benchmarked.
+4. Configuration 3 — LAS + LaZer — built and benchmarked.
+5. Time + communication-cost comparison across all three, off-chain messages included.
+6. Preparatory check of classical adaptor/atomic-swap cost on Solidity ✅ (§16.1 survey).
+7. Report restructure: evaluation chapter, Chapter-5 critical reflection ✅.
+8. Cumulative-acceptance figure replacing the mass-function figure ✅ — script, report
+   text, and the installed `report/latex/figures/fig_rejection_cdf.pdf` (regenerated
+   from `evidence/runs/20260717_084012/tables`; report rebuild still owed).
+9. Overleaf shared with Wang.
+10. Benchmark the classical repo, noting that some demos stop at Adapt and never
+    implement Ext (Wang: extraction is always fast, it is just the final step).
+
+**Open question for Royce to confirm:** whether one week is realistic. Wang said the
+three steps were doable, but his answer is **cut off mid-sentence** in both recordings,
+so his full caveat is unrecorded.
+
+## 17. Reference links
 
 - LAS spec: https://eprint.iacr.org/2020/845
 - Survey: https://eprint.iacr.org/2022/1151

@@ -169,8 +169,8 @@ the measurement boundary is drawn \cite{riou2026apples}.
   attempts per call and ``Accept.''\ is the per-attempt acceptance rate --- the two
   quantities every source records, and the ones the model predicts. The per-call
   \emph{dispersion} (the geometric standard deviation $\sigma=E\sqrt{1-1/E}$, the
-  medians and 95th percentiles, and the sampled maxima) is shown in the companion
-  distribution of \cref{fig:rejdist} rather than repeated here. The C driver is the
+  medians and 95th percentiles, and the sampled maxima) is annotated on the companion
+  acceptance curve of \cref{fig:rejcdf} rather than repeated here. The C driver is the
   implementation of record; the Rust protocol driver and the Criterion harness are
   the independent samples of \cref{sec:rustport}. Every measured row passes the
   five-standard-error validity gate of \cref{sec:benchmethod}.}
@@ -181,25 +181,29 @@ the measurement boundary is drawn \cite{riou2026apples}.
 
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig_rejection_dist}
-  \caption[Rejection-attempt distribution at the target setting]{The
-  rejection-attempt distribution at the target setting \emph{Simplified
+  \includegraphics[width=\linewidth]{figures/fig_rejection_cdf}
+  \caption[Cumulative probability of acceptance at the target setting]{The
+  probability that a sign-class call has been accepted \emph{within} $k$
+  rejection-sampling attempts, at the target setting \emph{Simplified
   Dilithium-III}. The curves are the closed-form geometric model of
   \cref{eq:rejacc} for the basic Sign bound $\gamma-\kappa$ (blue) and the
-  tighter LAS PreSign bound $\gamma-\kappa-1$ (orange) --- nearly coincident,
+  tighter LAS PreSign bound $\gamma-\kappa-1$ (orange): acceptance is
+  $36.8\%$ and $36.0\%$ respectively on the first attempt, passes $90\%$ by
+  five attempts, and then flattens --- the two curves are nearly coincident,
   which is exactly why the PreSign-versus-Sign timing gap is so small. The
-  dashed vertical lines and the annotated statistics are \emph{measured} on
-  the C implementation (2000-call distribution sample of
-  \cref{tab:rejstats}): means 2.715/2.716, medians 2, 95th percentiles 7, and
-  observed maxima of 17 (Sign) and 19 (PreSign) attempts --- the heavy
-  geometric tail that makes per-call signing times disperse.}
-  \label{fig:rejdist}
+  annotated statistics are \emph{measured} on the C implementation (the
+  2000-call distribution sample tabulated exactly in \cref{tab:rejstats}). The
+  flattening is the practical point: allowing many more attempts buys almost
+  nothing, because the overwhelming majority of calls are accepted within the
+  first few.}
+  \label{fig:rejcdf}
 \end{figure}
 
 Signing and pre-signing are dearer than verification because they use rejection
 sampling, and the attempt counters measured during the timed calls explain the
 Sign-versus-PreSign timing gap; \cref{tab:rejstats} collects the statistics and
-\cref{fig:rejdist} shows the distribution they come from. The closed-form expectation of \cref{eq:rejacc}
+\cref{fig:rejcdf} shows how quickly acceptance accumulates over successive
+attempts. The closed-form expectation of \cref{eq:rejacc}
 predicts 2.719 attempts per Sign and 2.775 per PreSign at the target setting ---
 PreSign is expected to restart about $2\%$ more often, because its bound is
 tighter by exactly one. Measured directly, by counting rejection-loop attempts
@@ -504,6 +508,36 @@ $16{,}777{,}216$ gas.
 This on-chain result --- for this D3 LAS instance in Solidity --- and the multi-hop variant
 are supporting evidence; they inform, but do not displace, the first-stage signature
 results above.
+
+Because that native verifier exceeds the per-transaction cap, an \emph{optimistic}
+alternative was also implemented and measured: \texttt{LASNaysayer}, a poqeth-inspired
+Naysayer verifier \cite{kysil2025poqeth} for the lattice setting: poqeth itself implements
+only hash-based and multivariate schemes and rules Dilithium out on public-key size. Instead of re-executing
+verification, the contract accepts a settlement optimistically and lets any party dispute a
+single failing step within a challenge window; verification is decomposed into three locally
+checkable invariants --- the response norm, each recomputed commitment coefficient (with the
+challenge derived on chain), and the final hash --- so a dispute recomputes only one
+coefficient by schoolbook convolution and never runs the NTT batch. An adversarial suite of
+nine tests passes, covering soundness (no dispute voids a valid settlement), completeness for
+each fault type (including a C-exported pure hash-fault vector against which only the hash
+dispute succeeds), the challenge-window and replay guards, input validation, and pull-payment
+isolation against a hostile recipient. The result is deliberately reported as mixed. Honest
+settlement is cheap --- an optimistic claim costs approximately $1.1$ million gas and
+finalisation approximately $27{,}000$, since the NTT batch never executes on the happy path
+--- but the binding cost is the worst-case fraud proof. The norm dispute costs approximately
+$34{,}000$ gas; the commitment dispute, in a baseline that passes the whole public matrix in
+calldata, approximately $13.9$ million gas of execution together with an approximately
+$246$-kilobyte calldata payload; and the hash dispute approximately $29.4$ million gas. These
+are execution-gas figures, so the full per-transaction totals --- adding the fixed intrinsic
+cost and the calldata --- are strictly larger. The hash dispute alone therefore exceeds the
+EIP-7825 cap of $16{,}777{,}216$ by roughly $1.75\times$ on execution gas before any calldata,
+because it must run a complete SHAKE256 in Solidity, which is not an EVM-native hash ---
+unlike the Keccak-based schemes of \cite{kysil2025poqeth}. The optimistic mode thus moves cost
+off the honest path but does \emph{not}, in this baseline, bring the worst-case dispute within
+a single transaction; doing so would require opening only the single disputed matrix row
+through a Merkle commitment rather than sending the whole matrix, and a hash dispute that
+avoids a full SHAKE256 pass. Like the native verifier, this is supporting evidence and does
+not displace the first-stage signature results.
 
 \begin{table}[t]
   \centering

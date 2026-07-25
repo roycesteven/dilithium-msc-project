@@ -416,8 +416,9 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
   built/tested under `-DDILITHIUM_MODE=3` (also 2/5 for portability).
 - Do NOT implement/analyse security proofs. Implement + benchmark + demo only.
 - **Two-stage spine (official):** Stage 1 = standalone LAS + benchmark vs pure
-  Dilithium ✅; Stage 2 = blockchain application (atomic swap / fair exchange on
-  a local/private chain) ✅ (simulated ledger; gas measurement still open).
+  Dilithium ✅; Stage 2 = blockchain application (atomic swap / fair exchange) ✅ at
+  the simulated-ledger level — but **Stage 2's target chain changed at Meeting 7,
+  see the pivot block below.**
 - **Benchmarks now need TWO baselines (B2):** (i) LAS vs pure Dilithium ✅
   (`bench_compare`); (ii) LAS vs **classical adaptor signature** ✅
   (`bench_classical` — libsecp256k1-zkp `ecdsa_adaptor`, vendored at `95b9835`,
@@ -440,6 +441,34 @@ scope per supervisor). Exact `2^24` would need a new NTT table or schoolbook mul
   function map (✅ `docs/02-methodology/FUNCTION_MAP.md`) → key decisions → benchmark results
   (both baselines) → critical analysis; code snippets only in appendix.
   ~8000 words from `docs/LAS.md`.
+
+## ⚠️ MEETING-7 PIVOT (2026-07-24) — Stage 2 retargets from the EVM to Bitcoin/UTXO
+
+Authority: `las-context-consolidated.md` §16 · transcript `meeting7_cleaned_transcript.md`.
+**Read §16 before planning any application work.** Summary of what changed:
+
+- **Target chain.** The Stage-2 application moves from a smart-contract chain to
+  **Bitcoin / a UTXO-based chain**. Reason (Wang): native on-chain LAS verification is
+  infeasible against the gas limit, and adaptor signatures are used in practice for
+  swaps on UTXO chains, not smart-contract chains. Bitcoin has no gas limit — only
+  transaction fees — and the heavy work stays off-chain.
+- **The EVM work is NOT retracted.** The measured ≈56.5 M-gas native verifier and the
+  Naysayer variant are retained as *the evidence for why* the UTXO venue was chosen.
+  EVM is deferred to "if we have time".
+- **Deliverable = three configurations**, built by reusing a maintained classical
+  atomic-swap repo's architecture and replacing its cryptography (signatures first,
+  ZKP second): (1) classical adaptor + Groth16, (2) **LAS + Groth16**, (3) **LAS +
+  LaZer**. Benchmark all three.
+- **Metrics change: gas → time + communication cost**, with off-chain protocol
+  messages counted, plus the usability finding (heavy pre-transaction computation may
+  need a dedicated PC rather than a phone).
+- **Permitted simplifications:** no real sockets (pass messages directly); π stays
+  off-chain; refund/timeout are edge cases (honest path first); packing in the swap
+  path is optional — if too slow, omit and record as a limitation. It is an
+  exploration/demo, not a product.
+- **Report rulings applied:** evaluation is its own chapter; critical reflection lives
+  in Chapter 5 as its own section (achieved / fell short / would do differently); the
+  rejection figure is now a **cumulative acceptance curve**, not P(exactly k attempts).
 
 ## Reference
 - **Objectives (authoritative):** `las-context-consolidated.md` (Meetings 1+2 merged).

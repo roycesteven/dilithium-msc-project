@@ -1,7 +1,9 @@
 # Project STATUS & Test Checklist — single source of truth for "what's done / tested"
 
-*Living tracker. Updated 2026-07-16 (Meeting-5 explainability/reproducibility package
-added — see §1). Read this first to see, at a glance, every
+*Living tracker. Updated 2026-07-25 (**Meeting-7 pivot: Stage 2 retargets from the EVM
+to Bitcoin/UTXO — see §6a and `las-context-consolidated.md` §16**; previous update
+2026-07-16, Meeting-5 explainability/reproducibility package, see §1). Read this first
+to see, at a glance, every
 deliverable, whether it is **built**, **tested**, and **documented**, plus the one
 command that reproduces each claim. Maps every item to the Meeting-2 objectives
 (`las-context-consolidated.md`) and to the report's assessment criteria (`CLAUDE.md`).*
@@ -222,8 +224,44 @@ beat [60s]; (6) limitations + future work [30s]. Talking-head in corner.
 
 ## 6. Immediate next actions (in order)
 
-**Meeting-5 (2026-07-06) is the latest word: the single active priority is the Stage-1
-explainability + reproducibility package below — not application/Stage-2 code.**
+**Meeting-7 (2026-07-24) is the latest word, and it SUPERSEDES the Meeting-5 ordering
+below: the active priority is now the Stage-2 application on Bitcoin/UTXO — three
+configurations — plus the report restructure.** Authority:
+`las-context-consolidated.md` §16 · `meeting7_cleaned_transcript.md`. Stage-2 code is
+no longer gated behind Stage-1 sign-off; Wang set it as the plan for the coming week.
+
+### 6a. Meeting-7 priorities (do these first)
+
+1. **Choose the base repo** — a maintained classical atomic-swap implementation whose
+   architecture can be reused with the cryptography replaced. Avoid Monero's
+   privacy-preserving complexity; prefer two similar UTXO chains. Candidates and
+   maintenance status surveyed in
+   `docs/04-evaluation/CLASSICAL_ADAPTOR_ONCHAIN_SURVEY.md` §2 (note:
+   `comit-network/xmr-btc-swap` is **deprecated**, succeeded by `eigenwallet/core`).
+2. **Configuration 1 — classical adaptor (ECDSA) + Groth16:** build, then benchmark.
+   Note that some demos stop at Adapt and never implement Ext.
+3. **Configuration 2 — LAS + Groth16:** replace the signature only. This isolates the
+   post-quantum *signature* cost from the proof system's.
+4. **Configuration 3 — LAS + LaZer:** the fully post-quantum stack.
+5. **Comparison on time + communication cost** (gas is not available on Bitcoin),
+   counting off-chain protocol messages, plus the usability discussion.
+6. ✅ **Cumulative-acceptance figure regenerated and installed** as
+   `report/latex/figures/fig_rejection_cdf.pdf`, from
+   `evidence/runs/20260717_084012/tables` (no benchmark re-run; the plot script reads
+   the existing CSVs). Reproduce with:
+   `python3 scripts/plot_las_paper_figures.py --input-dir evidence/runs/20260717_084012/tables --output-dir <out> --appendix-dir <out-appendix>`
+   then copy `rejection_acceptance_cdf_paper.pdf` → `report/latex/figures/fig_rejection_cdf.pdf`.
+   The superseded per-attempt mass function is emitted to the appendix dir as
+   `rejection_attempts_distribution_paper.pdf` (not yet included in the appendix `.tex`).
+   **The report still needs a LaTeX rebuild** to pick the figure up.
+7. ✅ Preparatory Solidity/classical cost check —
+   `docs/04-evaluation/CLASSICAL_ADAPTOR_ONCHAIN_SURVEY.md`.
+8. ✅ Report restructure — evaluation as its own chapter; critical reflection in
+   Chapter 5 (achieved / fell short / would do differently).
+9. ⬜ **Share the Overleaf project with Wang's Manchester address** (Royce's account
+   action; cannot be done from the repo).
+
+### 6b. Carried-over Meeting-5 Stage-1 items (still owed, now lower priority)
 
 1. **Open the clean-Dilithium → LAS PR and invite Wang** (Meeting-4 + Meeting-5 named
    deliverable): artefacts ready (`dilithium-baseline` branch, `docs/02-methodology/CODE_DIFF_VIEW.md`,
