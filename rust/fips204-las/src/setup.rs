@@ -74,14 +74,45 @@ pub const GAMMA: i32 = KAPPA * (D as i32) * (N_PLUS_ELL as i32);
 /// Seed length in bytes.
 pub const LAS_SEEDBYTES: usize = 32;
 /// Challenge-hash length in bytes: the stored digest `c_tilde`, the
-/// implementation realisation of the paper's `H : {0,1}* -> C` (the paper's
-/// challenge `c` IS this hash — eq. 7 counts it as the 32-byte term of `|sigma|`).
-/// Twin of upstream `CTILDEBYTES` (params.h) / `LAMBDA_DIV4` (ml_dsa.rs); the
-/// same value as `LAS_SEEDBYTES`, but a DISTINCT knob, as upstream keeps the two
-/// separate.  Stored in the `Signature`/`PreSignature` types (las_types.rs); the
-/// challenge polynomial `c = SampleInBall(c_tilde)` is only ever a local
-/// arithmetic value, never serialised.
-pub const LAS_CTILDEBYTES: usize = 32;
+/// implementation realisation of the paper's `H : {0,1}* -> C`.
+///
+/// eprint 2020/845 specifies `H` only as a random oracle onto the challenge
+/// space `C`; it does NOT prescribe a digest WIDTH, so the width is an
+/// implementation choice and is taken from FIPS 204. FIPS 204 §7.3
+/// (Algorithm 29, `SampleInBall`) takes a seed in `B^{lambda/4}`, i.e.
+/// `lambda/4` bytes with `lambda = 128/192/256` for ML-DSA-44/65/87 — 32/48/64
+/// bytes. Twin of upstream `CTILDEBYTES` (params.h) / `LAMBDA_DIV4`
+/// (ml_dsa.rs), and of the C `LAS_CTILDEBYTES` (setup.h), which derives it from
+/// the same `(n, ell, kappa)` table:
+///
+/// | (n, ell, kappa) | aligns with | `c_tilde` |
+/// |---|---|---|
+/// | (4, 4, 39) | ML-DSA-44 | 32 |
+/// | (6, 5, 49) | ML-DSA-65 | 48 (this build) |
+/// | (8, 7, 60) | ML-DSA-87 | 64 |
+/// | (4, 4, 60) | none — historical paper reproduction | 32 |
+///
+/// Alignment is of the REUSABLE ML-DSA primitives and the challenge-digest
+/// strength only. LAS keeps its own ternary secret distribution, rejection
+/// bounds, exact hint-free relation and adaptor algorithms, so a matched set is
+/// NOT a claim that LAS is ML-DSA-65 or inherits its security category.
+///
+/// Stored in the `Signature`/`PreSignature` types (las_types.rs); the challenge
+/// polynomial `c = SampleInBall(c_tilde)` is only ever a local arithmetic
+/// value, never serialised.
+pub const LAS_CTILDEBYTES: usize = las_ctildebytes();
+
+/// Digest width for the configured set. Mirrors the `#if` ladder in the C
+/// `setup.h`; an unrecognised set is a compile error, never a silent default.
+const fn las_ctildebytes() -> usize {
+    match (N, ELL, KAPPA) {
+        (4, 4, 39) => 32, // ML-DSA-44-aligned
+        (6, 5, 49) => 48, // ML-DSA-65-aligned target
+        (8, 7, 60) => 64, // ML-DSA-87-aligned
+        (4, 4, 60) => 32, // historical paper reproduction
+        _ => panic!("unrecognised (N, ELL, KAPPA) set: set LAS_CTILDEBYTES explicitly"),
+    }
+}
 
 /* ---- The construction-wide public parameters `pp = (A, H)`.  A' is held in
  * the NTT domain (type T), as the C `public_params.a_prime` holds it.  The six

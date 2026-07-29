@@ -13,7 +13,11 @@
 % review folds into the Introduction, as the assessment rubric requires.
 %
 % Use `singlespace` ONLY for drafts; remove before submission.
-\documentclass[12pt,MSc]{muthesis}
+% The `wordcount` option prints the count from word.count under the table of
+% contents (muthesis.cls: "A word count now (Sep 17) seems to be required").
+% Regenerate word.count first:
+%   texcount -1 -sum -relaxed -inc report.tex > word.count
+\documentclass[12pt,MSc,wordcount]{muthesis}
 
 % ---- packages (keep minimal; add as needed) ----
 \usepackage[T1]{fontenc}
@@ -82,7 +86,22 @@
 \input{chapters/00-abstract}
 \afterabstract           % declaration + copyright pages (auto-generated)
 
-% (Acknowledgements, if wanted, go here — out of scope for now)
+% muthesis.cls mandates the preface order: title / contents / abstract /
+% declaration / STATEMENT OF QUALIFICATIONS AND RESEARCH / anything else
+% (acknowledgements). The class documentation states the first \prefacesection
+% after \afterabstract "should be the statement of education and research".
+% These are front matter, so they are excluded from the texcount body count.
+%TC:ignore
+\prefacesection{Statement of qualifications and research}
+\TODO{Only you can write this — state your prior degree(s)/qualifications and
+      any relevant research experience, e.g.\ ``The author holds a BSc in \dots
+      from \dots. No part of the work reported here has been undertaken as part
+      of any previous qualification.''}
+
+\prefacesection{Acknowledgements}
+\TODO{Optional but conventional — e.g.\ thanks to your supervisor
+      Dr Zhipeng Wang, and to anyone else you wish to credit.}
+%TC:endignore
 
 \afterpreface            % begin body; continue page numbering; running headings
 
@@ -94,10 +113,15 @@
 \input{chapters/05-conclusion}
 
 % ---------- back matter ----------
+% The rubric excludes references, appendices and captions from the word count,
+% so the appendix and bibliography are fenced off from texcount here (captions
+% are excluded by the -sum weights in the Makefile's `wordcount` target).
+%TC:ignore
 \appendix
 \input{chapters/A-appendix}
 
 \bibliographystyle{plain}      % numeric [1] style; ships with TeX Live (IEEEtran.bst not installed)
 \bibliography{refs}
+%TC:endignore
 
 \end{document}

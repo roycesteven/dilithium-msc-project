@@ -70,7 +70,7 @@ concerns **role A only**.
 |---|---|---|
 | What it proves | that a party knows the witness behind the statement `Y` (Fig. 1's π) | that an LAS verification *was performed correctly*, so a chain need not re-run it |
 | Where it runs | **off-chain**, between the two parties | on-chain verifier checks it |
-| This project's PQ instantiation | **LaZer** — implemented (`ref/relation_zk*.{c,h}`, `rust/fips204-las/src/relation_zk.rs`) | **`rust/las-stark/`** — Winterfell FRI-STARK scaffold |
+| This project's PQ instantiation | **LaZer** — implemented (`ref/relation_zk*.{c,h}`, `rust/fips204-las/src/relation_zk.rs`) | **`rust/las-stark/`** — Winterfell FRI-STARK; the *arithmetic* core of verify (norm bound + `w' = z_top + A'·z_bot − c·t`) is proven at `d = 256`, the Fiat–Shamir hashes are not yet in-AIR |
 | Meeting-7 status | **in scope** — what the configurations vary | **deferred** with the EVM path |
 
 `rust/las-stark/` is *not* on the Meeting-7 critical path.

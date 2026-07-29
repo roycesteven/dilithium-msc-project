@@ -44,7 +44,10 @@ library LASVerify {
     uint256 internal constant Z_BITS = 19;       // LAS_Z_COEFF_BITS (D3)
     uint256 internal constant Z_OFFSET = 137935; // γ − κ
     uint256 internal constant BOUND = 137935;    // accept iff ‖z‖∞ ≤ γ − κ
-    uint256 internal constant SIG_BYTES = 32 + (N_PLUS_ELL * N * Z_BITS) / 8; // 6720
+    /// c_tilde width: FIPS 204 §7.3 lambda/4 for the ML-DSA-65-aligned set
+    /// (LAS_CTILDEBYTES in ref/setup.h). Was a flat 32 before that alignment.
+    uint256 internal constant CTILDE_BYTES = 48;
+    uint256 internal constant SIG_BYTES = CTILDE_BYTES + (N_PLUS_ELL * N * Z_BITS) / 8; // 6736
 
     /// Precompute the registered matrix: A' (NORMAL domain, row-major n*ell) into
     /// NTT domain, ONCE at registration. Mirrors setup_public_params NTT-ing
@@ -59,7 +62,7 @@ library LASVerify {
     ///                  (registered once via toNttDomain — NEVER NTT'd per verify).
     /// @param t         n polynomials, canonical [0,Q) (the public key).
     /// @param message   the signed message M.
-    /// @param sig       the packed adapted signature: c_tilde(32) ‖ BitPack19(z).
+    /// @param sig       the packed adapted signature: c_tilde(48) ‖ BitPack19(z).
     /// @return true iff the signature verifies.
     function verify(
         uint256[][] memory AprimeHat,
@@ -82,8 +85,8 @@ library LASVerify {
         ctx = shakeUpdate(ctx, tPacked);
         ctx = shakeUpdate(ctx, wPacked);
         ctx = shakeUpdate(ctx, message);
-        bytes memory cCheck = shakeDigest(ctx, 32);
-        for (uint256 i = 0; i < 32; i++) if (cCheck[i] != sig[i]) return false;
+        bytes memory cCheck = shakeDigest(ctx, CTILDE_BYTES);
+        for (uint256 i = 0; i < CTILDE_BYTES; i++) if (cCheck[i] != sig[i]) return false;
         return true;
     }
 
@@ -106,9 +109,9 @@ library LASVerify {
         pure
         returns (uint256[][] memory wprime, bytes memory tPacked)
     {
-        // 3. challenge polynomial from the digest c_tilde = sig[0:32].
-        bytes memory cTilde = new bytes(32);
-        for (uint256 i = 0; i < 32; i++) cTilde[i] = sig[i];
+        // 3. challenge polynomial from the digest c_tilde = sig[0:CTILDE_BYTES].
+        bytes memory cTilde = new bytes(CTILDE_BYTES);
+        for (uint256 i = 0; i < CTILDE_BYTES; i++) cTilde[i] = sig[i];
         uint256[] memory cHat = sampleInBallNist(cTilde, KAPPA, Q); // {0,1,Q-1}
 
         // Pack t (canonical, NORMAL domain) BEFORE any NTT destroys it.
@@ -148,7 +151,7 @@ library LASVerify {
         ctx = shakeUpdate(ctx, _packPolys(t, N_LAS));
         ctx = shakeUpdate(ctx, _packPolys(wprime, N_LAS));
         ctx = shakeUpdate(ctx, message);
-        return shakeDigest(ctx, 32);
+        return shakeDigest(ctx, CTILDE_BYTES);
     }
 
     // ---- helpers -------------------------------------------------------------
@@ -168,11 +171,11 @@ library LASVerify {
         f = (word >> (bitpos & 7)) & 0x7FFFF; // 19-bit mask
     }
 
-    /// Decode the z region (after the 32-byte c_tilde) into canonical [0,Q).
+    /// Decode the z region (after the CTILDE_BYTES c_tilde) into canonical [0,Q).
     /// z = LAS_Z_OFFSET − field  (ref/serialize.c decode_chal_response).
     function _decodeZ(bytes memory sig) private pure returns (uint256[][] memory z) {
         z = new uint256[][](N_PLUS_ELL);
-        uint256 bit = 32 * 8;
+        uint256 bit = CTILDE_BYTES * 8;
         for (uint256 i = 0; i < N_PLUS_ELL; i++) {
             z[i] = new uint256[](N);
             for (uint256 k = 0; k < N; k++) {

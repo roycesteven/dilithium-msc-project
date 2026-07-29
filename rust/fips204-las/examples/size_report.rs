@@ -92,14 +92,14 @@ fn main() {
     assert!(sk_len == 704, "C row: sk = r = 704 B");
     assert!(y_len == 4416, "C row: Y = t' = 4416 B");
     assert!(wit_len == 704, "C row: r' = 704 B");
-    assert!(c_len == 32, "C row: c_tilde = 32 B");
+    assert!(c_len == 48, "C row: c_tilde = 48 B (FIPS 204 lambda/4, ML-DSA-65-aligned)");
     assert!(z_len == 6688, "C row: z = z_hat = 6688 B");
-    assert!(sig_len == 6720, "C row: signature = pre-signature = adapted = 6720 B");
+    assert!(sig_len == 6736, "C row: signature = pre-signature = adapted = 6736 B");
 
     println!("Communication cost — component-level packed sizes (measured)");
     println!("Setting: Simplified Dilithium-III (n=6, ell=5, kappa=49), ring degree d=256");
     println!("Wire format: serialize.rs (byte-for-byte identical to C ref/serialize.c;");
-    println!("             cross-checked against the C pinned KAT digest bb6ad0da…260c)");
+    println!("             cross-checked against the C pinned KAT digest b4a10ffb…03be)");
     println!();
     println!("{:<42} {:>7}   {:>14}", "component", "bytes", "% of signature");
     let rows: [(&str, usize); 10] = [

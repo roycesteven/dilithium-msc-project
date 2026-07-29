@@ -85,14 +85,14 @@ static void pack_w_local(uint8_t *r, const poly *v, unsigned int count) {
  * H: KAPPA nonzero coefficients in {-1,+1} from SHAKE256(c_tilde). Ground truth
  * for the reused ZKNox sampleInBallNist(c_tilde, KAPPA, Q). Kept in lockstep
  * with basesig.c; if that changes, change this too. */
-static void export_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]) {
+static void export_challenge(poly *c, const uint8_t seed[LAS_CTILDEBYTES]) {
   unsigned int i, b, pos;
   uint64_t signs;
   uint8_t buf[SHAKE256_RATE];
   keccak_state state;
 
   shake256_init(&state);
-  shake256_absorb(&state, seed, LAS_SEEDBYTES);
+  shake256_absorb(&state, seed, LAS_CTILDEBYTES);
   shake256_finalize(&state);
   shake256_squeezeblocks(buf, 1, &state);
 

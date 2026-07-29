@@ -251,7 +251,8 @@ native precompile, at **75,751 gas**. The LAS path has two entrypoints. `claimLA
 only an unconditional **floor** — publishing the 6,720-byte signature (calldata + one
 keccak) with **no** lattice check — **289,930 gas**, ~3.8× the complete ECDSA claim.
 `claimLASVerified` performs the **complete** lattice verification: we **built it**
-(`evm/src/LASVerifier.sol`, reusing audited ZKNox primitives, validated end-to-end against
+(`evm/src/LASVerifier.sol`, reusing vendored ZKNox primitives — an experimental,
+self-described non-production library — validated end-to-end against
 the C reference — it *accepts* the real adapted signature and *rejects* tampered bytes) and
 **measured it at 56,538,682 gas**, ~746× the classical claim. That is now a *measured*
 number, superseding an earlier ≈16.7M op-count estimate; it is larger because a complete

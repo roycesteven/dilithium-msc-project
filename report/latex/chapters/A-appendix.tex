@@ -123,6 +123,199 @@ bootstrap confidence intervals) and applies the same Gate~1; it shares no
 timing code with the drivers, which is what makes its agreement an independent
 check rather than a re-run.
 
+\section{Methodology details}
+\label{app:methoddetail}
+
+This section carries the derivations and experimental-design detail deferred from
+\cref{ch:methodology}, so that the body states the decisions and this appendix
+justifies them in full.
+
+\paragraph{Why the per-attempt acceptance probability is secret-independent.}
+Each coefficient of the mask is uniform on the $2\gamma+1$ values of
+$[-\gamma,\gamma]$, and the secret-dependent term satisfies
+$\inftynorm{c\,r}\le\kappa$, because the challenge has exactly $\kappa$ nonzero
+coefficients of $\pm1$ and the secret is ternary. Each response coefficient
+$z_i = y_i + (c\,r)_i$ is therefore uniform on a window of $2\gamma+1$ consecutive
+integers whose centre is displaced from zero by at most $\kappa$. The acceptance
+interval $[-(\gamma-\kappa),\,\gamma-\kappa]$ is narrower than that window by exactly
+$\kappa$ on each side, so it lies wholly inside the window \emph{wherever} the
+displacement falls. Each coefficient is thus accepted with probability exactly
+$\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$, independently of the secret --- which is
+precisely why rejection sampling makes the published response simulatable, and hence
+why it leaks nothing about $r$. Raising this to the $(n+\ell)\,d$ coefficients of one
+attempt gives \cref{eq:rejacc}.
+
+\paragraph{The run-validity gate in full.}
+Over a run's timed sign-class calls the measured mean attempts $\bar{A}$ must satisfy
+$|\bar{A} - E| \le 5\,\sigma/\sqrt{n_{\mathrm{calls}}}$, where $E=1/p_{\mathrm{acc}}$
+is the closed-form expectation of \cref{eq:rejacc} and $\sigma = E\sqrt{1-1/E}$ is the
+geometric standard deviation. The test is applied separately for Sign and for PreSign,
+at both timing tiers, in C and in Rust, and a run that fails it aborts instead of
+producing evidence. The resulting band is $\pm\!\sim\!8\%$ at the C drivers' 2500
+timed calls and $\pm\!\sim\!1\%$ at the Criterion harness's $\approx\!10^5$, which is
+why only the latter resolves the $2\%$ theoretical separation between Sign and
+PreSign. The gate is a consistency check on the observed rejection rate, not a proof
+of sampler correctness: it provides evidence that the rejection behaviour is
+consistent with theory and that rejection-sampling variation is sufficiently
+controlled for the reported mean.
+
+\paragraph{The Groth16 circuit.}
+No pairing-based proof of this lattice statement was available to reuse, so the
+circuit is new, and it is far cheaper than the statement suggests. The map
+$r' \mapsto A r'$ is linear with public coefficients, so each row is an affine
+combination of witness variables and needs no witness--witness multiplication --- the
+expensive ingredient in a rank-one constraint system. The public linear map is still
+enforced, through linear constraints; the only non-linear and range constraints are
+the ternary bound, enforced as $r'^3 = r'$ per coefficient, and the reduction modulo
+$q$, enforced with a range-checked quotient per row. The constraint count is therefore
+linear in the parameter set's dimensions rather than in their product, and the same
+statement would have been intractable had it involved products of two \emph{secret}
+polynomials. Because the
+matrix is held in the number-theoretic-transform domain and is exported by neither
+implementation, it is recovered by evaluating the scheme's own linear map on unit
+vectors, so the circuit encodes the map the signature scheme actually computes with
+rather than a re-derivation that could drift from it.
+
+\paragraph{Measurement invariants of the UTXO study.}
+Two invariants are enforced rather than assumed. A phase must be timed in \emph{every}
+run or in none, so that no mean is silently taken over the subset of swaps that
+reached it; and communication subtotals are computed within each run before being
+reduced across runs, since summing each message's minimum would describe a swap that
+never occurred. One-time costs --- expanding $A$, building the elliptic-curve context,
+and Groth16's trusted setup --- are performed before timing begins and reported
+separately, being amortised over every swap rather than paid per swap. The rejection
+gate applies here too, but on a dedicated batch of \cfgTwoRejCalls{} pre-signature
+calls rather than on the two per swap the protocol itself performs: over so few calls
+the five-sigma band is wider than the distance from the expected attempt rate to a
+loop that never rejects at all, so a gate on that sample would have been vacuous.
+
+\paragraph{One deliberate exception to reproducibility.}
+Every other input derives from the pinned seed, but Groth16's trusted setup and each
+of its proofs draw fresh operating-system entropy. Both are security requirements
+rather than preferences: a reproducible setup would leave the toxic waste recoverable
+and void soundness, and reusing proof randomness across statements breaks
+zero-knowledge. The measurement consequence is stated rather than hidden --- proof
+\emph{size} is unaffected, since a Groth16 proof is three group elements regardless,
+but proving \emph{time} includes the entropy draw and so carries a little extra
+run-to-run variance.
+
+\section{The modelled UTXO ledger}
+\label{app:utxomodel}
+
+The ledger behind \cref{sec:stage2method} is a model, not a node: it has no
+peer-to-peer layer, no mempool policy, no fee market, no reorganisations and no script
+interpreter. What it does provide is what the study needs --- real transaction objects
+with canonical serialisation, a signature hash computed over the transaction rather
+than over an abstract message, and the public observability on which the protocol's
+atomicity depends, since a settled transaction's signature can be read back off the
+ledger by anyone, which is exactly how the witness leaks. An output carries an amount
+plus a spending condition: a signature check under a public key, with an optional
+timelocked refund branch.
+
+Deploying instead on a real Bitcoin node is not a matter of effort. Bitcoin Script
+cannot verify a lattice signature, so configurations~2 and~3 could not settle there
+without a consensus change --- which is precisely the assumption \cite{esgin2020post}
+makes when it states its applications over a UTXO-based chain \emph{whose signature
+algorithm is replaced with a lattice-based signature scheme}, and the reason that
+sentence is stated as an assumption rather than left implicit.
+
+\section{Wire encoding and the validating decoder}
+\label{app:serialize}
+
+The packed field widths behind \cref{sec:serialize} are 23 bits per coefficient for the
+public key and statement, 2 bits for the ternary secret and witness, and 18 or 19 bits
+for the response $z$ depending on the parameter set, since that field must hold
+$2(\gamma-\kappa)$ and $\gamma$ grows with $\kappa\,d\,(n+\ell)$. Because a verifier
+cannot trust its input, the decoder is defensive: it rejects a public-key coefficient
+$\ge q$, the invalid ternary code, and any response field outside the parameter set's
+band, while the encoder symmetrically rejects a non-ternary secret or a response
+exceeding $\gamma-\kappa$. This is the interface a Solidity, precompile or
+zero-knowledge-circuit verifier would expose, and it is the object the tamper test of
+\cref{sec:res-correctness} attacks.
+
+One encoding decision is worth recording. Following FIPS~204 \cite{1274601}, the wire
+format carries not the challenge polynomial $c$ but only the 32-byte commitment hash
+$\tilde c$ from which it is derived, every consumer re-deriving
+$c = \textsf{SampleInBall}(\tilde c)$ after decoding. This is a
+computation-versus-storage trade: storing the expanded polynomial would save the
+re-derivation at every decode, while storing the seed keeps the signature smaller and
+matches the standard's format. Where the same signature is decoded repeatedly the
+expanded challenge can be cached after the first derivation, making the re-derivation a
+one-time cost per object rather than a per-use one.
+
+\section{The atomic-swap demonstration and its proof of knowledge}
+\label{app:swapdemo}
+
+The narrated demonstration referenced in \cref{sec:res-app} follows Fig.~1 of
+\cite{esgin2020post} \emph{verbatim}. Two parties swap coins across two ledgers with no
+trusted third party and no on-chain scripts. Alice, the witness holder, commits first:
+she draws a fresh statement/witness pair $(Y,y)$, produces a zero-knowledge proof $\pi$
+that $Y$ has a \emph{ternary} preimage
+($\exists\, r' : \mathbf{A}r' = Y \wedge \inftynorm{r'} \le 1$), pre-signs the
+transaction spending her own coin, and sends $\{Y, \pi, \hat{\sigma}_1\}$ in one
+off-chain message. Bob pre-signs his own transaction against the \emph{same} $Y$ only
+after both $\pi$ and Alice's pre-signature verify --- the protocol's abort gate; at that
+point neither pre-signature is spendable. Alice, who knows $y$, adapts and publishes her
+signature to claim Bob's coin; the act of publishing reveals $y$, which Bob extracts and
+uses to adapt and publish his own signature. Either both legs settle or neither does.
+The demonstration prints this narrative and asserts every step, including the
+counterfactuals that a pre-adaptation signature fails basic verification and that $\pi$
+is rejected against any other statement.
+
+The proof $\pi$ reuses the LaZer lattice zero-knowledge library \cite{lazer} rather than
+a proof system written from scratch --- the same reuse posture applied throughout.
+Because LaZer proves per-partition binary coefficients or exact Euclidean norms, the
+ternary statement is encoded by binary decomposition,
+$[\mathbf{A} \mid -\mathbf{A}]\,(r_{+}\,\|\,r_{-}) = Y$ with both halves proven binary,
+which is equivalent to knowledge of a ternary preimage $r' = r_{+} - r_{-}$. The
+generated parameter set reports a knowledge error below $2^{-127}$ under Module-SIS and
+a proof size of approximately 31 kilobytes, with proving and verifying each completing
+well under a second. A dedicated test suite asserts completeness, rejection of every
+sampled single-byte tamper, rejection against a wrong statement, and that the prover
+refuses a non-ternary witness. A small ledger abstraction --- accounts with balances, a
+block height, and adaptor-locked contracts, the scriptless analogue of a
+hash-time-locked contract with the hash lock replaced by the statement $Y$ and the time
+lock by a timeout height --- additionally carries three asserted scenarios: the
+cross-chain happy path, a timeout/refund in which a premature refund is rejected and
+both parties recover their funds, and a multi-hop payment.
+
+\section{The optimistic (Naysayer) on-chain verifier}
+\label{app:naysayer}
+
+Because the native Solidity verifier exceeds the per-transaction gas cap
+(\cref{sec:res-app}), an \emph{optimistic} alternative was also implemented and
+measured: \texttt{LASNaysayer}, a poqeth-inspired Naysayer verifier
+\cite{kysil2025poqeth} for the lattice setting --- poqeth itself implements only
+hash-based and multivariate schemes and rules Dilithium out on public-key size.
+Instead of re-executing verification, the contract accepts a settlement optimistically
+and lets any party dispute a single failing step within a challenge window.
+Verification is decomposed into three locally checkable invariants --- the response
+norm, each recomputed commitment coefficient (with the challenge derived on chain), and
+the final hash --- so a dispute recomputes only one coefficient by schoolbook
+convolution and never runs the number-theoretic-transform batch. An adversarial suite
+of nine tests passes, covering soundness (no dispute voids a valid settlement),
+completeness for each fault type (including a C-exported pure hash-fault vector against
+which only the hash dispute succeeds), the challenge-window and replay guards, input
+validation, and pull-payment isolation against a hostile recipient.
+
+The result is deliberately reported as mixed. Honest settlement is cheap --- an
+optimistic claim costs approximately $1.1$ million gas and finalisation approximately
+$27\,000$, since the batch never executes on the happy path --- but the binding cost is
+the worst-case fraud proof. The norm dispute costs approximately $34\,000$ gas; the
+commitment dispute, in a baseline that passes the whole public matrix in calldata,
+approximately $13.9$ million gas of execution together with an approximately
+$246$-kilobyte calldata payload; and the hash dispute approximately $29.4$ million gas.
+These are execution-gas figures, so the full per-transaction totals --- adding the
+fixed intrinsic cost and the calldata --- are strictly larger. The hash dispute alone
+therefore exceeds the EIP-7825 cap of $16\,777\,216$ by roughly $1.75\times$ on
+execution gas before any calldata, because it must run a complete SHAKE256 in Solidity,
+which is not an EVM-native hash --- unlike the Keccak-based schemes of
+\cite{kysil2025poqeth}. The optimistic mode thus moves cost off the honest path but
+does \emph{not}, in this baseline, bring the worst-case dispute within a single
+transaction; doing so would require opening only the single disputed matrix row through
+a Merkle commitment rather than sending the whole matrix, and a hash dispute that
+avoids a full SHAKE256 pass.
+
 \section{Full benchmark data tables}
 \label{app:tables}
 
@@ -136,7 +329,7 @@ byte sizes at every parameter set (the target setting is the body table
 
 \Cref{fig:overhead} is the parameter-sensitivity check referred to in
 \cref{sec:res-compute}: it repeats the primary base-versus-adaptor comparison at all four
-parameter sets and confirms that the adaptor premium stays in the single digits as the
+parameter sets and confirms that the core-tier adaptor premium stays in the single digits as the
 dimensions are scaled up, so the headline result is not specific to the target setting.
 
 \begin{figure}[h]
@@ -146,7 +339,7 @@ dimensions are scaled up, so the headline result is not specific to the target s
   sensitivity of the adaptor overhead: each LAS adaptor operation as a percentage over the
   basic operation it mirrors, at the four parameter sets of \cref{tab:params}. PreSign is
   paired with Sign; PreVerify and Adapt with Verify; Extract has no basic analogue and is
-  omitted. The premium stays in the single digits everywhere, so adding adaptor
+  omitted. The core-tier premium stays in the single digits everywhere, so adding adaptor
   functionality does not become more expensive as the scheme is scaled up. This is a
   secondary robustness check; the primary comparison is the per-operation overhead at the
   target setting, \cref{tab:overhead-l3}.}

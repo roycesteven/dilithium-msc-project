@@ -1,13 +1,13 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow}}{16}{figure.2.1}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Repository structure: two implementations over reused primitives}}{21}{figure.2.2}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces The LAS adaptor data flow}}{18}{figure.2.1}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Repository structure: two implementations over reused primitives}}{22}{figure.2.2}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{49}{figure.3.1}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Cumulative probability of acceptance at the target setting}}{50}{figure.3.2}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{51}{figure.3.3}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces On-chain settlement gas for the three claim paths}}{54}{figure.3.4}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{41}{figure.3.1}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Cumulative probability of acceptance at the target setting}}{42}{figure.3.2}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{43}{figure.3.3}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces On-chain settlement gas for the three claim paths}}{46}{figure.3.4}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{73}{figure.A.1}%
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{69}{figure.A.1}%

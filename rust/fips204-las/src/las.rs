@@ -582,7 +582,7 @@ fn amul(pp: &PublicParams, v: &[R; N_PLUS_ELL]) -> [R; N] {
 /// Renamed from the former `las_challenge` to its upstream twin's name
 /// (`sample_in_ball`); the `las_` prefix is reserved for the four Algorithm-2
 /// public operations, not private helpers.
-fn sample_in_ball(seed: &[u8; LAS_SEEDBYTES]) -> R {
+fn sample_in_ball(seed: &[u8; LAS_CTILDEBYTES]) -> R {
     let mut h = Shake256::default();
     h.update(seed);
     let mut rd = h.finalize_xof();

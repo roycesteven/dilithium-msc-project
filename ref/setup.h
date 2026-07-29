@@ -63,12 +63,52 @@
 #define GAMMA      ((int32_t)KAPPA * LAS_D * N_PLUS_ELL)  /* gamma = kappa*d*(n+ell) */
 #define LAS_SEEDBYTES 32
 /* Challenge-hash length in bytes: the stored digest c_tilde, the implementation
- * realisation of the paper's H : {0,1}* -> C (the paper's challenge c IS this
- * hash -- eq. 7 counts it as the 32-byte term of |sigma|).  Twin of upstream
- * CTILDEBYTES (params.h); same value as LAS_SEEDBYTES but a DISTINCT knob, as
- * upstream keeps the two separate.  Stored in signature/pre_signature; the
- * challenge polynomial c = SampleInBall(c_tilde) is only ever a local value. */
-#define LAS_CTILDEBYTES 32
+ * realisation of the paper's H : {0,1}* -> C.  eprint 2020/845 specifies H only
+ * as a random oracle onto the challenge space C; it does NOT prescribe a digest
+ * WIDTH, so the width is an implementation choice and is taken from FIPS 204.
+ *
+ * FIPS 204 sec. 7.3 (Algorithm 29, SampleInBall) takes a seed in B^{lambda/4},
+ * i.e. c_tilde is lambda/4 bytes with lambda = 128/192/256 for
+ * ML-DSA-44/65/87 -- 32/48/64 bytes.  Upstream params.h already scales
+ * CTILDEBYTES that way.  This knob MUST therefore track the LAS parameter set,
+ * NOT DILITHIUM_MODE: the fair_* sweep builds several LAS sets against a
+ * DILITHIUM_MODE chosen only to satisfy params.h (see ref/Makefile), so keying
+ * off the mode would assign a digest width by build accident.
+ *
+ * The set is matched on (n, ell, kappa) TOGETHER -- dimensions alone do not
+ * separate the D2-aligned set from the paper set, which share (4,4):
+ *
+ *   (n, ell, kappa)   aligns with   c_tilde
+ *   (4, 4, 39)        ML-DSA-44     32
+ *   (6, 5, 49)        ML-DSA-65     48   <- project target
+ *   (8, 7, 60)        ML-DSA-87     64
+ *   (4, 4, 60)        (none)        32   <- historical paper reproduction
+ *
+ * The paper set is a SEPARATE historical reproduction set, not an ML-DSA-aligned
+ * one; 32 bytes is this project's choice for it, not a value 2020/845 states.
+ * Any other combination is a compile error rather than a silent default.
+ *
+ * Alignment here is of the REUSABLE ML-DSA primitives and the challenge-digest
+ * strength only.  LAS keeps its own secret distribution (ternary), rejection
+ * bounds, exact hint-free relation A*z - c*t = w (+Y), and adaptor algorithms,
+ * so a matched set is NOT a claim that LAS is ML-DSA-65 or inherits its security
+ * category.  Overridable with -DLAS_CTILDEBYTES= .
+ *
+ * Stored in signature/pre_signature; the challenge polynomial
+ * c = SampleInBall(c_tilde) is only ever a local value. */
+#ifndef LAS_CTILDEBYTES
+#if   (LAS_N == 4) && (ELL == 4) && (KAPPA == 39)
+#define LAS_CTILDEBYTES 32                    /* ML-DSA-44-aligned              */
+#elif (LAS_N == 6) && (ELL == 5) && (KAPPA == 49)
+#define LAS_CTILDEBYTES 48                    /* ML-DSA-65-aligned target       */
+#elif (LAS_N == 8) && (ELL == 7) && (KAPPA == 60)
+#define LAS_CTILDEBYTES 64                    /* ML-DSA-87-aligned              */
+#elif (LAS_N == 4) && (ELL == 4) && (KAPPA == 60)
+#define LAS_CTILDEBYTES 32                    /* historical paper reproduction  */
+#else
+#error "LAS_CTILDEBYTES: unrecognised (LAS_N, ELL, KAPPA) set; pass -DLAS_CTILDEBYTES= explicitly"
+#endif
+#endif
 
 /*
  * Note on the modulus: the paper specifies q ~ 2^24.  We reuse Dilithium's NTT,

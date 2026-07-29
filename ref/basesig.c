@@ -84,7 +84,7 @@ static unsigned int b_rej_S1(int32_t *a, unsigned int len, const uint8_t *buf, u
 static void b_poly_uniform_S1(poly *a, const uint8_t seed[LAS_SEEDBYTES], uint16_t nonce);
 static unsigned int b_rej_Sgamma(int32_t *a, unsigned int len, const uint8_t *buf, unsigned int buflen);
 static void b_poly_uniform_Sgamma(poly *a, const uint8_t seed[64], uint16_t nonce);
-static void b_poly_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]);
+static void b_poly_challenge(poly *c, const uint8_t seed[LAS_CTILDEBYTES]);
 static void b_polyw_pack(uint8_t *r, const poly *a);
 static void b_polyvec_matrix_pointwise_montgomery(poly t[LAS_N], const poly mat[LAS_N][ELL],
                                                   const poly v[ELL]);
@@ -245,7 +245,7 @@ int base_sign_internal(signature *sig,       /* paper σ: output signature σ = 
   unsigned int j;
   uint8_t t_packed[LAS_N*LAS_D*4];       /* canonical packing of the public key t: first input of H(pk, w, M) */
   uint8_t w_packed[LAS_N*LAS_D*4];       /* canonical packing of the commitment w: second input of H(pk, w, M) */
-  uint8_t c_tilde[LAS_SEEDBYTES];  /* challenge seed: <-> the c_tilde bytes (sign.c:152)     */
+  uint8_t c_tilde[LAS_CTILDEBYTES];  /* challenge seed: <-> the c_tilde bytes (sign.c:152)     */
   uint16_t mask_nonce = 0;            /* [REUSED]  sign.c:97: uint16_t mask_nonce = 0;               */
   poly y[N_PLUS_ELL];                 /* paper y: mask, y <-$ Sγ^(n+ℓ)  <-> polyvecl y          */
   poly y_1_hat[ELL];            /* NTT buffer for the A' half of y (see [CHANGED] below)  */
@@ -373,7 +373,7 @@ rej:                                         /* [REUSED]  sign.c:132: rej:  */
    * WHY: with no mu digest the message is absorbed directly -- third input
    * of c = H(pk, w, M). */
   shake256_finalize(&state);                 /* [REUSED]  sign.c:151: shake256_finalize(&state); */
-  shake256_squeeze(c_tilde, LAS_SEEDBYTES, &state);
+  shake256_squeeze(c_tilde, LAS_CTILDEBYTES, &state);
   /* ^[CHANGED] sign.c:152:
    *     shake256_squeeze(sig, CTILDEBYTES, &state);
    * WHY: the digest c_tilde seeds the challenge sampler AND -- as in upstream --
@@ -517,7 +517,7 @@ int base_verify_internal(const signature *sig,  /* paper σ: sig = (c, z), signa
   unsigned int i, j;             /* loop indices (i for the challenge byte-compare, j for the vector loops) */
   uint8_t t_packed[LAS_N*LAS_D*4];       /* canonical packing of the public key t: first input of H(pk, w', M) */
   uint8_t w_packed[LAS_N*LAS_D*4];       /* canonical packing of the commitment w': second input of H(pk, w', M) */
-  uint8_t c_tilde[LAS_SEEDBYTES];  /* challenge seed <-> c2[CTILDEBYTES] (sign.c:302) */
+  uint8_t c_tilde[LAS_CTILDEBYTES];  /* challenge seed <-> c2[CTILDEBYTES] (sign.c:302) */
   poly c;                             /* paper c: challenge polynomial, SampleInBall(sig->c_tilde), LOCAL */
   poly c_hat;                     /* NTT copy of c       <-> poly cp (sign.c:303)  */
   poly z_1_hat[ELL];            /* A' half of z        <-> polyvecl z (sign.c:304) */
@@ -625,7 +625,7 @@ int base_verify_internal(const signature *sig,  /* paper σ: sig = (c, z), signa
   /* ^[CHANGED] no upstream line HERE (M is inside mu).
    * WHY: third oracle input absorbed directly. */
   shake256_finalize(&state);                 /* [REUSED]  sign.c:351: shake256_finalize(&state); */
-  shake256_squeeze(c_tilde, LAS_SEEDBYTES, &state);
+  shake256_squeeze(c_tilde, LAS_CTILDEBYTES, &state);
                                              /* [REUSED]  sign.c:352: shake256_squeeze(c2, CTILDEBYTES, &state);
                                               * (32-byte challenge seed instead)        */
   /* [PAPER Alg.1] 18:     if c ≠ H(pk, w′, M), then return 0 */
@@ -823,14 +823,14 @@ static void b_poly_uniform_Sgamma(poly *a, const uint8_t seed[64], uint16_t nonc
 *              [CHANGED]  seed[CTILDEBYTES] -> seed[32]  (the challenge seed is a
 *                                                    fixed 32-byte SHAKE digest)
 **************************************************/
-static void b_poly_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]) {
+static void b_poly_challenge(poly *c, const uint8_t seed[LAS_CTILDEBYTES]) {
   unsigned int i, b, pos;
   uint64_t signs;
   uint8_t buf[SHAKE256_RATE];
   keccak_state state;
 
   shake256_init(&state);
-  shake256_absorb(&state, seed, LAS_SEEDBYTES);
+  shake256_absorb(&state, seed, LAS_CTILDEBYTES);
   shake256_finalize(&state);
   shake256_squeezeblocks(buf, 1, &state);
 

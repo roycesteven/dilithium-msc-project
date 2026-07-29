@@ -30,8 +30,8 @@ verification differs, so the gas difference is attributable to the signature:
   possible. **Measured: ≈56.5M gas** for the verified claim. A single Ethereum
   transaction is capped at **16,777,216 gas (2²⁴) by EIP-7825**, so this claim — ≈3.4×
   that cap — **cannot execute as one mainnet transaction**; the binding limit is the
-  per-transaction gas cap, not the block (currently 30M target / 60M max, which 56.5M
-  would fit). This is now a *measured* figure and **supersedes** the earlier op-budget
+  per-transaction gas cap, not the block (its raw demand is below the 60M block gas limit).
+  This is now a *measured* figure and **supersedes** the earlier op-budget
   *estimate* (≈16.7M, below): that estimate already included a ~2.76M *calculated* SHAKE
   model, but omitted the real Solidity SHAKE256 cost, the z-decode, packing, ABI/memory
   and settlement overhead.

@@ -25,11 +25,17 @@ endif
 
 # Word count (muthesis `wordcount` option reads word.count). Do not run from
 # inside LaTeX; the texcount output may need manual editing.
+#
+# `-sum=1,1,0,0,0` counts text + headers only, dropping captions and maths;
+# the appendix and bibliography are fenced with %TC:ignore in report.tex.
+# Together these match the COMP66060 rule: "References, appendices, and
+# figure/diagram/table captions are not included in the word count."
+# Target: ~8,000 words; 7,000-9,000 acceptable.
 wordcount:
 	@if command -v texcount >/dev/null 2>&1; then \
-		texcount -1 -sum -relaxed -inc report.tex > word.count; \
+		texcount -1 -sum=1,1,0,0,0 -relaxed -inc report.tex > word.count; \
 	elif [ -f texcount.pl ]; then \
-		perl texcount.pl -1 -sum -relaxed -inc report.tex > word.count; \
+		perl texcount.pl -1 -sum=1,1,0,0,0 -relaxed -inc report.tex > word.count; \
 	else \
 		echo "ERROR: texcount not installed."; \
 		exit 127; \

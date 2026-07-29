@@ -1066,7 +1066,7 @@ fn b_expand_mask(rho: &[u8; 64], mu: u16) -> [R; N_PLUS_ELL] {
  * straddle a block, so the stream is identical -- the C byte semantics) and
  * no CTEST path (this build takes no constant-time measurements).
  *************************************************/
-fn b_sample_in_ball(rho: &[u8; LAS_SEEDBYTES]) -> R {
+fn b_sample_in_ball(rho: &[u8; LAS_CTILDEBYTES]) -> R {
     // 1: c ← 0                                  (hashing.rs:47)
     let mut c = R0;
 

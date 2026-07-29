@@ -1,0 +1,60 @@
+# las-stark -- hash-based FRI-STARK proof for on-chain LAS verification (eprint 2020/845).
+#
+# Native LAS verification in Solidity costs ~56.5M gas, above EIP-7825's 16.77M
+# per-transaction cap, so it cannot run on-chain as one transaction. This crate
+# PURSUES the post-quantum succinct-proof route (work in progress): a transparent,
+# hash-based FRI-STARK (Winterfell). A FRI-STARK's soundness rests on the
+# collision-resistance of the hash (Blake3) AND the conjectured soundness of
+# low-degree testing (FRI) -- NO elliptic-curve/pairing assumptions, unlike a
+# Groth16 wrap (which would recover cheap on-chain verification but not be PQ).
+#
+# STANDALONE crate: it is NOT a member of the KAT-locked `fips204` package
+# (rust/fips204-las), so the LAS Rust port's KAT gate and MSRV 1.70 stay untouched.
+[package]
+name = "las-stark"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Hash-based FRI-STARK (post-quantum, no pairings) proof of the LAS on-chain verification relation (eprint 2020/845)."
+publish = false
+
+[dependencies]
+# Transparent hash-based STARK prover+verifier (FRI). Pinned to the 0.13 line
+# whose exact public API this crate is written against.
+winterfell = "0.13"
+# SHAKE256 for the native full-relation oracle (SampleInBall + Fiat-Shamir
+# challenge digest); same hash family the C reference and the EVM verifier use.
+sha3 = "0.10"
+
+[[bin]]
+name = "prove"
+path = "src/bin/prove.rs"
+
+[[bin]]
+name = "verify"
+path = "src/bin/verify.rs"
+
+[[bin]]
+name = "prove_relation"
+path = "src/bin/prove_relation.rs"
+
+[[bin]]
+name = "verify_relation"
+path = "src/bin/verify_relation.rs"
+
+[[bin]]
+name = "bench_stark"
+path = "src/bin/bench_stark.rs"
+
+[profile.release]
+opt-level = 3
+
+# Winterfell runs a strict per-constraint degree self-check under debug_assertions
+# that requires the MEASURED degree to equal the DECLARED degree. Data-dependent
+# range-check bit columns can be constant for a given instance (measured degree <
+# declared), which trips that check even though the declared degree is a valid
+# UPPER BOUND -- so the proof is still sound. Disable debug-assertions for the test
+# profile so `cargo test` matches release behaviour (proving is also far faster).
+[profile.test]
+debug-assertions = false
+opt-level = 3

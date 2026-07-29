@@ -1,146 +1,113 @@
 
 
-## Checkpoint — 2026-07-23 (On-chain LAS verifier: Stages 1–3 DONE + validated)
+## Checkpoint — 2026-07-27 12:48
 
-Branch: restructure
-
-Current goal:
-- Build a REAL on-chain (Solidity) LAS verifier (poqeth on-chain mode; poqeth 2025/091
-  itself excludes Dilithium + has no zk — see 2025-091.md). Staged, each stage validated
-  vs C golden before the next. No protocol simplification.
-
-Done (this session):
-- 2025-091.pdf -> 2025-091.md (faithful working guide; key correction up top: poqeth =
-  native on-chain + Naysayer optimistic, NOT zk; excludes lattice/Dilithium).
-- Stage 1: ref/test/export_verify_vector.c (+Makefile target) — golden vectors
-  (pp_normal A', t, M, packed sig, negacyclic-conv golden). BUILT+RAN; C base_verify
-  ACCEPTS the golden adapted sig. Vectors in evm/test/vectors/*.bin.
-- Stage 2: vendored ZKNox SHAKE256 -> evm/lib/zknox/ZKNOX_shake.sol (+NOTICE, MIT,
-  upstream fc09dff). evm/test/ZKNoxShake.t.sol 4/4 PASS (NIST KAT + multi-absorb +
-  streaming-squeeze).
-- Stage 3: reuse ZKNox normal-domain NTT (nttFw/nttInv/vecMulMod) -> vendored
-  ZKNOX_NTT_dilithium.sol + ZKNOX_dilithium_utils.sol. evm/test/LASNtt.t.sol 2/2 PASS
-  (round-trip + conv == C schoolbook negacyclic-conv golden).
-
-Key decisions:
-- Reuse ZKNox primitives (SHAKE/NTT/SampleInBall), assemble OUR OWN hint-less LAS
-  base_verify (A=[I|A'], c=H(pk,w,M), BitPack19 z). ETHDILITHIUM's ML-DSA top verifier
-  NOT reused (hints, 4x4).
-- NTT is normal-domain (not ref/ntt.c Montgomery); feed A'/t normal-domain; w' identical
-  after canonicalisation => equivalent, not a simplification.
-- A' registered as public param (paper Verify takes pp as given) -> only SHAKE256 needed
-  on-chain, no SHAKE128 A'-expansion.
-
-Files touched: 2025-091.md; ref/test/export_verify_vector.c; ref/Makefile;
-evm/lib/zknox/{ZKNOX_shake,ZKNOX_NTT_dilithium,ZKNOX_dilithium_utils}.sol + NOTICE.md;
-evm/test/{ZKNoxShake,LASNtt}.t.sol; evm/test/vectors/*.bin. third_party/ETHDILITHIUM
-cloned (git-ignored).
-
-Evidence: forge test ZKNoxShakeTest 4/4; LASNttTest 2/2; C exporter self-check ACCEPT.
-
-Open risks / notes:
-- Gas: 1 SHAKE256 ~200k; 1 conv ~1.2M. Full verify likely several M (consistent w/ ~16.7M est).
-- SampleInBall validation needs a C challenge golden (b_poly_challenge is static in
-  basesig.c) — export via a local copy in the exporter, or rely on Stage-5 end-to-end.
-
-Next action:
-- Stage 4: reuse ZKNOX_SampleInBall (tau=kappa=49) validated vs C challenge golden;
-  BitPack19 z-decode validated vs exported z; norm check ||z||inf<=gamma-kappa.
-- Then Stage 5 (assemble base_verify, end-to-end vs sig.bin), Stage 6 (wire claimLAS +
-  gas report), and the paper two-timeout refund fix.
-
-## Checkpoint — 2026-07-23b (On-chain LAS verifier WORKS end-to-end — Stage 5 DONE)
-
-Branch: restructure
-
-MILESTONE: a numerically-complete, validated on-chain (Solidity) LAS base verifier exists.
-evm/src/LASVerifier.sol (library LASVerify) reproduces ref/basesig.c base_verify_internal;
-evm/test/LASVerifier.t.sol 6/6 PASS — test_verify_accepts_golden ACCEPTS the real adapted
-signature (matches C), and rejects tampered sig / c_tilde / message.
-
-Stages (all validated vs C ground truth):
-- 2 SHAKE256 (ZKNox vendored): 4/4  (incl. large block-crossing multi-absorb)
-- 3 NTT (ZKNox nttFw/nttInv/vecMulMod): 2/2 vs C schoolbook conv
-- 4 SampleInBall(tau=kappa=49) + BitPack19 z-decode + norm: 3/3 vs c.bin/z.bin
-- 5 full verify: 6/6 (accept golden + reject tamper + w' vs w_prime.bin + oracle vs c_tilde)
-
-KEY BUG FOUND+FIXED (Dilithium NTT-domain gotcha): poly_uniform samples A' DIRECTLY in
-NTT domain (Â'); the verifier's ZKNox NTT needs NORMAL A'. export_verify_vector.c now
-recovers normal A' via the "multiply-by-1" idiom (pointwise_montgomery(Â',ntt(1)) +
-invntt_tomont). Decisive C self-check added: SHAKE256(pack(t)||pack(w')||M)==c_tilde -> OK.
-
-Vendored (evm/lib/zknox, MIT, upstream fc09dff): ZKNOX_shake, ZKNOX_NTT_dilithium,
-ZKNOX_dilithium_utils, ZKNOX_SampleInBall, ZKNOX_keccak_prng (+NOTICE.md). Full clone in
-git-ignored third_party/ETHDILITHIUM. foundry.toml: via_ir=true (verify has many locals).
-
-Design decisions locked: A' registered in NTT domain (LASVerify.toNttDomain, once) — NEVER
-NTT'd per verify; per-verify op budget = 12 fwd NTT (5 z_bot + 1 c + 6 t) + 36 pointwise +
-12 inv NTT, matching base_verify_internal.
-
-GAS (measured, honest): verify ~77M — EXCEEDS a 30M block. Unoptimized; the bit-by-bit
-BitPack19 z-decode (_readBits, ~17M) + Solidity NTT/pack overhead dominate. Optimization
-(byte-aligned z-decode, etc.) is Stage 6.
-
-Next action:
-- Stage 6: wire LASVerify.verify into AdaptorSwap.claimLAS (replace floor stub); optimize
-  z-decode toward the block limit; forge --gas-report.
-- Then paper two-timeout (t2<t1) refund fix in chain.c + AdaptorSwap.sol.
-
-## Checkpoint — 2026-07-23c (Stage 6 DONE — verified on-chain swap + gas report)
-
-Branch: restructure
-
-Stage 6 complete. AdaptorSwap.sol now has claimLASVerified (FULL LASVerify.verify) beside
-claimLAS (floor). SECURE: fundLASVerified commits keccak256(abi.encode(A',t,M)); claim
-re-derives + checks it (rejects substituted pk — test_LASVerifiedSwap_rejects_wrong_context).
-Title fixed HTLC->SCRIPTLESS (no hash-preimage; chain never checks Y; timeout=refund only).
-
-GAS REPORT (via_ir, deterministic):
-  claimClassical      75,751   (full ecrecover verify)
-  claimLAS (floor)   289,930   (calldata+keccak, NO verify)
-  claimLASVerified 56,538,682  (FULL native LAS base_verify)  <- headline
-Apples-to-apples full verify: 75,751 -> 56,538,682 = ~746x. ECDSA=precompile, LAS=Solidity.
-56.5M EXCEEDS EIP-7825 per-TX cap 16,777,216 (~3.4x) => not one mainnet tx. (Block now 30M
-target/60M max, which 56.5M would fit — binding limit is the per-tx cap, NOT the block.)
-Old 16.7M was an ESTIMATE (incl ~2.76M calculated SHAKE); real adds Solidity SHAKE + decode
-+ packing + ABI/memory + settlement overhead.
-
-Full suite: 22/22 pass (7 suites). z-decode optimized bit-by-bit->byte-window (77M->68M verify;
-claim 56.5M). foundry.toml via_ir=true.
-
-Docs updated: evm/README.md (claimLASVerified bullet + result table + apples-to-apples),
-AdaptorSwap.sol header+claimLASVerified comment. STILL TODO doc-sync: docs/LAS.md §8.4 +
-docs/03-results/GAS_LIMIT_INVESTIGATION.md still cite the 16.7M estimate as headline.
-
-Corrections applied from Royce review: function name base_verify (not base_sign_verify_internal);
-scope claim to "evaluated D3 Solidity verifier" not "all PQ"; EIP-7825 per-tx cap framing;
-~746x precise; SCRIPTLESS not HTLC; chain doesn't check Y; secure settlement via (A',t,M) commit.
-
-Next action:
-- Paper two-timeout (t2<t1) refund fix: chain.c/chain.h (single timeout -> t1>t2 asymmetric)
-  + AdaptorSwap.sol refund. Then doc-sync LAS.md §8.4 / GAS_LIMIT_INVESTIGATION.md.
-
-## Checkpoint — 2026-07-23 (Two-timeout refund fix — EVM only)
-
-Branch: restructure
+Branch: report
 
 Current goal:
-- Apply paper §4.1 two-timeout (t2<t1) refund rule to the EVM adaptor swap.
+- Build a fully-PQ succinct proof (Winterfell FRI-STARK, no Groth16) for on-chain LAS verification, in new standalone crate rust/las-stark.
 
 Done:
-- AdaptorSwap.sol: added TWO-TIMEOUT RULE NatSpec (first-claimed leg = shorter t2, second = longer t1, gap = u2 safety window); clarified refund enforces only this leg's own timeout.
-- AdaptorSwap.t.sol: new test_TwoTimeoutSafetyWindow (2 classical legs, asserts t2<t1, u1 claims 1st at ~t2, second leg still un-refundable => u2 keeps window, then u2 claims).
-- evm/README.md: added "Two-timeout refund rule (§4.1)" subsection.
+- Stage A: sound STARK norm gadget ||z||inf<=B (real proof, tested).
+- Stage A.2 groundwork: native byte-exact full-relation spec (SampleInBall + w' + SHAKE256 challenge) vs C goldens.
+- Stage A.2 convolution: sound single negacyclic-conv STARK (b range-checked) at reduced CONV_D=64; cargo test 7/7 green.
 
 Files touched/inspected:
-- evm/src/AdaptorSwap.sol, evm/test/AdaptorSwap.t.sol, evm/README.md
+- rust/las-stark/src/conv_air.rs
+- rust/las-stark/src/{air,prover}.rs
+- rust/las-stark/src/{relation,hashing,vectors,params,lib}.rs
+- rust/las-stark/tests/las_stark.rs
+- rust/las-stark/{Cargo.toml,README.md}
 
 Evidence used:
-- none (forge NOT run per guardrails)
+- none
 
 Open risks:
-- pcn C ledger (test_pcn.c scen 1&2) has same reversed-timeout bug but is OUT OF SCOPE (Royce), left unfixed.
-- New test not yet run (should be 23rd EVM test).
+- d=256 conv blocked by Winterfell 255-column cap; needs narrow layout (streaming MAC + LogUp lookup, or NTT-transform) + shared z_bot across 30 A'.z_bot convs.
+- Hashes (SampleInBall/SHAKE256) not yet in-AIR, so z not yet bound to c_tilde; still a gadget, not a succinct proof of verification.
 
 Next action:
-- Royce: cd evm && forge test --match-test test_TwoTimeoutSafetyWindow -vv (then full suite).
+- Implement narrow d=256 convolution (streaming MAC + LogUp lookup) sharing one z_bot to assemble w'.
+
+## Checkpoint — 2026-07-27 (later)
+
+Branch: report
+
+Current goal:
+- Narrow d=256 arithmetic proof for on-chain LAS verification (rust/las-stark).
+
+Done:
+- rust/las-stark/src/relation_air.rs: NEW STARK proving base_verify constraints (1) ||z||inf<=B
+  AND (3) w'_m = z_top[m] + sum_j A'[m][j](x)z_bot[j] - c(x)t[m] at the REAL d=256, all n=6 outputs
+  bound to ONE shared z. Narrow layout (4096 rows x 135 main + 15 aux cols) instead of the
+  d-wide window that hit Winterfell's 255-column cap.
+- Method: random-evaluation (Schwartz-Zippel) argument on Winterfell's AUX trace segment
+  (randomness drawn after main commitment). Prover commits z + integer quotients h_m (by X^d+1)
+  and g_m (by q); aux segment Horner-evaluates at random x and checks
+  sum_m rho_m [P_m(x) - (x^d+1)h_m(x) - q g_m(x)] = 0. Range checks |z|<=B, |h|<2^51, |g|<2^29
+  are load-bearing (they lift the F_p identity to Z; unbounded g would make it vacuous).
+- 5 new tests in tests/las_stark.rs (witness exists / rejects tampered w', proof round-trip,
+  rejects tampered public inputs, rejects tampered proof).
+- conv_air.rs (CONV_D=64) demoted to "schoolbook reference, superseded"; README rewritten;
+  lib.rs module docs updated; STAGE2_UTXO_SWAP_PLAN.md role-B cell updated.
+
+Files touched:
+- rust/las-stark/src/relation_air.rs (new), src/lib.rs, tests/las_stark.rs, README.md
+- docs/02-methodology/STAGE2_UTXO_SWAP_PLAN.md
+
+Evidence used:
+- none (no benchmarks run)
+
+Verification status:
+- `cargo check --tests` clean, no warnings.
+- `cargo test --release` = 12/12 PASS (was 7/7 before this change), incl. all 5 new
+  relation-AIR tests. No fixes were needed. No benchmark numbers taken.
+
+Open risks:
+- Plain `cargo test` (debug) is NOT the supported command: Winterfell's debug-assertion
+  "declared degree == measured degree" self-check would trip, since the declared aux
+  degrees are deliberately upper bounds. Use --release (README says so).
+- Hashes still out of the AIR: c and w' are PUBLIC inputs, so z is bound to (A',t,c,w') but
+  NOT to (c_tilde, M). Still not a stand-alone signature-verification proof.
+- Public inputs enter as 44 periodic columns (cycle d) => verifier work linear in |public|;
+  fine in Rust, would want A' behind a commitment for an on-chain verifier.
+
+Also done (same session, Royce chose option 2):
+- rust/las-stark/src/bin/prove_relation.rs + verify_relation.rs (registered in Cargo.toml).
+  prove_relation prints trace shape (rows x main+aux cols), public-input size in field
+  elements, proof size, and a PHASE SPLIT of prove time (quotient witness / trace build /
+  STARK). verify_relation rebuilds the public inputs from the same goldens and prints
+  verify time. Both print the "NOT proven: (2) SampleInBall, (4) SHAKE256" caveat.
+  `cargo check --release --bins` clean.
+- src/bin/bench_stark.rs = THE BENCHMARK OF RECORD + scripts/run_stark_bench.sh writes
+  evidence/stark/<ts>/{bench_stark.log,environment.txt} + latest symlink (stage2 layout).
+  Protocol aligned with the project (las-context §13.3, §15.6): 3 s DISCARDED WARM-UP,
+  then 5 timed reps, mean +- sample (n-1) SD, one machine, one process. Warm-up replaces
+  the inner 500/1000-iteration loop the us-scale drivers use (a 0.4 s op needs no timer
+  amortisation, it needs a warm cache/allocator).
+- MEASURED (evidence/stark/20260729_142953), both AIRs in ONE process, same protocol:
+    NormAir     (1) only : prove TOTAL 110.821 +- 0.212 ms, verify 0.470 +- 0.020 ms, 52,876 B
+    RelationAir (1)+(3)  : prove TOTAL 442.157 +- 4.501 ms, verify 1.319 +- 0.042 ms, 98,419 B
+      phases: witness 1.993, trace 1.306, prover ctor 0.007, Winterfell prove() 438.851
+    RATIO: prove 3.99x, verify 2.81x, size 1.86x.
+- TWO EARLIER CLAIMS WERE WRONG AND ARE RETRACTED:
+    (a) "~1.5-1.6x prove time" came from cold single shots + non-like-for-like spans.
+        prove_norm internally does trace build + prover ctor + prove, so it must be
+        compared against a RelationAir TOTAL covering the same steps. Correct: 3.99x.
+    (b) "FRI is the entire cost" -- Winterfell prove() is trace LDE + Merkle commits +
+        constraint evaluation + DEEP + FRI. Nothing here attributes cost to FRI alone.
+    Survives: witness+trace+ctor = 3.3 ms = 0.75% of total (arithmetising is ~free).
+- Also fixed: pub_inputs.clone() (176 KB) was INSIDE the verify timer in prove_relation
+  and verify_relation; hoisted out of the timed region in all three binaries.
+- On-chain: NO gas figure claimed. The 98,419 B proof is not the whole payload -- the
+  11,008 public field elements also reach the verifier, of which A' (7680, fixed params)
+  and t (1536, signer public key) are reusable/committable; only c (256) and w' (1536)
+  are signature-specific.
+- README Build & run section reordered: the relation CLIs are now step 2/3 (the main
+  result), the norm gadget demoted to step 4.
+
+Next action:
+- Royce runs: cd rust/las-stark && cargo run --release --bin prove_relation
+                                 && cargo run --release --bin verify_relation
+  -> gives the quotable d=256 proof size + prove/verify time for the report.
+- Then: in-AIR Keccak-f for SampleInBall + SHAKE256 challenge (binds z to c_tilde, M). Large.

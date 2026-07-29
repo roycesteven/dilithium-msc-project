@@ -69,7 +69,7 @@ use crate::helpers::{center_mod, full_reduce32};
 // (NOT las.h / basesig.h / relation.h): the codec sits below every scheme layer
 // and sees the six object types at their physical home, las_types.
 use crate::las_types::{PreSignature, PublicKey, SecretKey, Signature, Statement, Witness};
-use crate::setup::{D, GAMMA, KAPPA, LAS_CTILDEBYTES, N, N_PLUS_ELL};
+use crate::setup::{D, ELL, GAMMA, KAPPA, LAS_CTILDEBYTES, N, N_PLUS_ELL};
 use crate::types::{R, R0};
 use crate::Q;
 
@@ -101,17 +101,44 @@ pub const SECRET_KEY_BYTES: usize = (N_PLUS_ELL * D * LAS_SK_COEFF_BITS) / 8;
 /// Packed (honest, ternary) witness bytes — same ternary wire form as a
 /// secret key; the semantic type does not coincide.
 pub const WITNESS_BYTES: usize = SECRET_KEY_BYTES;
-/// Packed signature bytes: the raw 32-byte challenge digest c_tilde followed by
-/// the offset-packed response z (the paper's eq. 7 layout, 32 + |z|).
+/// Packed signature bytes: the raw challenge digest c_tilde (LAS_CTILDEBYTES,
+/// FIPS 204 `lambda/4` for the aligned set — 48 B here) followed by the
+/// offset-packed response z (the paper's eq. 7 layout, |c_tilde| + |z|).
 pub const SIGNATURE_BYTES: usize = LAS_CTILDEBYTES + (N_PLUS_ELL * D * LAS_Z_COEFF_BITS) / 8;
 /// Packed pre-signature bytes — exactly a signature's size (the paper's
 /// "essentially as efficient" claim at the byte level).
 pub const PRE_SIGNATURE_BYTES: usize = SIGNATURE_BYTES;
 
-// Anchor: these must equal the C test_kat3 build (D3 set) sizes.
-const _: () = assert!(LAS_Z_COEFF_BITS == 19);
-const _: () =
-    assert!(PUBLIC_KEY_BYTES == 4416 && SECRET_KEY_BYTES == 704 && SIGNATURE_BYTES == 6720);
+/// Expected wire sizes `(c_tilde, z bits, pk, sk, sig)` for every parameter set
+/// this project builds, as an anchor against the C twin. An unrecognised set is
+/// a compile error, never an unchecked build.
+///
+/// Derivations: `pk = n*d*23/8`, `sk = (n+ell)*d*2/8`,
+/// `sig = |c_tilde| + (n+ell)*d*z_bits/8`, with `z_bits` fixed by
+/// `2*(gamma-kappa)` and `|c_tilde|` by the FIPS 204 `lambda/4` alignment
+/// (`setup::LAS_CTILDEBYTES`).
+const fn expected_wire_sizes() -> (usize, usize, usize, usize, usize) {
+    match (N, ELL, KAPPA) {
+        //           c_tilde, z bits,  pk,   sk,  sig
+        (4, 4, 39) => (32, 18, 2944, 512, 4640), // ML-DSA-44-aligned
+        (6, 5, 49) => (48, 19, 4416, 704, 6736), // ML-DSA-65-aligned target
+        (8, 7, 60) => (64, 19, 5888, 960, 9184), // ML-DSA-87-aligned
+        (4, 4, 60) => (32, 18, 2944, 512, 4640), // historical paper reproduction
+        _ => panic!("unrecognised (N, ELL, KAPPA) set: no wire-size anchor defined"),
+    }
+}
+
+const _: () = {
+    let (ct, zbits, pk, sk, sig) = expected_wire_sizes();
+    assert!(LAS_CTILDEBYTES == ct);
+    assert!(LAS_Z_COEFF_BITS == zbits);
+    assert!(PUBLIC_KEY_BYTES == pk);
+    assert!(SECRET_KEY_BYTES == sk);
+    assert!(SIGNATURE_BYTES == sig);
+    // The only structural change from the pre-FIPS-204-alignment build is the
+    // digest: every signature/pre-signature grows by exactly |c_tilde| - 32.
+    assert!(SIGNATURE_BYTES == ct + (N_PLUS_ELL * D * zbits) / 8);
+};
 
 /// LSB-first bit writer over a pre-zeroed buffer (mirrors bw_put).
 fn bw_put(buf: &mut [u8], bitpos: &mut usize, val: u32, bits: usize) {

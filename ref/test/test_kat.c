@@ -41,19 +41,28 @@ typedef char kat_size_relations[
   (STATEMENT_BYTES == PUBLIC_KEY_BYTES &&
    WITNESS_BYTES == SECRET_KEY_BYTES &&
    PRE_SIGNATURE_BYTES == SIGNATURE_BYTES) ? 1 : -1];
+/* SIGNATURE_BYTES = LAS_CTILDEBYTES(48) + 11*256*19/8 (6688) = 6736.  The digest
+ * is the FIPS 204 lambda/4 width for the ML-DSA-65-aligned target (sec. 7.3,
+ * Algorithm 29), not the flat 32 bytes this build previously used, so the
+ * signature is 16 B larger and the pinned digest below changed with it. */
 typedef char kat_size_d3[
   (PUBLIC_KEY_BYTES == 4416 && SECRET_KEY_BYTES == 704 &&
-   SIGNATURE_BYTES == 6720 && LAS_Z_COEFF_BITS == 19) ? 1 : -1];
+   LAS_CTILDEBYTES == 48 &&
+   SIGNATURE_BYTES == 6736 && LAS_Z_COEFF_BITS == 19) ? 1 : -1];
 
 /* Pinned expected digest (Stage B: the c_tilde challenge lifecycle + the
  * c_tilde || BitPack(z) wire format).  Measured from a real Rust las_kat run and
  * pinned identically in both languages -- the cross-language interoperability
  * gate (tests/las_kat.rs prints the same value). */
+/* Regenerated 2026-07-29 when c_tilde moved from a flat 32 bytes to the FIPS 204
+ * lambda/4 width (48 B for this ML-DSA-65-aligned set).  The previous value was
+ * bb6ad0da...260c; it is NOT preserved, because the wire format legitimately
+ * changed.  C and Rust reached this value independently. */
 static const uint8_t EXPECTED[32] = {
-  0xbb, 0x6a, 0xd0, 0xda, 0xb9, 0x98, 0xc1, 0xf9,
-  0x0c, 0xa4, 0xd3, 0xcc, 0x0f, 0x5d, 0x3d, 0xfa,
-  0x72, 0x3e, 0x89, 0xf7, 0x9a, 0xff, 0x18, 0xfc,
-  0xe2, 0x69, 0x8a, 0x08, 0xc9, 0x6e, 0x26, 0x0c
+  0xb4, 0xa1, 0x0f, 0xfb, 0x6e, 0x64, 0x5e, 0x50,
+  0x76, 0xd1, 0xff, 0x59, 0x93, 0xfa, 0xa7, 0x29,
+  0x09, 0x23, 0x2f, 0xc7, 0x1e, 0x55, 0x4b, 0x93,
+  0x54, 0x41, 0x41, 0xd6, 0x59, 0x05, 0x03, 0xbe
 };
 
 static int poly_eq(const poly *a, const poly *b) {

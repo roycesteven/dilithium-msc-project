@@ -324,14 +324,14 @@ static void mc_Amul(poly w[LAS_N], const public_params *pp, const poly v[N_PLUS_
   }
 }
 
-static void mc_challenge(poly *c, const uint8_t seed[LAS_SEEDBYTES]) {
+static void mc_challenge(poly *c, const uint8_t seed[LAS_CTILDEBYTES]) {
   unsigned int i, b, pos;
   uint64_t signs;
   uint8_t buf[SHAKE256_RATE];
   keccak_state state;
 
   shake256_init(&state);
-  shake256_absorb(&state, seed, LAS_SEEDBYTES);
+  shake256_absorb(&state, seed, LAS_CTILDEBYTES);
   shake256_finalize(&state);
   shake256_squeezeblocks(buf, 1, &state);
 
@@ -361,7 +361,7 @@ static void mc_hash_challenge(poly *c, const public_key *pk, const poly commit[L
                               const uint8_t *m, size_t mlen) {
   keccak_state state;
   uint8_t buf[LAS_D*4];
-  uint8_t seed[LAS_SEEDBYTES];
+  uint8_t seed[LAS_CTILDEBYTES];
   unsigned int i;
 
   shake256_init(&state);
@@ -375,7 +375,7 @@ static void mc_hash_challenge(poly *c, const public_key *pk, const poly commit[L
   }
   shake256_absorb(&state, m, mlen);
   shake256_finalize(&state);
-  shake256_squeeze(seed, LAS_SEEDBYTES, &state);
+  shake256_squeeze(seed, LAS_CTILDEBYTES, &state);
   mc_challenge(c, seed);
 }
 
@@ -895,7 +895,7 @@ int main(void) {
   printf("   statement     Y = t'             %6zu   (%.1f%% of the signature; t' has pk size)\n",
          sz_pk, 100.0*(double)sz_pk/(double)sz_sig);
   printf("   witness       r'                 %6zu   (same packed layout as sk = r)\n", sz_sk);
-  printf("   challenge     c_tilde            %6zu   (32-byte H digest)\n", sz_c);
+  printf("   challenge     c_tilde            %6zu   (H digest; FIPS 204 lambda/4 for this set)\n", sz_c);
   printf("   response      z (final)          %6zu   (%.1f%% of the signature)\n",
          sz_z, 100.0*(double)sz_z/(double)sz_sig);
   printf("   response      z_hat (pre-sig)    %6zu   (same packed layout as z)\n", sz_z);

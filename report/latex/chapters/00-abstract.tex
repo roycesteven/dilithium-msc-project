@@ -3,42 +3,47 @@
 
 Blockchains authenticate transactions with elliptic-curve signatures, which a large
 quantum computer would break. Basic post-quantum signatures are now standardised, but
-the \emph{exotic} signatures that give blockchains their advanced features --- and in
+the \emph{exotic} signatures that give blockchains their advanced features --- in
 particular \emph{adaptor signatures}, the cryptographic core of atomic swaps and
 payment channels --- remain largely paper-only in the post-quantum setting. This
-dissertation implements and evaluates one such exotic scheme, LAS, a lattice-based
-adaptor signature, by reusing the CRYSTALS-Dilithium reference primitives, and
-demonstrates it end-to-end in a post-quantum atomic swap.
+dissertation implements and evaluates one such scheme, LAS, a lattice-based adaptor
+signature, by reusing the CRYSTALS-Dilithium reference primitives, and demonstrates it
+end-to-end in a post-quantum atomic swap.
 
-The artefact is built \emph{additively} on Dilithium. The entire lattice core ---
-polynomial arithmetic, the number-theoretic transform, and sampling based on SHAKE (an
-extendable-output hash function) --- is reused unchanged, verified by a file-level diff against a pristine baseline; not a
-single upstream function was modified. The adaptor layer (PreSign, PreVerify, Adapt,
-Extract), a bit-packed wire encoding with a validating decoder, and the atomic-swap
-demonstration are added as new code. The implementation passes functional tests over
-1000 iterations on three parameter sets, exact serialization round-trips, a tamper
-test in which all \tamperFlips{} single-byte signature flips are rejected, and pinned
-known-answer tests. An independent second implementation in Rust, built the same way
-on the Rust ML-DSA crate, reproduces the wire format and the pinned known-answer
-digest byte-for-byte and independently confirms the benchmark conclusions.
+The artefact is built \emph{additively}. The entire lattice core --- polynomial
+arithmetic, the number-theoretic transform, and sampling based on SHAKE (an
+extendable-output hash function) --- is reused unchanged, verified by a file-level diff
+against a pristine baseline; not a single upstream function was modified. The adaptor
+layer (PreSign, PreVerify, Adapt, Extract), a bit-packed wire encoding with a validating
+decoder, and the application are added as new code. The implementation passes functional
+tests over 1000 iterations on three parameter sets, exact serialization round-trips, a
+tamper test in which all \tamperFlips{} single-byte signature flips are rejected, and
+pinned known-answer tests. An independent second implementation in Rust, built the same
+way, reproduces the wire format and the pinned digest byte-for-byte and confirms the
+benchmark conclusions under a different compiler and statistical harness.
 
-The primary, fair comparison is LAS against its own simplified Dilithium-style base,
-using the same parameters and primitives, which isolates the cost of the adaptor layer;
-the optimised CRYSTALS-Dilithium reference is reported only as context, and a classical
-Elliptic Curve Digital Signature Algorithm (ECDSA) adaptor as a functionality-matched
-``price of post-quantum'' baseline. Every
-timing is a mean over repeated independent runs and is reported with its standard
-deviation. The data show that the
-adaptor layer is almost free in computation --- PreSign, PreVerify, and Adapt each add
-only single-digit overhead (at most $+\ovMaxAll\%$) over the basic operation they
-mirror, at every parameter set, and Extract is the cheapest operation. The real cost is
-\emph{communication}: the
-signature is \zPctTwo--\zPctFive\% lattice response vector $z$, and an adaptor swap additionally
-transmits a public-key-sized statement. The atomic-swap demonstration settles both
-legs of a two-party, two-chain exchange and asserts that a pre-signature is unspendable
-until the witness is revealed.
+The primary, fair comparison is LAS against its own simplified Dilithium-style base at
+identical parameters and primitives, isolating the adaptor layer's cost; the optimised
+CRYSTALS-Dilithium reference is reported only as context, and a classical Elliptic Curve
+Digital Signature Algorithm (ECDSA) adaptor as a functionality-matched ``price of
+post-quantum'' baseline. Every timing is a mean over repeated runs, reported with its
+standard deviation at an explicitly declared measurement boundary. At the core boundary
+the adaptor layer is almost free in computation: PreSign, PreVerify and Adapt each add
+at most $+\ovMaxAll\%$ over the basic operation they mirror, at every parameter set, and
+Extract is the cheapest operation of all. The real cost is \emph{communication} --- the
+signature is \zPctTwo--\zPctFive\% lattice response vector $z$, and an adaptor swap
+additionally transmits a public-key-sized statement. That cost reappears as computation
+once the byte boundary is included: wire encoding and decoding raise the adaptor premium
+to $+\packedOvPreSign$--$\packedOvAdapt\%$.
 
-The dissertation concludes that a working, tested, end-to-end post-quantum exotic
-signature is achievable by reuse of standardised primitives, and identifies tighter
-packing and migration to the larger modulus of the original LAS construction as the
-principal avenues for future work.
+Taking the protocol to a UTXO ledger, the venue the original construction assumes,
+sharpens the conclusion: at the application level the signature is not the dominant cost
+at all. Measured across three configurations, the zero-knowledge proof of knowledge
+consumes over 98\% of a swap, and substituting a lattice prover for a pairing-based one
+makes the swap \emph{faster} while making it larger. The dissertation concludes that a
+working, tested, end-to-end post-quantum exotic signature is achievable by reuse of
+standardised primitives; that entropy coding of the response and migration to the
+original construction's larger modulus remain the tractable size reductions, while the
+Dilithium optimisations this scheme had to disable pose an open compatibility problem;
+and that the proof system, not the signature, is where a post-quantum swap should next
+be optimised.

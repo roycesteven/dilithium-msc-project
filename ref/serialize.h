@@ -84,6 +84,38 @@
 #define SIGNATURE_BYTES     (LAS_CTILDEBYTES + (N_PLUS_ELL * LAS_D * LAS_Z_COEFF_BITS) / 8)
 #define PRE_SIGNATURE_BYTES SIGNATURE_BYTES
 
+/* Wire-size anchor for EVERY parameter set this project builds -- the C twin of
+ * the `expected_wire_sizes` table in rust/fips204-las/src/serialize.rs.  An
+ * unrecognised set is a compile error, never an unchecked build.
+ *
+ *   (n, ell, kappa)  c_tilde  z bits    pk    sk    sig
+ *   (4, 4, 39)            32      18  2944   512   4640   ML-DSA-44-aligned
+ *   (6, 5, 49)            48      19  4416   704   6736   ML-DSA-65-aligned target
+ *   (8, 7, 60)            64      19  5888   960   9184   ML-DSA-87-aligned
+ *   (4, 4, 60)            32      18  2944   512   4640   historical paper repro
+ *
+ * The only structural change from the pre-FIPS-204-alignment build is the digest
+ * width, so every signature/pre-signature grows by exactly LAS_CTILDEBYTES - 32. */
+#if   (LAS_N == 4) && (ELL == 4) && (KAPPA == 39)
+_Static_assert(LAS_CTILDEBYTES == 32 && LAS_Z_COEFF_BITS == 18 &&
+               PUBLIC_KEY_BYTES == 2944 && SECRET_KEY_BYTES == 512 &&
+               SIGNATURE_BYTES == 4640, "wire-size anchor: D2-aligned set");
+#elif (LAS_N == 6) && (ELL == 5) && (KAPPA == 49)
+_Static_assert(LAS_CTILDEBYTES == 48 && LAS_Z_COEFF_BITS == 19 &&
+               PUBLIC_KEY_BYTES == 4416 && SECRET_KEY_BYTES == 704 &&
+               SIGNATURE_BYTES == 6736, "wire-size anchor: D3-aligned target set");
+#elif (LAS_N == 8) && (ELL == 7) && (KAPPA == 60)
+_Static_assert(LAS_CTILDEBYTES == 64 && LAS_Z_COEFF_BITS == 19 &&
+               PUBLIC_KEY_BYTES == 5888 && SECRET_KEY_BYTES == 960 &&
+               SIGNATURE_BYTES == 9184, "wire-size anchor: D5-aligned set");
+#elif (LAS_N == 4) && (ELL == 4) && (KAPPA == 60)
+_Static_assert(LAS_CTILDEBYTES == 32 && LAS_Z_COEFF_BITS == 18 &&
+               PUBLIC_KEY_BYTES == 2944 && SECRET_KEY_BYTES == 512 &&
+               SIGNATURE_BYTES == 4640, "wire-size anchor: paper reproduction set");
+#else
+#error "no wire-size anchor defined for this (LAS_N, ELL, KAPPA) set"
+#endif
+
 /* ---- public key (Algorithm-1 object).  Pack canonicalises to [0,Q); unpack
  * REJECTS (returns -1) any coefficient >= Q. ---- */
 void pack_public_key(uint8_t out[PUBLIC_KEY_BYTES], const public_key *pk);
