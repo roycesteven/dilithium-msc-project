@@ -82,7 +82,7 @@ library console {
 /// GAS ACCOUNTING. `gasleft()` deltas are EXECUTION gas only: they exclude the 21,000
 /// intrinsic and the calldata byte cost that a real transaction pays (EIP-2028: 16 gas per
 /// non-zero byte, 4 per zero byte). Those dominate for LAS, whose claim carries a
-/// 6720-byte signature, so every row reports execution, calldata bytes, intrinsic and the
+/// packed signature, so every row reports execution, calldata bytes, intrinsic and the
 /// TOTAL a transaction would actually be charged. That total is the figure to compare
 /// against the EIP-7825 per-transaction cap of 16,777,216 gas.
 ///
@@ -183,10 +183,10 @@ abstract contract SwapGasBase {
 
     // ------------------------------------------------------------------ LAS legs
 
-    /// The real 6720-byte packed adapted signature exported from the C implementation.
+    /// The real packed adapted signature exported from the C implementation.
     function _lasSig() internal view returns (bytes memory sig) {
         sig = vm.readFileBinary("test/las_sig.bin");
-        require(sig.length == 6720, "expected 6720-byte packed LAS signature");
+        require(sig.length == LASVerify.SIG_BYTES, "packed LAS signature length != LASVerify.SIG_BYTES");
     }
 
     function _fundLasLegA() internal returns (uint256 id) {
@@ -304,7 +304,7 @@ contract FirstClaimLasGas is SwapGasBase {
         idB = chainB.fundLAS{value: COIN}(payable(u1), t2);
     }
 
-    /// The settlement FLOOR: calldata for the 6720-byte signature plus one keccak256, and
+    /// The settlement FLOOR: calldata for the packed signature plus one keccak256, and
     /// NO lattice verification. A strict lower bound on any real LAS settlement.
     function test_gas_firstClaim_las_floor() public {
         bytes memory sig = _lasSig();

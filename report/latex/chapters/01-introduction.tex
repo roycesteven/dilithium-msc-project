@@ -41,20 +41,18 @@ these constructions are mature and deployed; in the post-quantum setting they ar
 paper-only, which makes the adaptor signature a representative, high-value exotic scheme
 to implement and evaluate.
 
-The adaptor signature is best understood through the history of the atomic swap. A
-cross-chain exchange first relied on custodial intermediaries; hash-time-locked
-contracts (HTLCs) removed the custodian by locking both transfers under the preimage of
-one hash, so that claiming one leg reveals the preimage unlocking the other. HTLCs,
-however, need explicit on-chain script support, place the common hash on both chains
---- explicitly linking the two legs and, in multi-hop payments, every hop of a path ---
-and enlarge the transactions. The adaptor signature answers these limitations
+The adaptor signature is best understood through the history of the atomic swap.
+Cross-chain exchange first relied on custodial intermediaries; hash-time-locked
+contracts (HTLCs) removed the custodian by locking both transfers under one hash
+preimage, so that claiming one leg reveals the preimage unlocking the other. HTLCs,
+however, need explicit on-chain script support, place the common hash on both chains ---
+linking the two legs and, in multi-hop payments, every hop --- and enlarge the
+transactions. The adaptor signature answers these limitations
 \cite{poelstra2017,aumayr2021generalized} by moving the lock \emph{into the signature
-itself}, so settlement transactions look like ordinary single-signer payments --- no
-script beyond signature verification, no shared value linking the legs on chain, no
-extra on-chain bytes --- while retaining atomicity and revealing the witness only to
-the counterparty holding the matching pre-signature. The link removed is the explicit
-protocol one: timing, amounts and transaction-graph analysis can still correlate the
-two legs.
+itself}: settlement transactions look like ordinary single-signer payments, atomicity is
+retained, and the witness is revealed only to the counterparty holding the matching
+pre-signature. The link removed is the explicit protocol one --- timing, amounts and
+transaction-graph analysis can still correlate the two legs.
 
 \section{Subject area and related work}
 \label{sec:relatedwork}

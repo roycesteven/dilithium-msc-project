@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {AdaptorSwap} from "../src/AdaptorSwap.sol";
+import {LASVerify} from "../src/LASVerifier.sol";
 
 /// Minimal Foundry cheatcode interface (avoids a forge-std dependency / network install).
 interface Vm {
@@ -49,10 +50,10 @@ contract AdaptorSwapTest {
         require(BENEFICIARY.balance == b0 + 1 ether, "classical claim did not pay");
     }
 
-    /* ---- post-quantum leg: published LAS adapted signature (real 6720-byte blob) ---- */
+    /* ---- post-quantum leg: published LAS adapted signature (real packed blob) ---- */
     function test_LASSwap() public {
         bytes memory sig = vm.readFileBinary("test/las_sig.bin"); // exported by ref/test/export_packed (D3)
-        require(sig.length == 6720, "expected 6720-byte packed LAS signature");
+        require(sig.length == LASVerify.SIG_BYTES, "packed LAS signature length != LASVerify.SIG_BYTES");
 
         uint256 id = swap.fundLAS{value: 1 ether}(BENEFICIARY, timeout);
 

@@ -42,7 +42,7 @@ library LASNaysayLib {
     }
 
     function normExceedsAt(bytes calldata sig, uint256 i, uint256 k) internal pure returns (bool) {
-        uint256 bit = 256 + (i * N + k) * Z_BITS;
+        uint256 bit = CTILDE_BYTES * 8 + (i * N + k) * Z_BITS;
         int256 zc = int256(Z_OFFSET) - int256(_readField(sig, bit));
         uint256 zres = zc >= 0 ? uint256(zc) : uint256(int256(Q) + zc);
         uint256 absz = zres <= Q / 2 ? zres : Q - zres;
@@ -99,7 +99,7 @@ library LASNaysayLib {
 
     function decodeZ(bytes calldata sig) internal pure returns (uint256[][] memory z) {
         z = new uint256[][](N_PLUS_ELL);
-        uint256 bit = 256;
+        uint256 bit = CTILDE_BYTES * 8;
         for (uint256 i = 0; i < N_PLUS_ELL; i++) {
             z[i] = new uint256[](N);
             for (uint256 k = 0; k < N; k++) {

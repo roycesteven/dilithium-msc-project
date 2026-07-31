@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {sampleInBallNist} from "../lib/zknox/ZKNOX_SampleInBall.sol";
+import {LASVerify} from "../src/LASVerifier.sol";
 
 /// @title Stage-4 validation: SampleInBall reuse + BitPack19 z-decode + norm check.
 ///
@@ -9,7 +10,7 @@ import {sampleInBallNist} from "../lib/zknox/ZKNOX_SampleInBall.sol";
 ///      equal our C challenge H(c_tilde) (ref/basesig.c b_poly_challenge), exported
 ///      canonical {0,1,Q-1} as c.bin.
 ///  (b) z-decode: LAS's wire z is c_tilde(32B) ‖ BitPack19(z), LSB-first, each 19-bit
-///      field = LAS_Z_OFFSET - centred(z) (ref/serialize.c). Decoding sig.bin[32:]
+///      field = LAS_Z_OFFSET - centred(z) (ref/serialize.c). Decoding the z region
 ///      must reproduce the exported z.bin (N_PLUS_ELL polys, canonical [0,Q)). This
 ///      is OUR encoding (ML-DSA's z packing differs), so it is written here, not
 ///      reused, and folded into the verifier at Stage 5.
@@ -23,6 +24,7 @@ contract LASSampleZTest {
     uint256 constant Q = 8380417;
     uint256 constant KAPPA = 49;               // D3 challenge weight = ML-DSA-65 tau
     uint256 constant N_PLUS_ELL = 11;          // n + ell = 6 + 5
+    uint256 constant CTILDE_BYTES = LASVerify.CTILDE_BYTES; // FIPS 204 lambda/4
     uint256 constant Z_BITS = 19;              // LAS_Z_COEFF_BITS (D3)
     uint256 constant Z_OFFSET = 137935;        // gamma - kappa, gamma = KAPPA*N*N_PLUS_ELL = 137984
     uint256 constant BOUND = 137935;           // accept iff ||z||inf <= gamma-kappa
@@ -48,10 +50,10 @@ contract LASSampleZTest {
         }
     }
 
-    /// Decode sig.bin's z region (after the 32-byte c_tilde) into canonical [0,Q).
+    /// Decode sig.bin's z region (after the c_tilde digest) into canonical [0,Q).
     function _decodeZ(bytes memory sig) internal pure returns (uint256[][] memory z) {
         z = new uint256[][](N_PLUS_ELL);
-        uint256 bit = 32 * 8; // z region starts right after c_tilde
+        uint256 bit = CTILDE_BYTES * 8; // z region starts right after c_tilde
         for (uint256 i = 0; i < N_PLUS_ELL; i++) {
             z[i] = new uint256[](N);
             for (uint256 k = 0; k < N; k++) {
@@ -80,8 +82,8 @@ contract LASSampleZTest {
     // (a) SampleInBall reuse == C challenge golden.
     function test_sampleInBall_matches_C_challenge() public view {
         bytes memory sig = vm.readFileBinary("test/vectors/sig.bin");
-        bytes memory cTilde = new bytes(32);
-        for (uint256 i = 0; i < 32; i++) cTilde[i] = sig[i];
+        bytes memory cTilde = new bytes(CTILDE_BYTES);
+        for (uint256 i = 0; i < CTILDE_BYTES; i++) cTilde[i] = sig[i];
 
         uint256[] memory c = sampleInBallNist(cTilde, KAPPA, Q);
         uint256[] memory want = _readPoly("c.bin");

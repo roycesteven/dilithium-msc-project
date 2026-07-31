@@ -51,3 +51,6 @@ LAS_KNOWLEDGE_MAP.md
 las-context-consolidated.md
 SHA256SUMS
 *.log
+# Rust build artefacts
+**/target/
+**/amhl.h

@@ -8,6 +8,16 @@ Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Kristina
 \newblock In {\em International Conference on the Theory and Application of
   Cryptology and Information Security}, pages 635--664. Springer, 2021.
 
+\bibitem{bitcoincorepolicy}
+{Bitcoin Core developers}.
+\newblock Transaction relay and mining policy limits
+  (\texttt{src/policy/policy.h}).
+\newblock Source code, 2026.
+\newblock
+  \url{https://github.com/bitcoin/bitcoin/blob/master/src/policy/policy.h};
+  \texttt{MAX\_STANDARD\_TX\_WEIGHT},
+  \texttt{MAX\_STANDARD\_P2WSH\_STACK\_ITEM\_SIZE}.
+
 \bibitem{secp256k1zkp}
 {Blockstream Research}.
 \newblock {secp256k1-zkp}: Ecdsa adaptor signature module.
@@ -61,6 +71,13 @@ Ruslan Kysil, Istv{\'a}n~Andr{\'a}s Seres, P{\'e}ter Kutas, and N{\'a}ndor
 \newblock In {\em Proceedings of the 20th ACM Asia Conference on Computer and
   Communications Security}, pages 327--343, 2025.
 
+\bibitem{bip144}
+Johnson Lau and Pieter Wuille.
+\newblock {BIP} 144: Segregated witness (peer services).
+\newblock Bitcoin Improvement Proposal, 2015.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki};
+  defines the marker/flag and witness serialisation format.
+
 \bibitem{lazer}
 {Lazer-crypto project}.
 \newblock {LaZer}: a library for lattice-based zero-knowledge proofs.
@@ -68,6 +85,13 @@ Ruslan Kysil, Istv{\'a}n~Andr{\'a}s Seres, P{\'e}ter Kutas, and N{\'a}ndor
 \newblock \url{https://github.com/lazer-crypto/lazer}; accompanies the CCS 2024
   paper ``The LaZer Library: Lattice-Based Zero Knowledge and Succinct Proofs
   for Quantum-Safe Privacy''.
+
+\bibitem{bip141}
+Eric Lombrozo, Johnson Lau, and Pieter Wuille.
+\newblock {BIP} 141: Segregated witness (consensus layer).
+\newblock Bitcoin Improvement Proposal, 2015.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki};
+  defines the witness field, transaction weight and virtual size.
 
 \bibitem{lyubashevsky2012lattice}
 Vadim Lyubashevsky.
@@ -114,5 +138,11 @@ Peter~W Shor.
 \newblock Polynomial-time algorithms for prime factorization and discrete
   logarithms on a quantum computer.
 \newblock {\em SIAM review}, 41(2):303--332, 1999.
+
+\bibitem{bip341}
+Pieter Wuille, Jonas Nick, and Anthony Towns.
+\newblock {BIP} 341: Taproot: {SegWit} version 1 spending rules.
+\newblock Bitcoin Improvement Proposal, 2020.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki}.
 
 \end{thebibliography}

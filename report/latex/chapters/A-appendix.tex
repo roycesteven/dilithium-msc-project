@@ -80,7 +80,7 @@ cargo run --release --example size_report   # packed component sizes
 \label{app:benchalg}
 
 The pseudocode below is the procedure both protocol drivers implement
-(\texttt{ref/test/bench\_levels.c} and the Rust
+(\texttt{ref/\allowbreak test/\allowbreak bench\_levels.c} and the Rust
 \texttt{examples/bench\_levels.rs}, deliberately line-for-line mirrors), backing
 the methodology of \cref{sec:benchmethod}. Ordering matters: correctness is
 asserted \emph{before} timing on the very objects about to be timed, so no
@@ -234,20 +234,32 @@ zero-knowledge-circuit verifier would expose, and it is the object the tamper te
 \cref{sec:res-correctness} attacks.
 
 One encoding decision is worth recording. Following FIPS~204 \cite{1274601}, the wire
-format carries not the challenge polynomial $c$ but only the 32-byte commitment hash
-$\tilde c$ from which it is derived, every consumer re-deriving
+format carries not the challenge polynomial $c$ but only the digest $\tilde c$ from
+which it is derived, every consumer re-deriving
 $c = \textsf{SampleInBall}(\tilde c)$ after decoding. This is a
 computation-versus-storage trade: storing the expanded polynomial would save the
-re-derivation at every decode, while storing the seed keeps the signature smaller and
-matches the standard's format. Where the same signature is decoded repeatedly the
-expanded challenge can be cached after the first derivation, making the re-derivation a
-one-time cost per object rather than a per-use one.
+re-derivation at every decode, while storing the digest keeps the signature smaller.
+
+The digest \emph{width} is an implementation choice rather than a requirement of
+\cite{esgin2020post}, which specifies $H$ only as a random oracle onto the challenge set
+$C$ and fixes no encoding. It is therefore taken from FIPS~204, whose
+\textsf{SampleInBall} consumes a seed of $\lambda/4$ bytes, with $\lambda=128,192,256$
+for ML-DSA-44, -65 and -87 giving 32, 48 and 64~bytes. The width tracks the LAS
+parameter set and not the reference build mode, since the sweep compiles several LAS
+sets against a mode chosen only to satisfy the reference's parameter header: the
+ML-DSA-65-aligned target set takes 48~bytes, the ML-DSA-44- and ML-DSA-87-aligned LAS
+sets take 32 and 64, and the historical paper-parameter reference set, which corresponds
+to no ML-DSA parameter set, takes 32 by this project's choice. Matching these reusable
+parameters aligns the primitives and the challenge-digest strength only --- LAS retains
+its own ternary secret distribution, rejection bounds, exact hint-free relation and
+adaptor algorithms --- so it is not a claim that the scheme is ML-DSA-65 or inherits its
+security category.
 
 \section{The atomic-swap demonstration and its proof of knowledge}
 \label{app:swapdemo}
 
-The narrated demonstration referenced in \cref{sec:res-app} follows Fig.~1 of
-\cite{esgin2020post} \emph{verbatim}. Two parties swap coins across two ledgers with no
+The narrated demonstration referenced in \cref{sec:res-app} follows the swap protocol
+--- Figure~1 of \cite{esgin2020post} --- \emph{verbatim}. Two parties swap coins across two ledgers with no
 trusted third party and no on-chain scripts. Alice, the witness holder, commits first:
 she draws a fresh statement/witness pair $(Y,y)$, produces a zero-knowledge proof $\pi$
 that $Y$ has a \emph{ternary} preimage
@@ -304,7 +316,7 @@ $27\,000$, since the batch never executes on the happy path --- but the binding 
 the worst-case fraud proof. The norm dispute costs approximately $34\,000$ gas; the
 commitment dispute, in a baseline that passes the whole public matrix in calldata,
 approximately $13.9$ million gas of execution together with an approximately
-$246$-kilobyte calldata payload; and the hash dispute approximately $29.4$ million gas.
+$246$-kilobyte calldata payload; and the hash dispute approximately \gasNaysayDigestM{} million gas.
 These are execution-gas figures, so the full per-transaction totals --- adding the
 fixed intrinsic cost and the calldata --- are strictly larger. The hash dispute alone
 therefore exceeds the EIP-7825 cap of $16\,777\,216$ by roughly $1.75\times$ on

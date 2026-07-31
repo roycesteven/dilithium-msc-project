@@ -23,7 +23,7 @@ import {LASVerify} from "./LASVerifier.sol";
 ///     secp256k1 precompile `ecrecover`. This is cheap and is what a real EVM
 ///     atomic-swap (e.g. an ECDSA-adaptor DLC) settles with.
 ///
-///   • claimLAS — the adapted LAS signature is a 6720-byte packed lattice signature
+///   • claimLAS — the adapted LAS signature is a LASVerify.SIG_BYTES packed lattice signature
 ///     (D3 set: n=6, ell=5; wire = c_tilde || BitPack(z)). Native lattice verification
 ///     (NTT + SHAKE256 over the packed signature) is NOT performed on-chain here. Its
 ///     exact arithmetic op-budget — 12 forward + 12 inverse NTTs and 36 pointwise
@@ -32,7 +32,7 @@ import {LASVerify} from "./LASVerifier.sol";
 ///     current parameter set is reported in docs/03-results/GAS_LIMIT_INVESTIGATION.md.
 ///     Cf. poqeth, which needed dedicated machinery even for *basic* PQ verification.
 ///     This entrypoint therefore measures the unavoidable on-chain FLOOR — paying
-///     calldata gas for the 6720-byte signature plus one keccak256 pass over it — a
+///     calldata gas for the packed signature plus one keccak256 pass over it — a
 ///     strict LOWER BOUND on the true settlement cost. It is deliberately NOT a real
 ///     verification; see the report's evaluation section.
 ///
@@ -126,11 +126,11 @@ contract AdaptorSwap {
     }
 
     /// Settle with a published LAS adapted signature. Charges the on-chain FLOOR:
-    /// 6720 bytes of calldata + one keccak256 over them. NOT a lattice verification.
+    /// LASVerify.SIG_BYTES of calldata + one keccak256 over them. NOT a lattice verification.
     function claimLAS(uint256 id, bytes calldata sigPacked) external {
         Swap storage sw = swaps[id];
         require(sw.state == State.OPEN, "not open");
-        require(sigPacked.length == 6720, "bad LAS sig length"); // SIGNATURE_BYTES (D3: n=6, ell=5)
+        require(sigPacked.length == LASVerify.SIG_BYTES, "bad LAS sig length");
         bytes32 tag = keccak256(sigPacked); // minimal "touch every byte"; real verify is off-EVM
         sw.state = State.CLAIMED;
         emit Claimed(id, tag);

@@ -5,23 +5,23 @@
 % Source: evidence/latest/tables/primary_timing.csv
 % Source: evidence/latest/logs/fair_l2.log (TIER-2 packed section)
 % Source: evidence/latest/tables/communication_components.csv
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}l@{\hspace{5pt}}r@{\hspace{5pt}}r@{\hspace{5pt}}r@{\hspace{5pt}}r@{}}
   \toprule
-  & \shortstack[r]{ECDSA adaptor\\ (classical, hybrid\\ native API)} & \shortstack[r]{LAS adaptor\\ (post-quantum,\\ core tier)} & \shortstack[r]{LAS adaptor\\ (post-quantum,\\ packed tier)} \\
+  & \shortstack[r]{ECDSA adaptor\\ (classical,\\ hybrid\\ native API)} & \shortstack[r]{LAS adaptor\\ (post-\\ quantum,\\ core tier)} & \shortstack[r]{LAS adaptor\\ (post-\\ quantum,\\ packed tier)} & \shortstack[r]{overhead\\ LAS $\div$\\ classical\\ (tier-matched)} \\
   \midrule
-  \multicolumn{4}{@{}l}{\textit{Computation ($\mu$s/op)}} \\
-  KeyGen & $13.5 \pm 0.2$ & $31.4 \pm 0.1$ & $106 \pm 0.21$ \\
-  Sign & $19.0 \pm 0.3$ & $281 \pm 10$ & $454 \pm 7$ \\
-  Verify & $28.4 \pm 0.3$ & $65.5 \pm 0.1$ & $158 \pm 20$ \\
-  PreSign & $87.3 \pm 2.7$ & $299 \pm 9$ & $556 \pm 15$ \\
-  PreVerify & $117 \pm 8$ & $68.0 \pm 0.1$ & $281 \pm 6$ \\
-  Adapt & $1.5 \pm 0.1$ & $70.4 \pm 0.1$ & $405 \pm 2$ \\
-  Extract & $15.4 \pm 0.1$ & $25.6 \pm 0.04$ & $294 \pm 5$ \\
+  \multicolumn{5}{@{}l}{\textit{Computation ($\mu$s/op)}} \\
+  KeyGen & $13.5 \pm 0.2$ & $31.4 \pm 0.1$ & $106 \pm 0.21$ & 2.3$\times$ \\
+  Sign & $19.0 \pm 0.3$ & $281 \pm 10$ & $454 \pm 7$ & 15$\times$ \\
+  Verify & $28.4 \pm 0.3$ & $65.5 \pm 0.1$ & $158 \pm 20$ & 2.3$\times$ \\
+  PreSign & $87.3 \pm 2.7$ & $299 \pm 9$ & $556 \pm 15$ & 6.4$\times$ \\
+  PreVerify & $117 \pm 8$ & $68.0 \pm 0.1$ & $281 \pm 6$ & 2.4$\times$ \\
+  Adapt & $1.5 \pm 0.1$ & $70.4 \pm 0.1$ & $405 \pm 2$ & 270$\times$ \\
+  Extract & $15.4 \pm 0.1$ & $25.6 \pm 0.04$ & $294 \pm 5$ & 19$\times$ \\
   \midrule
-  \multicolumn{4}{@{}l}{\textit{Communication (bytes)}} \\
-  Public key / statement & 33 & \multicolumn{2}{c}{2944} \\
-  Secret key / witness   & 32 & \multicolumn{2}{c}{512} \\
-  Signature              & 64 & \multicolumn{2}{c}{4640} \\
-  Pre-signature          & 162 & \multicolumn{2}{c}{4640} \\
+  \multicolumn{5}{@{}l}{\textit{Communication (bytes)}} \\
+  Public key / statement & 33 & \multicolumn{2}{c}{2944} & 89$\times$ \\
+  Secret key / witness   & 32 & \multicolumn{2}{c}{512} & 16$\times$ \\
+  Signature              & 64 & \multicolumn{2}{c}{4640} & 72$\times$ \\
+  Pre-signature          & 162 & \multicolumn{2}{c}{4640} & 29$\times$ \\
   \bottomrule
 \end{tabular}

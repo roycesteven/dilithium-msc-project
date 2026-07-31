@@ -28,6 +28,7 @@
 \usepackage{booktabs}        % \toprule \midrule \bottomrule
 \usepackage{array}           % ragged-right fixed-width columns (see \newcolumntype L below)
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned wrapping column
+\usepackage{longtable}       % page-breaking tables (tab:challenges is taller than a page)
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tikz}
@@ -64,6 +65,25 @@
 % bench_swap log by scripts/gen_stage2_data.py. Same rule as above: chapters
 % cite these macros, never hand-typed literals.
 \input{generated/stage2macros}
+
+% Bitcoin wire-format projection of the settled swap transaction -- AUTO-GENERATED
+% by scripts/gen_bitcoin_tx_data.py from the same bench_swap log. Object sizes are
+% measured; the field layout is BIP141/BIP144/BIP341; the arithmetic self-checks
+% against the published 110 vB (P2WPKH) and 111 vB (P2TR) reference spends.
+\input{generated/btcmacros}
+
+% Float placement. LaTeX's defaults (topfraction 0.7, totalnumber 3, textfraction 0.2)
+% are too conservative for a chapter with this many tables: floats queue up and get
+% flushed to the end of the chapter, pages away from the text that references them.
+% Loosening them keeps each float on or beside its discussion, which is what a reader
+% needs when the text says "see table N".
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
 
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,
         columns=fullflexible,showstringspaces=false}

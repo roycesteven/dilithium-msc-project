@@ -26,6 +26,8 @@ declare -A FIGMAP=(
   ["paper_package/per_operation_timing_paper.pdf"]="fig_timing.pdf"
   ["paper_package/communication_components_paper.pdf"]="fig_components.pdf"
   ["appendix_package/adaptor_overhead_paper.pdf"]="fig_overhead.pdf"
+  ["paper_package/rejection_acceptance_cdf_paper.pdf"]="fig_rejection_cdf.pdf"
+  ["appendix_package/rejection_attempts_distribution_paper.pdf"]="fig_rejection_dist.pdf"
 )
 for src in "${!FIGMAP[@]}"; do
   if [ ! -f "$EV/$src" ]; then
@@ -38,6 +40,20 @@ done
 
 # --- 2. macros + data tables ------------------------------------------------
 python3 "$ROOT/scripts/gen_report_data.py"
+
+# Bitcoin wire-format projection of the settled swap transaction. Derived from the
+# Stage-2 log's measured object sizes, so it must be regenerated whenever those
+# change; it self-checks against the published P2WPKH/P2TR reference spends and
+# exits non-zero rather than emitting numbers it cannot validate.
+STAGE2_LOG="$ROOT/evidence/stage2/latest/bench_swap.log"
+if [ -f "$STAGE2_LOG" ]; then
+  python3 "$ROOT/scripts/gen_bitcoin_tx_data.py" \
+    --log "$STAGE2_LOG" \
+    --out "$ROOT/report/latex/generated/btcmacros.tex" \
+    --tab "$ROOT/report/latex/generated/tab_btctx.tex"
+else
+  echo "WARNING: no evidence/stage2/latest/bench_swap.log; btcmacros.tex left as-is." >&2
+fi
 
 # --- 3. optional PDF rebuild -------------------------------------------------
 if [ "$BUILD" = yes ]; then

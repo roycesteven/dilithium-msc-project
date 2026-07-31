@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {LASNaysayerSwap, LASNaysayLib} from "../src/LASNaysayer.sol";
+import {LASVerify} from "../src/LASVerifier.sol";
 
 /// Adversarial suite for the optimistic Naysayer verifier. Reuses the golden vectors of
 /// LASVerifier.t.sol; the committed trace is w_prime.bin. The PURE digest-fault case uses
@@ -125,7 +126,8 @@ contract LASNaysayerTest {
     function test_naysayNorm_voids_over_bound_z() public {
         uint256 id = _fund(payable(address(this)), timeout);
         bytes memory bad = _sig();
-        bad[32] = bytes1(uint8(0xFF)); bad[33] = bytes1(uint8(0xFF)); bad[34] = bytes1(uint8(0xFF)); // z[0][0] field -> 0x7FFFF
+        uint256 zo = LASVerify.CTILDE_BYTES; // z region starts right after c_tilde
+        bad[zo] = bytes1(uint8(0xFF)); bad[zo + 1] = bytes1(uint8(0xFF)); bad[zo + 2] = bytes1(uint8(0xFF)); // z[0][0] field -> 0x7FFFF
         _claim(id, bad, _wprime());
 
         uint256 g = gasleft();
@@ -212,7 +214,8 @@ contract LASNaysayerTest {
     function test_naysay_rejected_after_deadline() public {
         uint256 id = _fund(payable(address(this)), timeout);
         bytes memory bad = _sig();
-        bad[32] = bytes1(uint8(0xFF)); bad[33] = bytes1(uint8(0xFF)); bad[34] = bytes1(uint8(0xFF));
+        uint256 zo2 = LASVerify.CTILDE_BYTES;
+        bad[zo2] = bytes1(uint8(0xFF)); bad[zo2 + 1] = bytes1(uint8(0xFF)); bad[zo2 + 2] = bytes1(uint8(0xFF));
         _claim(id, bad, _wprime());
         vm.warp(block.timestamp + nay.CHALLENGE_PERIOD()); // at deadline
         require(_revertsWith(abi.encodeCall(nay.naysayNorm, (id, bad, uint256(0), uint256(0))), "window closed"), "late naysay landed");

@@ -387,7 +387,7 @@ def header(sources, meta):
 def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over):
+                rust_packed_over, onchain, packed_l2):
     t = timing[TARGET]
     o = over[TARGET]
     c = comm[TARGET]
@@ -398,7 +398,14 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     setup_means = [timing[lvl]["Setup"][0] for lvl in LEVELS]
     ratio_sig = c2["signature (c,z)"] / classical["sig"]
     ratio_pk = c2["pk = t"] / classical["pk"]
-    time_ratios = {op: timing["L2"][op][0] / classical[op][0]
+    # Tier-matched, exactly as tab_classical does it: the classical library's
+    # single hybrid boundary is core-like for KeyGen/Sign/Verify and packed-like
+    # for the four adaptor operations, so each LAS operation is taken at the tier
+    # that matches it.  Keeping this in step with the table is what stops the
+    # prose and the table quoting two different factors for the same operation.
+    _core_like = {"KeyGen", "Sign", "Verify"}
+    time_ratios = {op: (timing["L2"][op][0] if op in _core_like
+                        else packed_l2[op][0]) / classical[op][0]
                    for op in ["KeyGen", "Sign", "Verify", "PreSign", "PreVerify",
                               "Adapt", "Ext"]}
     slow_op = max(time_ratios, key=time_ratios.get)
@@ -457,6 +464,22 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     m.append(("clRatioPk", "%.0f" % ratio_pk))
     m.append(("clRatioTimeMax", "%.0f" % time_ratios[slow_op]))
     m.append(("clRatioTimeMaxOp", "Extract" if slow_op == "Ext" else slow_op))
+    # on-chain settlement gas (measured; evidence/onchain/latest/gas_report.log)
+    if onchain:
+        cap = 16_777_216
+        def g(k):
+            return "{:,}".format(onchain[k]).replace(",", "\\,")
+        m.append(("gasClassical", g("claimClassical")))
+        m.append(("gasLasFloor", g("claimLAS")))
+        m.append(("gasLasVerified", g("claimLASVerified")))
+        m.append(("gasLasVerifiedM", "%.1f" % (onchain["claimLASVerified"] / 1e6)))
+        m.append(("gasRatioFloor", "%.1f" % (onchain["claimLAS"] / onchain["claimClassical"])))
+        m.append(("gasRatioVerified", "%.0f" % (onchain["claimLASVerified"] / onchain["claimClassical"])))
+        m.append(("gasCapOver", "%.1f" % (onchain["claimLASVerified"] / cap)))
+        if "claim" in onchain:
+            m.append(("gasNaysayClaimM", "%.1f" % (onchain["claim"] / 1e6)))
+        if "naysayDigest" in onchain:
+            m.append(("gasNaysayDigestM", "%.1f" % (onchain["naysayDigest"] / 1e6)))
     # Rust port (protocol driver mirrors the C driver; Criterion is the
     # statistical harness)
     m.append(("rustOvPreSign", pct(rust_over["PreSign vs Sign"])))
@@ -617,40 +640,89 @@ def emit_tab_complete_target(out, meta, comm):
     (out / "tab_complete_target.tex").write_text(b)
 
 
+def parse_onchain_gas(path):
+    """Claim-path and Naysayer gas from a captured `forge test --gas-report` log.
+
+    Returns the MAX column per function: the worst case a settlement can cost,
+    which is what the EIP-7825 per-transaction cap must be judged against.
+    Absent log -> None, so the Stage-1 pipeline still runs without evidence/onchain.
+    """
+    if not path.exists():
+        return None
+    want = ["claimClassical", "claimLAS", "claimLASVerified",
+            "claim", "naysayDigest", "naysayNorm", "naysayWprime"]
+    got = {}
+    for line in path.read_text(errors="replace").splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 6 or cells[0] not in want:
+            continue
+        nums = [c for c in cells[1:] if re.fullmatch(r"[0-9]+", c)]
+        if len(nums) >= 4:
+            got[cells[0]] = int(nums[3])
+    return got or None
+
+
 def emit_tab_classical(out, meta, timing, comm, classical, packed_l2):
     """Classical vs LAS at Simplified Dilithium-II.  The classical library
     exposes exactly ONE measurement boundary (its native API: the 162-B
     pre-signature codec runs INSIDE the timed calls; public-key and
     final-ECDSA-signature wire codecs stay OUTSIDE -- verified against the
     secp256k1-zkp sources), so the classical column is that single tier and
-    LAS is shown at both of its tiers, per the tier rule."""
+    LAS is shown at both of its tiers, per the tier rule.
+
+    The overhead column is TIER-MATCHED rather than tied to one LAS tier,
+    because that single classical boundary is core-like for KeyGen/Sign/Verify
+    and packed-like for the four adaptor operations (see CORE_LIKE below)."""
     l2 = timing["L2"]
     cc = comm["L2"]
     b = header(["evidence/latest/logs/classical.log",
                 "evidence/latest/tables/primary_timing.csv",
                 "evidence/latest/logs/fair_l2.log (TIER-2 packed section)",
                 "evidence/latest/tables/communication_components.csv"], meta)
-    b += "\\begin{tabular}{@{}lrrr@{}}\n  \\toprule\n"
-    b += ("  & \\shortstack[r]{ECDSA adaptor\\\\ (classical, hybrid\\\\ native API)} & "
-          "\\shortstack[r]{LAS adaptor\\\\ (post-quantum,\\\\ core tier)} & "
-          "\\shortstack[r]{LAS adaptor\\\\ (post-quantum,\\\\ packed tier)} "
+    # The classical library exposes ONE hybrid boundary, and which LAS tier that
+    # corresponds to differs PER OPERATION: KeyGen/Sign/Verify exchange in-memory
+    # structs with their wire codecs OUTSIDE the timed call (core-like), while
+    # PreSign/PreVerify/Adapt/Extract pack or parse the pre-signature INSIDE it
+    # (packed-like).  Comparing every row against a single LAS tier would count
+    # the codec on one side only for four of the seven operations.
+    CORE_LIKE = {"KeyGen", "Sign", "Verify"}
+
+    def ov(las, cl):
+        """LAS-over-classical factor, LAS taken at the tier that matches the
+        classical library's boundary for that operation.  A value below 1 would
+        mean LAS is absolutely faster; the sub-1 branch is kept so such a result
+        prints honestly rather than rounding away to '1.0'."""
+        r = las / cl
+        return ("%.0f" % r) if r >= 10 else ("%.2f" % r if r < 1 else "%.1f" % r)
+
+    # A fifth column makes this table the widest in the report, so the headers
+    # wrap onto more lines (no wording is dropped -- the caption still defines
+    # each boundary) and the inter-column gaps are tightened from the 6pt default.
+    sep = "@{\\hspace{5pt}}"
+    b += "\\begin{tabular}{@{}l%sr%sr%sr%sr@{}}\n  \\toprule\n" % ((sep,) * 4)
+    b += ("  & \\shortstack[r]{ECDSA adaptor\\\\ (classical,\\\\ hybrid\\\\ native API)} & "
+          "\\shortstack[r]{LAS adaptor\\\\ (post-\\\\ quantum,\\\\ core tier)} & "
+          "\\shortstack[r]{LAS adaptor\\\\ (post-\\\\ quantum,\\\\ packed tier)} & "
+          "\\shortstack[r]{overhead\\\\ LAS $\\div$\\\\ classical\\\\ (tier-matched)} "
           "\\\\\n  \\midrule\n")
-    b += "  \\multicolumn{4}{@{}l}{\\textit{Computation ($\\mu$s/op)}} \\\\\n"
+    b += "  \\multicolumn{5}{@{}l}{\\textit{Computation ($\\mu$s/op)}} \\\\\n"
     for op in ["KeyGen", "Sign", "Verify", "PreSign", "PreVerify", "Adapt", "Ext"]:
         label = "Extract" if op == "Ext" else op
-        b += ("  %s & %s & %s & %s \\\\\n"
+        las = l2[op][0] if op in CORE_LIKE else packed_l2[op][0]
+        b += ("  %s & %s & %s & %s & %s$\\times$ \\\\\n"
               % (label, mean_sd(classical[op]), mean_sd(l2[op]),
-                 mean_sd(packed_l2[op])))
+                 mean_sd(packed_l2[op]), ov(las, classical[op][0])))
     b += "  \\midrule\n"
-    b += "  \\multicolumn{4}{@{}l}{\\textit{Communication (bytes)}} \\\\\n"
-    b += ("  Public key / statement & %d & \\multicolumn{2}{c}{%d} \\\\\n"
-          % (classical["pk"], cc["pk = t"]))
-    b += ("  Secret key / witness   & %d & \\multicolumn{2}{c}{%d} \\\\\n"
-          % (classical["sk"], cc["sk = r"]))
-    b += ("  Signature              & %d & \\multicolumn{2}{c}{%d} \\\\\n"
-          % (classical["sig"], cc["signature (c,z)"]))
-    b += ("  Pre-signature          & %d & \\multicolumn{2}{c}{%d} \\\\\n"
-          % (classical["presig"], cc["pre-signature (c,z_hat)"]))
+    b += "  \\multicolumn{5}{@{}l}{\\textit{Communication (bytes)}} \\\\\n"
+    for label, ck, lk in (("Public key / statement", "pk", "pk = t"),
+                          ("Secret key / witness  ", "sk", "sk = r"),
+                          ("Signature             ", "sig", "signature (c,z)"),
+                          ("Pre-signature         ", "presig",
+                           "pre-signature (c,z_hat)")):
+        b += ("  %s & %d & \\multicolumn{2}{c}{%d} & %s$\\times$ \\\\\n"
+              % (label, classical[ck], cc[lk], ov(cc[lk], classical[ck])))
     b += "  \\bottomrule\n\\end{tabular}\n"
     (out / "tab_classical.tex").write_text(b)
 
@@ -779,6 +851,8 @@ def main(argv=None):
     packed_l2 = parse_packed_timing(ev / "logs" / "fair_l2.log")
     tamper = parse_tamper(ev / "logs" / "serialization_tests.log")
     classical = parse_classical(ev / "logs" / "classical.log")
+    onchain = parse_onchain_gas(Path(__file__).resolve().parent.parent
+                                / "evidence" / "onchain" / "latest" / "gas_report.log")
     (rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
      rust_proto) = parse_rust_driver(rust / "bench_levels_rust.log")
     rust_packed_over = parse_rust_packed_overhead(rust / "bench_levels_rust.log")
@@ -807,7 +881,7 @@ def main(argv=None):
     emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over)
+                rust_packed_over, onchain, packed_l2)
     emit_tab_timing(out, meta, params, timing)
     emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over)
     emit_tab_components(out, meta, params, comm)

@@ -53,7 +53,7 @@ REPRO="-DLAS_GIT_COMMIT=\\\"$COMMIT\\\" -DLAS_GIT_BRANCH=\\\"$BRANCH\\\""
 read -r -d '' CMD_LIST <<'EOF' || true
 make test/test_las3        && ./test/test_las3        > logs/functional_tests.log
 make test/test_contract3   && ./test/test_contract3   > logs/contract.log
-make test/test_serde3      && ./test/test_serde3      > logs/serialization_tests.log
+make test/test_serde_l3    && ./test/test_serde_l3    > logs/serialization_tests.log
 make test/test_kat3        && ./test/test_kat3        > logs/kat.log
 make test/test_swap3       && ./test/test_swap3       > logs/atomic_swap.log
 make test/test_pcn3        && ./test/test_pcn3        > logs/pcn.log
@@ -125,7 +125,10 @@ build_run_stage2() {   # like build_run, but a no-op under STAGE1_ONLY
 echo "Correctness / test evidence:"
 build_run        test/test_las3       test/test_las3       functional_tests.log
 build_run_stage2 test/test_contract3  test/test_contract3  contract.log
-build_run        test/test_serde3     test/test_serde3     serialization_tests.log
+# Serde evidence is captured at the TARGET set (6,5,49), not the paper dims that
+# test_serde3 builds: the report quotes the tamper-flip count alongside the
+# target-setting signature size, so both must come from the same parameter set.
+build_run        test/test_serde_l3   test/test_serde_l3   serialization_tests.log
 build_run        test/test_kat3       test/test_kat3       kat.log
 build_run_stage2 test/test_swap3      test/test_swap3      atomic_swap.log
 build_run_stage2 test/test_pcn3       test/test_pcn3       pcn.log

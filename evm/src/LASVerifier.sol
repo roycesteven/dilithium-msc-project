@@ -159,7 +159,7 @@ library LASVerify {
     /// Read one LSB-first 19-bit field at bit offset `bitpos` (mirrors br_get, but
     /// by a byte window, not bit-by-bit). A 19-bit field with a 0..7 bit offset spans
     /// at most 26 bits => 4 bytes; the 4th byte is guarded so the final field (whose
-    /// window would run one byte past the 6720-byte signature) does not read OOB —
+    /// window would run one byte past the packed signature) does not read OOB —
     /// those out-of-range bits are masked away by the 19-bit mask regardless.
     function _readField(bytes memory buf, uint256 bitpos) private pure returns (uint256 f) {
         uint256 byteOff = bitpos >> 3;

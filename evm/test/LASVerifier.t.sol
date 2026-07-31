@@ -60,14 +60,14 @@ contract LASVerifierTest {
         }
     }
 
-    /// Debug: pack(t)‖pack(w_golden)‖M hashed must equal c_tilde = sig[0:32],
+    /// Debug: pack(t)‖pack(w_golden)‖M hashed must equal c_tilde = sig[0:CTILDE_BYTES],
     /// using the KNOWN-correct w_prime.bin — isolates pack+hash from arithmetic.
     function test_oracle_with_golden_wprime_matches_ctilde() public view {
         (, uint256[][] memory t,, bytes memory sig) = _inputs();
         bytes memory message = vm.readFileBinary("test/vectors/msg.bin");
         uint256[][] memory wgold = _readPolys("w_prime.bin", 6);
         bytes memory dg = LASVerify.oracle(t, wgold, message);
-        for (uint256 i = 0; i < 32; i++) {
+        for (uint256 i = 0; i < LASVerify.CTILDE_BYTES; i++) {
             require(dg[i] == sig[i], "oracle(pack(t),pack(w_golden),M) != c_tilde");
         }
     }

@@ -49,45 +49,41 @@ actually lands.
 \section{Achievement of the objectives}
 \label{sec:eval-objectives}
 
-\Cref{tab:objectives} states the verdict on each objective and the evidence for it.
-All five were met; two carry qualifications that matter.
+\Cref{tab:objectives} sets out the evidence behind each objective. All five were met;
+two carry qualifications that matter.
 
 \begin{table}[htbp]
   \centering
-  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} judged
-           against the evidence reported in \cref{ch:results}.}
+  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} against the
+           evidence reported in \cref{ch:results}. All five were met; the evidence
+           column states what each rests on.}
   \label{tab:objectives}
-  \begin{tabular}{@{}p{0.19\textwidth}p{0.55\textwidth}l@{}}
+  \begin{tabular}{@{}p{0.24\textwidth}p{0.68\textwidth}@{}}
     \toprule
-    \textbf{Objective} & \textbf{Evidence} & \textbf{Verdict} \\
+    \textbf{Objective} & \textbf{Evidence} \\
     \midrule
     1. Literature and scheme selection
       & Adaptor signature selected as the exotic scheme of highest blockchain value;
         LAS \cite{esgin2020post} selected as the design with the shortest path from a
-        standardised lattice signature (\cref{sec:relatedwork}).
-      & Met \\[3pt]
+        standardised lattice signature (\cref{sec:relatedwork}). \\[3pt]
     2. Additive implementation
       & Lattice core reused byte-for-byte, zero upstream functions modified, made
         auditable by a two-branch diff; adaptor layer, wire encoding and application
-        are new code (\cref{tab:reuse}).
-      & Met \\[3pt]
+        are new code (\cref{tab:reuse}). \\[3pt]
     3. Validation
       & Functional, serialization, tamper and known-answer tests pass
         (\cref{sec:res-correctness}); an independent Rust implementation reproduces
-        the wire format and the pinned digest byte-for-byte (\cref{sec:res-rust}).
-      & Met \\[3pt]
+        the wire format and the pinned digest byte-for-byte (\cref{sec:res-rust}). \\[3pt]
     4. Fair benchmarking
       & Adaptor overhead isolated per operation at two declared tiers
         (\cref{tab:overhead-l3}); two further baselines, five standard metrics,
         computation separated from communication; rejection rate gated against
         theory; relative conclusions reproduced by the Rust port
-        (\cref{tab:rust}).
-      & Met \\[3pt]
+        (\cref{tab:rust}). \\[3pt]
     5. Atomic-swap demonstration
       & End-to-end two-party, two-chain swap settling both legs and asserting
         unspendability before adaptation (\cref{sec:res-app}); extended to a measured
-        three-configuration study on a UTXO ledger (\cref{sec:res-stage2}).
-      & Met \\
+        three-configuration study on a UTXO ledger (\cref{sec:res-stage2}). \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -102,7 +98,7 @@ statistical harness.
 
 Objective~5 was met, with evidence extending beyond the original demonstration, but only
 after the first venue failed. On a local EVM a \emph{complete}, validated native LAS
-verifier was measured at approximately 56.5 million gas (\cref{tab:onchain}), above the
+verifier was measured at approximately \gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the
 EIP-7825 per-transaction cap, and an optimistic (Naysayer) variant then made honest
 settlement cheap while leaving a worst-case fraud proof that also exceeds it. That
 negative result is quantified rather than assumed, and it motivated rebuilding the
@@ -129,22 +125,38 @@ gated. The last is asymptotic rather than arithmetic, and generalises past this 
 in constraint-system libraries the ergonomic interface and the scalable interface are
 not the same interface.
 
-\begin{table}[htbp]
-  \centering
-  \caption[The six implementation challenges]{The six challenges that shaped the
-  implementation. A seventh, cross-cutting difficulty --- reproducing the C scheme
-  byte-for-byte in Rust, down to how each language's uniform sampler discards rejected
-  blocks --- is discussed with the cross-validation results (\cref{sec:res-rust}); the
-  pinned digest is what turned it into a mechanical process. One caveat belongs with
-  the gas figure of challenge~5: the reused ZKNox primitives come from a self-described
-  non-production library, so the measurement is the honest cost of \emph{a}
-  numerically-correct verifier, not an endorsement of that library.}
-  \label{tab:challenges}
-  \small
-  \begin{tabular}{@{}L{0.21\linewidth}L{0.38\linewidth}L{0.33\linewidth}@{}}
+% This table is taller than one page, so it is a longtable (breaks across pages
+% with a repeated header) rather than a float.
+\begingroup
+\small
+\singlespacing
+\setlength{\LTcapwidth}{\textwidth}
+\begin{longtable}{@{}L{0.21\linewidth}L{0.38\linewidth}L{0.33\linewidth}@{}}
+    \caption[The six implementation challenges]{\normalsize The six challenges that
+    shaped the implementation. A seventh, cross-cutting difficulty --- reproducing the
+    C scheme byte-for-byte in Rust, down to how each language's uniform sampler
+    discards rejected blocks --- is discussed with the cross-validation results
+    (\cref{sec:res-rust}); the pinned digest is what turned it into a mechanical
+    process. One caveat belongs with the gas figure of challenge~5: the reused ZKNox
+    primitives come from a self-described non-production library, so the measurement is
+    the honest cost of \emph{a} numerically-correct verifier, not an endorsement of
+    that library.}
+    \label{tab:challenges} \\
     \toprule
     Challenge & The problem & Resolution and lesson \\
     \midrule
+    \endfirsthead
+    \multicolumn{3}{@{}l@{}}{\emph{\tablename~\thetable{} --- continued from the
+      previous page}} \\[2pt]
+    \toprule
+    Challenge & The problem & Resolution and lesson \\
+    \midrule
+    \endhead
+    \midrule
+    \multicolumn{3}{@{}r@{}}{\emph{continued on the next page}} \\
+    \endfoot
+    \bottomrule
+    \endlastfoot
     1. The rejection-bound budget
       & PreSign must reject at $\gamma-\kappa-1$, one tighter than the basic
         acceptance bound of \cref{eq:signbound}. Set at $\gamma-\kappa$ instead,
@@ -197,27 +209,20 @@ not the same interface.
       & Rebuilding each row once as an explicit linear combination against the
         low-level constraint-system interface made the cost linear; setup now completes
         in \cfgTwoSetupTime{}. \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\end{longtable}
+\endgroup
 
 \section{Limitations}
 \label{sec:eval-limitations}
 
-The validity threats of \cref{sec:res-validity} bound what the results mean and are not
-repeated here. Four are worth restating as limitations of the artefact rather than of
-the measurement: the parameter set's concrete security is unanalysed by design; the
-modulus is $q\approx 2^{23}$ rather than the $2^{24}$ of \cite{esgin2020post}; the
-witness is extracted exactly, sidestepping the relaxed setting's noisy witness and the
-growth it implies for long payment channels; and the hint-free scheme yields larger keys
-and signatures than optimised Dilithium. Each trades cryptographic optimisation for a
-transparent, testable artefact, and each maps to an item of \cref{sec:future}.
-
-Two limitations attach specifically to the application study. Both ledgers are models
-rather than nodes, yielding real transaction objects, serialised sizes and the public
-leak channel on which atomicity depends, but no fees, propagation or confirmation
-latency, so on-chain \emph{bytes} are the honest proxy for on-chain cost. And
-configuration~2 is a deliberate hybrid whose proof system is not post-quantum ---
-included because it is the intermediate point that makes the proof-system comparison
-possible, not because it is a stack anyone should deploy, since a post-quantum signature
-does not protect a swap whose fairness rests on a pairing assumption.
+The validity threats of \cref{sec:res-validity} bound what the results \emph{mean} and
+are not repeated here. Two further limitations belong to the artefact rather than to the
+measurement, and they trade away different things. The hint-free construction yields
+larger keys and signatures than optimised Dilithium: cryptographic optimisation given up
+for a transparent, testable artefact that preserves the exact relation Adapt and Extract
+depend on (\cref{sec:impl}) --- the one of the two that \cref{sec:future} takes up
+directly. Configuration~2 instead gives up post-quantum assurance for a controlled
+comparison. It is the intermediate point that makes the proof-system comparison possible,
+not a stack anyone should deploy, since a post-quantum signature does not protect a swap
+whose fairness rests on a pairing assumption; configuration~3 is what answers it, within
+the study rather than as future work.

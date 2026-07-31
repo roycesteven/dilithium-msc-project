@@ -7,28 +7,58 @@ comparison of the three atomic-swap claim paths measured on a local EVM (Foundry
 inputs, and contract state, and independent of the host CPU), with the EIP-7825
 per-transaction gas cap drawn as the threshold the full verifier overshoots.
 
-The gas values are MEASURED (not from a CSV; they are `forge --gas-report`
-outputs, deterministic for the EVM), recorded here with their source function:
+The gas values are PARSED FROM A CAPTURED forge --gas-report LOG -- never typed into
+this script. Hardcoding them is what let this figure drift out of step with the
+implementation when the FIPS 204 c_tilde alignment changed the signature width, and
+with it the calldata gas of claimLAS/claimLASVerified.
 
-    claimClassical    75,751       full ECDSA verify via the ecrecover precompile
-    claimLAS          289,930      floor: calldata for the 6720-byte sig + 1 keccak, NO verify
-    claimLASVerified  56,538,682   COMPLETE native base_verify in Solidity (evm/src/LASVerifier.sol)
-    EIP-7825 cap      16,777,216   max gas one Ethereum transaction may use (2**24)
-
-Style mirrors scripts/plot_las_paper_figures.py (_style): >=10pt text, recessive
-axes, vector PDF at \\linewidth. Usage:  python3 scripts/plot_onchain_gas.py
+Usage (normally via scripts/run_onchain_gas.sh, which captures the log first):
+    python3 scripts/plot_onchain_gas.py --log evidence/onchain/latest/gas_report.log
+                                        [--out report/latex/figures]
 """
 import sys
 from pathlib import Path
 
-# measured gas (forge --gas-report; via_ir; deterministic EVM gas)
-CLASSICAL = 75_751        # claimClassical  (full ecrecover verify)
-LAS_FLOOR = 289_930       # claimLAS         (floor; no lattice verify)
-LAS_VERIFY = 56_538_682   # claimLASVerified (complete native base_verify)
-EIP7825_CAP = 16_777_216  # per-transaction gas cap (2**24)
+import argparse
+import re
+
+EIP7825_CAP = 16_777_216  # per-transaction gas cap (2**24), a protocol constant
+
+
+def parse_gas_report(path):
+    """Pull the three claim-path costs out of a `forge test --gas-report` log.
+
+    Rows look like:  | claimClassical | min | avg | median | max | #calls |
+    We take the MAX column: the worst case a settlement can cost, which is the
+    number the per-transaction cap must be judged against.
+    """
+    want = {"claimClassical": None, "claimLAS": None, "claimLASVerified": None}
+    for line in path.read_text(errors="replace").splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 6 or cells[0] not in want:
+            continue
+        nums = [c for c in cells[1:] if re.fullmatch(r"[0-9]+", c)]
+        if len(nums) >= 4:
+            want[cells[0]] = int(nums[3])   # min, avg, median, MAX
+    missing = [k for k, v in want.items() if v is None]
+    if missing:
+        raise SystemExit("plot_onchain_gas.py: %s not found in %s -- was the log "
+                         "captured with `forge test --gas-report`?"
+                         % (", ".join(missing), path))
+    return want["claimClassical"], want["claimLAS"], want["claimLASVerified"]
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--log", required=True, type=Path,
+                    help="captured `forge test --gas-report` output")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="figure output directory (default: report/latex/figures)")
+    args = ap.parse_args()
+    CLASSICAL, LAS_FLOOR, LAS_VERIFY = parse_gas_report(args.log)
+
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -50,7 +80,9 @@ def main():
               "LAS floor\n(claimLAS, no verify)",
               "LAS full verify\n(claimLASVerified)"]
     values = [CLASSICAL, LAS_FLOOR, LAS_VERIFY]
-    ratios = ["1$\\times$", "3.8$\\times$", "746$\\times$"]
+    # ratios DERIVED from the measured values, never written by hand
+    ratios = ["1$\\times$"] + ["%.3g$\\times$" % (v / CLASSICAL)
+                                for v in (LAS_FLOOR, LAS_VERIFY)]
     colors = ["#4C72B0", "#DD9A54", "#D1622B"]  # classical blue, floor light-orange, verify orange
     ypos = [2, 1, 0]  # verify at bottom so it sits nearest the x-axis label
 
@@ -79,7 +111,8 @@ def main():
             "EIP-7825 per-transaction cap\n{:,} gas".format(EIP7825_CAP),
             color="#B00020", ha="right", va="top", fontsize=9.5)
 
-    out_dir = Path(__file__).resolve().parent.parent / "report" / "latex" / "figures"
+    out_dir = args.out or (Path(__file__).resolve().parent.parent
+                           / "report" / "latex" / "figures")
     out_dir.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
         fig.savefig(out_dir / ("fig_onchain." + ext), bbox_inches="tight", dpi=200)

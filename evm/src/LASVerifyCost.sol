@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 /// @title LASVerifyCost — a gas-faithful cost probe for *native* on-chain LAS verification.
 ///
 /// WHY THIS EXISTS. `claimLAS` in AdaptorSwap.sol charges only the unavoidable on-chain
-/// FLOOR (calldata for the 6720-byte signature + one keccak) and deliberately does NOT
+/// FLOOR (calldata for the packed signature + one keccak) and deliberately does NOT
 /// verify the lattice signature, on the stated grounds that native verification is
 /// "infeasible in the EVM / exceeds the block gas limit". That claim was previously
 /// hand-waved. This contract turns it into a MEASURED number: it executes the exact

@@ -1,30 +1,25 @@
-\chapter{Conclusion, critical reflection, and future work}
+\chapter[Conclusion and future work]{Conclusion, critical reflection, and future work}
 \label{ch:conclusion}
 
 \section{Conclusions}
 \label{sec:conclusions}
 
-This dissertation set out to implement and evaluate a post-quantum exotic signature
-scheme --- a lattice-based adaptor signature reusing the CRYSTALS-Dilithium primitives
---- and to demonstrate it in a blockchain atomic swap. That aim was achieved within the
-stated prototype scope: the lattice core is reused unchanged, with the adaptor layer,
-wire encoding and application added as new, tested code; the scheme passes functional,
-serialization, tamper and known-answer tests, is corroborated by an independent Rust
-implementation reproducing the wire format and the pinned digest byte-for-byte, and
-drives an end-to-end two-party, two-chain swap.
+The aim of \cref{sec:aims} was achieved within the stated prototype scope. The lattice
+core is reused unchanged; the adaptor layer, wire encoding and application are new,
+tested code. The scheme passes functional, serialization, tamper and known-answer tests,
+an independent Rust implementation reproduces the wire format and the pinned digest
+byte-for-byte, and an end-to-end two-party, two-chain swap runs.
 
 The central question --- what adaptor functionality costs over a plain signature, and
 what post-quantum operation costs over a classical one --- is answered with measured
-data at declared boundaries. The adaptor layer is almost free in computation, adding at
-most $+\ovMaxAll\%$ at the core boundary over the basic operation each adaptor operation
-mirrors, at every parameter set and in both implementations independently; the premium
-rises to $+\packedOvPreSign$--$\packedOvAdapt\%$ once the byte boundary is included, and
-that rise is serialization rather than arithmetic. The cost of LAS is therefore
-\emph{communication} --- the signature is \zPctTwo--\zPctFive\% response vector, and the
-statement $Y$ is transmitted on top of it --- and against the classical ECDSA adaptor
-the post-quantum price is likewise paid in bytes, the classical scheme's
-discrete-logarithm-equality proof making its own adaptor layer proportionally the more
-expensive.
+data at declared boundaries. Adaptor functionality is almost free in computation: at most
+$+\ovMaxAll\%$ at the core boundary, rising to
+$+\packedOvPreSign$--$\packedOvAdapt\%$ once the byte boundary is included, a rise that
+is serialization rather than arithmetic. The cost of LAS is therefore
+\emph{communication} --- the signature is \zPctTarget\% response vector at every parameter set, with the
+statement $Y$ transmitted on top --- and the classical comparison points the same way,
+the discrete-logarithm-equality proof making \emph{its} adaptor layer proportionally the
+more expensive.
 
 Taking the protocol to a UTXO ledger --- the venue \cite{esgin2020post} actually
 assumes --- sharpens that conclusion rather than repeating it, because at the
@@ -48,15 +43,16 @@ applications run on modelled ledgers rather than live networks.
 
 The central strategic choice --- to build \emph{additively} on a standardised reference
 rather than reimplement lattice arithmetic --- paid off twice. It made the
-implementation tractable in the time available, and it produced an unusually strong
-provenance argument, the security-critical arithmetic being byte-for-byte the published
-CRYSTALS-Dilithium reference implementation with a two-branch diff that makes the claim
-auditable rather than assertable. Being language-agnostic, the strategy also made the
-second implementation cheap to build, yet it upgraded the correctness argument from one
-tested codebase to two that agree byte-for-byte and exposed every timing conclusion to
-an independent harness. If one methodological result deserves to outlive this
-dissertation, it is that pairing a pinned known-answer digest with an independent
-reimplementation is a cheap and unusually decisive way to validate a cryptographic port.
+implementation tractable in the time available. It also produced an unusually strong
+provenance argument: the security-critical arithmetic is byte-for-byte the published
+CRYSTALS-Dilithium reference, with a two-branch diff that makes the claim auditable
+rather than assertable. Being language-agnostic, the strategy made the second
+implementation cheap to build, yet upgraded the correctness argument from one tested
+codebase to two that agree byte-for-byte, and exposed every timing conclusion to an
+independent harness. If one methodological result deserves to
+outlive this dissertation, it is that pairing a pinned known-answer digest with an
+independent reimplementation is a cheap and decisive way to validate a cryptographic
+port.
 
 Two further things went better than expected. Confronting the fairness problem honestly
 --- comparing LAS against a parameter-matched base rather than optimised Dilithium ---
@@ -73,24 +69,23 @@ Three shortfalls are worth stating plainly, over and above the scoped limitation
 
 First, and most substantively, \textbf{on-chain settlement was measured but not
 solved}. A complete, numerically-correct native Solidity verifier exists and its cost is
-known (\cref{tab:onchain}), and a negative result about deployability is still a result
---- but the honest reading is that demonstrating a \emph{deployable} post-quantum
-adaptor swap on a smart-contract chain was not achieved: native verification sits far
-above the per-transaction gas cap, and the optimistic variant only moves the problem
-into a worst-case fraud proof that also exceeds it. The cause is structural rather than
-a failure of tuning, and it decides the future work: the decisive term is the hash,
+known (\cref{tab:onchain}), and a negative result about deployability is still a result.
+But the honest reading is that a \emph{deployable} post-quantum adaptor swap on a
+smart-contract chain was not achieved: native verification sits far above the
+per-transaction gas cap, and the optimistic variant only moves the problem into a
+worst-case fraud proof that also exceeds it. The cause is structural rather than a
+failure of tuning, and it decides the future work. The decisive term is the hash,
 SHAKE256 not being EVM-native, while the lattice arithmetic compounds the problem
-through calldata rather than independently breaching the cap. Local optimisation could
+through calldata rather than independently breaching the cap; local optimisation could
 close neither.
 
 Second, the applications are \textbf{exploratory demonstrators, not products}. Both
 settle over modelled ledgers and assert the properties that matter, but neither runs
 against a live network. For the UTXO study this is partly forced: Bitcoin Script cannot
 verify a lattice signature, so the post-quantum configurations could not settle on a real
-node without a consensus change --- exactly the assumption \cite{esgin2020post} makes in
-stating its applications over a UTXO chain \emph{whose signature algorithm has been
-replaced}. The model is faithful to that assumption and yields real transaction objects,
-sizes and leak channel; what it omits is network, consensus, fee and confirmation
+node without a consensus change --- exactly the assumption \cite{esgin2020post} makes
+(\cref{app:utxomodel}). The model is faithful to that assumption; what it omits is
+network, consensus, fee and confirmation
 overhead. The reported costs are therefore an implementation-level feasibility estimate
 rather than a deployment figure --- and, since the omitted overheads add cost, certainly
 not an upper bound on one.
@@ -130,44 +125,43 @@ discipline is cheap at the start and expensive to add later.
 \label{sec:future}
 
 \begin{itemize}
+  \item \textbf{Reduce the proof, not the signature.} The application study identifies
+        the role-A proof as the dominant end-to-end cost by an order of magnitude. Two
+        directions are worth measuring: a \emph{succinct} post-quantum proof system,
+        cutting the proof from tens of kilobytes toward Groth16's constant size while
+        keeping transparency; and amortisation across swaps, since a party proves
+        knowledge of a fresh statement each time.
+  \item \textbf{Bring on-chain verification within one transaction.} Native
+        verification and an optimistic Naysayer variant \cite{kysil2025poqeth} both
+        exceed the per-transaction cap in the worst case (\cref{sec:res-app}). The hash
+        dispute breaches the cap outright and the matrix work inflates calldata, so the
+        promising routes attack both: a hash dispute avoiding a full SHAKE256 pass or a
+        precompile for it, a Merkle opening of the single disputed matrix row rather
+        than the whole matrix, or a succinct proof of verification.
+  \item \textbf{Move bulk data off chain, and ask who then stores it.} Where a design
+        genuinely requires a proof to be publicly available --- the on-chain
+        verification route above, not the swap, whose $\pi$ is already exchanged
+        directly between the two parties --- a content-addressed store such as IPFS
+        could hold it while the chain carries only a commitment. The saving is real but
+        not free: it introduces a second platform and a bridge to it, and it relocates
+        rather than answers the question of who is paid to keep the data available.
   \item \textbf{Closing the size gap, and why it is not routine.} The response $z$ is
         almost the whole signature (\cref{sec:res-comm}) and already occupies the
         minimum \emph{fixed} width its range admits, so shrinking it needs entropy or
-        range coding, or a smaller $\gamma$ --- not tighter bit-packing. The reductions
-        that close the gap for plain Dilithium are exactly the optimisations this
-        construction had to disable, because they break the exact identity
-        $A\vecz - c\,t = w+Y$ that Adapt and Extract depend on (\cref{sec:impl}), so
-        whether an adaptor-compatible analogue exists is a genuine open question rather
-        than an engineering task. Either way it would not change the end-to-end swap
-        profile, where the proof remains the bottleneck.
+        range coding, or a smaller $\gamma$. The reductions that close the gap for plain
+        Dilithium are exactly the optimisations this construction had to disable
+        (\cref{sec:impl}), so whether an adaptor-compatible analogue exists is a genuine
+        open question rather than an engineering task.
   \item \textbf{Parameter migration.} Move to the $q\approx 2^{24}$ of
         \cite{esgin2020post} with a new NTT table and map the parameters to NIST
         security levels, with before-and-after benchmarks so the trade-off is
         explicit.
-  \item \textbf{Bring on-chain verification within one transaction.} Native
-        verification and an optimistic Naysayer variant \cite{kysil2025poqeth} both
-        exceed the per-transaction cap in the worst case (\cref{sec:res-app}). Since the
-        hash dispute is what breaches the cap outright and the matrix work is what
-        inflates calldata, the promising routes attack both: a hash dispute avoiding a
-        full SHAKE256 pass or a precompile for it, a Merkle opening of the single
-        disputed matrix row rather than the whole matrix, or a succinct proof of
-        verification --- after which a swap should be benchmarked on a live testnet.
-  \item \textbf{Take the UTXO study to a live network, as far as one allows.} For the
-        classical configuration \emph{regtest} would validate the integration against a
-        real node's consensus rules but calibrate nothing economic, while \emph{signet}
-        would supply the fees, propagation and confirmation latency the model cannot.
-        For configurations~2 and~3 no Bitcoin test network helps, and that is the point
-        rather than a caveat: signet enforces the same script rules as mainnet, so a
-        deployment figure for the post-quantum swap is blocked on chain support, not on
-        engineering. That asymmetry --- a classical swap priceable today against a
-        post-quantum one that cannot be deployed at all --- mirrors on the UTXO side the
-        missing-precompile conclusion reached on the EVM.
-  \item \textbf{Reduce the proof, not the signature.} The application study identifies
-        the role-A proof as the dominant end-to-end cost by an order of magnitude. Two
-        directions are worth measuring: a \emph{succinct} post-quantum proof system,
-        keeping transparency and quantum resistance while cutting the proof from tens of
-        kilobytes toward Groth16's constant size; and amortisation across swaps, since a
-        party proves knowledge of a fresh statement each time.
+  \item \textbf{Take the UTXO study to a live network.} For the classical configuration
+        \emph{signet} would supply the fees, propagation and confirmation latency the
+        model cannot. For configurations~2 and~3 no Bitcoin test network helps, and that
+        is the point rather than a caveat: a deployment figure for the post-quantum swap
+        is blocked on chain support, not on engineering --- mirroring on the UTXO side
+        the missing-precompile conclusion reached on the EVM.
   \item \textbf{A new research question.} Extend toward functional adaptor signatures,
         moving from systems implementation toward a novel construction.
 \end{itemize}
