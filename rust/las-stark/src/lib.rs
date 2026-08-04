@@ -47,6 +47,7 @@ pub mod params;
 pub mod prover;
 pub mod relation;
 pub mod relation_air;
+pub mod role_a_air;
 pub mod vectors;
 
 use winterfell::{BatchingMethod, FieldExtension, ProofOptions};

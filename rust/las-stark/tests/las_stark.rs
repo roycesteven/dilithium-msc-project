@@ -15,6 +15,9 @@ use las_stark::relation;
 use las_stark::relation_air::{
     prove_relation, verify_relation, RelationPublicInputs, RelationWitness,
 };
+use las_stark::role_a_air::{
+    prove_role_a, verify_role_a, RoleAInstance, RoleAPublicInputs, RoleAWitness,
+};
 use las_stark::vectors::{norm_inf_vec, VerifyVector};
 use winterfell::math::fields::f64::BaseElement;
 use winterfell::Proof;
@@ -158,6 +161,92 @@ fn relation_tampered_proof_rejected() {
         Ok(p) => assert!(
             verify_relation(p, pub_inputs).is_err(),
             "a tampered relation proof must not verify"
+        ),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// role-A relation: a succinct POST-QUANTUM proof of the statement the swap's
+// configurations 2 (Groth16) and 3 (LaZer) prove.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn role_a_instance_satisfies_the_relation() {
+    // The generated instance must actually be in the relation: r ternary and
+    // A r = t'. If it were not, every proof below would be vacuous.
+    let vv = load();
+    let inst = RoleAInstance::from_vector(&vv, 0xA5A5_1234);
+    let pi = RoleAPublicInputs::from_instance(&inst);
+    let w = RoleAWitness::build(&inst, &pi).expect("the generated instance must be in R_A");
+    assert!(
+        w.r.iter().all(|p| p.iter().all(|&v| (-1..=1).contains(&v))),
+        "the witness must be ternary"
+    );
+}
+
+#[test]
+fn role_a_rejects_non_ternary_witness() {
+    // The relation is ||r||inf <= 1, not "small": a witness outside {-1,0,1}
+    // must be refused rather than quietly proven.
+    let vv = load();
+    let mut inst = RoleAInstance::from_vector(&vv, 0xA5A5_1234);
+    inst.r[0][0] = 2;
+    let pi = RoleAPublicInputs::from_instance(&inst);
+    assert!(
+        RoleAWitness::build(&inst, &pi).is_err(),
+        "a non-ternary witness must be refused"
+    );
+}
+
+#[test]
+fn role_a_rejects_wrong_statement() {
+    // Witness construction must fail when t' is not A r -- the q-division stops
+    // being exact.
+    let vv = load();
+    let mut inst = RoleAInstance::from_vector(&vv, 0xA5A5_1234);
+    inst.t_prime[0][0] = (inst.t_prime[0][0] + 1) % las_stark::params::Q;
+    let pi = RoleAPublicInputs::from_instance(&inst);
+    assert!(
+        RoleAWitness::build(&inst, &pi).is_err(),
+        "a statement that is not A r must be refused"
+    );
+}
+
+#[test]
+fn role_a_stark_roundtrip() {
+    let vv = load();
+    let inst = RoleAInstance::from_vector(&vv, 0xA5A5_1234);
+    let (proof, pub_inputs) = prove_role_a(&inst).expect("prove role-A");
+    assert!(!proof.to_bytes().is_empty(), "proof must be non-empty");
+    verify_role_a(proof, pub_inputs).expect("a valid role-A proof must verify");
+}
+
+#[test]
+fn role_a_proof_rejects_tampered_statement() {
+    // The proof is bound to the public statement it was made for.
+    let vv = load();
+    let inst = RoleAInstance::from_vector(&vv, 0xA5A5_1234);
+    let (proof, mut pub_inputs) = prove_role_a(&inst).expect("prove role-A");
+    pub_inputs.t_prime[0][0] += 1;
+    assert!(
+        verify_role_a(proof, pub_inputs).is_err(),
+        "a role-A proof must not verify against a tampered t'"
+    );
+}
+
+#[test]
+fn role_a_tampered_proof_rejected() {
+    let vv = load();
+    let inst = RoleAInstance::from_vector(&vv, 0xA5A5_1234);
+    let (proof, pub_inputs) = prove_role_a(&inst).expect("prove role-A");
+    let mut bytes = proof.to_bytes();
+    let mid = bytes.len() / 2;
+    bytes[mid] ^= 0xFF;
+    match Proof::from_bytes(&bytes) {
+        Err(_) => {} // corruption caught at deserialization -> rejected
+        Ok(p) => assert!(
+            verify_role_a(p, pub_inputs).is_err(),
+            "a tampered role-A proof must not verify"
         ),
     }
 }

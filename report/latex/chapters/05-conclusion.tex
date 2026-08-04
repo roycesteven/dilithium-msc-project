@@ -53,9 +53,8 @@ rather than reimplement lattice arithmetic --- paid off twice. It made the imple
 tractable, and it produced an unusually strong provenance argument: the security-critical
 arithmetic is byte-for-byte the published CRYSTALS-Dilithium reference, with a two-branch
 diff that makes the claim auditable rather than assertable. Being language-agnostic, the
-strategy made the second implementation cheap to build, upgraded the correctness argument
-from one tested codebase to two agreeing byte-for-byte, and exposed every timing
-conclusion to an independent harness. If one methodological result deserves to outlive
+strategy also made the second implementation cheap, upgrading the correctness argument
+from one tested codebase to two agreeing byte-for-byte. If one result deserves to outlive
 this dissertation, it is that pairing a pinned known-answer digest with an independent
 reimplementation is a cheap and decisive way to validate a cryptographic port.
 
@@ -84,9 +83,8 @@ settle over modelled ledgers and assert the properties that matter, but neither 
 against a live network. For the UTXO study this is partly forced: Bitcoin Script cannot
 verify a lattice signature, so the post-quantum configurations could not settle on a real
 node without a consensus change --- exactly the assumption \cite{esgin2020post} makes.
-The reported costs are therefore an implementation-level feasibility estimate rather than
-a deployment figure, and since the omitted overheads add cost, not an upper bound on
-one.
+The reported costs are therefore a feasibility estimate rather than a deployment figure,
+and since the omitted overheads add cost, not an upper bound on one.
 
 Third, the concrete security of the chosen parameter set is \textbf{unanalysed by
 design}. This was a sanctioned scope decision, not an oversight, but it bounds what
@@ -99,11 +97,10 @@ stated engineering setting, not a parameter set anyone should deploy.
 The clearest change is \textbf{target selection for the application}. Substantial effort
 went into taking the verifier on-chain in Solidity before the gas cost was known to be
 prohibitive. The framing was wrong as well as the venue: the project asked ``can a
-post-quantum signature be verified on chain?'' when the measurement that mattered was
-``what dominates a post-quantum swap?'', and the answer proved to be a component that
-never touches a chain at all. Beginning on the UTXO side would have reached that question
-sooner, with the EVM measurement retained for what it genuinely establishes: the
-comparative argument for \emph{why} the venue was changed.
+post-quantum signature be verified on chain?'' when what mattered was ``what dominates a
+post-quantum swap?'' --- and the answer never touches a chain at all. Beginning on the
+UTXO side would have reached that sooner, with the EVM measurement retained for what it
+does establish: why the venue was changed.
 
 Second, \textbf{measurement discipline would come first}: both early artefacts --- the
 biased acceptance estimate and the asymmetric timed loops --- followed from building the
@@ -116,17 +113,25 @@ days, not weeks.
 \label{sec:future}
 
 \begin{itemize}
-  \item \textbf{Shrink the statement, not the signature.} The sharpest redirection the
-        results produce. The response $z$ is almost the whole signature, but building on
-        unmodified ML-DSA halves the signature while leaving $Y$ byte-identical
-        (\cref{sec:res-mldsa}), so compressing the signature merely promotes the statement
-        to the dominant object. A statement is full-width because it enters the
-        verification identity before any rounding; whether an adaptor-compatible
-        compression exists is a genuine open question, not an engineering task.
-  \item \textbf{Reduce the proof.} The application study identifies the role-A proof as
-        the dominant end-to-end cost by an order of magnitude. Two directions are worth
-        measuring: a \emph{succinct} post-quantum proof system, and amortisation across
-        swaps, since a party proves knowledge of a fresh statement each time.
+  \item \textbf{A statement that is small by design.} Building on unmodified ML-DSA
+        halves the signature while leaving $Y$ byte-identical (\cref{sec:res-mldsa}), so
+        the statement becomes the dominant object. Compressing $Y$ \emph{inside} this
+        construction was then tested directly, and fails: truncation is invisible to the
+        adaptor's own functions, which hash whatever statement they are handed, and fatal
+        at the two boundaries that matter, since ordinary verification recomputes
+        $\mathbf{Az}-c\mathbf{t}$ against the true $Y$ and \textsc{Ext} accepts only on the
+        exact relation. Deriving $Y$ from its generator seed compresses it completely and
+        hands over the witness. What is open is therefore not a better encoding but a
+        different hard relation whose statement is small by construction.
+  \item \textbf{Reduce the proof.} The role-A proof dominates a swap, and both routes
+        proposed here were measured; both fail at this scale. Batching amortises the wrong
+        cost --- the Groth16 proof is constant in the batch and was never the bottleneck,
+        while the LaZer proof does shrink per swap, but only by making proving and
+        verification several times worse. A \emph{succinct} post-quantum system that is
+        also zero-knowledge, which \cite{esgin2020post} requires of $\pi$, was run under
+        LaBRADOR and loses to the deployed prover on every axis: succinctness is
+        asymptotic, and one instance of this relation is far too small to reach it. What
+        is open is a construction whose proof is small at \emph{this} scale.
   \item \textbf{Bring on-chain verification within one transaction.} Native verification
         and an optimistic Naysayer variant \cite{kysil2025poqeth} both exceed the
         per-transaction cap in the worst case (\cref{sec:res-app}). The promising routes
@@ -138,10 +143,9 @@ days, not weeks.
         sound; whether it preserves ML-DSA's unforgeability argument is unexamined, and
         is the prerequisite before that route could be recommended over the simplified
         scheme.
-  \item \textbf{Take the UTXO study to a live network.} For the classical configuration
-        \emph{signet} would supply the fees, propagation and confirmation latency the
-        model cannot. For configurations~2 and~3 no Bitcoin test network helps, and that
-        is the point rather than a caveat: a deployment figure for the post-quantum swap
-        is blocked on chain support, not on engineering --- mirroring on the UTXO side
-        the missing-precompile conclusion reached on the EVM.
+  \item \textbf{Take the UTXO study to a live network.} \emph{Signet} would supply the
+        classical configuration with the fees, propagation and latency the model cannot.
+        For configurations~2 and~3 no Bitcoin test network helps, and that is the point
+        rather than a caveat: the post-quantum swap is blocked on chain support, not on
+        engineering --- mirroring the missing-precompile conclusion reached on the EVM.
 \end{itemize}

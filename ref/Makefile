@@ -142,6 +142,33 @@ LAZER_LIBS = $(LAZER_DIR)/liblazer.a \
 relation_zk_lazer.o: relation_zk_lazer.c relation_zk_lazer.h relation_zk_params.h
 	$(CC) -Wall -Wextra -Wshadow -O3 -I$(LAZER_DIR) -c -o $@ relation_zk_lazer.c
 
+# --- pi under LaBRADOR (succinct + post-quantum + ZERO-KNOWLEDGE) -----------
+# eprint 2020/845 Sec 4.1 requires pi to be zero-knowledge; the FRI-STARK in
+# rust/las-stark is succinct and PQ but NOT zk, so it is not a valid pi.
+# LaBRADOR is all three, and LaZer ships it -- but as a git submodule that must
+# be fetched and built once:
+#   cd third_party/lazer && git submodule update --init src/labrados
+#                        && make liblabrador36.so
+# ⚠️ The bridge includes the SUBMODULE's own labrados_python.h, NOT LaZer's
+# shipped src/labradosNN_py.h: the shipped header declares the internal ring
+# degree N=64 while the submodule builds N=256, so the struct layouts disagree
+# and the shipped header would silently corrupt memory. -DNDEBUG is REQUIRED --
+# labrados structs have #ifndef NDEBUG members, so it must match the library.
+LABRADOR_LOGQ ?= 38
+LABRADOR_DIR = $(LAZER_DIR)/src/labrados
+LABRADOR_LINK = -L$(LAZER_DIR) -Wl,-rpath,$(LAZER_DIR) -llabrador$(LABRADOR_LOGQ)
+
+relation_zk_labrador.o: relation_zk_labrador.c relation_zk_labrador.h
+	$(CC) -Wall -Wextra -Wshadow -O3 -march=native -DNDEBUG -DLOGQ=$(LABRADOR_LOGQ) \
+	  -I$(LABRADOR_DIR) -c -o $@ relation_zk_labrador.c
+
+test/bench_labrador_role_a: test/bench_labrador_role_a.c relation_zk_labrador.h \
+  relation_zk_labrador.o relation.c relation.h setup.c setup.h las_types.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+	  -o $@ $< relation.c setup.c randombytes.c $(KECCAK_SOURCES) \
+	  relation_zk_labrador.o $(LABRADOR_LINK) -lm
+
 # --- batched pi (proof-amortisation experiment) -----------------------------
 # One LaZer proof over k independent instances of the Fig. 1 relation, via a
 # block-diagonal statement. Answers the question the Groth16 amortisation run

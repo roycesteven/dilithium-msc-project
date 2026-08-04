@@ -728,3 +728,98 @@ NEXT
   succinct PQ proof system, not batching.
 - Also still owed: 05-conclusion.tex:119-125 (statement compression, answered negatively).
 - 6-8 min slides; frontmatter \TODO (Royce only).
+
+## Checkpoint — 2026-08-04 — ZK correction to the STARK result; LaBRADOR groundwork
+
+Branch: report. No commits. Royce: "baca 2020-845.md 4.1 ! PROOF NYA HARUS ZERO KNOWLEDGE !
+Jalankan relation yang sama menggunakan backend LaBRADOR di LaZer !"
+
+THE CORRECTION (this is the important part):
+Read eprint 2020/845 4.1. The swap's security needs pi to HIDE the witness -- if u2 learned
+r from pi it could adapt sigma-hat_1 itself and take BOTH sides. So pi must be ZERO-KNOWLEDGE,
+not merely a proof of knowledge. The FRI-STARK built earlier today is NOT zk (Winterfell adds
+no zk randomisation), so it is NOT a valid pi. I had written that as a scope caveat; that was
+too weak -- it is a DISQUALIFICATION, and it also means the three-prover comparison flattered
+the STARK on an axis where it does not qualify (LaZer and Groth16 both pay for zk).
+Applied to: docs/03-results/SUCCINCT_PQ_PROOF_EXPERIMENT.md (banner + scope + new section 6),
+CLAUDE.md (merged into the las-stark block, not appended).
+
+LABRADOR GROUNDWORK (library builds; the RUN IS NOT DONE):
+- third_party/lazer/src/labrados was an UNINITIALISED git submodule (lazer-crypto/labrador).
+  Fetched at pinned commit 3f95485. Built liblabrador{32,36,38}.so (needs -lmvec -lm only).
+- TRAP FOUND, recorded in CLAUDE.md: LaZer's shipped src/labradosNN_py.h declares internal
+  ring degree N=64, but the submodule the Makefile builds defines N=256. Struct layouts
+  disagree -> a C driver against the shipped _py.h would corrupt memory. Must use
+  src/labrados/labrados_python.h with -DLOGQ=NN -DNDEBUG -Isrc/labrados.
+- Python/cffi route is BLOCKED: liblazer.a is not -fPIC, so _lazer_cffi fails to link. Would
+  need liblazer.so (lib-shared-all). Also needs LIBRARY_PATH=~/micromamba/envs/lazer-build/lib
+  for -lmpfr. C driver is the better route anyway (matches project convention).
+- Encoding worked out (NOT yet coded): witness w0 = (r_plus || r_minus), 22 polys, normty BIN
+  (native binary norm type -- matches the deployed LNP22 decomposition); witness w1 = g, 6
+  polys, L2EXACT bound; 6 constraints [A|-A]*w0 - q*g = t'. g is needed because LaBRADOR
+  works over ITS prime p, not our q; the l2 bound on g is load-bearing (unbounded g satisfies
+  the equation for any t'). LOGQ=38 REQUIRED: binary decomposition doubles columns -> coeffs
+  ~2^35 vs LOGQ=36's p/2 ~ 2^35.
+- API: labrador38_py_{init_witness,set_witness_vector,init_statement,append_constraint,
+  gen_params(zk flag!),simple_verify,prove,verify}. Layout: witness element i = deg*N int64
+  coeffs; phi = per vector, n[i] polys of deg*N coeffs consecutively; b = deg*N.
+  Dev strategy: use py_simple_verify(st,wt) to check the ENCODING before proving.
+- MEASUREMENT CAVEAT: proof size is only available via py_gen_params' printed "Estimated
+  proof size" (dch_pack_params_gen returns it but is hidden by -fvisibility=hidden). That is
+  NOT byte-exact like LNP22's prooflen; any comparison must say so.
+
+NEXT
+- Write ref/relation_zk_labrador.{c,h} (third lazer-adjacent TU, labrados headers ONLY) +
+  ref/test/bench_labrador_role_a.c, encode as above, check with py_simple_verify first.
+- Then measure zk=1 vs the LNP22 baseline and fold into SUCCINCT_PQ_PROOF_EXPERIMENT.md.
+
+## Checkpoint — 2026-08-04 — LaBRADOR run: succinct+PQ+zk measured; direction CLOSED
+
+Branch: report. No commits. Royce: "run" (the LaBRADOR driver laid out last checkpoint).
+
+RESULT: it works, and it closes the succinct-PQ-proof direction.
+- LaBRADOR is the ONLY prover tested that is succinct AND post-quantum AND zero-knowledge,
+  i.e. the only succinct candidate that actually satisfies 2020/845 Sec 4.1.
+- At this statement size it LOSES to the deployed LNP22 on every axis (~3.7x proof, ~10x
+  prove, ~10x verify). Same lesson as the STARK from the other side: succinctness is
+  asymptotic and one role-A relation (28 polys) sits deep in the fixed-overhead regime.
+- Encoding gate ACCEPT, every proof verified, 5 reps + warm-up, zk ON.
+Evidence evidence/labrador_role_a/20260804_173459. Numbers live there and in the write-up
+section 6; do not retype them elsewhere.
+
+BUILT
+- ref/relation_zk_labrador.{c,h} -- THIRD (and last) vendored-proof-library TU. Encoding
+  [A|-A]w - q*g = t', w binary via LaBRADOR's native BIN norm type, g an l2-bounded quotient.
+- ref/test/bench_labrador_role_a.c (+ Makefile target, LABRADOR_LOGQ=38 default).
+- scripts/run_labrador_role_a.sh -> evidence/labrador_role_a/<ts>/.
+
+THREE TRAPS HIT, ALL NOW IN CLAUDE.md + the runner header:
+1. src/labrados is a git submodule the README's LaZer clone does NOT fetch. That is why
+   liblazer.a had zero labrador symbols. `git submodule update --init src/labrados`.
+2. LaZer's shipped src/labradosNN_py.h declares internal N=64; the submodule it actually
+   builds defines N=256. Struct layouts disagree -> building against the shipped header
+   silently corrupts memory. Use src/labrados/labrados_python.h, -DLOGQ=NN -DNDEBUG.
+3. labrados' simple_verify/verify return 1 on SUCCESS, opposite to the setters in the same
+   header. I got this backwards first and it looked like a broken encoding. The encoding
+   gate is what localised it -- worth keeping in any future bridge.
+
+TWO THINGS I GOT WRONG AND FIXED MID-RUN (same class as the earlier %% / "dominant in BOTH"):
+- The g bound: I derived an aligned-worst-case |g|inf<=641, which LaBRADOR REFUSED as too
+  large to prove exactly. The negacyclic sum has cancellation; measured |g|inf is ~25-31.
+  Replaced with a stated-margin bound (||g||^2 <= 1e8, ~1000x honest) and documented WHY it
+  is a margin rather than a worst case.
+- LOGQ: 36 was insufficient once the quotient is in the lifting sum. 38 uses ~78% of p/2.
+
+CAVEATS THAT MUST TRAVEL (in the write-up, do not drop them)
+- The encoding is OURS and may not be LaBRADOR's best: LaZer's python/labrados.py ships its
+  own mod-q lifting helpers (num_pols_in_r, "As=t mod p -> As+qGr=t mod q"), suggesting a
+  more economical decomposition exists. So this measures LaBRADOR THROUGH THIS ENCODING.
+- Proof size is LaBRADOR's printed "Estimated proof size", NOT byte-exact like LNP22's
+  prooflen (dch_pack_params_gen is hidden by -fvisibility=hidden). Never compare silently.
+- Prove time is noisy (~18% SD). Not wired into the swap.
+
+NEXT
+- Ch5 "Reduce the proof" bullet can now be written against THREE measured results
+  (amortisation both provers, STARK, LaBRADOR) -- the direction is closed, not open.
+- Still owed: 6-8 min slides; frontmatter \TODO (Royce only).
+- Optional: measure zk=0 vs zk=1 to price zero-knowledge (one-flag change).

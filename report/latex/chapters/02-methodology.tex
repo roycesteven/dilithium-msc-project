@@ -88,11 +88,10 @@ Classifying every source file by how the reference is used
 (\cref{tab:reuse}) yields a clean split: the entire lattice core --- polynomial
 arithmetic, NTT, rounding, packing, FIPS-202 --- is reused unchanged, the only modified
 file is the \texttt{Makefile}, and the scheme, serialization, application and evaluation
-are new. No upstream source function is modified, so the security-critical lattice
-arithmetic is exactly the published reference code and every adaptor-specific line is new
-and isolated. The same posture extends to the vendored libraries ---
-\texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer \cite{lazer} --- both unmodified,
-the latter behind a single-file bridge.
+are new. No upstream function is modified, so the security-critical arithmetic is exactly
+the published reference code and every adaptor-specific line is isolated. The same posture
+extends to the vendored \texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer
+\cite{lazer}, both unmodified, the latter behind a single-file bridge.
 
 \paragraph{Data types and the matrix product.}
 LAS is a self-contained module over the reference's degree-$d$ polynomial type. Because
@@ -262,12 +261,12 @@ succeeds only if all $(n+\ell)\,d$ pass:
   \approx \left(1-\frac{\kappa}{\gamma}\right)^{(n+\ell)d}
   \approx e^{-\kappa (n+\ell) d/\gamma} = e^{-1}\approx 36.8\%,
 \end{equation}
-the last step using the design choice $\gamma=\kappa\,d\,(n+\ell)$, made in
-\cite{esgin2020post} exactly so the expected number of restarts is ``about $e<3$''.
-Expected attempts per call are therefore $1/p_{\mathrm{acc}}$: at the target setting
-\textbf{2.719 for Sign} and \textbf{2.775 for PreSign}, whose bound is tighter by one.
-PreSign is thus \emph{expected} to restart about $2\%$ more often before any adaptor
-arithmetic is counted, so the measured counters are reported beside the timings.
+the last step using the design choice $\gamma=\kappa\,d\,(n+\ell)$ from
+\cite{esgin2020post}, made exactly so the expected number of restarts is ``about $e<3$''.
+Expected attempts are therefore $1/p_{\mathrm{acc}}$: \textbf{2.719 for Sign} and
+\textbf{2.775 for PreSign}, whose bound is tighter by one, so PreSign is \emph{expected}
+to restart about $2\%$ more often before any adaptor arithmetic is counted. The measured
+counters are reported beside the timings.
 
 \paragraph{Rejection sampling: the run-validity gate.}
 Because the attempt count is geometric, per-call timings are heavy-tailed and averages
@@ -338,10 +337,9 @@ fair counterpart of an adaptor signature being another adaptor signature.
 
 The narrated demonstration of \cref{sec:res-app} shows that the two-party atomic-swap
 protocol of Esgin, Ersoy and Erkin \cite{esgin2020post} --- Figure~1 of that paper, set
-out step by step in \cref{app:swapdemo} and called simply \emph{the swap protocol} here
---- \emph{runs}. A second study measures what it \emph{costs}. Because its conclusions
-depend entirely on what is held fixed, its design is stated here rather than beside its
-results.
+out in \cref{app:swapdemo} and called simply \emph{the swap protocol} here ---
+\emph{runs}. A second study measures what it \emph{costs}; because its conclusions depend
+on what is held fixed, its design is stated here rather than beside its results.
 
 \paragraph{The venue, and why it is modelled.}
 The construction \cite{esgin2020post} states its applications over ``a UTXO-based
