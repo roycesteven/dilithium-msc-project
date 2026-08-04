@@ -1,10 +1,6 @@
 \chapter{Introduction}
 \label{ch:intro}
 
-This chapter sets out why post-quantum exotic signatures matter for blockchains, what
-this project builds, and how the dissertation is organised. It first establishes the
-context, then reviews the necessary literature, then states the aim and objectives.
-
 \section{Context and motivation}
 \label{sec:motivation}
 
@@ -41,47 +37,43 @@ these constructions are mature and deployed; in the post-quantum setting they ar
 paper-only, which makes the adaptor signature a representative, high-value exotic scheme
 to implement and evaluate.
 
-The adaptor signature is best understood through the history of the atomic swap.
-Cross-chain exchange first relied on custodial intermediaries; hash-time-locked
-contracts (HTLCs) removed the custodian by locking both transfers under one hash
-preimage, so that claiming one leg reveals the preimage unlocking the other. HTLCs,
-however, need explicit on-chain script support, place the common hash on both chains ---
-linking the two legs and, in multi-hop payments, every hop --- and enlarge the
-transactions. The adaptor signature answers these limitations
+The primitive is best understood against the atomic swap's history. Cross-chain exchange
+first relied on custodial intermediaries; hash-time-locked contracts removed the
+custodian by locking both transfers under one hash preimage, so claiming one leg reveals
+the preimage unlocking the other. Such contracts, however, need explicit on-chain script
+support, place a common hash on both chains --- linking the legs --- and enlarge the
+transactions. The adaptor signature answers all three
 \cite{poelstra2017,aumayr2021generalized} by moving the lock \emph{into the signature
 itself}: settlement transactions look like ordinary single-signer payments, atomicity is
 retained, and the witness is revealed only to the counterparty holding the matching
-pre-signature. The link removed is the explicit protocol one --- timing, amounts and
-transaction-graph analysis can still correlate the two legs.
+pre-signature. The link removed is the explicit protocol one; timing and amounts can
+still correlate the two legs.
 
 \section{Subject area and related work}
 \label{sec:relatedwork}
 
 This section reviews only the work needed to understand the problem and justify the
-approach; it is deliberately not an exhaustive survey, in line with the report
-guidance to favour depth over breadth.
+approach, favouring depth over breadth.
 
 \paragraph{Exotic signatures for post-quantum blockchains.}
-The motivating survey \cite{buser2023survey} catalogues exotic signature families ---
-multi-, aggregate, threshold, ring, blind, and adaptor signatures --- and identifies
-the shortage of efficient PQ-secure blockchain implementations as an open challenge.
-This project contributes one such implementation and evaluation.
+The motivating survey \cite{buser2023survey} catalogues exotic signature families and
+identifies the shortage of efficient PQ-secure blockchain implementations as an open
+challenge. This project contributes one such implementation and evaluation.
 
 \paragraph{Lattice signatures and Dilithium.}
 CRYSTALS-Dilithium is a lattice signature in the ``Fiat--Shamir with aborts'' family
 \cite{ducas2018crystals,lyubashevsky2012lattice}, its security reducing to the Module
-Learning With Errors (Module-LWE) and Module Short Integer Solution (Module-SIS)
-problems. It samples a masked commitment, derives a challenge by hashing, computes a
-response, and \emph{rejects and retries} when the response would leak the secret ---
-the rejection-sampling step characterising the family. Its reference implementation
-provides the polynomial arithmetic, number-theoretic transform (NTT) and SHAKE-based
-sampling (SHAKE being an extendable-output hash function) that this project reuses.
+Learning With Errors and Module Short Integer Solution problems. It samples a masked
+commitment, derives a challenge by hashing, computes a response, and \emph{rejects and
+retries} when the response would leak the secret --- the rejection-sampling step
+characterising the family. Its reference implementation provides the polynomial
+arithmetic, number-theoretic transform (NTT) and SHAKE-based sampling this project
+reuses.
 
 \paragraph{Adaptor signatures.}
-Adaptor signatures were introduced informally as ``scriptless scripts''
-\cite{poelstra2017} and later formalised, with applications to channels and swaps
-\cite{aumayr2021generalized}. The abstraction adds four algorithms to a base signature ---
-\textsc{PreSign}, \textsc{PreVerify}, \textsc{Adapt}, \textsc{Extract} --- relative
+Introduced informally as ``scriptless scripts'' \cite{poelstra2017} and later formalised
+\cite{aumayr2021generalized}, the abstraction adds four algorithms to a base signature
+--- \textsc{PreSign}, \textsc{PreVerify}, \textsc{Adapt}, \textsc{Extract} --- relative
 to a hard relation $(Y,y)$: a pre-signature can be \emph{adapted} into a full signature
 by anyone knowing the witness $y$, and publishing that signature lets anyone holding the
 pre-signature \emph{extract} $y$. Anonymous multi-hop locks generalise this to payment
@@ -89,32 +81,27 @@ paths \cite{malavolta2019anonymous}.
 
 \paragraph{Post-quantum adaptor signatures.}
 Esgin, Ersoy and Erkin proposed LAS, a lattice-based adaptor signature on a
-Dilithium-style base, with PQ payment-channel constructions \cite{esgin2020post}. LAS
-is the design implemented here. Their work is primarily theoretical --- definitions, a
-construction and security proofs --- so a practical, benchmarked, blockchain-facing
-implementation is this dissertation's contribution. Recent work such as poqeth studies
-how PQ primitives are integrated and costed on Ethereum \cite{kysil2025poqeth},
-providing a template for the on-chain side.
+Dilithium-style base \cite{esgin2020post}; it is the design implemented here. Their work
+is primarily theoretical --- definitions, a construction and security proofs --- so a
+practical, benchmarked, blockchain-facing implementation is this dissertation's
+contribution. poqeth studies how PQ primitives are integrated and costed on Ethereum
+\cite{kysil2025poqeth}, providing a template for the on-chain side.
 
 \paragraph{Classical baseline.}
 The natural answer to ``what does post-quantum cost'' is a comparison with a
-\emph{classical adaptor} signature --- not merely plain ECDSA. Mature ECDSA-adaptor
-implementations exist \cite{secp256k1zkp}; this project benchmarks against one, and
-against Dilithium itself, taking care (see \cref{ch:methodology}) to state security
-parameters explicitly so that the comparisons are fair.
+\emph{classical adaptor} signature, not merely plain ECDSA. Mature ECDSA-adaptor
+implementations exist \cite{secp256k1zkp}; this project benchmarks against one, stating
+security parameters explicitly so the comparison is fair (\cref{ch:methodology}).
 
 \section{Project category, aim, and objectives}
 \label{sec:aims}
 
 \paragraph{Category.}
 This is a \emph{systems implementation and evaluation} project grounded in existing
-research, not a proposal of a new cryptographic protocol; following the project brief,
-its emphasis is practical implementation and benchmarking rather than theoretical
-design. The contribution is a reliable, tested, benchmarked realisation of an existing
-exotic scheme (LAS, \cite{esgin2020post}) and its demonstration in a blockchain
-atomic-swap application. A genuinely new research question would require adding
-functionality on top of adaptor signatures --- functional adaptor signatures, say ---
-which is noted as future work but out of scope here.
+research, not a proposal of a new cryptographic protocol: its emphasis is practical
+implementation and benchmarking. The contribution is a reliable, tested, benchmarked
+realisation of an existing exotic scheme (LAS, \cite{esgin2020post}) and its
+demonstration in a blockchain atomic-swap application.
 
 \paragraph{Aim.}
 To implement and evaluate a post-quantum exotic signature scheme --- a lattice-based
@@ -130,12 +117,10 @@ in a post-quantum blockchain atomic-swap application.
   \item Validate correctness and robustness through functional, serialization,
         tamper, and known-answer tests, including cross-validation by a second,
         independent implementation checked against the same known-answer digest.
-  \item Benchmark LAS fairly --- at explicitly stated parameters, with repeated runs
-        and reported variance --- against a simplified Dilithium baseline at
-        identical parameters, the NIST-optimised Dilithium, and a classical
-        ECDSA-adaptor baseline, separating computation from communication cost and
-        reporting key-generation time, public-key size, signature size, signing time,
-        and verification time.
+  \item Benchmark LAS fairly --- at explicitly stated parameters, with repeated runs and
+        reported variance --- against a simplified Dilithium baseline at identical
+        parameters and a classical ECDSA-adaptor baseline, separating computation from
+        communication cost across the five standard signature metrics.
   \item Demonstrate an end-to-end post-quantum atomic swap using the implementation
         --- following the protocol of \cite{esgin2020post} verbatim, including its
         zero-knowledge proof of knowledge $\pi$ --- and discuss its feasibility.
@@ -144,9 +129,7 @@ in a post-quantum blockchain atomic-swap application.
 \section{Dissertation structure}
 \label{sec:structure}
 
-\Cref{ch:methodology} describes the methods: the LAS construction, the reuse-based
-implementation strategy, the testing approach, and the benchmarking methodology.
-\Cref{ch:results} reports the test and benchmark results and discusses their
-validity. \Cref{ch:evaluation} justifies the evaluation strategy and judges the work
-against the objectives. \Cref{ch:conclusion} concludes, reflects critically on the
-approach, and proposes future work.
+\Cref{ch:methodology} describes the methods; \cref{ch:results} reports the measurements
+and discusses their validity; \cref{ch:evaluation} judges the work against the
+objectives; \cref{ch:conclusion} concludes, reflects critically, and proposes future
+work.

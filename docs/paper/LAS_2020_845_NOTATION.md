@@ -259,9 +259,10 @@ Analysis"** incl. **Eq. (7)** (p.11–12).
 - **Stage 1 (main report figures):** parameter table, per-operation timing,
   adaptor overhead, communication component sizes. These describe the standalone
   signature/adaptor (Algorithms 1–2, §3) and its benchmarks.
-- **Stage 2 / application figures:** atomic swap, AMHL, PCN, multi-hop payloads
-  — application terminology only, from **§4** ("Applications": atomic swaps §4.1,
-  payment channel networks §4.2).
+- **Stage 2 / application figures:** atomic swap and UTXO-ledger payloads
+  — application terminology only, from **§4** ("Applications": atomic swaps §4.1;
+  §4.2's payment-channel networks are cited as paper content only, since multi-hop
+  locks are out of this project's scope).
 - Do **not** mix Stage-1 communication component-size figures with Stage-2
   off-chain / settlement payload figures.
 

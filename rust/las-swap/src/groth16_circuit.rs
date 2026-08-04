@@ -189,94 +189,151 @@ pub struct RelationCircuit<'a> {
 
 impl ConstraintSynthesizer<Fr> for RelationCircuit<'_> {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
-        let q_fr = Fr::from(Q);
-        let has_witness = self.r.is_some();
+        emit_instance(&cs, self.matrix, &self.t, self.r.as_deref())
+    }
+}
 
-        // Precompute every assignment once. Recomputing a row's quotient inside
-        // each of its KBITS closures would repeat a COLS-term dot product 14
-        // times per row for no reason.
-        let r_i8 = self.r.unwrap_or_default();
-        let quotients: Vec<u64> = if has_witness {
-            (0..ROWS).map(|o| row_quotient(self.matrix, o, &r_i8, &self.t)).collect()
-        } else {
-            Vec::new()
-        };
+/// `k` independent instances of the relation, sharing one matrix, in a single
+/// proof — the amortisation experiment (`bin/bench_amortise.rs`).
+///
+/// A party opens a swap with a **fresh** statement each time, so today each swap
+/// carries its own proof. Groth16's proof is three group elements whatever the
+/// circuit proves, so `k` instances in one proof cost the same bytes as one —
+/// the per-swap proof size falls as `1/k`. What does *not* amortise is the
+/// proving work, which grows with the constraint count, and the verifier's
+/// public input, which grows as `ROWS·k`. Measuring where those two curves cross
+/// is the point of the experiment.
+///
+/// Every instance is emitted by the same [`emit_instance`] the single-instance
+/// circuit uses, so the batched circuit proves exactly the conjunction of `k`
+/// copies of the claim configuration 2 already proves — including the
+/// load-bearing range checks. Nothing is relaxed to make the batch cheaper.
+pub struct BatchedRelationCircuit<'a> {
+    pub matrix: &'a CompositeMatrix,
+    /// One `(t, r)` per instance. `r` is `None` during setup, when only the
+    /// constraint *shape* matters.
+    pub instances: Vec<(Vec<Fr>, Option<Vec<i8>>)>,
+}
 
-        let val = |assigned: bool, v: Fr| -> Result<Fr, SynthesisError> {
-            if assigned {
-                Ok(v)
-            } else {
-                Err(SynthesisError::AssignmentMissing)
-            }
-        };
-
-        // ---- witness: r, one variable per coefficient -----------------------
-        let mut r_vars = Vec::with_capacity(COLS);
-        for j in 0..COLS {
-            r_vars.push(cs.new_witness_variable(|| {
-                val(has_witness, i8_to_fr(r_i8[j]))
-            })?);
+impl<'a> BatchedRelationCircuit<'a> {
+    /// The shape-only circuit for `circuit_specific_setup`: `k` instances with
+    /// zero public input and no witness.
+    pub fn setup_shape(matrix: &'a CompositeMatrix, k: usize) -> Self {
+        BatchedRelationCircuit {
+            matrix,
+            instances: (0..k).map(|_| (vec![Fr::from(0u64); ROWS], None)).collect(),
         }
+    }
+}
 
-        // ---- ternary bound: r^3 = r  <=>  r(r-1)(r+1) = 0  <=>  r in {-1,0,1}
-        // The norm bound ||r||inf <= 1 that §4.1 requires: proven, not assumed.
-        for (j, &rv) in r_vars.iter().enumerate() {
-            let sq = cs.new_witness_variable(|| {
-                let x = i8_to_fr(r_i8.get(j).copied().unwrap_or(0));
-                val(has_witness, x * x)
-            })?;
-            // r * r = sq
-            cs.enforce_constraint(lc!() + rv, lc!() + rv, lc!() + sq)?;
-            // sq * r = r   (i.e. r^3 = r)
-            cs.enforce_constraint(lc!() + sq, lc!() + rv, lc!() + rv)?;
+impl ConstraintSynthesizer<Fr> for BatchedRelationCircuit<'_> {
+    fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
+        for (t, r) in &self.instances {
+            emit_instance(&cs, self.matrix, t, r.as_deref())?;
         }
-
-        // ---- public input: t -------------------------------------------------
-        let mut t_vars = Vec::with_capacity(ROWS);
-        for o in 0..ROWS {
-            let t_o = self.t[o];
-            t_vars.push(cs.new_input_variable(|| Ok(t_o))?);
-        }
-
-        // ---- one linear row at a time ---------------------------------------
-        for o in 0..ROWS {
-            // Quotient bits, range-checking k' so it cannot be chosen freely.
-            // Without this the row equation could be satisfied for ANY r and the
-            // proof would establish nothing.
-            let mut k_bits = Vec::with_capacity(KBITS);
-            for b in 0..KBITS {
-                let bit = cs.new_witness_variable(|| {
-                    let k = quotients.get(o).copied().unwrap_or(0);
-                    val(has_witness, Fr::from((k >> b) & 1))
-                })?;
-                // booleanity: bit * bit = bit
-                cs.enforce_constraint(lc!() + bit, lc!() + bit, lc!() + bit)?;
-                k_bits.push(bit);
-            }
-
-            // Build the row in ONE pass: O(COLS + KBITS), not O(COLS^2).
-            //
-            //   sum_j M[o][j]·r_j  −  t_o  −  q·(sum_b 2^b·bit_b − K_OFFSET) = 0
-            let mut row = LinearCombination::<Fr>::zero();
-            for (j, &rv) in r_vars.iter().enumerate() {
-                let m = self.matrix.at(o, j);
-                if m != 0 {
-                    row = row + (Fr::from(m), rv);
-                }
-            }
-            row = row - (Fr::one_val(), t_vars[o]);
-            for (b, &bit) in k_bits.iter().enumerate() {
-                row = row - (q_fr * Fr::from(1u64 << b), bit);
-            }
-            // + q·K_OFFSET on the constant wire
-            row = row + (q_fr * Fr::from(K_OFFSET as u64), Variable::One);
-
-            // A linear constraint in R1CS form: row · 1 = 0.
-            cs.enforce_constraint(row, lc!() + Variable::One, lc!())?;
-        }
-
         Ok(())
     }
+}
+
+/// Emit the constraints for ONE instance of `∃r : M r = t mod q ∧ ‖r‖∞ ≤ 1`.
+///
+/// The single and batched circuits share this so there is exactly one
+/// implementation of the relation: a batch cannot silently prove something
+/// weaker than a single proof does.
+fn emit_instance(
+    cs: &ConstraintSystemRef<Fr>,
+    matrix: &CompositeMatrix,
+    t_in: &[Fr],
+    r_in: Option<&[i8]>,
+) -> Result<(), SynthesisError> {
+    let q_fr = Fr::from(Q);
+    let has_witness = r_in.is_some();
+    let t = t_in;
+
+    // Precompute every assignment once. Recomputing a row's quotient inside
+    // each of its KBITS closures would repeat a COLS-term dot product 14
+    // times per row for no reason.
+    let r_i8: &[i8] = r_in.unwrap_or(&[]);
+    let quotients: Vec<u64> = if has_witness {
+        (0..ROWS).map(|o| row_quotient(matrix, o, r_i8, t)).collect()
+    } else {
+        Vec::new()
+    };
+
+    let val = |assigned: bool, v: Fr| -> Result<Fr, SynthesisError> {
+        if assigned {
+            Ok(v)
+        } else {
+            Err(SynthesisError::AssignmentMissing)
+        }
+    };
+
+    // ---- witness: r, one variable per coefficient -----------------------
+    let mut r_vars = Vec::with_capacity(COLS);
+    for j in 0..COLS {
+        r_vars.push(cs.new_witness_variable(|| {
+            val(has_witness, i8_to_fr(r_i8[j]))
+        })?);
+    }
+
+    // ---- ternary bound: r^3 = r  <=>  r(r-1)(r+1) = 0  <=>  r in {-1,0,1}
+    // The norm bound ||r||inf <= 1 that §4.1 requires: proven, not assumed.
+    for (j, &rv) in r_vars.iter().enumerate() {
+        let sq = cs.new_witness_variable(|| {
+            let x = i8_to_fr(r_i8.get(j).copied().unwrap_or(0));
+            val(has_witness, x * x)
+        })?;
+        // r * r = sq
+        cs.enforce_constraint(lc!() + rv, lc!() + rv, lc!() + sq)?;
+        // sq * r = r   (i.e. r^3 = r)
+        cs.enforce_constraint(lc!() + sq, lc!() + rv, lc!() + rv)?;
+    }
+
+    // ---- public input: t -------------------------------------------------
+    let mut t_vars = Vec::with_capacity(ROWS);
+    for o in 0..ROWS {
+        let t_o = t[o];
+        t_vars.push(cs.new_input_variable(|| Ok(t_o))?);
+    }
+
+    // ---- one linear row at a time ---------------------------------------
+    for o in 0..ROWS {
+        // Quotient bits, range-checking k' so it cannot be chosen freely.
+        // Without this the row equation could be satisfied for ANY r and the
+        // proof would establish nothing.
+        let mut k_bits = Vec::with_capacity(KBITS);
+        for b in 0..KBITS {
+            let bit = cs.new_witness_variable(|| {
+                let k = quotients.get(o).copied().unwrap_or(0);
+                val(has_witness, Fr::from((k >> b) & 1))
+            })?;
+            // booleanity: bit * bit = bit
+            cs.enforce_constraint(lc!() + bit, lc!() + bit, lc!() + bit)?;
+            k_bits.push(bit);
+        }
+
+        // Build the row in ONE pass: O(COLS + KBITS), not O(COLS^2).
+        //
+        //   sum_j M[o][j]·r_j  −  t_o  −  q·(sum_b 2^b·bit_b − K_OFFSET) = 0
+        let mut row = LinearCombination::<Fr>::zero();
+        for (j, &rv) in r_vars.iter().enumerate() {
+            let m = matrix.at(o, j);
+            if m != 0 {
+                row = row + (Fr::from(m), rv);
+            }
+        }
+        row = row - (Fr::one_val(), t_vars[o]);
+        for (b, &bit) in k_bits.iter().enumerate() {
+            row = row - (q_fr * Fr::from(1u64 << b), bit);
+        }
+        // + q·K_OFFSET on the constant wire
+        row = row + (q_fr * Fr::from(K_OFFSET as u64), Variable::One);
+
+        // A linear constraint in R1CS form: row · 1 = 0.
+        cs.enforce_constraint(row, lc!() + Variable::One, lc!())?;
+    }
+
+    Ok(())
 }
 
 /// `Fr::one()` without importing the whole `One` trait at every call site.

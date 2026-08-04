@@ -60,8 +60,8 @@ per-function audit is `docs/02-methodology/FUNCTION_MAP.md`; the diff-level view
 | `ref/basesig.{c,h}` | **Algorithm 1 only**, and the ONE canonical ordinary signature of the build (Definition 3: the adaptor *inherits* KeyGen/Sign/Verify from it): `base_keygen`/`base_sign`/`base_verify` + seeded-KAT variants (`base_keygen_seed`, `base_sign_det`), `base_attempts`. No statement anywhere — also the fair comparison partner, kept out of `las.c` so neither path can contaminate the other |
 | `ref/las.{c,h}` | **Algorithm 2 only**: `las_presign/preverify/adapt/ext` + `las_presign_det`, `las_attempts` counter, `las_expected_attempts` (exact restart-rate theory for the benchmark gate) |
 | `ref/serialize.{c,h}` | the wire codec: six typed pack/unpack pairs, wire `c_tilde ‖ BitPack(z)`, validating pk/sk decoders (`base_verify_packed`, the byte-level verifier, lives in `basesig.c`) |
-| `ref/amhl.{c,h}`, `ref/chain.{c,h}` | multi-hop locks (optional tier) and the simulated ledger for the atomic-swap demo — Stage 2, not part of the Stage-1 comparison |
-| `ref/test/…` | correctness tests (1000-iteration contract, KATs, serde/tamper) and the benchmark drivers (primary: `bench_levels.c`; secondary: `bench_compare.c`, `bench_app.c`, `bench_classical.c` — see `docs/02-methodology/FUNCTION_MAP.md` §3.5) |
+| `ref/amhl.{c,h}`, `ref/chain.{c,h}` | **dead legacy, dropped from the project (2026-08-03)** — left on the pre-restructure API, does not compile, deliberately not repaired; the Stage-2 evaluation lives in `rust/las-swap/` |
+| `ref/test/…` | correctness tests (1000-iteration contract, KATs, serde/tamper) and the benchmark drivers (primary: `bench_levels.c`; secondary: `bench_compare.c`, `bench_classical.c` — see `docs/02-methodology/FUNCTION_MAP.md` §3.5) |
 
 ## 3. The Rust implementation (independent cross-language confirmation)
 

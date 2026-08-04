@@ -2,21 +2,18 @@
 \label{ch:results}
 
 This chapter reports what was measured and why the results should be believed:
-correctness first, then computation cost, then communication cost with its component
-breakdown, and finally the application results.
+correctness, computation cost, communication cost, and the application results.
 
 \section{Correctness and robustness}
 \label{sec:res-correctness}
 
 No performance claim means anything until the implementation is shown \emph{correct},
 and an adaptor signature is not correct merely because it signs and verifies --- it must
-satisfy a specific contract. \Cref{tab:contract} lists every clause and its outcome; all
-pass, with zero compiler warnings under the project's strict flags. Clauses~1--4 are the
-adaptor contract itself: a pre-signature is verifiable yet unspendable (the tripwire),
-becomes an ordinary signature once the witness is added, and completing it reveals that
-witness --- the mechanism that makes an atomic swap atomic. Clauses~5--6 are robustness,
-and clause~7 the reproducibility that lets an independent verifier be cross-checked
-against fixed vectors.
+satisfy a specific contract. \Cref{tab:contract} lists every clause; all pass, with zero
+compiler warnings. Clauses~1--4 are the adaptor contract itself: a pre-signature is
+verifiable yet unspendable (the tripwire), becomes an ordinary signature once the witness
+is added, and completing it reveals that witness --- the mechanism that makes an atomic
+swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
 
 \begin{table}[htbp]
   \centering
@@ -45,15 +42,13 @@ against fixed vectors.
 \section{Computation cost}
 \label{sec:res-compute}
 
-The primary computation result is the cost of the \emph{adaptor layer} --- what LAS adds
-to the base signature it is built on. The two paths share algorithm, parameters and
-primitives, so any difference is purely the price of adaptor functionality
-(\cref{sec:benchmethod}). \Cref{tab:overhead-l3} reports it at \emph{both} measurement
-boundaries and \cref{fig:timing} visualises the core tier. At the core boundary, at the
-target setting, every adaptor operation stays within single digits of its counterpart
-and Extract --- which has no base analogue --- is the cheapest of all; every operation
-completes in well under two milliseconds, signing and pre-signing dominating because of
-rejection sampling.
+The primary computation result is the cost of the \emph{adaptor layer}. The two paths
+share algorithm, parameters and primitives, so any difference is purely the price of
+adaptor functionality (\cref{sec:benchmethod}). \Cref{tab:overhead-l3} reports it at
+\emph{both} boundaries and \cref{fig:timing} visualises the core tier: every adaptor
+operation stays within single digits of its counterpart, Extract is the cheapest of all,
+and every operation completes in well under two milliseconds, signing and pre-signing
+dominating because of rejection sampling.
 
 \begin{table}[htbp]
   \centering
@@ -99,30 +94,24 @@ rejection sampling.
   \label{fig:timing}
 \end{figure}
 
-At the core boundary the adaptor layer is almost free in computation, and the reasons are
-structural. PreSign ($+\ovPreSign\%$ over Sign) runs the same reject loop, adding only
-$Y$ to the commitment and a tighter bound. PreVerify ($+\ovPreVerify\%$ over Verify)
-recomputes the same commitment shape with the extra $+Y$. Adapt ($+\ovAdapt\%$ over
-Verify) runs a PreVerify then adds the witness vector, costing about one verification
-plus a few polynomial additions. Extract merely subtracts $z-\hat z$ and checks
-$A\,y=Y$. None changes the asymptotic work. This is the headline of the
-standalone-signature evaluation: \emph{at the core tier} adaptor functionality costs
-single-digit percentages of extra computation at every parameter set, and the two
-operations unique to an adaptor signature cost no more than a verification each
-(\cref{fig:overhead}, appendix).
+At the core boundary the adaptor layer is almost free, and the reasons are structural.
+PreSign ($+\ovPreSign\%$ over Sign) runs the same reject loop, adding only $Y$ to the
+commitment and a tighter bound; PreVerify ($+\ovPreVerify\%$) recomputes the same
+commitment shape with the extra $+Y$; Adapt ($+\ovAdapt\%$) runs a PreVerify then adds
+the witness vector; Extract merely subtracts $z-\hat z$ and checks $A\,y=Y$. None changes
+the asymptotic work. This is the headline of the standalone-signature evaluation:
+\emph{at the core tier} adaptor functionality costs single-digit percentages at every
+parameter set, and the two operations unique to an adaptor signature cost no more than a
+verification each (\cref{fig:overhead}, appendix).
 
-That argument concerns the core tier alone. The packed-tier block of
-\cref{tab:overhead-l3} shows what changes when the boundary moves to packed bytes, as a
-wire or on-chain verifier requires: the premium grows to $+\packedOvPreSign\%$,
-$+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- an order of magnitude above the
-core-tier figures, and no longer single-digit. This gap is serialization, not adaptor
-arithmetic: each adaptor operation must additionally decode the public-key-sized
-statement $Y$ (\stmtBytesTarget~B), and Adapt re-packs the completed signature. The
-object that dominates the \emph{communication} cost (\cref{sec:res-comm}) therefore
-reappears as the dominant \emph{computation} cost once the byte boundary is included,
-so a deployment verifying from bytes should budget for the packed row. Presenting both
-tiers with each boundary stated is deliberate: reported lattice-signature timings are
-notoriously sensitive to where the boundary is drawn \cite{riou2026apples}.
+At the packed boundary the premium grows to $+\packedOvPreSign\%$,
+$+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- an order of magnitude higher. The gap
+is serialization, not adaptor arithmetic: each operation additionally decodes the
+public-key-sized statement $Y$ (\stmtBytesTarget~B). The object dominating
+\emph{communication} cost thus reappears as the dominant \emph{computation} cost once
+bytes are included, so a deployment verifying from bytes should budget for the packed row
+--- and reported lattice timings are notoriously sensitive to this boundary
+\cite{riou2026apples}.
 
 \begin{table}[htbp]
   \centering
@@ -163,30 +152,25 @@ notoriously sensitive to where the boundary is drawn \cite{riou2026apples}.
 \end{figure}
 
 Signing and pre-signing are dearer than verification because of rejection sampling,
-which is intrinsic to the Fiat--Shamir-with-aborts family rather than a defect here.
+intrinsic to the Fiat--Shamir-with-aborts family rather than a defect here.
 \Cref{eq:rejacc} predicts 2.719 attempts per Sign and 2.775 per PreSign, the latter
-restarting about $2\%$ more often because its bound is tighter by exactly one; measured
-directly, by counting attempts rather than estimating from a timing ratio, the run of
-record observed \rejAttBase{} and \rejAttLas{} respectively (\cref{tab:rejstats}), and
-\cref{fig:rejcdf} shows how quickly acceptance accumulates. At the drivers' 2500 timed
-calls the gate band ($\pm\!\sim\!8\%$) is wider than that $2\%$ separation, so the two
-counts are statistically indistinguishable at this sample size --- which is why the
-core-tier PreSign overhead ($+\ovPreSign\%$) should be read as of the same order as the
-attempt-count prediction, not as a precise constant. Only the $\approx\!10^5$-call
-Criterion harness, band $\pm\!\sim\!1\%$, resolves it.
+restarting about $2\%$ more often because its bound is tighter by one; counted directly
+rather than estimated from a timing ratio, the run of record observed \rejAttBase{} and
+\rejAttLas{} (\cref{tab:rejstats}). At 2500 timed calls the gate band
+($\pm\!\sim\!8\%$) is wider than that $2\%$ separation, so the core-tier PreSign overhead
+($+\ovPreSign\%$) should be read as of the same order as the prediction rather than as a
+precise constant; only the $\approx\!10^5$-call Criterion harness resolves it.
 
 \section{Cross-implementation check: C implementation versus Rust port}
 \label{sec:res-rust}
 
-The scheme exists twice (\cref{sec:rustport}), and the two implementations agree at
-every level at which they can be compared. At the byte level agreement is exact: the
-same packed sizes at the target setting (public key \pkBytesTarget{}~B, signature
-\sigBytesTarget{}~B, checked programmatically on every Rust run) and the same pinned
-known-answer digest (\texttt{\katDigestHead\ldots\katDigestTail}). Since that digest
-covers key generation, signing, the four adaptor operations and the serialization, a
-divergence anywhere in either implementation's sampling, algebra or encoding would flip
-it; its equality is a strong, cheap argument that the two codebases compute the same
-scheme.
+The scheme exists twice (\cref{sec:rustport}), and the two implementations agree at every
+level at which they can be compared. At the byte level agreement is exact: the same packed
+sizes (public key \pkBytesTarget{}~B, signature \sigBytesTarget{}~B, checked
+programmatically on every Rust run) and the same pinned known-answer digest
+(\texttt{\katDigestHead\ldots\katDigestTail}). Since that digest covers key generation,
+signing, the four adaptor operations and the serialization, a divergence anywhere in
+either implementation's sampling, algebra or encoding would flip it.
 
 \begin{table}[htbp]
   \centering
@@ -205,23 +189,17 @@ scheme.
   \input{generated/tab_rust}
 \end{table}
 
-Timing agreement is necessarily looser, the builds going through different compilers,
-but close: \cref{tab:rust} shows every operation agreeing within about \rustCMaxDev\%
-(largest gap \rustCMaxDevOp). More importantly the central conclusion reproduces in
-both languages. At the core tier the Rust port measures $+\rustOvPreSign\%$,
-$+\rustOvPreVerify\%$ and $\rustOvAdapt\%$ for PreSign, PreVerify and Adapt against
-their base operations --- all single-digit, like the C column beside them. The Rust
-Adapt figure is slightly \emph{negative}: at this scale the genuine overhead is smaller
-than the cost gap between the base and LAS verify paths, whose separate helpers compile
-to marginally different code, so the measurement floor rather than a real speed-up fixes
-its sign.
-The packed tier reproduces too --- $+\rustPackedOvPreSign\%$,
-$+\rustPackedOvPreVerify\%$ and $+\rustPackedOvAdapt\%$, all positive and in the C
-figures' order --- confirming that once statement decoding is included the adaptor
-premium is a cross-language signal, not a compiler artefact. Both ports' counted
-rejection rates pass the same gate, and the Criterion harness gives lower absolute
-times but the same ordering and shape (\cref{fig:criterion}). The headline results are
-therefore properties of the algorithm, not of one codebase, compiler or harness.
+Timing agreement is looser, the builds going through different compilers, but close:
+every operation agrees within about \rustCMaxDev\% (largest gap \rustCMaxDevOp). More
+importantly the central conclusion reproduces in both languages. At the core tier the Rust
+port measures $+\rustOvPreSign\%$, $+\rustOvPreVerify\%$ and $\rustOvAdapt\%$ --- all
+single-digit, like the C column beside them; the slightly \emph{negative} Adapt figure is
+the measurement floor rather than a real speed-up, the genuine overhead at this scale
+being smaller than the gap between the two verify paths. The packed tier reproduces too
+($+\rustPackedOvPreSign\%$, $+\rustPackedOvPreVerify\%$, $+\rustPackedOvAdapt\%$), all
+positive and in the C figures' order. Both ports pass the same rejection gate
+(\cref{fig:criterion}). The headline results are therefore properties of the algorithm,
+not of one codebase, compiler or harness.
 
 \begin{figure}[htbp]
   \centering
@@ -242,10 +220,9 @@ therefore properties of the algorithm, not of one codebase, compiler or harness.
 \label{sec:res-comm}
 
 The computation results show the adaptor layer is cheap at the core boundary; the size
-results show where the real cost lies. \Cref{tab:complete-l3} decomposes every LAS
-object into bytes at the target setting, to explain \emph{which} component drives the
-size rather than merely state that signatures are large. Sizes are fixed by the
-encoding, so they are reported once, as exact bytes with no dispersion.
+results show where the real cost lies. \Cref{tab:complete-l3} decomposes every LAS object
+into bytes at the target setting, explaining \emph{which} component drives the size.
+Sizes are fixed by the encoding, so they are exact and carry no dispersion.
 
 \begin{table}[htbp]
   \centering
@@ -266,43 +243,37 @@ encoding, so they are reported once, as exact bytes with no dispersion.
   \input{generated/tab_complete_target}
 \end{table}
 
-Two points follow. First, \textbf{the response $z$ is essentially the entire
-signature} --- \zPctTarget\% of it at every parameter set ---
-since the challenge travels only as its short digest $\tilde c$
-(\cref{sec:serialize}); any optimisation of LAS signatures is therefore an optimisation
-of $z$. Second, \textbf{an adaptor swap additionally transmits a public-key-sized
-statement $Y$ and a signature-sized pre-signature}, the witness being small; these are
-the only objects an adaptor scheme sends that a basic signature does not.
+Two points follow. First, \textbf{the response $z$ is essentially the entire signature}
+--- \zPctTarget\% of it at every parameter set --- since the challenge travels only as its
+short digest, so any optimisation of LAS signatures is an optimisation of $z$. Second,
+\textbf{an adaptor swap additionally transmits a public-key-sized statement $Y$ and a
+signature-sized pre-signature}: the only objects an adaptor scheme sends that a basic
+signature does not.
 
 \noindent\textbf{The sharp conclusion: the cost of LAS is not adaptor computation but
-communication --- specifically the response vector $z$ and the statement $Y$.} At the
-core tier the adaptor operations add at most $+\ovMaxAll\%$ of compute, while the
-objects moving on the wire are one to a few kilobytes, dominated by $z$. That matters
-more in a blockchain setting than ``the signature is \sigBytesTarget{} bytes'': bytes
-reaching a ledger are stored and replicated by every node, while the statement and
-pre-signature, exchanged off-chain, still cost both parties bandwidth. The response is
-stored at full width --- 18--19 bits per coefficient, neither range-reduced nor
-entropy-coded --- the clearest opportunity for reducing that footprint
-(\cref{sec:future}).
+communication --- specifically $z$ and $Y$.} The adaptor operations add at most
+$+\ovMaxAll\%$ of compute, while the objects on the wire are kilobytes. That matters more
+in a blockchain setting than ``the signature is \sigBytesTarget{} bytes'': bytes reaching
+a ledger are stored and replicated by every node, while the statement and pre-signature,
+though off-chain, still cost both parties bandwidth. The response is stored at full width,
+neither range-reduced nor entropy-coded --- the clearest opportunity for reducing that
+footprint (\cref{sec:future}).
 
 \subsection{The price of post-quantum: classical adaptor baseline}
 \label{sec:res-classical}
 
 The second baseline is a classical secp256k1 ECDSA adaptor signature
-\cite{secp256k1zkp}: the natural functional counterpart of LAS, with the same operation
-set and driving the same scriptless swaps, but resting on classical discrete-log rather
-than lattice hardness. It therefore measures the practical cost of moving from a
-classical adaptor signature to a post-quantum one. LAS is instantiated at
-\emph{Simplified Dilithium-II} and only there: secp256k1 offers roughly 128-bit
-classical security and the nearest post-quantum target is NIST level~2, so those
-dimensions are the most like-for-like engineering match, while the -III or -V settings
-would pit the classical scheme against a deliberately stronger configuration. Following
-the tier rule, LAS appears at both its boundaries while the classical scheme sits at the
-\emph{hybrid native-API boundary} (\cref{tab:tiers}), so the comparison is read
-conservatively --- against LAS's core tier it slightly flatters LAS, against its packed
-tier the classical scheme --- but the conclusions survive either way, resting on
-order-of-magnitude gaps rather than percent-level differences. \Cref{tab:classical}
-reports the comparison operation by operation.
+\cite{secp256k1zkp}: the natural functional counterpart of LAS, driving the same
+scriptless swaps but resting on discrete-log rather than lattice hardness. It measures
+the practical cost of moving from a classical adaptor signature to a post-quantum one.
+LAS is instantiated at \emph{Simplified Dilithium-II} and only there: secp256k1 offers
+roughly 128-bit classical security, so those dimensions are the most like-for-like
+engineering match, while -III or -V would pit the classical scheme against a deliberately
+stronger configuration. Following
+the tier rule, LAS appears at both its boundaries while the classical scheme sits at its
+\emph{hybrid native-API boundary}, so the comparison is read conservatively --- but the
+conclusions survive either reading, resting on order-of-magnitude gaps rather than
+percent-level differences (\cref{tab:classical}).
 
 \begin{table}[htbp]
   \centering
@@ -336,57 +307,95 @@ reports the comparison operation by operation.
   \input{generated/tab_classical}
 \end{table}
 
-Two findings stand out. First, \textbf{the post-quantum price is paid almost entirely
-in size}: LAS's signature and public key are roughly $\clRatioSig\times$ and
-$\clRatioPk\times$ larger than the classical adaptor's. In computation every LAS
-operation stays well under a millisecond; even the largest per-operation factor
-(\clRatioTimeMaxOp, about $\clRatioTimeMax\times$ a classical operation that is
-nearly free at $1.5\,\mu$s) still costs well under a millisecond absolutely. That
-factor repays decomposition, because the adaptor arithmetic is not what costs: adding
-the witness is a single pass over $(n+\ell)d$ coefficients. LAS's \textsc{Adapt} is
-dominated instead by the \textsc{PreVerify} the construction obliges it to run before
-returning, and, at the packed tier, by decoding the statement, witness, public key and
-pre-signature and re-encoding the result --- some 23 kilobytes of codec work. Its
-classical counterpart does neither, being a single scalar inversion and multiplication.
-The ratio thus compares two different quantities of work, not two speeds for the same
-work. Second, \textbf{the two
-schemes pay their adaptor overhead in opposite ways}. The classical adaptor must attach
-a discrete-logarithm-equality proof \cite{fournier2019adaptor}, making its PreSign and
-PreVerify several times its own base sign and verify. LAS folds the statement into a
-hash it already computes, and so stays within a few percent of its base at the core
-tier. The lattice adaptor layer is thus the cheaper one to add.
+Two findings stand out. First, \textbf{the post-quantum price is paid almost entirely in
+size}: LAS's signature and public key are roughly $\clRatioSig\times$ and
+$\clRatioPk\times$ larger than the classical adaptor's, while every LAS operation stays
+well under a millisecond. Even the largest per-operation factor (\clRatioTimeMaxOp,
+$\clRatioTimeMax\times$) repays decomposition, because it compares two different
+\emph{quantities of work} rather than two speeds for the same work: Algorithm~2 of
+\cite{esgin2020post} obliges \textsc{Adapt} to run \textsc{PreVerify} before returning, so
+\adaptPreVerifyPct\% of LAS's \lasAdaptPackedUs\,$\mu$s is a full lattice verification and
+the rest is largely codec, whereas \texttt{secp256k1\_ecdsa\_adaptor\_decrypt} merely
+inverts one scalar and multiplies, leaving verification to a separate exported call
+\cite{secp256k1zkp}. Charging the classical side the verification LAS cannot skip puts the
+two at \clAdaptMatchedUs\,$\mu$s against \lasAdaptPackedUs\,$\mu$s ---
+$\clRatioAdaptMatched\times$, not $\clRatioTimeMax\times$: a property of the two
+\emph{interfaces}, not of lattice arithmetic. Second, \textbf{the two schemes pay their
+adaptor overhead in opposite ways}. The classical adaptor must attach a
+discrete-logarithm-equality proof \cite{fournier2019adaptor}, making its PreSign and
+PreVerify several times its own base operations, whereas LAS folds the statement into a
+hash it already computes. The lattice adaptor layer is the cheaper one to add.
+
+\section{Testing the simplification: the adaptor on unmodified ML-DSA}
+\label{sec:res-mldsa}
+
+\Cref{sec:impl} disabled Dilithium's hint vector, Power2Round and high/low-bit
+decomposition, reasoning that the adaptor needs the exact identity $A\vecz-c\,t=w+Y$.
+That was an \emph{assertion}, so it was tested: the four adaptor operations were built a
+third time on NIST ML-DSA \emph{as FIPS~204 specifies it} \cite{1274601}, all three
+optimisations enabled. Three findings follow; the second overturns the assertion.
+
+\textbf{The naive port fails outright.} Adding the statement to the challenge hash and
+changing nothing else --- treating the hint machinery as a black box --- yields
+pre-signatures that do not pre-verify at all (\mldsaNaiveP{}/\mldsaIters{}), because the
+transmitted hint reconstructs $\mathrm{HighBits}(w)$ while the challenge committed to
+$\mathrm{HighBits}(w+Y)$. Some modification is therefore genuinely unavoidable.
+
+\textbf{But the verifier is not what must change.} Once the \emph{whole} commitment path
+moves onto $w+Y$ --- the committed high bits, the low-bits rejection test \emph{and}
+\textsc{MakeHint} --- and \textsc{PreSign} tightens its bound by the witness norm, the
+construction satisfies the full adaptor contract (\mldsaContract{} items, including four
+tamper rejections and byte-identical determinism), and, decisively, \textbf{the unmodified
+FIPS~204 verifier accepts the adapted signature} (\mldsaRepairedP{}/\mldsaIters{}). So
+\textsc{PreSign} and \textsc{PreVerify} are necessarily new algorithms, while
+\textsc{Verify} is not: a post-quantum adaptor swap could settle against a standard ML-DSA
+verifier. A matched no-statement baseline reproduces FIPS~204's own published repetition
+rates, which is what makes these rows attributable to the adaptor rather than to a porting
+error.
+
+\textbf{The size gain is real but bounded, and it relocates the bottleneck.} Measured
+against the scheme of record in one process, the adaptor layer stays single-digit on both
+constructions ($+\mldsaOvPreSign\%$ against $+\mldsaOvPreSignSimp\%$ for \textsc{PreSign}
+per attempt), and per-signature cost is close to equal for opposite reasons: ML-DSA
+restarts about twice as often (\mldsaAttempts{} against \mldsaAttemptsSimp{}) but each
+attempt is roughly half the price. What ML-DSA buys is \emph{bytes} --- the signature
+falls to \mldsaSigBytes{}\,B from \mldsaSigBytesSimp{}\,B --- but the statement $Y$ does
+not shrink at all (byte-identical at \mldsaStmtBytes\,B), because Power2Round compresses
+a public key while $Y$ enters the verification identity \emph{before} any rounding. The
+swap payload therefore improves only to \mldsaPayloadRatio$\times$, and $Y$ becomes larger
+than the signature it accompanies. \textbf{Compressing the signature moves the bottleneck
+to the statement rather than removing it}, redirecting the size question of
+\cref{sec:res-comm} and the future work of \cref{sec:future}.
+
+This is a functional demonstration, not a security argument: whether committing to
+$\mathrm{HighBits}(w+Y)$ preserves ML-DSA's unforgeability is not analysed, and is
+exactly the kind of claim \cref{sec:eval-limitations} declares out of scope.
 
 \section{Application demonstration}
 \label{sec:res-app}
 
 The implementation drives an end-to-end post-quantum atomic swap following the swap
-protocol \cite{esgin2020post} \emph{verbatim}, including its proof of knowledge $\pi$, which
-\cref{app:swapdemo} sets out step by step together with the proof's construction over
-the LaZer library \cite{lazer} and its test suite. Two results matter here. First, the
-protocol runs and every step is asserted, including the counterfactuals that a
-pre-adaptation signature fails basic verification and that $\pi$ is rejected against any
-other statement; a modelled ledger additionally carries a timeout/refund path and a
-multi-hop payment. Second, $\pi$ is what makes the second party's final step
-\emph{guaranteed} rather than merely expected: by the Module-SIS uniqueness argument of
-\cite{esgin2020post} the extracted witness equals the proven ternary one, so the adapted
-signature is certain to clear the verification bound --- without $\pi$ a malicious
-counterparty could claim and leave an unadaptable pre-signature behind. The proof
-measures approximately 31 kilobytes at a knowledge error below $2^{-127}$, and is
-exchanged off-chain only, exactly as \cite{esgin2020post} note, so it adds nothing to
-on-chain cost.
+protocol \cite{esgin2020post} \emph{verbatim}, including its proof of knowledge $\pi$
+(\cref{app:swapdemo}). Two results matter. First, the protocol runs and every step is
+asserted, including the counterfactuals that a pre-adaptation signature fails basic
+verification and that $\pi$ is rejected against any other statement. Second, $\pi$ is what
+makes the second party's final step \emph{guaranteed} rather than merely expected: by the
+Module-SIS uniqueness argument of \cite{esgin2020post} the extracted witness equals the
+proven ternary one, so the adapted signature is certain to clear the verification bound
+--- without $\pi$ a malicious counterparty could claim and leave an unadaptable
+pre-signature behind. The proof measures approximately 31 kilobytes at a knowledge error
+below $2^{-127}$ and is exchanged off-chain only.
 
 As a supporting check on deployability, native on-chain LAS verification was
 \emph{implemented} and measured on a real Solidity stack. One full verified settlement
-costs approximately \gasLasVerifiedM{} million gas (\cref{tab:onchain}; \cref{fig:onchain}),
-roughly \gasRatioVerified{}$\times$ the equivalent classical ECDSA-adaptor claim, which verifies in a native
-precompile whereas LAS runs entirely in EVM bytecode. That exceeds the EIP-7825
-per-transaction cap of $16\,777\,216$ gas. An \emph{optimistic} (Naysayer) alternative
-makes honest settlement cheap (approximately \gasNaysayClaimM{} million gas per claim) but
-leaves a worst-case fraud proof at approximately \gasNaysayDigestM{} million, also over the cap. The
-verifier's construction, its validation against the C implementation, and the Naysayer
-variant are detailed in \cref{app:naysayer}. These measurements are why the application
-was taken to a UTXO chain; they inform, but do not displace, the signature results
-above.
+costs approximately \gasLasVerifiedM{} million gas (\cref{tab:onchain};
+\cref{fig:onchain}), roughly \gasRatioVerified{}$\times$ the classical ECDSA-adaptor
+claim, which verifies in a native precompile whereas LAS runs entirely in EVM bytecode
+--- exceeding the EIP-7825 per-transaction cap of $16\,777\,216$ gas. An \emph{optimistic}
+(Naysayer) alternative makes honest settlement cheap ($\approx$\gasNaysayClaimM{} million
+gas) but leaves a worst-case fraud proof at $\approx$\gasNaysayDigestM{} million, also
+over the cap, and a fraud proof that cannot be mined is not one (\cref{app:naysayer}).
+These measurements are why the application was taken to a UTXO chain.
 
 \begin{table}[htbp]
   \centering
@@ -444,16 +453,13 @@ above.
 \section{The swap on a UTXO chain: three configurations compared}
 \label{sec:res-stage2}
 
-The demonstration above establishes that the protocol runs. This section measures what
-it \emph{costs} and isolates which component is responsible, over the UTXO ledger and
-under the design of \cref{sec:stage2method}: three configurations (\cref{tab:configs}),
-of which only the $2\to3$ step is controlled. \Cref{tab:stage2-time} gives the
-per-phase timings and \cref{tab:stage2-comm} the communication cost. Timings are the
-mean $\pm$ sample standard deviation over \stageTwoRuns{} complete swaps at the
-\emph{packed} tier, so they are not comparable with the core-tier figures of
-\cref{sec:res-compute}. Both LAS
-configurations passed the rejection gate, measuring \cfgTwoRejMeasured{} attempts per
-\textsc{PreSign} against the closed-form \cfgTwoRejExpected{}.
+The demonstration above establishes that the protocol runs; this section measures what
+it \emph{costs}, over the UTXO ledger and under the design of \cref{sec:stage2method}:
+three configurations (\cref{tab:configs}), of which only the $2\to3$ step is controlled.
+Timings are the mean $\pm$ sample standard deviation over \stageTwoRuns{} complete swaps
+at the \emph{packed} tier, so they are not comparable with \cref{sec:res-compute}. Both
+LAS configurations passed the rejection gate (\cfgTwoRejMeasured{} attempts per
+\textsc{PreSign} against the closed-form \cfgTwoRejExpected{}).
 
 \begin{table}[htbp]
   \centering
@@ -541,38 +547,32 @@ the post-quantum penalty is not where intuition puts it.
 \paragraph{The controlled comparison inverts the expected trade-off.} Replacing Groth16
 with LaZer --- same signature, same $\mathbf{A}$, same inputs --- makes the swap
 \emph{faster} by \cmpTimePctAbs{}\% while making it \emph{larger} by
-\cmpBytesPctAbs{}\%: the post-quantum system is roughly twice as quick to produce a
-proof yet emits one about \stageTwoProofSizeRatio{}$\times$ bigger (\cmpProofFrom{}\,B
-against \cmpProofTo{}\,B). Two structural facts drive this. Groth16 is \emph{succinct}
---- three group elements whatever the circuit --- but producing that proof means a
-multi-scalar multiplication over the whole constraint system, whereas LaZer is not
-succinct, its proof growing with the statement, but proving a lattice relation with
-lattice machinery avoids encoding arithmetic over a 23-bit modulus into a 254-bit
-pairing-friendly field. Verification runs the other way: Groth16 verifies in
-\cfgTwoProofVerifyMean{}\,$\mu$s against LaZer's \cfgThreeProofVerifyMean{},
-succinctness paying off exactly where it is designed to.
+\cmpBytesPctAbs{}\%: roughly twice as quick to produce a proof, yet emitting one about
+\stageTwoProofSizeRatio{}$\times$ bigger. Groth16 is \emph{succinct} --- three group
+elements whatever the circuit --- but producing that proof means a multi-scalar
+multiplication over the whole constraint system, whereas LaZer's proof grows with the
+statement yet proves a lattice relation with lattice machinery, avoiding the encoding of
+a 23-bit modulus into a 254-bit pairing-friendly field. Verification runs the other way
+(\cfgTwoProofVerifyMean{}\,$\mu$s against \cfgThreeProofVerifyMean{}), succinctness
+paying off exactly where it is designed to.
 
 \paragraph{Configuration~2's trade is worse than it looks.} Pairing security is broken
 by Shor, so its proof is precisely the component a post-quantum adversary attacks: a
-post-quantum signature does not protect a swap whose fairness argument rests on a
-classical proof. Groth16 also requires a \emph{trusted, per-circuit} setup ---
-\cfgTwoSetupTime{} here --- whose secret must be destroyed for soundness, whereas
-LaZer's parameters are public and transparent. Configuration~3 is thus not merely the
-post-quantum option: it is faster end-to-end, needs no trusted party and removes a
-quantum vulnerability, paying only in bytes.
+post-quantum signature does not protect a swap whose fairness rests on a classical proof.
+Groth16 also needs a \emph{trusted, per-circuit} setup (\cfgTwoSetupTime{}) whose secret
+must be destroyed for soundness, whereas LaZer's parameters are transparent.
+Configuration~3 is thus not merely the post-quantum option: it is faster end-to-end,
+needs no trusted party and removes a quantum vulnerability, paying only in bytes.
 
 \paragraph{Communication is again the real price, with a usability consequence.} A
-classical swap moves \cfgOneBytesTotal{}\,B in total; the fully post-quantum swap moves
+classical swap moves \cfgOneBytesTotal{}\,B; the fully post-quantum swap moves
 \cfgThreeBytesTotal{}\,B, about \stageTwoBytesRatioThree{}$\times$ more, and puts
-\stageTwoOnChainRatio{}$\times$ more on the ledgers. That on-chain multiple is what
-matters economically, since a UTXO chain prices transactions by size --- and it is also
-why the venue was changed, the same objects costing prohibitive gas on the EVM
-(\cref{tab:onchain}). In practical terms a fully post-quantum swap needs
+\stageTwoOnChainRatio{}$\times$ more on the ledgers --- the multiple that matters
+economically, since a UTXO chain prices by size. A fully post-quantum swap needs
 \cfgThreeTotalMean{}\,$\mu$s and tens of kilobytes of off-chain messaging per exchange,
-overwhelmingly the proof, against the classical swap's \cfgOneTotalMean{}\,$\mu$s:
-comfortable on a laptop, but a wide enough gap that a mobile wallet's UX assumptions
-would not port naively. No constrained device was measured, so that point should not be
-over-read (\cref{sec:res-validity}).
+overwhelmingly the proof, against \cfgOneTotalMean{}\,$\mu$s classically: comfortable on
+a laptop, but a wide enough gap that a mobile wallet's assumptions would not port
+naively. No constrained device was measured, so that point should not be over-read.
 
 \section{Transaction structure and what a UTXO chain would charge}
 \label{sec:res-txstruct}
@@ -580,10 +580,8 @@ over-read (\cref{sec:res-validity}).
 The sizes above are the model ledger's own encoding (\cref{app:utxomodel}). Laid out
 instead in Bitcoin's wire format, what does a settled swap cost, and does it fit?
 \Cref{tab:btctx} answers by projecting the \emph{measured} object sizes onto the
-serialisation of \cite{bip141,bip144,bip341}. The arithmetic is generated rather than
-hand-computed, and is accepted only if it first reproduces two published figures:
-110\,vB for a one-input, one-output P2WPKH spend and 111\,vB for its Taproot
-equivalent.
+serialisation of \cite{bip141,bip144,bip341}; the arithmetic is generated, and accepted
+only if it first reproduces two published reference figures.
 
 \begin{table}[htbp]
   \centering
@@ -607,60 +605,50 @@ equivalent.
 In raw bytes the post-quantum settlement is \btcRawRatio$\times$ the classical one; in
 virtual size --- what fees are charged on --- only \btcVsizeRatio$\times$. SegWit bills
 witness bytes at one weight unit and all others at four, and a post-quantum signature is
-\emph{entirely} witness data, so it is discounted throughout. That decision, taken long
-before anyone considered lattice signatures on Bitcoin, removes \btcDiscountSaving\,\%
-of the size penalty; on a pre-SegWit chain the same signature would sit in
-\texttt{scriptSig} and cost four times as much. It is a concrete argument for UTXO
-chains as the venue, and has no counterpart on the EVM, where calldata carries no
-comparable discount and native verification cost \gasLasVerifiedM{}\,M gas
-(\cref{tab:onchain}).
+\emph{entirely} witness data. That decision, taken long before anyone considered lattice
+signatures on Bitcoin, removes \btcDiscountSaving\,\% of the size penalty. It is a
+concrete argument for UTXO chains as the venue, with no counterpart on the EVM, where
+calldata carries no comparable discount and native verification cost
+\gasLasVerifiedM{}\,M gas (\cref{tab:onchain}).
 
 \paragraph{It fits the size limits, but not the verification rules.}
-A settlement weighs \btcThreeWeight{}\,WU against the \btcMaxStdWeight{}\,WU
-standardness limit --- \btcThreePctStd\,\% of it, leaving room for \btcMaxInputsStd{}
-such inputs in one transaction. Dividing the \btcMaxBlockWeight{}\,WU block limit by one
-settlement gives an upper bound of \btcThreePerBlock{} per block against
-\btcOnePerBlock{} classical ones; both ceilings ignore the coinbase and every competing
-transaction, so they bound relative capacity rather than predict throughput. A UTXO
-chain does impose a limit, then, but a weight limit rather than a gas limit, and one
-swap sits well inside it --- the contrast with the EVM, where native verification
-exceeded the block gas limit outright and forced the change of venue.
+A settlement weighs \btcThreeWeight{}\,WU against the \btcMaxStdWeight{}\,WU standardness
+limit --- \btcThreePctStd\,\% of it --- and the \btcMaxBlockWeight{}\,WU block limit
+admits an upper bound of \btcThreePerBlock{} settlements per block against
+\btcOnePerBlock{} classical ones, ignoring competing transactions. A UTXO chain does
+impose a limit, then, but a weight limit rather than a gas limit, and one swap sits well
+inside it --- the contrast with the EVM, where native verification exceeded the gas limit
+outright and forced the change of venue.
 
 Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
 verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340
 Schnorr and nothing else, so configurations 2 and 3 could not settle on Bitcoin as it
-stands. Closing that would need a consensus change, and this study takes no position on
-which route; \cite{esgin2020post} assumes only the venue, a UTXO chain ``where the
-signature algorithm is replaced with a lattice-based signature scheme''. Separately, the
-objects collide with limits that exist regardless: the signature is
-\btcSigOverElement$\times$ over the 520\,B consensus stack-item limit and
-\btcSigOverStdElement$\times$ over the 80\,B standardness limit
-\cite{bitcoincorepolicy}, the public key \btcPkOverElement$\times$ over the former.
-Raising them, or splitting each object across stack items and recombining it, needs an
-opcode Bitcoin does not currently enable. Both obstacles apply equally to an ordinary
-post-quantum payment: they are properties of lattice signature sizes, not of adaptor
-signatures.
+stands; \cite{esgin2020post} assumes only the venue, a UTXO chain ``where the signature
+algorithm is replaced with a lattice-based signature scheme'', and this study takes no
+position on which consensus route would deliver it. Separately, the objects collide with
+limits that exist regardless: the signature is \btcSigOverElement$\times$ over the 520\,B
+consensus stack-item limit and \btcSigOverStdElement$\times$ over the 80\,B standardness
+limit \cite{bitcoincorepolicy}. Both obstacles apply equally to an ordinary post-quantum
+payment: they are properties of lattice signature sizes, not of adaptor signatures.
 
 \section{Threats to validity}
 \label{sec:res-validity}
 
 Several factors qualify these results. All timings are machine-dependent, mitigated by
 reporting standard deviations, fixing one machine and compiler, emphasising ratios over
-absolutes, and by the cross-implementation check (\cref{sec:res-rust}). The LAS parameter
+absolutes, and by the cross-implementation check (\cref{sec:res-rust}). The parameter
 set's concrete security level is not formally established, security proofs being out of
-scope, so every cross-scheme claim is qualified by the parameters of \cref{tab:params};
-the modulus is $q\approx 2^{23}$ rather than the $2^{24}$ of \cite{esgin2020post}, which
-leaves correctness unaffected ($q>2\gamma$) but changes the security margin. The
-extracted witness is exact here, whereas the relaxed setting of \cite{esgin2020post}
-allows witness noise that can grow across long payment-channel paths; exact extraction
-sidesteps that growth but is a simplification.
+scope, so every cross-scheme claim is qualified by \cref{tab:params}; the modulus is
+FIPS~204's $q\approx 2^{23}$ rather than the $2^{24}$ of \cite{esgin2020post}, which
+leaves correctness unaffected ($q>2\gamma$) but changes the security margin. The extracted
+witness is exact here, whereas the relaxed setting of \cite{esgin2020post} allows witness
+noise that can grow across long payment paths.
 
 Two further factors are specific to \cref{sec:res-stage2}. The UTXO ledger is a model
-rather than a node (\cref{app:utxomodel}): it yields real transaction objects, real
-serialised sizes and the real leak channel on which atomicity depends, but no fees or
-confirmation latency, so on-chain byte counts are the honest proxy and are reported as
-such. That limit belongs to the venue rather than to the study, since configurations~2
-and~3 cannot settle on a real Bitcoin node without a consensus change
-(\cref{sec:res-txstruct}). Finally, the Stage-2 timings come from a single desktop
-machine (\stageTwoCpu{}), so the usability discussion above is an extrapolation, not a
-measurement on constrained hardware.
+rather than a node (\cref{app:utxomodel}): real transaction objects, real serialised sizes
+and the real leak channel atomicity depends on, but no fees or confirmation latency, so
+on-chain byte counts are the honest proxy. That limit belongs to the venue rather than the
+study, since configurations~2 and~3 cannot settle on a real node without a consensus
+change. Finally, the Stage-2 timings come from a single desktop machine
+(\stageTwoCpu{}), so the usability discussion is an extrapolation, not a measurement on
+constrained hardware.

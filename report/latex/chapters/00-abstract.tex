@@ -18,16 +18,21 @@ and an independent second implementation in Rust reproduces the wire format and 
 pinned digest byte-for-byte under a different compiler and statistical harness.
 
 The primary comparison is LAS against its own simplified Dilithium-style base at
-identical parameters and primitives, which isolates the adaptor layer's cost; a
-classical elliptic-curve (ECDSA) adaptor provides a functionality-matched ``price of
-post-quantum'' baseline. At the core measurement boundary the adaptor layer is almost
-free in computation: PreSign, PreVerify and Adapt each add at most $+\ovMaxAll\%$ over
-the basic operation they mirror, at every parameter set, and Extract is the cheapest
-operation of all. The real cost is \emph{communication} --- the signature is
-\zPctTarget\% lattice response vector $z$ at every parameter set, and an adaptor swap additionally
-transmits a public-key-sized statement. That cost reappears as computation once the byte
-boundary is included, raising the adaptor premium to
+identical parameters and primitives, which isolates the adaptor layer's cost; a classical
+elliptic-curve (ECDSA) adaptor provides a functionality-matched ``price of post-quantum''
+baseline. At the core measurement boundary the adaptor layer is almost free in
+computation: PreSign, PreVerify and Adapt each add at most $+\ovMaxAll\%$ over the basic
+operation they mirror, and Extract is the cheapest operation of all. The real cost is
+\emph{communication} --- the signature is \zPctTarget\% lattice response vector, and an
+adaptor swap additionally transmits a public-key-sized statement --- and that cost
+reappears as computation once the byte boundary is included, raising the premium to
 $+\packedOvPreSign$--$\packedOvAdapt\%$.
+
+Building the same construction on unmodified NIST ML-DSA tests the simplification the
+implementation rests on, and corrects it: the signing side must indeed be redesigned, but
+the standard verifier need not be, and it accepts the adapted signature unchanged. That
+route halves the signature at equal computation while leaving the statement untouched, so
+it relocates the communication bottleneck rather than removing it.
 
 Taking the protocol to a UTXO ledger, the venue the original construction assumes,
 sharpens the conclusion: at the application level the signature is not the dominant cost

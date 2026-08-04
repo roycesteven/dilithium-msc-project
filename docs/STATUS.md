@@ -26,12 +26,10 @@ functions were written first, and why) →
 | D2 | 8-point adaptor contract, 1000 iters, modes 2/3/5, 100% correct | ✅ | ✅ | ✅ | `./test/test_las2 ./test/test_las3 ./test/test_las5` |
 | D3 | Atomic swap (2-party, 2-chain), narrated + asserted — **rewritten 2026-07-19 to paper §4.1 Fig. 1 verbatim** (witness holder commits first, π gate, byte-level tripwire) | ✅ | ✅ | ✅ | needs LaZer (README "π + atomic swap"); `make test/test_swap3 && ./test/test_swap3` |
 | D4 | Scriptless HTLC ledger: swap / timeout-refund / same-Y PCN | ✅ | ✅ | ✅ | `make test/test_pcn3 && ./test/test_pcn3` |
-| D5 | AMHL multi-hop (γ−κ−K, distinct Y_j, wormhole-resistant, refund) — *bonus* | ✅ | ✅ | ✅ | `make test/test_amhl3 && ./test/test_amhl3` |
 | D6 | Byte serialisation + validating decoder + `base_verify_packed`; swept across parameter sets (paper + D2/D3/D5, parameter-derived `z` width) | ✅ | ✅ | ✅ | `make test/test_serde3 test/test_serde_l2 test/test_serde_l3 test/test_serde_l5 && ./test/test_serde3 && ./test/test_serde_l2 && ./test/test_serde_l3 && ./test/test_serde_l5` |
 | D7 | Deterministic API + pinned KAT (reproducibility, C4) | ✅ | ✅ | ✅ | `make test/test_kat3 && ./test/test_kat3` |
 | D8 | Benchmark 1 — per-op timings + **direct** rejection rate | ✅ | ✅ | ✅ | `make test/bench_las3 && ./test/bench_las3` |
 | D9 | Benchmark 2 — LAS vs optimised Dilithium-3 (context; superseded as headline by D20) | ✅ | ✅ | ✅ | `make test/bench_compare3 && ./test/bench_compare3` |
-| D10 | Benchmark 3 — application cost (swap payload + AMHL-vs-K) | ✅ | ✅ | ✅ | `make test/bench_app3 && ./test/bench_app3` |
 | D11 | Benchmark 4 — **classical adaptor baseline** (ECDSA, same machine) | ✅ | ✅ | ✅ | clone secp256k1-zkp (README.md §4.1), `make test/bench_classical && ./test/bench_classical` |
 | D12 | Function map (reused/modified/added; 0 upstream modified) | ✅ | n/a | ✅ | `docs/02-methodology/FUNCTION_MAP.md` |
 | D13 | Reproducibility README + recorded provenance/toolchain | ✅ | n/a | ✅ | `README.md` |
@@ -42,16 +40,17 @@ functions were written first, and why) →
 | D24 | **Base-signature correctness test** (`basesig.c`, **CHECK**-gated, 1000 iters × paper/2/3/5): honest verify, tamper/wrong-key rejection, cross-module equivalence with `las.c`, cross-path interlock (tripwire + adapted-verifies-under-base + exact Ext), + 4 negative tests (wrong statement, wrong witness, tampered pre-signature, tampered adapted signature) | 🟡 ready (build via `make`) | ⬜ run by Royce | ✅ | `make test/test_basesig_paper test/test_basesig2 test/test_basesig3 test/test_basesig5 && ./test/test_basesig_paper` |
 | D25 | **Fig. 1 proof of knowledge π** (2026-07-19; Royce-directed scope extension): `relation_zk.{c,h}` + `relation_zk_lazer.{c,h}` over vendored LaZer; binary decomposition `[A\|−A]`; knowledge error ≤ 2⁻¹²⁷; measured proof ≈ 30.7 KB off-chain; committed params `relation_zk_params.h`; Rust twin `relation_zk.rs` (`--features relation-zk`, same C bridge) | ✅ | ✅ | ✅ | needs LaZer (README "π + atomic swap"); `make test/test_zkp3 && ./test/test_zkp3`; Rust: `cargo test --offline --features relation-zk --test las_zkp --test las_swap` |
 | D26 | **Stage-2 UTXO atomic swap, three configurations** (Meeting-7): `rust/las-swap/` — UTXO ledger per paper §4 (signature algorithm as a parameter), Fig. 1 driver verbatim, honest path + timeout/refund; (1) classical ECDSA adaptor, (2) LAS + Groth16 over `∃r: Ar=t ∧ ‖r‖∞≤1` (own R1CS circuit, arkworks 0.4/BN254), (3) LAS + LaZer. Measured on time + communication incl. off-chain messages; rejection gate wired | ✅ | ✅ | ✅ | `cd rust/las-swap && cargo run --release --bin bench_swap --features secp256k1,groth16,relation-zk`; evidence `evidence/stage2/20260725_202359/`; write-up `report/latex/chapters/03-results.tex` §3.6 |
+| D27 | **ML-DSA adaptor experiment, complete** (Meeting-8, Wang: *"just try it"*; 2026-08-03): LAS built on NIST FIPS 204 **as specified** — hint vector, Power2Round and the high/low-bit split all **enabled** — as a full scheme with its own wire format, in three binaries: (a) `test_mldsa_hint` diagnostic (which feature breaks a naive port), (b) `test_mldsa_las` itemised contract **13/13 at ML-DSA-44/65/87** incl. 4 tamper rejections + malformed-input rejection + determinism, (c) `bench_mldsa_compare` head-to-head against the simplified scheme with **both constructions in one binary**. Converts the project's *assertion* into a *demonstration* and **corrects it**: the signer's side must be modified (naive port fails PreVerify 0/200), the **verifier's must not** (unmodified `crypto_sign_verify` accepts the adapted signature 200/200). Cost: adaptor overhead single-digit % on both constructions; ML-DSA halves the signature (3309 vs 6736 B) at equal compute, but the statement `Y` is byte-identical (4416 B), so the swap payload only reaches 0.69×. Functional demonstration only — security of committing to `HighBits(w+Y)` is **not** analysed | ✅ | ✅ | ✅ | `./scripts/run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`; write-up `docs/03-results/MLDSA_HINT_EXPERIMENT.md` |
 | D21 | **Two-branch code-diff view** (Meeting-3): `dilithium-baseline` (pristine) vs `main`; 0 upstream sources changed | ✅ | n/a | ✅ | `git diff --name-status dilithium-baseline main -- ref/`; `docs/02-methodology/CODE_DIFF_VIEW.md` |
 | D22 | **LaTeX report scaffold** (Meeting-3): muthesis.cls, by chapter, official title, real benchmark tables, builds to PDF | 🟡 | n/a | ✅ | `cd report/latex && make` (TODOs: student id, figure, machine-of-record) |
-| D16 | Parameter migration to paper's q≈2²⁴ | ⬜ | ⬜ | documented as future work | — |
+| D16 | ~~Parameter migration to paper's q≈2²⁴~~ — **DROPPED** (2026-08-03): NIST FIPS 204 is the parameter authority, so `q = 8380417` is *correct*, not a shortfall. Superseded by the ML-DSA hint experiment (D27) | n/a | n/a | n/a | — |
 | D17 | On-chain LAS *verification* — **complete native Solidity verifier** implemented (`evm/src/LASVerifier.sol`, `library LASVerify`; reuses vendored ZKNox ETHDILITHIUM primitives SHAKE256/NTT/SampleInBall; validated end-to-end vs C — **accepts** golden adapted sig, **rejects** tamper; wired into `AdaptorSwap.claimLASVerified`, securely bound by a fund-time `keccak256(A',t,M)` commitment) | ✅ | ✅ | ✅ | `cd ref && make test/export_verify_vector && ./test/export_verify_vector ../evm/test/vectors; cd ../evm && forge test` — **measured ≈56.5M gas**; > EIP-7825 per-tx cap (16,777,216) ⇒ a *deployed* precompile / zk proof / Naysayer scheme remains future work |
 | D18 | Second LAS-family scheme (application-layer) | ⬜ | ⬜ | n/a | — *optional stretch* |
 | D19 | Video (6–8 min) | ⬜ | ⬜ | n/a | see §5 storyboard |
 
 **Headline:** every *required* Meeting-2 deliverable (Stage 1, Stage 2, both
-benchmark baselines, function map, reproducibility) is ✅ done & tested. AMHL,
-serialisation, KATs, **and the on-chain Solidity gas benchmark (D15)** are ✅ done.
+benchmark baselines, function map, reproducibility) is ✅ done & tested.
+Serialisation, KATs, **and the on-chain Solidity gas benchmark (D15)** are ✅ done.
 What remains is the **report polish** (D14), the **video** (D19), and the
 explicitly-optional tier (D16–D18).
 
@@ -124,8 +123,6 @@ All run with zero compiler warnings under
 | `test_las{2,3,5}` | 1000 each, modes 2/3/5 | PreVerify accepts; **Verify rejects pre-sig (tripwire)**; adapted σ verifies; Ext recovers y **exactly**; Sign/Verify round-trip; bit-flip forgery rejected |
 | `test_swap3` | 1 narrated run | **Fig. 1 verbatim incl. π**: Bob's abort gate (π + PreVerify); π rejected against any other statement; raw pre-signature *bytes* unspendable (both legs); two-leg atomicity; post-Ext `‖y′‖∞ ≤ 1 ∧ y′ = y` |
 | `test_zkp3` | 1 statement + sweeps | π completeness; single-byte tamper sweep rejected; wrong-statement rejected; non-ternary (R′_A) witness refused by the prover. Rust twins: `las_zkp.rs`, `las_swap.rs` (same C bridge) |
-| `test_pcn3` | 3 scenarios | cross-chain swap; timeout-refund (no coins lost); same-Y multi-hop PCN |
-| `test_amhl3` | K=4 happy + K=2 refund | distinct Y_j; **wormhole resistance** (s_K can't open hop 1); ‖s_j‖∞≤j; exact cascade recovery; refund |
 | `test_serde3` | 256 random + exhaustive | round-trip pk/sk/sig; verify-from-bytes; tripwire survives packing; **all 4640 byte-flips rejected at Verify** (wire = `c_tilde ‖ BitPack(z)`); malformed pk/sk input rejected |
 | `test_kat3` | 4 fixed vectors | full deterministic pipeline; byte-identical re-runs; **pinned SHAKE256 digest match** |
 
@@ -208,7 +205,7 @@ finding is what motivated the Meeting-7 pivot of Stage 2 to a UTXO chain**
 | Abstract (5%) | `report/REPORT_DRAFT.md` Abstract | executive summary w/ key results |
 | Introductory material (20%) | report §1 + `docs/LAS.md §1, 1.1` | quantum threat, 2×2 framing, related work (LAS / survey / poqeth), objectives O1–O5 |
 | Methodology (20%) | report §2–3 + `docs/LAS.md §2–5`, `docs/02-methodology/THEORY_IMPL_BRIDGE.md`, `docs/02-methodology/FUNCTION_MAP.md` | variant-B design, simplified-scheme & param justification, alternatives rejected, reused-vs-added table |
-| Evaluation (20%) | report §4 + `docs/LAS.md §8–8.3` | **two baselines**, 2×2 matrix, direct rejection measurement, AMHL-vs-K, correctness 100% |
+| Evaluation (20%) | report §4 + `docs/LAS.md §8–8.3` | **two baselines**, 2×2 matrix, direct rejection measurement, parameter-sensitivity sweep, correctness 100% |
 | Conclusion (10%) | report §6 | conclusions vs objectives + ordered future work |
 | Format/structure (5%) | report headings, numbered tables/figs, refs | — (needs figure redraw + reference formatting pass) |
 | Project achievement (20%) | whole artefact | first public LAS; first exotic-PQ-on-chain; 0 upstream fns modified; zero-warning build; tamper/KAT robustness |
@@ -218,8 +215,8 @@ finding is what motivated the Meeting-7 pivot of Stage 2 to a UTXO chain**
 ## 5. Video storyboard hook (6–8 min — D19, not started)
 
 Suggested arc that *complements* (not repeats) the report: (1) the 2×2 quadrant
-and why the exotic-PQ cell is empty [30s]; (2) live `./test/test_amhl3` showing the
-wormhole-resistance assertion + norm growth scrolling [90s]; (3) animate the swap
+and why the exotic-PQ cell is empty [30s]; (2) live `./test/test_contract3` showing the
+itemised 8-point adaptor contract scrolling to PASS [90s]; (3) animate the swap
 cascade (Fig. 3) with the "publishing σ reveals y" reveal [120s]; (4) the
 "price of PQ" bar chart — sizes ×29–89 vs near-flat adaptor overhead, the
 counter-intuitive inverted-overhead result [120s]; (5) `test_serde3` tamper test

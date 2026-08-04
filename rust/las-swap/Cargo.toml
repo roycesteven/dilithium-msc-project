@@ -73,5 +73,11 @@ groth16 = [
 name = "bench_swap"
 path = "src/bin/bench_swap.rs"
 
+# Does the role-A proof amortise across swaps? Builds without `groth16` (and
+# then reports that it needs the feature) so `cargo build` stays green.
+[[bin]]
+name = "bench_amortise"
+path = "src/bin/bench_amortise.rs"
+
 [profile.release]
 opt-level = 3

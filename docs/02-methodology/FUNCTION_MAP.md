@@ -6,7 +6,7 @@ the report's "reused vs modified vs added" table (report skeleton B4).*
 
 **Headline:** **zero upstream Dilithium source functions were modified.** LAS is
 implemented as a set of **new, self-contained modules** (`las`, `basesig`,
-`serialize`, `amhl`, `chain`) that *call* a small subset of Dilithium's mode-independent
+`setup`, `relation`, `serialize`) that *call* a small subset of Dilithium's mode-independent
 arithmetic/hash primitives as-is. The only edit to an existing file is the
 `Makefile`, which gains additive build targets for the new modules. This is the
 "clean diff = visible contribution" design choice (see §4).
@@ -112,15 +112,6 @@ from bytes). The `z` field width is parameter-derived (`LAS_Z_COEFF_BITS` = 18 b
 the paper/D2 sets, 19 for D3/D5), so every parameter set packs losslessly. Sizes
 (paper/D2): pk 2944 B, sk 512 B, sig 4640 B.
 
-### 3.3 `amhl.{c,h}` — multi-hop locks (optional/bonus tier)
-`amhl_setup_gen` (cumulative statements `Y_j=A·(l₁+…+l_j)`), `amhl_norm`,
-`amhl_recover_prev`.
-
-### 3.4 `chain.{c,h}` — toy ledger for the swap/PCN demos
-`chain_init`, `chain_account_add`, `chain_advance`, `chain_balance`,
-`chain_fund_swap`, `chain_fund_swap_k`, `chain_claim_swap`,
-`chain_extract_witness`, `chain_refund_swap`.
-
 ### 3.5 Tests / benchmarks (`ref/test/`)
 Functional / KAT: `test_las` (1000-iter 8-point contract, modes 2/3/5),
 `test_basesig` (1000-iter **CHECK**-gated base-signature correctness: honest verify +
@@ -129,7 +120,7 @@ tamper/wrong-key rejection + cross-module equivalence with `las.c` + cross-path 
 adapted signature; paper/2/3/5),
 `test_swap` (paper §4.1 Fig. 1 verbatim incl. π; opt-in, needs LaZer), `test_zkp`
 (π completeness / tamper / wrong-statement / non-ternary refusal; opt-in),
-`test_pcn` (same-Y HTLC), `test_amhl` (multi-hop), `test_serde` (round-trip /
+`test_serde` (round-trip /
 verify-from-bytes / tamper, swept across parameter sets — `test_serde3` paper dims plus
 `test_serde_l2/l3/l5`), `test_kat` (pinned SHAKE256 digest).
 Benchmarks: `bench_levels` (**primary fair** benchmark — base path `basesig.c` vs LAS

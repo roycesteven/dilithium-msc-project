@@ -238,8 +238,9 @@ Gas does not exist here, so per §16.3 the axes are **time** and **communication
 ## 9. Explicitly out of scope for this stage
 
 Live testnet/mainnet deployment · EVM/Solidity work (deferred) · real network sockets
-(messages passed directly, §16.4) · on-chain π · AMHL multi-hop (bonus, already done) ·
-parameter migration to q≈2²⁴.
+(messages passed directly, §16.4) · on-chain π · AMHL multi-hop (**dropped from the
+project entirely**, 2026-08-03) · parameter migration to q≈2²⁴ (**dropped**: FIPS 204
+is the parameter authority).
 
 ---
 

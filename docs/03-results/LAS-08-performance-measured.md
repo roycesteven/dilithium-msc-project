@@ -236,35 +236,11 @@ Adapt + Ext) is a few milliseconds (a single un-averaged sample, dominated by th
 two rejection-sampled pre-signs, so it varies run to run). The harness re-asserts
 the fairness invariant (adapted sigs verify, pre-sigs do not).
 
-**(2) Multi-hop AMHL payment — cost as a function of path length K** (40 routes per
-K, mode 3; `attempts/presig` measured directly):
-
-| K | bound `γ−κ−K` | #pre-sigs | attempts/presig | presig time (ms) | settlement sigs | public statements | max `‖s_j‖∞` |
-|--:|--:|--:|--:|--:|--:|--:|--:|
-| 1 | 122820 | 1 | 2.60 | 0.74 | 4 672 B | 2 944 B | 1 |
-| 2 | 122819 | 2 | 2.30 | 1.29 | 9 344 B | 5 888 B | 2 |
-| 4 | 122817 | 4 | 2.73 | 3.01 | 18 688 B | 11 776 B | 4 |
-| 6 | 122815 | 6 | 2.95 | 4.97 | 28 032 B | 17 664 B | 6 |
-| 8 | 122813 | 8 | 2.91 | 6.61 | 37 376 B | 23 552 B | 7 |
-
-*(Representative run; the byte columns are exact — they are the `serialize.c`
-sizes `K·LAS_SIG_BYTES` and `K·LAS_PK_BYTES` — but `attempts/presig`, `presig
-time` and the realised `max‖s_j‖∞` (≤ K) are random/machine-dependent and vary
-between runs.)*
-
-Three findings for the report:
-1. **Settlement footprint is linear in K** — `K` adapted signatures + `K` public
-   statements (payload proxy, not gas); no super-linear blow-up.
-2. **Witness norm grows with the hop index, `‖s_j‖∞ ≤ j ≤ K`** (each `s_j` is a sum
-   of `j` ternary vectors; the realised maximum is at or just below `K`, e.g. 7–8
-   at K=8 across runs), the "knowledge gap" made concrete and the precise reason
-   every hop pre-signs at `γ−κ−K`.
-3. **The `γ−κ−K` tightening is performance-negligible.** Going `K = 1 → 8` shrinks
-   the accept band by `7/(γ−κ) ≈ 0.0057 %`, so `attempts/presig` is flat in `K`
-   (≈2.7–3.0, the variation is sampling noise). AMHL therefore adds **no per-hop
-   signing penalty** beyond the unavoidable "K hops ⇒ K pre-signatures." This is a
-   genuine, slightly counter-intuitive result: the bound change that makes
-   multi-hop *correct* costs essentially nothing in *speed*.
+> **Multi-hop (AMHL) results removed, 2026-08-03.** An earlier revision reported an
+> AMHL cost-vs-path-length table here. Multi-hop locks were subsequently **dropped
+> from the project**, the driver (`ref/test/bench_app.c`) no longer builds against
+> the current API, and no claim in the report rests on those figures. They are
+> therefore withdrawn rather than restated.
 
 ### 8.3 Classical adaptor baseline — "the price of post-quantum" (`ref/test/bench_classical.c`)
 
@@ -321,6 +297,37 @@ harness (which mirrors the LAS operation set one-to-one) is ours. Reproduce via
    tripwire, Section 4.2). LAS's adapted signature is indistinguishable from an
    ordinary one; the classical adapted signature is too, but its pre-signature
    pipeline needs a second verifier implementation on the wire.
+4. **Why `Adapt` shows the largest factor — and why it is not a speed gap**
+   (supervisor question, Meeting 8; answered in the report at §3.6 with macros
+   derived from `evidence/latest`, not with the illustrative figures above). The
+   two `Adapt` calls do *different amounts of work*:
+   - **LAS is obliged to verify.** Algorithm 2 of eprint 2020/845 (line 21) makes
+     `Adapt` run `PreVerify` and return ⊥ if it fails, so `las_adapt` performs a
+     full lattice verification — NTT of `ẑ`, the `A'·ẑ` product, `c·t`, the
+     inverse NTT and a SHAKE256 pass over `pk ‖ w+Y ‖ M` — before it adds anything.
+     That mandated verification is the *majority* of the measured `Adapt` time
+     (macro `\adaptPreVerifyPct`).
+   - **The adaptation proper is trivial**: `las_polyvecm_add` over `(n+ℓ)·d`
+     coefficients plus a reduce. It is not what costs.
+   - **The packed tier adds codec, not arithmetic**: `las_adapt_packed`
+     validating-decodes `σ̂`, `Y`, `r'` and `pk` and re-encodes `σ`
+     (macro `\adaptCodecKB`).
+   - **The classical call does none of this.**
+     `secp256k1_ecdsa_adaptor_decrypt` (third_party/secp256k1-zkp,
+     `src/modules/ecdsa_adaptor/main_impl.h`) deserialises the 162-byte adaptor
+     signature, rejects a zero decryption key, computes `s = s' · y⁻¹` with one
+     scalar inversion and one multiplication, conditionally negates for low-S and
+     saves. **There is no group operation and no verification** — verifying is the
+     separate exported `secp256k1_ecdsa_adaptor_verify`, which the caller must
+     invoke itself.
+   The like-for-like comparison therefore charges the classical side that separate
+   verify call. Doing so (macros `\clAdaptMatchedUs`, `\clRatioAdaptMatched`)
+   collapses the headline factor by roughly two orders of magnitude. The remaining
+   difference is the expected lattice-vs-elliptic-curve verification gap, already
+   visible in the `Verify` row. **The ~270× figure is a property of the two APIs'
+   contracts, not of lattice arithmetic**, and the earlier explanation ("the
+   pre-signature is huge") was wrong: size drives the codec term only, which is
+   the smaller of the two.
 
 **Honest caveats (state in the report):** libsecp256k1 is constant-time, heavily
 optimised production code, while our LAS is a reference-style simplified scheme —

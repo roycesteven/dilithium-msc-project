@@ -379,3 +379,352 @@ Next action:
 - Trim 8,955 -> 8,000 (955 words). Duplication/filler exhausted; remaining source is the
   ~40 sentences over 40 words plus further high-level-ing of sec 2.6 (848 w) and 2.7.
 - Fill the frontmatter \TODO (student id, prior degrees, acknowledgements) -- Royce only.
+
+## Checkpoint — 2026-08-03 — remaining-work sweep: AMHL cleanup, Adapt gap, ML-DSA hint experiment, EVM/IPFS write-ups
+
+Branch: report. No commits made. Royce mid-session: "skip the report for the moment,
+focus on the work being done first" -> report edits paused after the Adapt fix; Ch4/Ch5
+report follow-ups are recorded as owed in CLAUDE.md.
+
+DONE
+1. AMHL cleanup (was owed in CLAUDE.md). Report: tab:reuse row, 03-results multi-hop
+   result claim, A-appendix "three scenarios" -> two. Docs: 51 edits across 22 files via
+   two assertion-guarded scripts (every anchor asserted to match exactly once, no file
+   written unless all matched). Literature mentions kept per the (a)/(b) test; dead
+   sections replaced by a DROPPED banner rather than erased. Also removed the dead
+   bench_app3/test_pcn3/test_amhl3 targets from ref/Makefile `all`.
+2. Adapt ~270x explanation (Wang, owed). Root cause found by reading BOTH algorithms:
+   eprint 2020/845 Alg. 2 line 21 obliges LAS Adapt to run PreVerify; secp256k1's
+   ecdsa_adaptor_decrypt does NOT verify (deserialise + one scalar inverse + one mul;
+   verification is a separate exported call). So the ratio compares different work.
+   Added 6 DERIVED macros to scripts/gen_report_data.py (nothing typed): 69% of LAS
+   Adapt is the mandated PreVerify; like-for-like (charging classical its verify) is
+   3x, not 270x; codec 15.3 kB. Regenerated generated/*.tex; rewrote 03-results.tex
+   §3.6. Note: the old prose said "some 23 kilobytes" - that was the D3 figure in a D2
+   table; now a macro at the table's own parameter set.
+   The earlier answer "the pre-signature is huge" was wrong: size drives only the
+   smaller (codec) term.
+3. ML-DSA HINT EXPERIMENT (highest-novelty item) - built, run, evidence captured.
+   New: ref/mldsa_las.{c,h} (structural mirror of ref/sign.c, [REUSED]/[CHANGED]/[NEW]
+   annotations, zero upstream functions modified), ref/test/test_mldsa_hint.c,
+   Makefile targets test/test_mldsa_hint{2,3,5}, scripts/run_mldsa_hint_experiment.sh,
+   write-up docs/03-results/MLDSA_HINT_EXPERIMENT.md, STATUS D27.
+   Evidence: evidence/mldsa_hint/20260803_124058 (all three ML-DSA sets, 200 iters).
+   THE RESULT CORRECTS THE PROJECT'S OWN CLAIM:
+     - signer side MUST be modified: naive port (statement in the hash, nothing else)
+       fails PreVerify 0/200. The whole commitment path - committed high bits,
+       low-bits rejection test AND MakeHint - has to move onto w+Y, and PreSign must
+       tighten to GAMMA1-BETA-ETA.
+     - verifier side must NOT: the UNMODIFIED FIPS 204 crypto_sign_verify accepts the
+       adapted signature 200/200 at ML-DSA-44/65/87, with hint + Power2Round +
+       high/low-bit split all ENABLED.
+     - cost ~0 in rejection sampling (+7.2% at ML-DSA-65, within the tightened-bound
+       prediction); statement Y is LARGER than the signature at every set (4416 vs
+       3309 B at -65) because Power2Round cannot compress Y.
+   METHOD NOTE worth keeping: the first run showed P4 failing 0/200 in BOTH variants -
+   which looked like a headline finding and was actually a harness bug. PreSign/
+   PreVerify omitted FIPS 204's 2-byte context prefix {0,0} that crypto_sign_verify
+   absorbs into mu. Fixed, and a matched no-statement baseline (VBASE) was added as a
+   FIDELITY GATE: it must verify under the stock verifier, and it reproduces FIPS 204's
+   own repetition rates (4.255/5.105/3.865 vs ~4.25/5.1/3.85). Without that gate the
+   bug would have shipped as a result.
+   CAVEAT that must travel with the claim: functional demonstration only - the security
+   of committing to HighBits(w+Y) is NOT analysed (security analysis stays out of scope).
+4. EVM/Naysayer write-up: docs/02-methodology/EVM_TX_STRUCTURE.md - the EVM counterpart
+   of BITCOIN_TX_STRUCTURE.md, per Meeting 8's "same question applies to the EVM".
+   No new measurement; quotes evidence/onchain/latest. Key contrast recorded: Ethereum
+   needs NO consensus change (LAS is application payload in `data`, never the tx's own
+   secp256k1 signature) but the only verifying path is 3.4x over the EIP-7825 cap;
+   Bitcoin needs a consensus change but then meters by size. Naysayer stated as a
+   negative result (naysayDigest 1.7x over the cap).
+5. IPFS fallback: docs/04-evaluation/IPFS_OFFCHAIN_STORAGE.md. Documentation only.
+   Headline: the swap needs none of it (pi is a direct party-to-party message); for the
+   optimistic verifier, data-availability failure becomes a SOUNDNESS failure.
+6. Verified Royce's ChatGPT future-work list against Wang's rulings - see the reply.
+   Two items rejected: multi-hop/payment channels (DROPPED by standing ruling, removed
+   from the docs in item 1 today) and "port to ML-DSA" as future work (it is item 3,
+   already done, and its purpose is evidential not production).
+
+WHAT I RAN (deviates from the usual "Royce runs everything"): the hint experiment
+(a correctness diagnostic whose OUTPUT is the deliverable - writing it up unrun would
+have meant guessing), plus scripts/gen_report_data.py. No benchmark was run; no timing
+number was produced or changed.
+
+NEXT
+- Report (deferred by Royce): fold the hint result into Ch. 4 - it corrects the claim at
+  04-evaluation.tex:169 - and rewrite Ch. 5 future work (drop the q~2^24 bullet).
+- 6-8 minute slides.
+- Word count re-check after the above; frontmatter TODO is Royce-only.
+
+## Checkpoint — 2026-08-03 (cont.) — full ML-DSA adaptor experiment + head-to-head benchmark
+
+Branch: report. No commits. Royce: "lakukan full ML-DSA experiment secara utuh dan
+komprehensif, lalu lakukan comparison benchmark dengan implementasi yang ada sekarang."
+
+BUILT (all under evidence/mldsa_hint/latest, runner run for modes 2/3/5):
+- ref/mldsa_las.{c,h} completed into a FULL scheme: added the wire format --
+  statement = 23-bit-per-coefficient codec (Power2Round cannot compress Y, it enters
+  the identity before rounding), witness = ML-DSA's own polyeta codec, BOTH decoders
+  validating. Also fixed mldsa_las_gen to leave Y canonical in [0,Q) (polyveck_reduce
+  leaves centred reps, which broke the codec round-trip).
+- ref/test/test_mldsa_las.c: itemised contract, 13 items -- 7 positive, 5 negative
+  (tampered msg / tampered pre-sig / wrong statement / wrong witness / malformed
+  statement bytes), 1 determinism. PASS 13/13 at ML-DSA-44/65/87.
+- ref/test/bench_mldsa_compare.c: head-to-head, BOTH constructions in ONE binary
+  (name spaces don't collide: LAS_N/ELL/KAPPA vs K/L/GAMMA1/GAMMA2). Same protocol as
+  bench_levels (5 reps x 500/1000, mean+-SD, direct attempt counting).
+- Makefile: test_mldsa_las{2,3,5} + bench_mldsa_compare{2,3,5}, in `all` and `clean`.
+- scripts/run_mldsa_hint_experiment.sh: now runs all three binaries per mode,
+  --skip-bench flag, exits non-zero if any contract/gate fails.
+
+RESULTS
+- Fidelity gate passes; matched baseline reproduces FIPS 204 repetition rates
+  (4.246/5.217/3.996 vs ~4.25/5.1/3.85) and the matched partner lands on stock
+  crypto_sign_signature (514.73 vs 522.41 us at level 3).
+- Adaptor overhead PAIRED per attempt: simplified +1.3/+2.2/+2.4%, ML-DSA
+  +3.8/+2.8/+3.5%. Single-digit on both -> ML-DSA costs no extra adaptor overhead.
+- Per-signature cost nearly equal FOR OPPOSITE REASONS: ML-DSA ~2x the restarts
+  (5.22 vs 2.71) but ~half the price per attempt (gamma1 bit-unpack over L=5 vs
+  rejection sampling over n+ell=11).
+- SIZES are the real story: ML-DSA halves sig (3309 vs 6736) and pk (1952 vs 4416),
+  but Y is BYTE-IDENTICAL (4416 both) -> swap payload only 0.69x, not 0.49x.
+  Y > signature at every set. Future size work must target Y, not the signature.
+
+FIVE MEASUREMENT FAULTS CAUGHT BY GATES (all would have shipped wrong numbers; the
+rules they forced are now recorded in CLAUDE.md and must not be weakened):
+1. Missing FIPS 204 2-byte empty-context prefix {0,0} in mu -> P4 failed 0/200 in BOTH
+   variants and looked like the headline finding. Harness bug, not a result.
+2. Deterministic rejection loop: benchmark re-signed one fixed instance -> ML-DSA
+   restarted identically every call (exactly 4.0000 / 2.0000 attempts). Gate caught it.
+3. Stale key: the KeyGen benchmark replaced the keypair, so Verify was timed on an
+   invalid signature = the REJECTION path. Now every timed block has a success-path
+   assertion (EXPECT_OK).
+4. Drift-inverted overheads: Sign and PreSign measured in separate blocks let clock
+   drift land on one -> overheads swung -3%..+8%, sometimes negative. Fixed by PAIRED
+   INTERLEAVED ratios (alternate within each repetition, ratio per rep, mean+-SD) plus
+   an untimed warm-up of both constructions before anything is timed.
+5. Mislabelled column: simplified column hardcoded "Dilithium-III" at all three modes.
+   Now keyed on (LAS_N, ELL, KAPPA) with #error on an unrecognised set.
+Also added: attempt-counter sanity check (delta >= number of timed calls).
+
+Royce's mid-session review (via ChatGPT) asked for 5 verifications; all addressed --
+fresh rnd per ML-DSA signing call (confirmed, plus config.h already randomizes stock
+signing), m_sig regenerated after the keypair changes (was a REAL bug, fixed),
+da_ >= niter validated, g_att_mean/sd stored and used (4 sites each), and the
+"interleaved" claim in the header corrected (the two CONSTRUCTIONS are sequential;
+only the overhead PAIRS are interleaved).
+
+NEXT
+- Report (still deferred): fold the hint + comparison results into Ch. 4, rewrite Ch. 5
+  future work (drop q~2^24; add "target Y, not the signature").
+- 6-8 minute slides.
+
+## Checkpoint — 2026-08-04 — all chapters updated for the ML-DSA result; word count 10,361 -> 8,990
+
+Branch: report. No commits. Royce: "update all chapters ... only novelty / most important
+/ 'gold' content, absolute max 9000, always refer to the rubric."
+
+CRITICAL FINDING FIRST: the stored report/latex/word.count said 8,955; the REAL body
+count was 10,361. Several past checkpoints planned trims against the stale number. The
+fencing is correct (%TC:ignore excludes frontmatter/appendix/bibliography, -sum weights
+exclude captions), so 10,361 was genuinely 1,361 OVER the hard limit. Always run
+`make -C report/latex wordcount` before reasoning about budget. Also learned: tabular
+BODIES count, but TikZ picture content and generated/*.tex tables count ZERO.
+
+THE CORRECTION THE EXPERIMENT FORCED (3 places, all applied):
+- 02-methodology "Simplifications": dropped "which the adaptor mechanism requires" --
+  refuted by the experiment. Now says the question was TESTED, not assumed, and forward-
+  references sec:res-mldsa. Modulus reframed as FIPS 204's (the parameter authority),
+  and the "migrating is future work" clause deleted.
+- 04-evaluation challenge 2: was "the simplified scheme is a design requirement, not a
+  convenience". Now: the belief was tested and proved too strong -- a SUFFICIENT route,
+  not a necessary one.
+- 05-conclusion future work: q~2^24 bullet DELETED (dropped, not future work). New lead
+  bullet "Shrink the statement, not the signature" + a new bullet on analysing the
+  security of the ML-DSA variant.
+
+NEW CONTENT (the novelty, ~410 words in Ch3):
+- New section sec:res-mldsa "Testing the simplification: the adaptor on unmodified
+  ML-DSA": naive port fails (0/200), repaired version 13/13 + stock FIPS 204 verifier
+  accepts 200/200, adaptor overhead single-digit on both constructions, signature halves
+  but Y is byte-identical so the payload only reaches 0.69x.
+- Every number is a MACRO. Extended scripts/gen_report_data.py with parse_mldsa()
+  reading evidence/mldsa_hint/latest -> 14 new macros (\mldsaContract, \mldsaRepairedP,
+  \mldsaSigBytes, \mldsaStmtRatio, \mldsaPayloadRatio, ...). It dies loudly if the
+  repaired variant did not hold P4 on every iteration, so the report cannot claim a
+  result the evidence does not support. Nothing typed by hand.
+- Abstract gained a 5-line paragraph on the ML-DSA correction.
+
+WORD BUDGET (10,361 -> 8,990), per chapter:
+  abstract   354 -> 408   (+54, ML-DSA para)
+  intro     1132 -> 953   (-179, background trimmed per Meeting 8)
+  method    2922 -> 2328  (-594)
+  results   3073 -> 2814  (-259 NET, after +411 of new ML-DSA content)
+  eval      1381 -> 1227  (-154)
+  conclusion 1482 -> 1243 (-239)
+Method's biggest saving was moving tab:tests, tab:notation and tab:tiers into the
+appendix as a new section app:tests -- reference tables, uncounted there, and the
+appendix is excluded by the rubric.
+
+VERIFIED: `make` builds report.pdf clean, 0 undefined references, 0 undefined citations,
+5 overfull boxes (pre-existing). make wordcount = 8990.
+
+NEXT
+- 6-8 minute slides (the last Meeting-8 deliverable).
+- Frontmatter \TODO (student id, prior degrees, acknowledgements) -- Royce only.
+- Optional: re-run scripts/run_benchmark_suite.sh, since ref/ sources are newer than
+  evidence/latest (the freshness tripwire in CLAUDE.md).
+
+## Checkpoint — 2026-08-04 (later) — two future-work items promoted to implemented experiments
+
+Branch: report. No commits.
+
+Royce asked for four Ch. 5 future-work directions. Asked which reading he wanted; he chose
+"attempt the feasible ones", having been shown that this BREAKS the Meeting-8 feature
+freeze and competes with report polish + slides. His call; proceeded.
+
+BUILT (neither has been RUN -- no numbers exist yet):
+- ref/test/test_statement_compress.c + Makefile targets test/test_statement_compress{2,3,5}
+  (added to `all`). Diagnostic in the test_mldsa_hint shape. Candidates: C0 control (full
+  Y), C1 Power2Round-style truncation swept b=1,2,4,8,13, C2 seed-instead-of-Y. Every
+  adaptor call gets the COMPRESSED statement. Properties P1..P5; decisive rows P3 (base
+  Verify accepts adapted sig -- the chain) and P4 (Ext recovers the witness -- atomicity).
+  Hard gate: control must hold or nothing is attributable. gcc -fsyntax-only -Wall -Wextra
+  clean at set 3.
+- rust/las-swap: BatchedRelationCircuit in groth16_circuit.rs + new bin bench_amortise.rs
+  (registered in Cargo.toml, builds without the groth16 feature and says it needs it).
+  Refactor: the relation body was factored into `emit_instance`, now shared by the single
+  and batched circuits, so a batch cannot prove something weaker than k single proofs.
+  Per-batch tamper check on the LAST instance's public input enforces that at runtime.
+  k = 1,2,4,8; warm-up + 5 reps + success-path assertions per the ML-DSA measurement rules.
+- scripts/run_statement_compress.sh -> evidence/statement_compress/<ts>/
+  scripts/run_amortise_bench.sh     -> evidence/amortise/<ts>/   (both bash -n clean, +x)
+- docs/03-results/STATEMENT_COMPRESSION_EXPERIMENT.md
+  docs/03-results/PROOF_AMORTISATION_EXPERIMENT.md
+  Both state "implemented, not yet run" and contain ZERO numbers.
+- CLAUDE.md: new block recording the freeze override, both capabilities, and the two items
+  deliberately NOT attempted.
+
+NOT ATTEMPTED (stated to Royce, stays in Ch. 5 future work):
+- "Analyse the ML-DSA variant's security" -- barred by the standing supervisor ruling that
+  security analysis is out of scope; it is a reduction, not code.
+- "Solve one-transaction verification" -- needs a SHAKE256 precompile / Merkle-opened
+  dispute / succinct proof of verification; a new artefact far beyond the freeze.
+
+UNRESOLVED RISKS:
+- The Rust side is NOT compile-checked (cargo check would build arkworks = a real build,
+  which Royce runs). Only the C file was syntax-checked. First `cargo run --features
+  groth16` may surface type errors in bench_amortise.rs / groth16_circuit.rs.
+- bench_amortise regenerates a fresh SRS per repetition per batch size; k=8 is ~230k
+  constraints. Expect several minutes and significant RAM. Reduce REPS or BATCHES if it
+  is too slow.
+
+NEXT
+- Royce: `./scripts/run_statement_compress.sh` then `./scripts/run_amortise_bench.sh`.
+- Then rewrite 05-conclusion.tex:118-129 (the two bullets these answer) against the
+  evidence, and decide whether either earns space in Ch. 3 within the 9,000-word ceiling.
+- Still owed: 6-8 min slides; frontmatter \TODO (Royce only).
+
+## Checkpoint — 2026-08-04 (later still) — both new experiments RUN; results in
+
+Branch: report. No commits. Royce said "run", which overrides the standing don't-build rule.
+
+STATEMENT COMPRESSION -- evidence/statement_compress/20260804_112718 (all 3 sets, 100 iters)
+Verdict: the assertion is CONFIRMED and now has a mechanism.
+- Truncation: P1 PreVerify 100/100 and P2 Adapt 100/100 hold, while P3 base Verify and
+  P4 Ext are 0/100 -- at EVERY depth b=1,2,4,8,13, at all three sets. b=1 is only a 4%
+  saving and already fails 100/100. Not a marginal failure.
+- Seed candidate: 4416 -> 32 B (138x), all 5 functional rows 100/100 (Y exact), and the
+  receiver recovered the witness 100/100. Largest compression = total break, demonstrated.
+- Hint repair: net +0 B at every depth, by construction. Lossless baseline already applied:
+  23-bit packing 4416 vs 6144 B naive (-28%).
+- Control held at every set, so all rows are attributable.
+
+PROOF AMORTISATION -- evidence/amortise/20260804_114004 (k=1,2,4,8 x 5 reps, exit 0)
+Verdict: NEGATIVE result for configuration 2, and worth reporting as one.
+- Proof is 128 B at EVERY k; per-swap 128/64/32/16 = exactly 1/k.
+- BUT 128 B was never the bottleneck. Recomputed from evidence/stage2/latest: Prove(pi) is
+  645,621 us = 97.3% of the swap and 47.1x the next phase. So batching amortises the cost
+  that was already negligible and leaves the dominant one alone.
+- Per-swap proving 494 -> 653 ms (+32% at k=8) -- flat to WORSE, never better. Across the
+  three runs that day the trend varied, so do not claim a monotone law.
+- Per-swap verify flat (~12 ms). Setup 667 -> 5687 ms, per circuit.
+- Framing: this is about GROTH16, not batching. The 1/k would matter for a large-proof /
+  cheap-generation system (LaZer's profile) -- NOT measured.
+
+CORRECTION MADE MID-RUN (why evidence/amortise has 3 dirs):
+The binary's own closing prose asserted the swap was proof-dominant in BOTH time and
+communication. Checked against evidence/stage2/latest: false -- dominant in time only
+(128 B proof). Fixed the prose + a `%%` Rust format bug (Rust does not escape %), re-ran.
+latest = 20260804_114004 is the one to quote. Earlier two are superseded, not deleted.
+
+FILES CHANGED SINCE LAST CHECKPOINT
+- rust/las-swap/src/bin/bench_amortise.rs (interpretation corrected, %% fixed)
+- docs/03-results/{STATEMENT_COMPRESSION_EXPERIMENT.md,PROOF_AMORTISATION_EXPERIMENT.md}
+  -- both now "run", with measured tables; compression doc section numbering fixed
+- CLAUDE.md -- both results recorded under the promoted-future-work block
+
+NEXT
+- Rewrite 05-conclusion.tex:118-129. Both bullets are now ANSWERED, not open:
+  "Shrink the statement" -> settled negative within this construction; the live question is
+  a different hard relation whose statement is small by design.
+  "Reduce the proof" -> amortisation measured and it targets the wrong cost for Groth16;
+  the live question is a succinct PQ system, or batching a large-proof system.
+- Decide whether either earns body space inside the 9,000-word ceiling (currently 8,990),
+  or stays an appendix/doc-only result.
+- Still owed: 6-8 min slides; frontmatter \TODO (Royce only).
+
+## Checkpoint — 2026-08-04 — LaZer amortisation measured; the question is now CLOSED
+
+Branch: report. No commits. Royce: "uji LaZer sekarang" (test LaZer now) -- the open item
+the Groth16 run left behind.
+
+KEY CORRECTION TO AN EARLIER BELIEF: SageMath IS available on this machine
+(~/micromamba/envs/lazer-sage/bin/sage). The earlier note that batched LaZer was blocked on
+regenerating relation_zk_params.h was wrong -- codegen took ~30 s at k=2, minutes at k=8.
+
+NEW CAPABILITY (batched pi, NOT wired into the swap):
+- ref/relation_zk_batch.{c,h} -- block-diagonal statement, k copies of [I|A'|-I|-A'|0] on
+  the diagonal, off-block zero => the batch is the CONJUNCTION of k copies of the deployed
+  statement. Per-instance block is byte-identical to relation_zk.c's.
+- ref/relation_zk_lazer_batch.{c,h} -- the second (and only other) TU that includes lazer.h.
+  k=1 dispatches to the COMMITTED las_pi_params, so the baseline IS the shipped prover.
+  New gate names PI_BATCH_* -- they do NOT rename/alias PI_ROWS/PI_COLS/PI_DEG/
+  PI_PROOF_MAX_BYTES, which remain the k=1 module's.
+- ref/relation_zk_params_k{2,4,8}.h -- COMMITTED generated sets (sage not needed to build).
+- scripts/gen_lazer_batch_params.sh -- regenerates them (needs sage).
+- ref/test/bench_lazer_amortise.c + scripts/run_lazer_amortise.sh ->
+  evidence/lazer_amortise/20260804_122156. Built clean, no warnings. Exit 0, all gates
+  passed (success-path assertions + per-batch tamper check on the LAST instance).
+
+RESULT -- batching fails for BOTH provers, for OPPOSITE reasons:
+- Groth16: proof/swap 128 -> 16 B (perfect 1/k) but 128 B was never the bottleneck;
+  per-swap compute flat.
+- LaZer:   proof/swap 30723 -> 17645 B (0.57x, -43%) -- a REAL saving on config 3's
+  dominant communication object, and the first real saving in this direction.
+  BUT per-swap prove+verify is 3.33x WORSE (prove 159->445 ms, verify 75->335 ms):
+  LaZer's work grows SUPERLINEARLY in the batch.
+  Since role-A pi is already 98.6% of config 3's end-to-end time, the binding constraint is
+  COMPUTE -- batching buys bytes by spending exactly that. Wrong way round.
+Measured LaZer sizes track the codegen predictions (31.3/47.7/78.1/144.7 KiB) closely.
+
+ALSO CORRECTED THIS SESSION: bench_lazer_amortise.c's closing prose originally asserted the
+sublinear size win was "a saving on something that mattered" and stopped there. After seeing
+the compute column that was incomplete, so the binary now computes and prints the trade-off
+(size ratio vs compute ratio) rather than a pre-written conclusion. Same class of mistake as
+the Groth16 %% / "dominant in BOTH" fix earlier today: do not pre-write conclusions.
+
+FILES CHANGED
+- ref/{relation_zk_batch.c,relation_zk_batch.h,relation_zk_lazer_batch.c,
+       relation_zk_lazer_batch.h,relation_zk_params_k{2,4,8}.h,Makefile}
+- ref/test/bench_lazer_amortise.c
+- scripts/{gen_lazer_batch_params.sh,run_lazer_amortise.sh}
+- docs/03-results/PROOF_AMORTISATION_EXPERIMENT.md (now covers BOTH provers)
+- CLAUDE.md
+
+NEXT
+- Rewrite 05-conclusion.tex:126-129 ("Reduce the proof"): amortisation is now ANSWERED
+  negatively for both provers, with the LaZer trade-off quantified. The live question is a
+  succinct PQ proof system, not batching.
+- Also still owed: 05-conclusion.tex:119-125 (statement compression, answered negatively).
+- 6-8 min slides; frontmatter \TODO (Royce only).

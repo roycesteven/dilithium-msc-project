@@ -55,6 +55,13 @@ lattice setting; our exact-extraction parameterisation sidesteps it for the demo
 
 ### 7.4 A scriptless-script ledger (`ref/chain.{c,h}`, `ref/test/test_pcn.c`)
 
+> **Superseded, kept for the record.** This account-model ledger was the *first*
+> Stage-2 study. It is now **dead legacy**: `chain.{c,h}` and `test_pcn.c` were left
+> on the pre-restructure API, no longer compile, and are deliberately not repaired.
+> The Stage-2 evaluation of record is the UTXO ledger in `rust/las-swap/`
+> (`docs/02-methodology/STAGE2_UTXO_SWAP_PLAN.md`), which is what the report measures.
+> Nothing below is a current project result.
+
 To show LAS in a setting closer to a real blockchain, `chain.{c,h}` provide a small
 ledger abstraction: accounts with balances, a block height, and *adaptor-locked
 contracts* — the scriptless analogue of a Hash-Time-Locked Contract (HTLC):
@@ -76,10 +83,10 @@ statement `Y` locks all hops. This is a correct scriptless HTLC but not the pape
 AMHL (Adaptor Multi-Hop Lock). In the same-Y model, observing `y` from any claimed
 hop lets a party adapt *all* other hops locked to `Y` — a wormhole-style weakness on
 longer paths. The paper's AMHL assigns each hop a *different* cumulative statement
-`Y_j = A·(l_1 + … + l_j)` and uses PreSign bound `γ−κ−K` for path length K. **AMHL
-is now implemented** (`ref/amhl.{c,h}`, `ref/test/test_amhl.c`) and described in
-Section 7.5; the same-Y demo below is retained as the simpler baseline that
-isolates the core adaptor mechanism.
+`Y_j = A·(l_1 + … + l_j)` and uses PreSign bound `γ−κ−K` for path length K. That
+construction is **out of this project's scope** (dropped 2026-08-03); the same-Y
+demo below is the ledger model actually built, and it isolates the core adaptor
+mechanism.
 
 `test_pcn.c` runs three hard-asserted scenarios (all pass):
 
@@ -94,96 +101,22 @@ isolates the core adaptor mechanism.
    pulls the inner hop with `y` (revealing it); Bob extracts `y` and pulls the outer
    hop, earning his routing fee. Final: Alice=89, Bob=101, Carol=10.
 
-This is a **working** post-quantum scriptless swap and payment-channel
-demonstration. The same-Y model is sufficient to prove the adaptor mechanism is
-functional end-to-end and is the clearest baseline for isolating it; the
-multi-hop-safe AMHL construction that removes its wormhole weakness is the
-headline multi-hop artefact and is described next in Section 7.5.
+This is a **working** post-quantum scriptless swap demonstration. The same-Y model
+is sufficient to prove the adaptor mechanism is functional end-to-end and is the
+clearest baseline for isolating it. Removing its wormhole weakness would require the
+paper's AMHL construction, which is out of this project's scope.
 
-### 7.5 Adaptor Multi-Hop Locks — AMHL (`ref/amhl.{c,h}`, `ref/test/test_amhl.c`)
+### 7.5 Adaptor Multi-Hop Locks — AMHL — **out of scope**
 
-The same-Y ledger of Section 7.4 proves the adaptor mechanism works, but it is
-*not* the paper's payment-channel-network construction. AMHL (LAS Fig. 2 / §5) is,
-and it is the headline multi-hop artefact of this project. It removes the
-same-Y wormhole weakness by giving every hop on a route a **distinct** statement.
+> **Dropped from the project (2026-08-03).** Anonymous multi-hop locks (AMHL,
+> eprint 2020/845 Fig. 2 / §5) are **out of scope** — not a deliverable, not a
+> bonus, and not future work. The exploratory C files `ref/amhl.{c,h}` remain in
+> the tree on the pre-restructure API, do not compile, and must not be repaired.
+> Nothing in this project's results, report or evaluation rests on them.
 
-#### 7.5.1 Construction
-For a K-hop route `U_0 → U_1 → … → U_K` (sender `U_0`, receiver `U_K`):
-
-```
-Setup (run by the sender U_0, who knows the whole route):
-    sample increments   l_1, …, l_K  ← S_1          (ternary, ‖l_j‖∞ ≤ 1)
-    cumulative witness   s_0 = 0,  s_j = s_{j-1} + l_j = l_1 + … + l_j
-    cumulative statement Y_0 = 0,  Y_j = A·s_j       (so Y_j = Y_{j-1} + A·l_j)
-    Hop j (payer U_{j-1} → payee U_j) is locked to Y_j and opened with s_j.
-
-Secret distribution (least-privilege):
-    receiver U_K      ← s_K                 (the full witness, i.e. the "invoice")
-    intermediary U_j  ← l_{j+1}  only        (1 ≤ j < K)
-
-Pre-signing: every hop uses  las_presign_k(…, K)  → bound γ−κ−K.
-
-Cascade (claims flow right→left, receiver first):
-    U_K  Adapts hop K with s_K and publishes σ_K           ⇒ s_K becomes public
-    U_{j-1} extracts s_j from hop j, computes s_{j-1}=s_j−l_{j+1}, Adapts hop j−1
-    … down to hop 1, which the sender's first counterparty U_1 finally pulls.
-```
-
-The cumulative statements are built additively from the increment key pairs
-(`Y_j = Y_{j-1} + A·l_j`), reusing `base_keygen` to produce each `(A·l_j, l_j)` —
-no new lattice arithmetic. Adapt and Ext are **unchanged** from Section 4: Adapt
-adds the cumulative witness `s_j`, and Ext returns exactly `s_j` (it satisfies
-`A·s_j = Y_j`).
-
-#### 7.5.2 Why each property holds
-- **Distinct statements ⇒ no wormhole.** Because `Y_i ≠ Y_j` for `i ≠ j`, learning
-  the opener `s_j` of one hop reveals nothing usable about a non-adjacent hop.
-  The demo asserts the converse directly: adapting hop 1 with the receiver's secret
-  `s_K` yields a signature that ordinary `Verify` **rejects** (it would force
-  `A·z−c·t = w + Y_K ≠ w + Y_1`, a Fiat–Shamir mismatch). Only the adjacent
-  increment `l_{j+1}` bridges hop `j+1` to hop `j`.
-- **Witness-norm growth (the knowledge gap, made concrete).** `s_j` is a sum of `j`
-  ternary vectors, so `‖s_j‖∞ ≤ j ≤ K`. The demo prints this growth exactly
-  (`‖s_1‖∞ = 1, …, ‖s_4‖∞ = 4`). This is *why* every hop must pre-sign at the
-  tighter bound `γ−κ−K`: the adapted response `z = ẑ + s_j` then still satisfies
-  `‖z‖∞ ≤ (γ−κ−K) + j ≤ γ−κ` and clears ordinary `Verify`.
-- **Exact recovery.** At each hop the extractor recovers `s_j` exactly, and the
-  intermediary recomputes `s_{j-1} = s_j − l_{j+1}` exactly (asserted equal to the
-  setup value). Extraction is noise-free in this parameterisation; the residual
-  *relaxed-relation* knowledge gap is discussed in Section 9.
-- **Timeouts/refund.** Hops carry laddered timeouts (outer hops expire last, so
-  every puller retains a safety window). The refund scenario advances the block
-  height past every timeout and refunds each hop to its funder — no coins lost.
-
-#### 7.5.3 The K-hop bound in practice
-The tightening from `γ−κ−1` to `γ−κ−K` is *cryptographically essential* but has
-**negligible performance cost**: with `γ = 122880` and `K ≤ 8`, the accepted band
-shrinks by at most `K/(γ−κ) ≈ 0.007 %`, so the rejection-sampling acceptance rate
-(Section 8) is indistinguishable from the single-hop case. AMHL therefore adds no
-per-hop *signing* penalty beyond the obvious linear "K hops ⇒ K pre-signatures."
-
-#### 7.5.4 Demo output (mode 3)
-`test_amhl3` runs two hard-asserted scenarios; abridged transcript:
-
-```
-== Scenario 1: AMHL 4-hop routed payment (happy path) ==
-    hop 1: Y_1 distinct=yes   ‖s_1‖inf = 1  (<= 1)
-    hop 2: Y_2 distinct=yes   ‖s_2‖inf = 2  (<= 2)
-    hop 3: Y_3 distinct=yes   ‖s_3‖inf = 3  (<= 3)
-    hop 4: Y_4 distinct=yes   ‖s_4‖inf = 4  (<= 4)
-  funded hops: Alice→Bob(13) Bob→Carol(12) Carol→Dave(11) Dave→Erin(10)
-  wormhole check: s_4 cannot open hop 1 (distinct statement)  -> OK
-  cascade: Erin→Dave→Carol→Bob pull right-to-left, exact recovery each hop
-  balances: Alice=87 Bob=101 Carol=101 Dave=101 Erin=10   (payment + per-hop fee)
-== Scenario 2: AMHL route times out (refund path) ==
-  refund before timeout rejected; after timeouts every hop refunds  -> safe OK
-```
-
-Alice pays 10 to Erin across a 4-hop route; each of the three intermediaries earns
-a 1-unit routing fee, and the conservation `87+101+101+101+10 = 400` holds. This is
-the genuinely novel part of LAS exercised end-to-end — most adaptor-signature demos
-stop at a single swap.
-
+The same-Y ledger of Section 7.4 is therefore the only multi-party model this
+project builds, and Section 7.6's proof of knowledge π is what makes the two-party
+swap guaranteed rather than merely expected.
 
 ---
 

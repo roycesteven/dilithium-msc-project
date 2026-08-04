@@ -34,7 +34,7 @@ foundation the next step stands on.
 | 1 | `701f97a` | 06-03 | `ref/las.c`, `ref/las.h`, `ref/test/test_las.c` | **the LAS scheme itself** (KeyGen/Sign/Verify + PreSign/PreVerify/Adapt/Ext) | the core deliverable — nothing else matters until this works |
 | 2 | `6746331` | 06-03 | `ref/chain.c`+`.h`, `test_swap.c`, `test_pcn.c`, `bench_las.c`, `bench_compare.c` | a **simulated ledger** + atomic-swap & payment-channel demos + first benchmarks | a signature is only interesting once it *does something* on a chain |
 | 3 | `bac594b` | 06-03 | *(docs: `THEORY_IMPL_BRIDGE.md`)* | paper-equation → code-line mapping | report marks: prove the code *is* the paper |
-| 4 | `3a4c357` | 06-03 | `ref/amhl.c`+`.h`, `test_amhl.c` (+ new fns in `las.c`/`chain.c`) | **multi-hop** payment locks (bonus) | multi-hop is an *extension* of the single-hop swap, so it comes after it |
+| 4 | `3a4c357` | 06-03 | `ref/amhl.c`+`.h`, `test_amhl.c` (+ new fns in `las.c`/`chain.c`) | **multi-hop** payment locks — *dropped 2026-08-03, now dead legacy* | multi-hop is an *extension* of the single-hop swap, so it comes after it |
 | 5 | `5dc1b63` | 06-12 | `ref/serialize.c`+`.h`, `bench_classical.c`, `bench_app.c`, `test_serde.c`, `test_kat.c` (+ deterministic fns in `las.c`) | **byte format** + byte-level verifier + classical baseline + reproducible vectors | to measure *size* and to have the interface a blockchain consumes |
 | 6 | `2ffcca4` | 06-15 | `evm/src/AdaptorSwap.sol`, `evm/test/AdaptorSwap.t.sol`, `ref/test/export_packed.c` | a **real Solidity swap on a local EVM** + gas measurement | graduate from a simulated ledger to a real blockchain |
 | 7 | *(this session, uncommitted)* | 06-18 | `evm/src/LASVerifyCost.sol`, `evm/test/LASVerifyCost.t.sol` | **measured gas of native LAS verification** | replace a hand-waved "exceeds the block limit" claim with a number |
@@ -104,7 +104,12 @@ complexity of a real EVM. `bench_las.c` (per-operation timings) and `bench_compa
 **Decision/why:** Pure assessment value — examiners want every equation in the paper
 mapped to the exact C function/line. No new scheme code; this is the evidence layer.
 
-### Step 4 — Multi-hop locks: AMHL (`3a4c357`) — *the bonus*
+### Step 4 — Multi-hop locks: AMHL (`3a4c357`) — *later dropped from the project*
+
+> **Not a deliverable (2026-08-03).** This step is recorded because it happened, but
+> multi-hop locks were subsequently dropped: `ref/amhl.{c,h}` is dead legacy that no
+> longer compiles, is deliberately not repaired, and supports no claim in the report,
+> the evaluation, or the future work.
 **New files:** `ref/amhl.c`+`.h`, `ref/test/test_amhl.c`.
 **Also extended existing files:** `las.c`/`las.h` gained `las_presign_k` /
 `las_preverify_k` (a tighter `γ−κ−K` bound for K hops); `chain.c` gained
@@ -169,7 +174,7 @@ real SHAKE256, z-decode and packing, and it exceeds the EIP-7825 per-transaction
         │
         ├── docs: theory↔code bridge                 (evidence, parallel)
         │
-        ├── AMHL multi-hop  (extends PreSign w/ tighter bound)   ← after single-hop
+        ├── AMHL multi-hop  (dropped from the project; dead code) ← after single-hop
         │
         ▼
  Serialization  serialize.c  →  bytes + base_verify_packed
@@ -199,7 +204,8 @@ the working tree (nothing pushed, nothing lost). They are listed in `docs/STATUS
 > "I imported the standard Dilithium primitives unchanged, built the LAS adaptor
 > scheme on top (ordinary Sign/Verify first, then the four adaptor functions), proved
 > it with a 1000-iteration test, then demonstrated it on a simulated ledger (atomic
-> swap, payment channels), added the bonus multi-hop construction, gave signatures a
+> swap, payment channels), explored a multi-hop construction that was later dropped,
+> gave signatures a
 > real byte format so I could measure size and verify from bytes, ran it as a real
 > Solidity swap on a local EVM for gas, and finally measured the gas cost of native
 > on-chain verification — which corrected an earlier over-claim. Each step is a

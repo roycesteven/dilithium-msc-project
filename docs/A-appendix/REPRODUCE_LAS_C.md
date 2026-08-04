@@ -6,7 +6,7 @@ Stage-1 benchmark: **ordinary lattice-based signature (Algorithm 1) vs LAS adapt
 signature (Algorithm 2)** at matched parameters.
 
 **Scope — deliberately excluded from this guide.** No application layer: no atomic
-swap, no payment-channel / AMHL, no `las_presign_k` (K-hop bound), no classical
+swap, no payment-channel / AMHL (out of project scope), no classical
 ECDSA-adaptor baseline, no EVM/gas measurement. The guide stops at the Algorithm 1
 vs Algorithm 2 comparison; the application tier is only started once the signature
 implementation and its benchmark are airtight.
@@ -324,5 +324,5 @@ make test/test_kat3     && ./test/test_kat3        # pinned digest bb6ad0da…26
 cd .. && bash scripts/run_benchmark_suite.sh       # Algorithm 1 vs 2 benchmark + evidence
 ```
 
-Stop here. Atomic swap, PCN/AMHL, `las_presign_k`, the classical-adaptor baseline
+Stop here. Atomic swap, the classical-adaptor baseline
 and EVM gas are all later-stage work, out of scope for this document.

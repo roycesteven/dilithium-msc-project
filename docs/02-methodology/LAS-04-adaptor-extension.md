@@ -56,11 +56,11 @@ Let `t = A·r` (signer key) and `Y = A·y_w` (statement, witness `y_w`).
   `‖z‖∞ = ‖ẑ + y_w‖∞ ≤ (γ − κ − 1) + 1 = γ − κ`,
   exactly the band ordinary Verify accepts. This one-unit tightening is the whole
   reason Adapt produces in-bounds signatures. ✔
-  **Generalisation to K hops:** if the adapted witness is a *sum* of up to `K`
-  ternary vectors (`‖y_w‖∞ ≤ K`, as in the multi-hop construction of Section 7.5),
-  PreSign must instead accept only `‖ẑ‖∞ ≤ γ − κ − K`, giving
-  `‖z‖∞ ≤ (γ − κ − K) + K = γ − κ` again. This is exactly the paper's `γ−κ−K`
-  bound, implemented as `las_presign_k(…, K)` with the macro `LAS_BOUND_PRESIGN_K`.
+  **Generalisation to K hops (paper only, not implemented here):** were the adapted
+  witness a *sum* of up to `K` ternary vectors (`‖y_w‖∞ ≤ K`), PreSign would have to
+  accept only `‖ẑ‖∞ ≤ γ − κ − K`, giving `‖z‖∞ ≤ (γ − κ − K) + K = γ − κ` again —
+  the `γ−κ−K` bound of eprint 2020/845. Multi-hop locks are out of this project's
+  scope, so only the single-hop `K = 1` case is built and measured.
   Setting `K = 1` recovers the single-hop case verbatim.
 
 ### 4.2 The "tripwire": a pre-signature is **not** a signature

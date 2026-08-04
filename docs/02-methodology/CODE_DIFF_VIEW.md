@@ -81,14 +81,13 @@ confirmed at the file level by this diff.
 | `ref/las.c`, `ref/las.h` | the LAS scheme: KeyGen, Sign, Verify + the adaptor operations PreSign, PreVerify, Adapt, Ext (paper Algorithm 2, "variant B") |
 | `ref/basesig.c`, `ref/basesig.h` | the **separate** simplified Dilithium-style base signature (`base_keygen`/`base_sign`/`base_verify`, `c = H(pk, w, M)`, no statement `Y`) — the fair baseline for `bench_levels`; kept out of `las.{c,h}` so the LAS protocol is untouched, shares only `las.h`'s parameter macros + struct layout |
 | `ref/serialize.c`, `ref/serialize.h` | byte-level wire/on-chain encoding + validating decoder + `base_verify_packed` |
-| `ref/amhl.c`, `ref/amhl.h` | anonymous multi-hop locks (distinct per-hop statements) — optional/bonus tier |
-| `ref/chain.c`, `ref/chain.h` | scriptless-HTLC toy ledger (accounts, block height, claim / timeout-refund) |
+| `ref/amhl.c`, `ref/amhl.h`, `ref/chain.c`, `ref/chain.h` | **dead legacy, not part of the project** — exploratory multi-hop/ledger code left on the pre-restructure API; does not compile and is not repaired (dropped 2026-08-03) |
 | `ref/test/test_las.c` | LAS correctness test (1000 iters, modes 2/3/5) |
 | `ref/test/test_basesig.c` | **CHECK**-gated base-signature correctness (1000 iters, paper/2/3/5): honest verify, tamper/wrong-key rejection, cross-module equivalence with `las.c`, cross-path interlock (tripwire + adapted-verifies-under-base + exact Ext), plus 4 negative tests (wrong statement, wrong witness, tampered pre-signature, tampered adapted signature) |
 | `ref/test/test_serde.c` | serialization round-trip + single-byte-tamper rejection + validating decoder; swept across parameter sets (`test_serde3` paper dims + `test_serde_l2/l3/l5`) |
 | `ref/test/test_kat.c` | deterministic API + pinned known-answer vectors |
 | `ref/test/test_contract.c` | consolidated correctness-contract harness (itemised 8-point PASS) |
-| `ref/test/test_swap.c`, `ref/test/test_pcn.c`, `ref/test/test_amhl.c` | atomic-swap / payment-channel / multi-hop demos |
+| `ref/test/test_swap.c` | Fig. 1 atomic-swap demo (the Stage-2 evaluation is `rust/las-swap/`; `test_pcn.c` / `test_amhl.c` are dead legacy) |
 | `ref/test/bench_las.c` | per-op timing + measured rejection rate |
 | `ref/test/bench_compare.c` | LAS vs. optimised Dilithium-3 |
 | `ref/test/bench_levels.c` | **primary fair benchmark**: the separate base path (`basesig.c`) vs the LAS adaptor path (`las.c`), adaptor-overhead pairing + cross-verify contract; official Dilithium = context only ("not algorithm-matched"); ≥5 runs with std-dev; component-level size breakdown |

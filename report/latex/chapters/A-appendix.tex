@@ -287,9 +287,9 @@ sampled single-byte tamper, rejection against a wrong statement, and that the pr
 refuses a non-ternary witness. A small ledger abstraction --- accounts with balances, a
 block height, and adaptor-locked contracts, the scriptless analogue of a
 hash-time-locked contract with the hash lock replaced by the statement $Y$ and the time
-lock by a timeout height --- additionally carries three asserted scenarios: the
-cross-chain happy path, a timeout/refund in which a premature refund is rejected and
-both parties recover their funds, and a multi-hop payment.
+lock by a timeout height --- additionally carries two asserted scenarios: the
+cross-chain happy path, and a timeout/refund in which a premature refund is rejected and
+both parties recover their funds.
 
 \section{The optimistic (Naysayer) on-chain verifier}
 \label{app:naysayer}
@@ -327,6 +327,109 @@ does \emph{not}, in this baseline, bring the worst-case dispute within a single
 transaction; doing so would require opening only the single disputed matrix row through
 a Merkle commitment rather than sending the whole matrix, and a hash dispute that
 avoids a full SHAKE256 pass.
+
+\section{Test types and parameter notation}
+\label{app:tests}
+
+\begin{table}[htbp]
+  \centering
+  \caption[The four test types]{The four test types, what each asserts, and what it
+  would catch. The functional suite's statement-binding clause --- that a pre-signature
+  \emph{fails} basic verify --- is the tripwire that distinguishes an adaptor signature
+  from a signature; the known-answer digest is what the second implementation is
+  checked against (\cref{sec:rustport}).}
+  \label{tab:tests}
+  \small
+  \begin{tabular}{@{}L{0.20\linewidth}L{0.42\linewidth}L{0.30\linewidth}@{}}
+    \toprule
+    Test type & Scale and assertions & Catches \\
+    \midrule
+    Functional
+      & 1000 iterations per Dilithium mode (2, 3, 5), fresh parameters, keys and
+        message each time; asserts the full adaptor cycle --- pre-signature
+        pre-verifies, \emph{fails} basic verify, adapts to a valid signature, and
+        extraction returns the witness exactly --- plus a sign/verify round trip and
+        one-bit-forgery rejection
+      & any break in the adaptor contract; statement binding \\[3pt]
+    Serialization
+      & 256 random instances; exact round-trip for keys and every signature variant
+      & encoder/decoder asymmetry \\[3pt]
+    Tamper
+      & every one of the \tamperFlips{} bytes of a valid packed signature flipped in
+        turn; all must break verification; malformed encodings must be rejected
+      & a decoder that trusts its input \\[3pt]
+    Known-answer
+      & all inputs fixed, deterministic API, packed bytes of every object folded into
+        one SHAKE256 digest compared against a pinned 32-byte value
+      & any unintended change to sampling, algebra or encoding, on any machine \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption[Security and scheme parameter notation]{Security and scheme parameters: the symbol, its meaning, and the value(s)
+  it takes across the parameter sets, \emph{listed in the row order of}
+  \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
+  notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and this
+  build runs at $d=256$, the ring degree of the reused Dilithium NTT. The one exception is
+  the challenge-digest width $\lvert\tilde c\rvert$, which \cite{esgin2020post} does not
+  fix --- it specifies $H$ only as a random oracle onto the challenge set $C$ --- so the
+  width is an implementation choice, taken from FIPS~204 wherever a set aligns with an
+  ML-DSA one (\cref{app:serialize}). The figure and table
+  captions in \cref{ch:results} refer back to these names and values.}
+  \label{tab:notation}
+  \small
+  \begin{tabular}{@{}l L{0.45\linewidth} L{0.31\linewidth}@{}}
+    \toprule
+    Symbol & Meaning & Value(s): LAS-2020/845 reference, Simplified Dilithium-II/III/V \\
+    \midrule
+    $n$        & module rank: rows of $A$, length of public key $t$                 & 4, 4, 6, 8 \\
+    $\ell$     & extra columns of $A'$ (secret-vector extension)                    & 4, 4, 5, 7 \\
+    $M=n+\ell$ & response dimension (number of polynomials in $z,\hat z,y$)         & 8, 8, 11, 15 \\
+    $\kappa$   & challenge Hamming weight (number of $\pm1$ in $c$; Dilithium $\tau$) & 60, 39, 49, 60 \\
+    $\gamma$   & rejection / masking bound, $\gamma=\kappa\,d\,(n+\ell)$            & 122\,880,\ 79\,872,\ 137\,984,\ 230\,400 \\
+    $d$        & ring degree ($X^{d}+1$)                                            & 256 (all sets) \\
+    $q$        & modulus from the reused NTT, $q\approx 2^{23}$                     & 8\,380\,417 (all sets) \\
+    $\lvert\tilde c\rvert$
+               & challenge-digest width in bytes: FIPS~204's $\lambda/4$ at the three
+                 ML-DSA-aligned sets; a project choice at the LAS-2020/845 reference set,
+                 which that rule does not cover
+               & 32 (project choice),\ 32,\ 48,\ 64 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption[The three measurement boundaries]{The measurement boundaries. Comparisons
+  are only ever made within one boundary. The classical column is not a uniform tier
+  but a \emph{hybrid}, because \texttt{secp256k1-zkp} exposes the pre-signature only in
+  packed form: the four adaptor operations behave like the packed tier and the three
+  base operations like the core tier.}
+  \label{tab:tiers}
+  \small
+  \begin{tabular}{@{}L{0.20\linewidth}L{0.34\linewidth}L{0.38\linewidth}@{}}
+    \toprule
+    Boundary & What crosses it & What it answers \\
+    \midrule
+    Core tier
+      & in-memory structures in, structures out
+      & what the adaptor \emph{algebra} costs, isolated from encoding \\[3pt]
+    Packed tier
+      & packed wire bytes in and out, including the validating decode of every input
+        and encode of every output (\cref{sec:serialize})
+      & what a wire or on-chain consumer pays per call with nothing cached; one
+        operation's byte boundary, \emph{not} a whole-protocol cost \\[3pt]
+    Hybrid native API (classical only)
+      & the boundary \texttt{secp256k1-zkp} itself exposes: PreSign, PreVerify, Adapt
+        and Extract pack or parse the 162-byte pre-signature \emph{inside} the timed
+        call; KeyGen, Sign and Verify exchange parsed structs with the wire codecs
+        outside it
+      & the classical cost as the unmodified library actually charges it \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{Full benchmark data tables}
 \label{app:tables}
@@ -389,11 +492,36 @@ dimensions are scaled up, so the headline result is not specific to the target s
 \section{Auditing the reuse claim}
 \label{app:diff}
 
-The ``reused vs.\ modified vs.\ added'' claim (\cref{tab:reuse}) is verified by
-diffing the pristine baseline branch against the project branch.
+\Cref{tab:reuse} gives the per-file classification behind the ``reused vs.\ modified
+vs.\ added'' claim of \cref{sec:impl}. The claim was established by keeping the pristine
+upstream tree on its own branch and diffing it against the project branch: the commands
+below print nothing for the lattice core, which is what makes ``zero upstream functions
+modified'' an auditable statement rather than an assertion.
 
-\begin{lstlisting}[language=bash,caption={Branch diff proving the lattice core is
-untouched (no output means identical).},label={lst:diff}]
+\begin{table}[h]
+  \centering
+  \caption[Source files: reused, modified, and added]{Source files of the implementation, classified by how the reference is
+  used. The lattice core is reused unchanged; the only modified file is the
+  \texttt{Makefile}; the scheme, serialization, application, and evaluation are new.}
+  \label{tab:reuse}
+  \small
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Category & Files & Role \\
+    \midrule
+    Reused unchanged & \texttt{poly/polyvec/ntt/reduce/rounding}, & the entire \\
+                     & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
+    Modified         & \texttt{Makefile} & compile new targets \\
+    Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
+                     & \texttt{relation\_zk.\{c,h\}} (+ LaZer bridge), & \\
+                     & \texttt{basesig}, \texttt{setup}, \texttt{relation}, & \\
+                     & tests, benchmarks & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{lstlisting}[language=bash,caption={Branch diff establishing that the lattice core
+is untouched (no output means identical).},label={lst:diff}]
 git diff --name-status dilithium-baseline main -- ref/
 git diff dilithium-baseline main -- ref/poly.c ref/ntt.c ref/sign.c \
     ref/packing.c ref/polyvec.c ref/reduce.c ref/rounding.c ref/params.h

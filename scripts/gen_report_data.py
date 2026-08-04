@@ -384,10 +384,62 @@ def header(sources, meta):
 # emitters
 # ---------------------------------------------------------------------------
 
+def parse_mldsa(ev_dir):
+    """The ML-DSA adaptor experiment (evidence/mldsa_hint/latest).
+
+    Separate evidence stream from evidence/latest: it measures a DIFFERENT
+    construction (LAS on FIPS 204 as specified) and its numbers must never be
+    mixed with the simplified scheme's.  Returns None when the experiment has
+    not been run, so the report degrades to "not available" rather than to a
+    stale number.
+    """
+    hint = ev_dir / "mldsa_hint_mode3.log"
+    contract = ev_dir / "mldsa_contract_mode3.log"
+    compare = ev_dir / "mldsa_compare_mode3.log"
+    if not (hint.exists() and contract.exists() and compare.exists()):
+        return None
+    h, c, k = (f.read_text() for f in (hint, contract, compare))
+    d = {}
+
+    # naive vs repaired variant: the two P4 rows, in file order (V0 then V1)
+    p4 = re.findall(r"P4 stock Verify ACCEPTS adapted signature\s+<-- decisive\s+"
+                    r"(\d+)\s*/\s*(\d+)", h)
+    p1 = re.findall(r"P1 PreVerify accepts pre-signature\s+(\d+)\s*/\s*(\d+)", h)
+    if len(p4) < 2 or len(p1) < 2:
+        die("could not parse the P1/P4 rows from %s" % hint)
+    d["naive_p1"], d["iters"] = p1[0][0], p1[0][1]
+    d["repaired_p4"] = p4[1][0]
+    if p4[1][0] != p4[1][1]:
+        die("the ML-DSA repaired variant did not hold P4 on every iteration "
+            "(%s/%s); the report must not claim it does" % p4[1])
+
+    m = re.search(r"PASS: (\d+)/(\d+) contract items hold", c)
+    if not m:
+        die("the ML-DSA contract did not PASS in %s" % contract)
+    d["contract"] = "%s/%s" % (m.group(1), m.group(2))
+
+    m = re.search(r"PreSign vs Sign \(/attempt\)\s+([-\d.]+)% \+/-\s+([\d.]+)"
+                  r"\s+([-\d.]+)% \+/-\s+([\d.]+)", k)
+    if not m:
+        die("could not parse the paired PreSign overhead from %s" % compare)
+    d["ov_simp"], d["ov_mldsa"] = m.group(1), m.group(3)
+
+    m = re.search(r"attempts/Sign\s+([\d.]+)\s+([\d.]+)", k)
+    d["att_simp"], d["att_mldsa"] = m.group(1), m.group(2)
+
+    for key, label in (("sig", "signature"), ("stmt", r"statement Y"),
+                       ("payload", r"swap payload \(sig \+ Y\)")):
+        m = re.search(label + r"\s+(\d+)\s+(\d+)\s+([\d.]+)x", k)
+        if not m:
+            die("could not parse the '%s' size row from %s" % (label, compare))
+        d[key + "_simp"], d[key + "_mldsa"], d[key + "_ratio"] = m.groups()
+    return d
+
+
 def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over, onchain, packed_l2):
+                rust_packed_over, onchain, packed_l2, mldsa=None):
     t = timing[TARGET]
     o = over[TARGET]
     c = comm[TARGET]
@@ -464,6 +516,52 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     m.append(("clRatioPk", "%.0f" % ratio_pk))
     m.append(("clRatioTimeMax", "%.0f" % time_ratios[slow_op]))
     m.append(("clRatioTimeMaxOp", "Extract" if slow_op == "Ext" else slow_op))
+    # --- Adapt decomposition (the supervisor-requested explanation of the ~270x
+    # headline factor).  The two Adapt calls do DIFFERENT WORK, so the raw ratio
+    # is not a speed comparison:
+    #   * LAS Adapt is obliged by eprint 2020/845 Alg. 2 line 21 to run PreVerify
+    #     before it returns, and at the packed tier it also decodes sigma-hat, Y,
+    #     r' and pk and re-encodes sigma.
+    #   * secp256k1_ecdsa_adaptor_decrypt does neither: it deserialises the
+    #     162-byte adaptor signature, inverts one scalar, multiplies, and
+    #     conditionally negates.  Verification is a SEPARATE exported call.
+    # Every quantity below is measured; the script only divides.
+    _cl_adapt = classical["Adapt"][0]
+    _las_adapt_packed = packed_l2["Adapt"][0]
+    _las_prever_packed = packed_l2["PreVerify"][0]
+    m.append(("clAdaptUs", "%.1f" % _cl_adapt))
+    m.append(("lasAdaptPackedUs", "%.0f" % _las_adapt_packed))
+    # share of LAS Adapt that is the PreVerify the construction mandates
+    m.append(("adaptPreVerifyPct", "%.0f"
+              % (100.0 * _las_prever_packed / _las_adapt_packed)))
+    # like-for-like: charge the classical side the verification LAS is forced to do
+    m.append(("clAdaptMatchedUs", "%.0f" % (classical["PreVerify"][0] + _cl_adapt)))
+    m.append(("clRatioAdaptMatched", "%.0f"
+              % (_las_adapt_packed / (classical["PreVerify"][0] + _cl_adapt))))
+    # bytes the packed Adapt must decode and re-encode: sigma-hat, Y, r', pk in,
+    # sigma out -- at the SAME parameter set as tab:classical (L2).
+    m.append(("adaptCodecKB", "%.1f"
+              % ((c2["signature (c,z)"] + c2["signature (c,z)"] + c2["Y = t'"]
+                  + c2["r'"] + c2["pk = t"]) / 1024.0)))
+    # ML-DSA adaptor experiment (measured; evidence/mldsa_hint/latest).
+    # A SEPARATE construction from the scheme of record -- these macros must
+    # never be mixed with the simplified scheme's figures.
+    if mldsa:
+        m.append(("mldsaIters", mldsa["iters"]))
+        m.append(("mldsaContract", mldsa["contract"]))
+        m.append(("mldsaNaiveP", mldsa["naive_p1"]))
+        m.append(("mldsaRepairedP", mldsa["repaired_p4"]))
+        m.append(("mldsaOvPreSign", mldsa["ov_mldsa"]))
+        m.append(("mldsaOvPreSignSimp", mldsa["ov_simp"]))
+        m.append(("mldsaAttempts", mldsa["att_mldsa"]))
+        m.append(("mldsaAttemptsSimp", mldsa["att_simp"]))
+        m.append(("mldsaSigBytes", mldsa["sig_mldsa"]))
+        m.append(("mldsaSigBytesSimp", mldsa["sig_simp"]))
+        m.append(("mldsaSigRatio", mldsa["sig_ratio"]))
+        m.append(("mldsaStmtBytes", mldsa["stmt_mldsa"]))
+        m.append(("mldsaStmtRatio", mldsa["stmt_ratio"]))
+        m.append(("mldsaPayloadRatio", mldsa["payload_ratio"]))
+
     # on-chain settlement gas (measured; evidence/onchain/latest/gas_report.log)
     if onchain:
         cap = 16_777_216
@@ -853,6 +951,8 @@ def main(argv=None):
     classical = parse_classical(ev / "logs" / "classical.log")
     onchain = parse_onchain_gas(Path(__file__).resolve().parent.parent
                                 / "evidence" / "onchain" / "latest" / "gas_report.log")
+    mldsa = parse_mldsa(Path(__file__).resolve().parent.parent
+                        / "evidence" / "mldsa_hint" / "latest")
     (rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
      rust_proto) = parse_rust_driver(rust / "bench_levels_rust.log")
     rust_packed_over = parse_rust_packed_overhead(rust / "bench_levels_rust.log")
@@ -881,7 +981,7 @@ def main(argv=None):
     emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over, onchain, packed_l2)
+                rust_packed_over, onchain, packed_l2, mldsa)
     emit_tab_timing(out, meta, params, timing)
     emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over)
     emit_tab_components(out, meta, params, comm)

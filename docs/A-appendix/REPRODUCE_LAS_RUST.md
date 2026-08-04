@@ -7,7 +7,7 @@ benchmark: **ordinary lattice-based signature (Algorithm 1) vs LAS adaptor
 signature (Algorithm 2)**.
 
 **Scope — deliberately excluded.** No application layer: no atomic swap, no
-payment-channel / AMHL, no `presign_k` (K-hop bound), no classical ECDSA-adaptor
+payment-channel / AMHL (out of project scope), no classical ECDSA-adaptor
 baseline, no EVM/gas. The guide stops at the Algorithm 1 vs Algorithm 2
 comparison; nothing application-level starts until the signature implementation
 and benchmark are airtight.
@@ -147,7 +147,7 @@ Bounds as in C: Sign rejects `‖z‖∞ > γ−κ`; PreSign rejects at the tigh
 `‖ẑ‖∞ > γ−κ−1` (the −1 budget that keeps adapted signatures inside the ordinary
 Verify bound — the failure mode to watch).
 
-Not ported (out of Stage-1 scope by design): `las_presign_k`/AMHL and
+Not ported (out of project scope by design): AMHL/multi-hop locks and
 everything application-level — see the scope statement at the top.
 
 ## Step 6 — Port the serialization (`src/serialize.rs`)
@@ -350,6 +350,6 @@ cargo run --release --example bench_levels     # overhead summary + rejection co
 cargo run --release --example size_report      # component sizes == C evidence row
 ```
 
-Stop here. Atomic swap, PCN/AMHL, `presign_k`, the classical-adaptor baseline and
+Stop here. Atomic swap, the classical-adaptor baseline and
 EVM gas are all later-stage work, out of scope until the PQ signature
 implementation and its benchmark are airtight in both languages.

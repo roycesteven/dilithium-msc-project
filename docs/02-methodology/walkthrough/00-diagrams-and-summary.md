@@ -124,7 +124,7 @@ flowchart TB
     C_base["basesig.{c,h} — Algorithm 1 (base sig)"]
     C_las["las.{c,h} — Algorithm 2 (adaptor)"]
     C_ser["serialize.{c,h} — wire codec + verify-from-bytes"]
-    C_app["amhl.{c,h} · chain.{c,h} — Stage-2 demo (C only)"]:::stage2
+    C_app["relation_zk.{c,h} — Fig. 1 proof of knowledge pi (C only)"]:::stage2
   end
 
   subgraph RLAS["Rust LAS — <code>rust/fips204-las/src/</code> (new)"]

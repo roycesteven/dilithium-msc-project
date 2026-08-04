@@ -30,7 +30,7 @@ flowchart TD
     subgraph S1["2 · IMPLEMENTATION (two mirrored ports, byte-identical)"]
         cimpl["C port (ref/)<br/>setup - relation + proof pi - base signature (Alg. 1) - adaptor LAS (Alg. 2) - serialize"]
         rimpl["Rust port (rust/fips204-las/)<br/>same six layers, same names"]
-        apps["Applications on top<br/>Fig. 1 atomic swap - HTLC ledger + multi-hop locks - EVM gas probe"]
+        apps["Applications on top<br/>Fig. 1 atomic swap - UTXO swap (Rust) - EVM gas probe"]
     end
 
     subgraph S2["3 · CORRECTNESS GATES (nothing is measured before these pass)"]

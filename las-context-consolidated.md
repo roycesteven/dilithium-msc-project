@@ -1,26 +1,30 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 7)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 7 + 8)
 
 > Meeting-6 directives are held separately in
 > `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`, not in this file.
-> **Meeting 7 (§16) retargets Stage 2 from the EVM to Bitcoin/UTXO — read it before
-> planning any further application work.**
+> **Meeting 7 (§16) retargets Stage 2 from the EVM to Bitcoin/UTXO. Meeting 8 (§17) is
+> the LATEST WORD: no new features — break down the Bitcoin transaction, polish the
+> report, prepare the presentation. Read both before planning any further work.**
 >
-> **THE canonical objectives/context file** (merges Meetings 1, 2, 3, 4 and 5). As of
-> 2026-06-13 the older `LAS_OBJECTIVES_FOR_TOP_MARK.md`, `las-objectives-meeting2.md`
+> **THE canonical objectives/context file** (merges Meetings 1, 2, 3, 4, 5, 7 and 8). As
+> of 2026-06-13 the older `LAS_OBJECTIVES_FOR_TOP_MARK.md`, `las-objectives-meeting2.md`
 > and `docs/archive/LAS_PROJECT_HANDOFF.md` have been **deleted** — their content is
 > fully captured here (objectives), in `CLAUDE.md` (project context), and in
 > `docs/STATUS.md` (live deliverable/test checklist). This file = the *spec*;
 > `docs/STATUS.md` = the *progress tracker*.
 > Provenance tags: **[M1]** = Meeting 1 · **[M2]** = Meeting 2 (2026-06-08) ·
 > **[M3]** = Meeting 3 (2026-06-18) · **[M4]** = Meeting 4 (June 2026, exact date
-> not in transcript) · **[M5]** = Meeting 5 (2026-07-06) · **[M1→M2]** = set in M1,
+> not in transcript) · **[M5]** = Meeting 5 (2026-07-06) · **[M7]** = Meeting 7
+> (2026-07-24) · **[M8]** = Meeting 8 (2026-07-31) · **[M1→M2]** = set in M1,
 > revised in M2.
 > Where the meetings conflict, the **later meeting wins** (M2 over M1; M3 over M2
 > for evaluation rigour / fairness — M3 raised the Stage-1 bar, see §13; **M4 raised
 > the Stage-1 *presentation* bar and showed Stage 1 is NOT yet supervisor-signed-off**,
 > see §14; **M5 added the explainability/reproducibility artefacts — high-level
 > diagrams, C⇄Rust cross-check, README split — that must accompany the Stage-1
-> figures**, see §15). M5 is the latest word.
+> figures**, see §15; **M7 moved Stage 2 to Bitcoin/UTXO**, see §16; **M8 froze the
+> feature set and made the Bitcoin transaction breakdown the single remaining
+> requirement**, see §17). **M8 is the latest word.**
 
 ---
 
@@ -55,7 +59,15 @@
 
 - [M1] Target paper parameters: `d=256, n=ℓ=4, q≈2²⁴, κ=60, γ=122880`.
 - [M2] **Revision — start from the implementation's parameters, do not change anything at the beginning.** Initial builds use Dilithium's `q = 8380417 ≈ 2²³`. First task is making the existing implementation run as-is.
-- Reconciliation: migration to paper params is a *later, documented* step (separate commit, before/after benchmarks). If migration is disruptive, staying on reference params is acceptable **provided** the deviation is justified in the report and norm-bound arithmetic is re-derived for the actual q.
+- ~~Reconciliation: migration to paper params is a *later, documented* step.~~
+  **[Royce, 2026-08-03 — SUPERSEDES the two bullets above for parameter authority]
+  NIST FIPS 204 (ML-DSA) is the parameter authority, not the LAS paper.** `q = 8380417`
+  is ML-DSA's modulus and is therefore **correct**, not a deviation to be apologised for.
+  **The `q≈2²⁴` migration is DROPPED, not deferred** — NIST does not ask for it, so it is
+  no longer a goal and must not reappear in any work queue or future-work list. Where the
+  paper and FIPS 204 differ on a *parameter*, follow FIPS 204 and say so in the report.
+  (Report *mathematical notation* is unaffected — it still follows the LAS paper's
+  symbols; see `docs/paper/LAS_2020_845_NOTATION.md`.)
 - Standing technical concern [M1+M2]: after Adapt adds the witness, the result must remain within the rejection bound — handle and document the post-adaptation norm check explicitly.
 
 ## 5. Official project structure [M1→M2 merged]
@@ -68,11 +80,27 @@ Implement LAS by modifying Dilithium; benchmark against pure Dilithium. Understa
 **Stage 2 — Blockchain application** (= M1 "better")
 **Atomic swap or fair exchange** on a **local testnet / private chain** [M2]. Method: take an existing adaptor-signature-based atomic-swap construction and **replace only the signature component** with LAS — do not rebuild application logic [M2]. Compare gas cost / application efficiency.
 
-**Optional tier** (= M1 "best"; only after Stages 1–2 + benchmarks + report draft):
-- **AMHL / multi-hop payment demo** [M1→M2 **demoted**]: previously the chosen next stage; M2 explicitly makes it optional ("another story… if you do not have time, focus on the first two stages — that is already enough"). Spec if attempted: LAS Fig. 2, bound `‖ẑ‖∞ > γ − κ − K` for path length K, timeouts, refund paths.
-- **On-chain LAS verification** (precompile or zk proof) — the swap protocol + gas floor are already measured (`evm/`); native EVM verification is the open piece.
-- **Parameter migration** to the paper's `q≈2²⁴` — a documented before/after step.
-- **Second LAS-family scheme** (application-layer only) — far-stretch; consensus-level multisigs (Squirrel/Chipmunk-style) are out of scope.
+**Remaining work** (= M1 "best"). **[Royce, 2026-08-03] This tier is NOT "optional".**
+Everything still open is **mandatory**; the items differ only in **order**, ranked by
+(1) what Wang instructed/prioritised, (2) low-hanging fruit, (3) novelty value to the
+report, (4) feasibility in the time left. The words "optional", "if time permits",
+"stretch" and "bonus" are retired from this project's vocabulary — including in the
+report's future-work section.
+- ~~**AMHL / multi-hop payment demo**~~ — **DROPPED [Royce, 2026-08-03].** Out of the
+  project entirely: not a bonus, not future work, not a deliverable. `ref/amhl.{c,h}` is
+  dead legacy; existing AMHL claims in the report/docs are a **removal task**. (History:
+  M1 chose it as the next stage, M2 demoted it.)
+- **NIST ML-DSA hint experiment** [M8 §17.6, redefined by Royce 2026-08-03] — build LAS
+  on ML-DSA **as NIST specifies it** (hint vector, Power2Round, high/low decomposition
+  enabled) to *demonstrate* that NIST's construction must be modified for LAS to work.
+  Highest novelty value in the queue; Wang named it for the week after Meeting 8.
+- **On-chain LAS verification** (precompile or zk proof) — the swap protocol + gas floor
+  are already measured (`evm/`); native EVM verification is the open piece. M8 §17.4:
+  only after the Bitcoin/UTXO solution is fully finished.
+- ~~**Parameter migration** to the paper's `q≈2²⁴`~~ — **DROPPED**, see §4: NIST is the
+  parameter authority and does not ask for it.
+- ~~**Second LAS-family scheme**~~ — **ruled out by Wang in M8 §17.7** (no time; polish
+  what exists). Consensus-level multisigs (Squirrel/Chipmunk-style) remain out of scope.
 
 ## 6. Scope rules — hard fences
 
@@ -613,7 +641,186 @@ phone and may need a dedicated PC — that is a reportable finding, not an aside
 three steps were doable, but his answer is **cut off mid-sentence** in both recordings,
 so his full caveat is unrecorded.
 
-## 17. Reference links
+## 17. Meeting-8 directives [M8, 2026-07-31 — freeze the features; break down the Bitcoin transaction; polish]
+
+Source: `meeting8_cleaned_transcript.md` (merged from `meeting8_original_transcript.md`
+and `meeting8_summary.md`; the `.m4a` was not re-transcribed). **Speaker polarity is
+flipped versus Meeting 7** — in M8, Speaker 1 = Wang, Speaker 2 = Royce.
+
+Meeting 8 **added no scope**. Wang reviewed the three-configuration UTXO results,
+accepted them, and spent most of the meeting on one gap: *the report never says what a
+Bitcoin transaction actually contains.* Where M8 refines earlier meetings, **M8 is the
+latest word**. Its governing instruction: **"You don't need to contain all the stuff —
+you just need to make sure that what you have done looks good, looks perfect, looks
+great."**
+
+### 17.1 The results are accepted — stop measuring, start polishing
+
+Royce reported the Rust UTXO comparison across the three M7 configurations: classical
+adaptor (no ZKP), LAS + Groth16, LAS + LaZer. Findings: **Groth16 takes longer to
+generate but yields a much smaller proof; LaZer generates fast but the proof is much
+larger.** Post-quantum proof sizes land ≈30× the classical ones, and as much as ≈300×
+on the on-chain components. Wang's verdict: *"it's what we expected for us… people argue
+that most of the time the security is good, but the size is not good."* **He asked for
+no further measurements.**
+
+Recorded rationale for configuration 1 carrying **no π**: the classical adaptor-signature
+protocol on the elliptic curve does not specify one — it only carries a discrete-log
+equality proof (DLEQ). Wang accepted this ("so in our construction they don't have that
+component?" → confirmed).
+
+### 17.2 THE central ask — break down the Bitcoin transaction, with diagrams
+
+The report treats a "transaction" abstractly, so it cannot say which fields the adaptor
+layer changes or why communication grows. Wang wants, explicitly:
+
+1. **What a standard Bitcoin transaction contains** — taken from Bitcoin's own
+   definition, not from the LAS paper. His instruction was literally to look up the
+   standard structure: *"You could just Google how a Bitcoin transaction looks like.
+   This is the standard transaction structure."* Rationale: **"the paper is a very
+   oversimplification of the architecture"** and does not specify practice.
+2. **Exactly which components the adaptor construction adds** — pre-signature, statement
+   `Y`, witness — **and where they sit**. The proof π appears **not** to be included
+   on-chain (both agreed; Wang: *"the proof has not been included in the transaction"*).
+3. **Two diagrams: the original/standard transaction vs the modified transaction**, with
+   the changed fields highlighted. *"If you give a diagram to show that, okay, this is
+   the original transaction… and this is the modified transaction, by adding the adaptor
+   signature. Then we can see which components have already been changed."*
+4. **The breakdown is what justifies the reported communication-size increase** — *"then
+   we can reason on the side of why the communication size will be larger."*
+5. **Confirm how the witness is actually carried on-chain**, since implementations
+   differ (Royce: *"some people usually put the witness into the chain, some don't"* →
+   Wang: *"you should make sure how they use the witness here"*).
+
+Wang's closing weight on this item: **"I think that's the most important thing
+[remaining]. [Otherwise] I think, yeah, we've done a great job."**
+
+### 17.3 Terminology ruling — "transaction" ≠ "the signed message"
+
+Royce's write-up used "transaction" to mean the message being signed. Wang objected:
+in a Bitcoin context "transaction" names a **predefined format**, so **a different term
+must be used for the signed message**. *"You would be better to use another term —
+because 'transaction' here, we are in the context of blockchain, of Bitcoin… they have a
+predefined format, which should follow the definition of a Bitcoin transaction."*
+
+Second terminology ruling: LAS's **PreSign / PreVerify / Adapt / Ext are `functions`,
+not `protocols`** — *"'protocol' means more high-level design… for example we have
+consensus protocols; for this it's more like a scheme, and inside the scheme we have
+some functions."* Both rulings apply report-wide, every occurrence.
+
+### 17.4 Sequencing — finish Bitcoin/UTXO before any further EVM work
+
+Royce asked whether to continue the Naysayer/poqeth optimistic-verification exploration
+on the EVM. Wang: **finish the Bitcoin solution properly first.** The same unanswered
+question — how the added components sit inside the transaction or the smart contract —
+applies to the EVM anyway, so the EVM becomes *a discussion of a more advanced solution*
+once a **fully complete finished solution** exists on Bitcoin. *"I would like to see a
+fully complete finished solution first. Then you can discuss more advanced solutions."*
+
+The transaction structure is also **ZKP-independent**: *"no matter how we use LaZer or
+Groth16, the structure shouldn't differ; the components should be the same."*
+
+### 17.5 Report rulings (refine M4.6 / M5.10 / M7.5)
+
+- **Word count need not be proportional to the rubric's mark weighting.** Write more
+  where the interesting work is — results, not background. Wang was content that
+  Chapter 3 is the largest chapter. *"You don't need to make them proportional. You just
+  make sure that your report is good."* (Royce reported trimming to ≈9,000 words.)
+- **Figures are embedded in the text**, between paragraphs / top / bottom of the page —
+  **not** collected at the end of a chapter or in the appendix. *"In some other subjects
+  like economics they prefer to put the figures in the appendix — but their domain is
+  different."* **This overrides the earlier code-and-figures-to-appendix habit.**
+- **Group related figures side by side** (e.g. the four LAS function diagrams) and
+  **avoid a single figure consuming a whole page** unless it genuinely needs one; always
+  leave room for text on the page.
+- **Chapter 5 is titled "Conclusion, critical reflection and future work"** — agreed
+  verbatim in the meeting.
+
+### 17.6 Future work — named directions and their limits
+
+> **[Royce, 2026-08-03] Two corrections to how this subsection was framed in the
+> meeting.** (i) **Nothing below is "optional"** — see §5: everything open is mandatory
+> and merely ordered by priority. (ii) **The hint item is not about shrinking `Y`** — its
+> real objective is stated in the first bullet's follow-up paragraph.
+
+- **Reducing proof/object size is the most valuable direction.** Royce identified
+  **statement `Y` as the largest single component**, present both off-chain and on-chain,
+  and proposed a **Dilithium-style hint optimisation** so full public parameters need not
+  be transmitted. He had avoided it fearing it breaks `Adapt`/`Ext`, which require both
+  parties to derive identical values. Wang: interesting, **try it** (target the week
+  after next); the open question is whether **verification and extraction still work**.
+  *"Just try it, just try it. I don't know, to be honest."*
+
+  **What that item actually is [Royce, 2026-08-03 — supersedes the in-meeting framing].**
+  Not a size micro-optimisation. The objective is to **build LAS on NIST ML-DSA as
+  specified** — hint vector `h`, Power2Round, and high/low-bit decomposition all
+  **enabled** — rather than on the LAS paper's simplified Dilithium. Its purpose is
+  **evidential**: the project currently *asserts* that NIST's ML-DSA construction must be
+  modified for LAS to work correctly (the clean identity `Az − ct = w + Y` holds only
+  once those features are disabled, §3). Running the experiment converts that assertion
+  into a **demonstration** — showing precisely what breaks in `Verify`/`Adapt`/`Ext` when
+  the hint machinery is present, and therefore why the simplification was necessary.
+  That makes it the **highest-novelty item in the remaining queue**, and mandatory.
+- **IPFS / decentralised storage as a documented fallback** for large data, with miners
+  or validators referring to the address. Caveats Wang attached: it drags in another
+  platform and a **cross-platform bridge**, and raises **who maintains the off-chain
+  storage**. *"We can always have a solution, but the question is how good the solution
+  is."*
+- **Check whether Bitcoin imposes a relevant size limit** (Royce: some, but not as strict
+  as the EVM's).
+- **Live-network UTXO deployment** (fees, propagation) is future work, not this project.
+- **Functional signatures are ruled out** — no implementation exists, so it would mean
+  redoing the whole project from scratch.
+
+### 17.7 Scope fences reaffirmed
+
+- **No second signature scheme**, despite the original proposal allowing one — *"I don't
+  think we have enough time… you should first focus on polishing what you have already
+  done, and make sure the results there are correct."*
+- **zkVM / RISC-V is out** unless Bitcoin's virtual machine is RISC-V-based (it is not);
+  Wang judged it time-consuming and structurally mismatched.
+- **No more features generally** — Royce: *"I think that's it for the project, because if
+  I add more features, I'm not sure whether I can put everything in."* Wang agreed.
+
+### 17.8 Open technical question — why is LAS `Adapt` ≈270× ECDSA's?
+
+ECDSA's adaptor `Adapt` costs ≈1.5 µs; LAS's is ≈270× that. Royce could not fully
+explain it beyond *"the pre-signature is huge, so even adding small things into the big
+things just costs more."* Wang noted ECDSA's adaptor construction is simply very
+efficient, and asked him to check that algorithm. **This explanation is still owed.**
+
+### 17.9 Meeting-8 deliverable list
+
+1. **Break down the Bitcoin transaction structure in the report** — which components the
+   adaptor construction adds (pre-signature, statement `Y`, witness; π appears to stay
+   off-chain) and where each sits in a standard transaction.
+2. **Two diagrams: standard transaction vs modified transaction**, changed fields
+   highlighted, used to justify the communication-size increase.
+3. **Stop calling the signed message a "transaction"** — adopt a distinct term
+   report-wide.
+4. **Investigate how the pre-signature and witness are carried in a real broadcast
+   transaction**, following Bitcoin's documented structure rather than the paper.
+5. **Finish Bitcoin/UTXO before any further EVM/Naysayer work.**
+6. Report quality over proportional word counts; more on results, less on background.
+7. **Embed figures in the text**; group the four LAS function figures side by side; avoid
+   single-figure pages.
+8. Title Chapter 5 **"Conclusion, critical reflection and future work"**.
+9. Call PreSign / PreVerify / Adapt / Ext **functions**, never protocols.
+10. *Optional, week after next:* try the **hint-style optimisation to shrink statement
+    `Y`**, and check whether verification/extraction survive it.
+11. *Optional:* check Bitcoin size limits; document **IPFS-style off-chain storage** as a
+    future-work fallback, with its bridge/maintenance caveats.
+12. **Do not add a second signature scheme**; zkVM/RISC-V out; functional signatures and
+    live-network deployment are future work only.
+13. **Draft slides for a 6–8 minute presentation**, to present to Wang **the week after
+    next** for comments — the same material underpins the video.
+14. **Explain the ≈270× `Adapt` gap** versus ECDSA (§17.8).
+15. *Wang's own action:* he has **not yet checked the LAS API/implementation details**
+    and will do so later — so the API should be self-checked before then.
+
+**Next meeting:** next week (i.e. week of 2026-08-07).
+
+## 18. Reference links
 
 - LAS spec: https://eprint.iacr.org/2020/845
 - Survey: https://eprint.iacr.org/2022/1151

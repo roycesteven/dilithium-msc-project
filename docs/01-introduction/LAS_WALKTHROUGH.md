@@ -114,7 +114,8 @@ scenario — the paper's Fig. 1, receipt included — runs and self-checks in
 
 We also built the richer version — **paying through several people in a chain**
 (a payment-channel network), where each hop has its *own* padlock so no
-intermediary can cheat the others. That's the "AMHL" part (Section 6.4).
+intermediary can cheat the others — the "AMHL" construction of the LAS paper, which
+this project does not build.
 
 ---
 
@@ -180,7 +181,7 @@ of its functions** (`docs/02-methodology/FUNCTION_MAP.md`). The new pieces:
        │           │     validating decoder + base_verify_packed = the
        │           │     interface an on-chain verifier would call)
        │           │
-       │           ├── ref/amhl.{c,h}        multi-hop locks (paying via a chain
+       │           ├── ref/relation.{c,h}    statement/witness generation (Y = A*y)
        │           │     of people, each hop its own padlock)
        │           │
        │           └── ref/chain.{c,h}       a tiny pretend-ledger (accounts,
@@ -197,34 +198,13 @@ What each test program proves (all pass, zero compiler warnings):
   sig, extracted secret is exactly right. 100% correct.
 - **`test_swap`** — the Alice/Bob atomic swap of Section 4, every step asserted.
 - **`test_pcn`** — the pretend-ledger: a cross-chain swap, a *timeout-refund*
-  (nobody loses coins if a party vanishes), and a multi-hop payment.
-- **`test_amhl`** — the proper multi-hop version (§6.4 below).
+  (nobody loses coins if a party vanishes).
 - **`test_serde`** — bytes round-trip perfectly; **flipping any single one of the
   4640 signature bytes makes verification fail** (tamper-evidence); garbage input
   is rejected.
 - **`test_kat`** — runs everything from fixed seeds and checks the output against a
   **pinned fingerprint** (`f7fc40…e6b1`), so the build is bit-for-bit reproducible
   on any machine.
-
-### 6.4 The multi-hop part (AMHL), in one picture
-
-Pay Erin through Bob, Carol, Dave. Each hop gets its **own** padlock built so that
-unlocking one hop reveals exactly what's needed to unlock the previous one — and
-*nothing* about non-neighbouring hops (so a middleman can't steal). Erin (paid
-last in the chain, claims first) pulls her hop, which cascades the secret backward:
-
-```
- Alice ─Y₁→ Bob ─Y₂→ Carol ─Y₃→ Dave ─Y₄→ Erin
-   claims last  ◄─────────────────────────  Erin claims first
-   "no wormhole": the secret for hop 4 cannot open hop 1 (different padlocks) ✓ asserted
-```
-
-A subtlety we *measured*: each hop's secret is a sum of small numbers, so its size
-grows with the number of hops (1, 2, 3, 4 …). That growth — the famous "knowledge
-gap" — is exactly why deeper routes pre-sign with a slightly tighter budget
-(`γ−κ−K` for `K` hops). We show it costs essentially nothing in speed (Section 7).
-
----
 
 ## 7. The results, in plain words
 
@@ -296,7 +276,6 @@ cd ref
 make test/test_las3   && ./test/test_las3     # core: 1000 trials, the 8-point contract
 make test/test_zkp3   && ./test/test_zkp3     # the padlock receipt π (needs LaZer — see README)
 make test/test_swap3  && ./test/test_swap3    # the Alice↔Bob atomic swap incl. π, narrated (needs LaZer)
-make test/test_amhl3  && ./test/test_amhl3    # multi-hop: wormhole-resistance + norm growth
 make test/test_serde3 && ./test/test_serde3   # tamper test: all 4640 byte-flips rejected
 make test/test_kat3   && ./test/test_kat3     # reproducible fingerprint match
 make test/bench_las3      && ./test/bench_las3      # speeds + rejection rate
@@ -309,7 +288,7 @@ make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin
 cd ../evm && forge test --gas-report
 ```
 *(The classical baseline needs a one-time clone — see `README.md`.)*
-Good things to film: `test_amhl3` scrolling its wormhole/norm-growth asserts; the
+Good things to film: `test_contract3` scrolling its itemised 8-point PASS; the
 `test_serde3` "all 4640 byte-flips rejected" line; the `bench_classical` 2×2; the
 `forge --gas-report` table.
 
@@ -334,8 +313,8 @@ Good things to film: `test_amhl3` scrolling its wormhole/norm-growth asserts; th
   completed signature still verifies; the project's key correctness knob.
 - **Atomic swap** — trustless coin trade across two chains; all-or-nothing.
 - **HTLC** — the classic "hash-and-timeout lock" that adaptor signatures replace.
-- **AMHL (multi-hop lock)** — paying through a chain of people, each hop its own lock.
-- **Wormhole attack** — a multi-hop theft that distinct per-hop locks prevent.
+- **AMHL (multi-hop lock)** — paying through a chain of people, each hop its own lock;
+  a construction of the LAS paper that this project does not build.
 - **Serialisation / packing** — turning objects into the byte string sent on the wire.
 - **KAT (known-answer test)** — fixed-input test pinned to an expected fingerprint.
 - **Gas** — what an Ethereum operation costs; you pay per byte and per computation.
