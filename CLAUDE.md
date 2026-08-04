@@ -121,12 +121,12 @@ sessions. Always regenerate before reasoning about budget. Facts that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-04 12:27 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-04 12:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
 - Branch **`report`** · HEAD aa71cbf · 2026-07-31 · utxo bitcoin implementation correction real tx vs paper tx
-- Working tree: 58 modified tracked file(s), 245 untracked path(s) · no upstream tracking branch
+- Working tree: 96 modified tracked file(s), 0 untracked path(s) · no upstream tracking branch
 - Recent commits:
   - `aa71cbf 2026-07-31 utxo bitcoin implementation correction real tx vs paper tx`
   - `4aef1f7 2026-07-29 meeting 7`
