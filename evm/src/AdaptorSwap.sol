@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {LASVerify} from "./LASVerifier.sol";
+import {LASVerifyOpt} from "./LASVerifierOpt.sol";
 
 /// @title AdaptorSwap — a signature-scheme-agnostic SCRIPTLESS escrow for adaptor-
 ///        signature atomic swaps, used to measure the *on-chain* cost of settling a swap
@@ -159,6 +160,42 @@ contract AdaptorSwap {
         require(sw.state == State.OPEN, "not open");
         require(keccak256(abi.encode(AprimeHat, t, message)) == sw.lasContext, "context mismatch");
         require(LASVerify.verify(AprimeHat, t, message, sigPacked), "LAS verify failed");
+        sw.state = State.CLAIMED;
+        emit Claimed(id, keccak256(sigPacked));
+        sw.beneficiary.transfer(sw.amount);
+    }
+
+    /// Settle with full on-chain LAS verification **inside one transaction**.
+    ///
+    /// Same scheme, same parameters and the same accept/reject predicate as
+    /// `claimLASVerified` — `LASVerifyOpt` is pinned to `LASVerify` and to the C golden
+    /// vectors by `test/LASVerifierOpt.t.sol` — but re-expressed so that execution plus
+    /// intrinsic gas lands under EIP-7825's 16,777,216 cap, which
+    /// `test/LASGasBreakdown.t.sol::test_optimised_fits_in_one_transaction` asserts.
+    /// This is the entrypoint that could actually be mined; `claimLASVerified` is kept
+    /// as the measured baseline it is compared against, not as a deployable path.
+    ///
+    /// BINDING. `lasContext` must equal
+    /// `keccak256(abi.encode(aHatPacked, tHatPacked, tPacked, message))`. That is a
+    /// wider commitment than the `claimLASVerified` one: it additionally pins `tHatPacked`
+    /// (the public key in NTT domain, registered so the verifier need not re-transform it)
+    /// and `tPacked` (the normal-domain hash preimage of the same key). Both are supplied
+    /// rather than derived, so both must be committed — otherwise a claimer could hand in
+    /// a t̂ unrelated to the t that gets hashed.
+    function claimLASVerifiedOpt(
+        uint256 id,
+        bytes calldata sigPacked,
+        bytes calldata aHatPacked,
+        bytes calldata tHatPacked,
+        bytes calldata tPacked,
+        bytes calldata message
+    ) external {
+        Swap storage sw = swaps[id];
+        require(sw.state == State.OPEN, "not open");
+        require(
+            keccak256(abi.encode(aHatPacked, tHatPacked, tPacked, message)) == sw.lasContext, "context mismatch"
+        );
+        require(LASVerifyOpt.verify(aHatPacked, tHatPacked, tPacked, message, sigPacked), "LAS verify failed");
         sw.state = State.CLAIMED;
         emit Claimed(id, keccak256(sigPacked));
         sw.beneficiary.transfer(sw.amount);

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  4 AUG 2026 10:23
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  5 AUG 2026 10:29
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -947,15 +947,15 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <7> on input line 59.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <5> on input line 59.
-
-Overfull \hbox (3.94708pt too wide) in paragraph at lines 121--127
+ [18]
+Overfull \hbox (3.94708pt too wide) in paragraph at lines 102--108
  []\T1/lmr/bx/n/12 (-20) Hash, chal-lenge, and sam-plers.[] \T1/lmr/m/n/12 (-20
 ) The ran-dom or-a-cle $\OML/lmm/m/it/12 H$ \T1/lmr/m/n/12 (-20) is built from 
 SHAKE256,
  []
 
-[18] [19] [20] [21] [22{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}]
-[23] [24]
+[19] [20] [21] [22{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}] [23]
+[24]
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/8'.
 (microtype)             Ignoring protrusion settings for this character.
@@ -1011,7 +1011,7 @@ Chapter 5.
 
 ] [53] [54]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-19.
+17.
  (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) [55{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]) (./chapters/A-appendix.
@@ -1052,7 +1052,7 @@ Overfull \hbox (8.02162pt too wide) in paragraph at lines 258--258
  []
 
 [63] [64] [65]
-<figures/fig_overhead.pdf, id=1271, 543.34494pt x 348.09785pt>
+<figures/fig_overhead.pdf, id=1272, 543.34494pt x 348.09785pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
 Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 452.
@@ -1069,12 +1069,16 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[66] [67] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+[66]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[67] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [68] [69 <./figures/fig_overhead.pdf>]) (./report.bbl [70]
+) [68] [69 <./figures/fig_overhead.pdf>] [70]) (./report.bbl [71]
 Underfull \hbox (badness 10000) in paragraph at lines 12--20
 []\T1/lmr/m/n/12 (+20) Bitcoin Core de-vel-op-ers.  Trans-ac-tion re-lay and mi
 n-ing pol-
@@ -1092,15 +1096,15 @@ Underfull \hbox (badness 10000) in paragraph at lines 12--20
 licy / policy . h$[]\T1/lmr/m/n/12 (+20) ;
  []
 
-[71
+[72
 
-] [72]
+] [73]
 Underfull \hbox (badness 4366) in paragraph at lines 117--121
 []\T1/lmr/m/n/12 (+20) Andrew Poel-stra.  Script-less scripts.  Pre-sen-ta-tion
 , Mi-lan Bit-
  []
 
-) [73] (./report.aux)
+) [74] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1109,13 +1113,13 @@ Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: B6F61391C32E7CCFCBCDB89DD3178745;11237.
  ) 
 Here is how much of TeX's memory you used:
- 28826 strings out of 476182
- 523367 string characters out of 5795595
+ 28823 strings out of 476182
+ 523328 string characters out of 5795595
  2175975 words of memory out of 5000000
  49493 multiletter control sequences out of 15000+600000
- 746408 words of font info for 366 fonts, out of 8000000 for 9000
+ 746234 words of font info for 364 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,13n,87p,1003b,2159s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,87p,1003b,2168s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx8.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/p
@@ -1134,10 +1138,10 @@ t10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt12.pfb></usr/share/texmf/fo
 nts/type1/public/lm/lmtt8.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.p
 fb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pf
 b>
-Output written on report.pdf (73 pages, 857046 bytes).
+Output written on report.pdf (74 pages, 858161 bytes).
 PDF statistics:
- 1636 PDF objects out of 1728 (max. 8388607)
- 1207 compressed objects within 13 object streams
- 316 named destinations out of 1000 (max. 500000)
+ 1642 PDF objects out of 1728 (max. 8388607)
+ 1212 compressed objects within 13 object streams
+ 317 named destinations out of 1000 (max. 500000)
  102358 words of extra memory for PDF output out of 106986 (max. 10000000)
 

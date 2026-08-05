@@ -37,23 +37,19 @@ these constructions are mature and deployed; in the post-quantum setting they ar
 paper-only, which makes the adaptor signature a representative, high-value exotic scheme
 to implement and evaluate.
 
-The primitive is best understood against the atomic swap's history. Cross-chain exchange
-first relied on custodial intermediaries; hash-time-locked contracts removed the
-custodian by locking both transfers under one hash preimage, so claiming one leg reveals
-the preimage unlocking the other. Such contracts, however, need explicit on-chain script
-support, place a common hash on both chains --- linking the legs --- and enlarge the
-transactions. The adaptor signature answers all three
+Cross-chain exchange first relied on custodial intermediaries; hash-time-locked contracts
+removed the custodian by locking both transfers under one hash preimage, so claiming one
+leg reveals the preimage unlocking the other. Such contracts, however, need explicit
+on-chain script support, place a common hash on both chains --- linking the legs --- and
+enlarge the transactions. The adaptor signature answers all three
 \cite{poelstra2017,aumayr2021generalized} by moving the lock \emph{into the signature
 itself}: settlement transactions look like ordinary single-signer payments, atomicity is
-retained, and the witness is revealed only to the counterparty holding the matching
+retained, and the witness reaches only the counterparty holding the matching
 pre-signature. The link removed is the explicit protocol one; timing and amounts can
-still correlate the two legs.
+still correlate the legs.
 
 \section{Subject area and related work}
 \label{sec:relatedwork}
-
-This section reviews only the work needed to understand the problem and justify the
-approach, favouring depth over breadth.
 
 \paragraph{Exotic signatures for post-quantum blockchains.}
 The motivating survey \cite{buser2023survey} catalogues exotic signature families and

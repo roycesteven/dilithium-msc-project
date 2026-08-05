@@ -32,7 +32,12 @@ def parse_gas_report(path):
     We take the MAX column: the worst case a settlement can cost, which is the
     number the per-transaction cap must be judged against.
     """
-    want = {"claimClassical": None, "claimLAS": None, "claimLASVerified": None}
+    want = {"claimClassical": None, "claimLAS": None, "claimLASVerified": None,
+            # OPTIONAL: the single-transaction verifier (LASVerifyOpt). Absent from
+            # logs captured before it existed, so it must not be a hard requirement --
+            # an old evidence log has to keep replotting.
+            "claimLASVerifiedOpt": None}
+    required = ("claimClassical", "claimLAS", "claimLASVerified")
     for line in path.read_text(errors="replace").splitlines():
         if not line.lstrip().startswith("|"):
             continue
@@ -42,12 +47,13 @@ def parse_gas_report(path):
         nums = [c for c in cells[1:] if re.fullmatch(r"[0-9]+", c)]
         if len(nums) >= 4:
             want[cells[0]] = int(nums[3])   # min, avg, median, MAX
-    missing = [k for k, v in want.items() if v is None]
+    missing = [k for k in required if want[k] is None]
     if missing:
         raise SystemExit("plot_onchain_gas.py: %s not found in %s -- was the log "
                          "captured with `forge test --gas-report`?"
                          % (", ".join(missing), path))
-    return want["claimClassical"], want["claimLAS"], want["claimLASVerified"]
+    return (want["claimClassical"], want["claimLAS"], want["claimLASVerified"],
+            want["claimLASVerifiedOpt"])
 
 
 def main():
@@ -57,7 +63,7 @@ def main():
     ap.add_argument("--out", type=Path, default=None,
                     help="figure output directory (default: report/latex/figures)")
     args = ap.parse_args()
-    CLASSICAL, LAS_FLOOR, LAS_VERIFY = parse_gas_report(args.log)
+    CLASSICAL, LAS_FLOOR, LAS_VERIFY, LAS_VERIFY_OPT = parse_gas_report(args.log)
 
     try:
         import matplotlib
@@ -75,25 +81,33 @@ def main():
         "axes.grid": False, "figure.dpi": 200,
     })
 
-    # rows top-to-bottom: classical, floor, verify
+    # rows top-to-bottom: classical, floor, [single-transaction verify], verify.
+    # The optimised row is inserted only when the log carries it, so this script
+    # still reproduces the pre-optimisation figure from an older evidence log.
     labels = ["Classical ECDSA\n(claimClassical)",
-              "LAS floor\n(claimLAS, no verify)",
-              "LAS full verify\n(claimLASVerified)"]
-    values = [CLASSICAL, LAS_FLOOR, LAS_VERIFY]
-    # ratios DERIVED from the measured values, never written by hand
-    ratios = ["1$\\times$"] + ["%.3g$\\times$" % (v / CLASSICAL)
-                                for v in (LAS_FLOOR, LAS_VERIFY)]
-    colors = ["#4C72B0", "#DD9A54", "#D1622B"]  # classical blue, floor light-orange, verify orange
-    ypos = [2, 1, 0]  # verify at bottom so it sits nearest the x-axis label
+              "LAS floor\n(claimLAS, no verify)"]
+    values = [CLASSICAL, LAS_FLOOR]
+    colors = ["#4C72B0", "#DD9A54"]  # classical blue, floor light-orange
+    if LAS_VERIFY_OPT is not None:
+        labels.append("LAS full verify, optimised\n(claimLASVerifiedOpt)")
+        values.append(LAS_VERIFY_OPT)
+        colors.append("#3E8E5A")  # green: the row that clears the cap
+    labels.append("LAS full verify, baseline\n(claimLASVerified)")
+    values.append(LAS_VERIFY)
+    colors.append("#D1622B")  # orange: the row that does not
 
-    fig, ax = plt.subplots(figsize=(9.2, 3.1))
+    # ratios DERIVED from the measured values, never written by hand
+    ratios = ["1$\\times$"] + ["%.3g$\\times$" % (v / CLASSICAL) for v in values[1:]]
+    ypos = list(range(len(values) - 1, -1, -1))  # first label at the top
+
+    fig, ax = plt.subplots(figsize=(9.2, 0.78 * len(values) + 0.75))
     left = 1e4  # log-axis floor: bars start here, not at 0 (0 is undefined on a log axis)
     ax.barh(ypos, [v - left for v in values], left=left, height=0.62,
             color=colors, zorder=3)
 
     ax.set_xscale("log")
     ax.set_xlim(left, 1.6e8)
-    ax.set_ylim(-0.6, 2.6)
+    ax.set_ylim(-0.6, len(values) - 0.4)
     ax.set_yticks(ypos)
     ax.set_yticklabels(labels)
     ax.set_xlabel("on-chain settlement gas (log scale; EVM gas is deterministic)")
@@ -107,7 +121,7 @@ def main():
 
     # EIP-7825 per-transaction gas cap threshold
     ax.axvline(EIP7825_CAP, color="#B00020", linestyle="--", linewidth=1.4, zorder=4)
-    ax.text(EIP7825_CAP * 0.92, 2.5,
+    ax.text(EIP7825_CAP * 0.92, len(values) - 0.5,
             "EIP-7825 per-transaction cap\n{:,} gas".format(EIP7825_CAP),
             color="#B00020", ha="right", va="top", fontsize=9.5)
 

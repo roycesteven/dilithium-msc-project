@@ -80,7 +80,7 @@ The guiding principle is that an exotic scheme equals a basic scheme plus extra
 functions, so the lattice arithmetic should be \emph{reused}, not rewritten. The
 implementation is built additively on the upstream CRYSTALS-Dilithium reference
 \cite{ducas2018crystals,pqcrystalsdilithium} at a pinned commit, and the same strategy is
-applied a second time in Rust (\cref{sec:rustport}). Neither is itself ``the reference'':
+applied again in Rust (\cref{sec:rustport}). Neither is itself ``the reference'':
 both are \emph{modified, simplified} ML-DSA-style bases carrying the LAS layer of
 \textcite{esgin2020post}.
 
@@ -111,14 +111,13 @@ Following \cite{esgin2020post}, the base signature omits Dilithium's hint vector
 Power2Round and high/low-bit decomposition, hashing the full commitment $w$ rather
 than its high bits. This keeps the exact identity $A\vecz - c\,t = w$ available, at
 the cost of larger keys and signatures (quantified in \cref{ch:results}). Whether
-those optimisations can coexist with an adaptor layer at all was not assumed but
+those optimisations can coexist with an adaptor layer was not assumed but
 \emph{tested}, by building the same construction on unmodified ML-DSA
-(\cref{sec:res-mldsa}). The modulus follows the same reuse principle: the reference
-NTT fixes $q=8\,380\,417\approx 2^{23}$, which is FIPS~204's own modulus
-\cite{1274601}, rather than the $q\approx 2^{24}$ of \cite{esgin2020post}. Since
-$q>2\gamma$ correctness is unaffected; only the concrete Module-SIS/LWE margin
-differs. No module depends on a mode-specific constant, so identical code runs at
-every parameter set.
+(\cref{sec:res-mldsa}). The modulus is reused too: the reference NTT fixes
+$q=8\,380\,417\approx 2^{23}$, FIPS~204's own modulus \cite{1274601}, rather than the
+$q\approx 2^{24}$ of \cite{esgin2020post}. Since $q>2\gamma$ correctness is unaffected;
+only the concrete Module-SIS/LWE margin differs. No module depends on a mode-specific
+constant, so identical code runs at every parameter set.
 
 \section{Serialization and the on-chain interface}
 \label{sec:serialize}
@@ -199,14 +198,13 @@ harness, so agreement defends the C numbers against harness artefacts. \emph{Dep
 realism}: a memory-safe language is the plausible vehicle for production use.
 
 To make the timings comparable the two protocol drivers mirror each other exactly ---
-same repetition scheme, fixed seed, fixed message, same success-path gating, same
-rejection statistics. One caveat qualifies the port's independence: where
-\cite{esgin2020post} leaves an engineering choice open the Rust implementation adopts
-the C implementation's, concretely an early-abort rejection check. Sharing that is what
-makes the two languages time the same algorithm, but it is established by inspecting
-the two norm checks rather than by the automated evidence, which constrains outputs and
-rejection rates and not the work profile of a rejected attempt
-(\cref{app:methoddetail}).
+same repetition scheme, fixed seed, fixed message, success-path gating and rejection
+statistics. One caveat qualifies the port's independence: where \cite{esgin2020post}
+leaves an engineering choice open, Rust adopts the C implementation's --- concretely an
+early-abort rejection check. Sharing that is what makes the two languages time the same
+algorithm, but it is established by inspecting the two norm checks rather than by the
+automated evidence, which constrains outputs and rejection rates, not the work profile
+of a rejected attempt (\cref{app:methoddetail}).
 
 \section{Benchmarking methodology and fair comparison}
 \label{sec:benchmethod}
@@ -220,9 +218,9 @@ Undocumented boundaries are a recognised benchmarking pitfall for lattice signat
 boundaries (\cref{tab:tiers}): a \emph{core tier}, structures in and out, isolating the
 adaptor algebra from encoding; a \emph{packed tier}, wire bytes in and out including
 every validating decode, giving what an on-chain consumer pays; and, for the classical
-baseline alone, the \emph{hybrid} boundary its library actually exposes. Comparisons
-are only ever made within one boundary, and wherever a base-versus-LAS comparison is
-presented \emph{both tiers are shown}.
+baseline alone, the \emph{hybrid} boundary its library exposes. Comparisons are only made
+within one boundary, and wherever a base-versus-LAS comparison is presented \emph{both
+tiers are shown}.
 
 
 \paragraph{Implementation of record, repeatability, and machine.}
@@ -277,17 +275,17 @@ within five standard errors, separately for Sign and PreSign, at both tiers, in 
 Rust, and a failing run aborts instead of producing evidence. This is a consistency
 check on the rejection rate, not a proof of sampler correctness
 (\cref{app:methoddetail,app:benchalg}). A second gate precedes every timing: the
-correctness contract is asserted on the very objects about to be timed, so no failure
+correctness contract is asserted on the objects about to be timed, so no failure
 path is ever measured.
 
 \paragraph{Parameter sensitivity and component sizes.}
 To test whether the adaptor overhead scales with the lattice dimensions, the same
-comparison is repeated at the four parameter sets of \cref{tab:params} (symbols defined
-in \cref{tab:notation}), whose module dimensions are the standard Dilithium choices at
-NIST levels~2, 3 and~5, used purely as well-studied dimensions to scale across. No
-concrete bit-security is claimed, security proofs being out of scope. Each key and
-signature is additionally decomposed into components, so the \emph{cause} of a size
-difference can be identified rather than merely its total stated.
+comparison is repeated at the four parameter sets of \cref{tab:params} (symbols in
+\cref{tab:notation}), whose module dimensions are the standard Dilithium choices at NIST
+levels~2, 3 and~5, used purely as well-studied dimensions to scale across. No concrete
+bit-security is claimed, security proofs being out of scope. Each key and signature is
+decomposed into components, so the \emph{cause} of a size difference can be identified
+rather than merely its total stated.
 
 \begin{table}[htbp]
   \centering
@@ -337,19 +335,19 @@ fair counterpart of an adaptor signature being another adaptor signature.
 
 The narrated demonstration of \cref{sec:res-app} shows that the two-party atomic-swap
 protocol of Esgin, Ersoy and Erkin \cite{esgin2020post} --- Figure~1 of that paper, set
-out in \cref{app:swapdemo} and called simply \emph{the swap protocol} here ---
+out in \cref{app:swapdemo} and called \emph{the swap protocol} here ---
 \emph{runs}. A second study measures what it \emph{costs}; because its conclusions depend
 on what is held fixed, its design is stated here rather than beside its results.
 
 \paragraph{The venue, and why it is modelled.}
 The construction \cite{esgin2020post} states its applications over ``a UTXO-based
 blockchain like Bitcoin \emph{where the signature algorithm is replaced with a
-lattice-based signature scheme}''. That sentence is load-bearing and is implemented
-literally: a UTXO ledger was built in which \emph{the signature algorithm is a
-parameter}, so one ledger serves every configuration and any measured difference is the
-cryptography, not the ledger. It is a model rather than a node --- real transaction
-objects, canonical serialisation and the public leak channel atomicity depends on, but
-no fee market, propagation or consensus (\cref{app:utxomodel}).
+lattice-based signature scheme}''. That sentence is implemented literally: a UTXO ledger
+was built in which \emph{the signature algorithm is a parameter}, so one ledger serves
+every configuration and any measured difference is the cryptography, not the ledger. It
+is a model rather than a node --- real transaction objects, canonical serialisation and
+the public leak channel atomicity depends on, but no fee market, propagation or consensus
+(\cref{app:utxomodel}).
 
 \paragraph{What a settled transaction contains, and what the adaptor layer changes.}
 Because the venue is a transaction rather than a contract, which \emph{components} the
@@ -357,10 +355,10 @@ construction touches has a precise answer, and \cref{fig:txstruct} gives it. A B
 transaction is a fixed sequence of fields --- version, inputs, outputs, locktime --- with,
 since SegWit \cite{bip141}, the signature segregated into a \emph{witness} field. Of the
 objects the swap protocol defines, exactly one reaches a ledger: the adapted signature
-$\sigma$, in the slot an ordinary signature already occupies. The statement $Y$, the proof
-$\pi$ and both pre-signatures are off-chain messages only, and the witness $y$ is never
-transmitted at all, since $u_2$ derives it from the published $\sigma$ and its own
-$\hat{\sigma}_2$. The adaptor layer thus adds \emph{no on-chain field} --- which is what
+$\sigma$, in the slot an ordinary signature already occupies. Everything else is an
+off-chain message, and the witness $y$ is never transmitted at all, since $u_2$ derives
+it from the published $\sigma$. The adaptor layer thus adds \emph{no on-chain field} ---
+which is what
 \emph{scriptless} means --- so every on-chain byte by which the post-quantum swap exceeds
 the classical one is attributable to the signature scheme alone
 (\cref{sec:res-txstruct}).
@@ -431,16 +429,16 @@ settled transaction --- since conflating them would misreport communication cost
 The three configurations of \cref{tab:configs} each run the swap protocol end-to-end
 across two ledgers. The \emph{role-A} proof is the proof of knowledge $\pi$ the protocol
 places on the wire immediately after $Y$, claiming that a witness to $Y$ exists and is
-short. Only the $2\to3$ step is controlled, and the design works to make it one: both LAS
-configurations share one expansion of the public matrix, derive all key material from one
-pinned seed, and prove the \emph{identical} relation
+short. Only the $2\to3$ step is controlled, by design: both LAS configurations share one
+expansion of the public matrix, derive all key material from one pinned seed, and prove
+the \emph{identical} relation
 $\exists\, r' : A r' = t' \wedge \inftynorm{r'} \le 1$ --- the hard relation of the
 statement/witness pair, \emph{not} the signer's key pair, and including the norm bound,
 since proving only $A r' = t'$ would fail to close the knowledge gap. This is verified
 rather than assumed: each half reports a \emph{relation binding} computed through its own
 code, and a configuration whose halves disagree refuses to run (\cref{app:methoddetail}).
 The $1\to2$ step is not controlled: it changes the signature scheme, the relation and
-whether a role-A proof exists at all, so it is reported as a whole-stack comparison, the
+whether a role-A proof exists, so it is reported as a whole-stack comparison, the
 signature-only question being answered by \cref{sec:res-classical}.
 
 \begin{table}[htbp]
@@ -481,9 +479,9 @@ linear in the dimensions rather than in their product (\cref{app:methoddetail}).
 
 \paragraph{Measurement.}
 Because gas does not exist on this venue, the axes are execution time and communication
-cost, the latter counting \emph{off-chain} protocol messages and not only what reaches a
-ledger. Sizes are observed from the transmitted buffers rather than computed from a
-formula, and these timings sit at the \textbf{packed tier}, so they are not comparable
-with core-tier figures elsewhere. Each configuration runs \stageTwoRuns{} complete swaps,
+cost, the latter counting \emph{off-chain} protocol messages, not only what reaches a
+ledger. Sizes are observed from the transmitted buffers rather than computed, and these
+timings sit at the \textbf{packed tier}, so they are not comparable with core-tier
+figures elsewhere. Each configuration runs \stageTwoRuns{} complete swaps,
 reported as mean $\pm$ sample standard deviation, one-time costs excluded and reported
 separately (\cref{app:methoddetail}).

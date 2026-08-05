@@ -230,6 +230,119 @@ cost uses a published per-round figure rather than a same-machine measurement.
 
 ---
 
+## 7. Bringing it inside one transaction (2026-08-05)
+
+Section 5's result is a **negative** one: ≈56.5M gas, ≈3.4× the per-transaction cap,
+therefore not mineable as one transaction. That is an honest measurement of **one
+implementation**, and it is worth being precise about what it does and does not show.
+It shows that *this* Solidity verifier does not fit. It does **not** show that the
+predicate itself is too big for the cap — nobody had asked how much of the 56.5M was
+LAS and how much was the way LAS had been expressed in Solidity.
+
+So we asked. `src/LASVerifierOpt.sol` (+ `src/LASShake.sol`) computes the **identical
+predicate over the identical scheme** — same q, same κ, same bounds, same
+`SHAKE256(pack(t)‖pack(w')‖M)` preimage, same FIPS 204 SampleInBall — restructured
+along four lines:
+
+1. **Half the transforms.** The baseline runs 12 forward + 12 inverse NTTs. `t` is fixed
+   public-key material, so it is registered once in NTT domain exactly as `A'` already
+   was, removing 6 forward NTTs. And the inverse NTT is a **linear map**, so
+   `invNTT(Â·ẑ) − invNTT(ĉ·t̂) = invNTT(Â·ẑ − ĉ·t̂)`: the two products are combined in
+   NTT domain and inverted once per row, removing 6 inverse NTTs. 24 → 12, same result.
+2. **No matrix in memory.** `A'` and `t` used to arrive as `uint256[][]` — one 32-byte
+   word per 23-bit coefficient, **304,292 bytes of calldata** decoded into ~300 KB of
+   memory, which also drives the EVM's *quadratic* memory charge. They now arrive packed
+   (4 bytes per coefficient, 8 per word) and are read straight from **calldata** by the
+   multiply loops.
+3. **A sponge that does not churn.** The vendored SHAKE256 keeps a 200-**byte** buffer in
+   200 memory **words**, absorbs one bounds-checked byte at a time, and re-allocates that
+   buffer plus three 24-entry constant tables on every one of the ~91 permutations a
+   verification needs. The replacement keeps 25 lanes at fixed offsets, writes the round
+   constants once per context, and absorbs 8 input bytes per `mload`.
+4. **Word-wise codecs.** The z-decode, the norm gate and `pack(w')` were per-byte,
+   bounds-checked Solidity loops over ~12 KB and 2,816 coefficients. The norm gate also
+   moved onto the *raw 19-bit field*: since `z = Z_OFFSET − field`, the condition
+   `field ≤ 2·BOUND` **is** `‖z‖∞ ≤ BOUND`, with no canonicalisation first.
+
+**A faster verifier that is not the same verifier is worth nothing**, so it is pinned
+three ways in `evm/test/LASVerifierOpt.t.sol`: the packed `w'` must equal the C golden
+`w_prime.bin` byte-for-byte; the ACCEPT bit on the golden adapted signature and REJECT on
+a tampered z byte / tampered `c_tilde` / wrong message must hold; and it must agree with
+the vendored `LASVerify` on all four. The rewritten sponge is separately pinned to the
+vendored SHAKE256 in `evm/test/LASShakeEquiv.t.sol` at ten input lengths chosen around
+the 136-byte rate.
+
+**The gate.** `evm/test/LASGasBreakdown.t.sol::test_optimised_fits_in_one_transaction`
+**fails** unless execution + 21,000 + EIP-2028 calldata is strictly under 16,777,216 —
+the same "fail loudly rather than publish a plausible-looking number" discipline as the
+rejection-rate gate on the C/Rust benchmark drivers. A companion test asserts the
+**baseline still exceeds** the cap, so the comparison cannot go stale in either direction.
+
+> **Numbers.** Every figure for this path comes from a real run:
+> `./scripts/run_onchain_gas.sh` → `evidence/onchain/latest/gas_report.log`, which now
+> also carries a per-stage attribution (decode, SampleInBall, forward NTTs, w', SHAKE,
+> preimage assembly) and a `claimLASVerifiedOpt` row directly comparable with
+> `claimLASVerified` in the same `--gas-report` table. **Do not quote a figure for this
+> section from prose — read it from the log.** Until that run exists, the honest
+> statement is "designed and gated to fit", not "fits".
+
+**What this does and does not change.** If the gate passes, the claim becomes: *native
+on-chain LAS verification at the D3 set is executable as a single Ethereum transaction,
+and the earlier 56.5M figure measured the expression rather than the scheme.* It does
+**not** make on-chain verification cheap — it stays orders of magnitude above a classical
+`ecrecover` claim, so the Meeting-7 reasoning for choosing Bitcoin/UTXO (fees, off-chain
+heavy work, adaptor signatures used there in practice) is untouched. And it says nothing
+about the *other* parameter sets, or about anything other than this predicate.
+
+---
+
+## 8. The standardisation route: EIP-8051
+
+Section 6 recommended "a precompile or a zero-knowledge proof". That recommendation now
+has a specific, citable object behind it.
+
+**[EIP-8051](https://eips.ethereum.org/EIPS/eip-8051), "Precompile for ML-DSA signature
+verification"** (Renaud Dubois, Simon Masson, Oct 2025) specifies precompiles at
+`0x12` (`VERIFY_MLDSA`) and `0x13` (`VERIFY_MLDSA_ETH`) at **4,500 gas**. Two details
+matter to this project specifically:
+
+- Its authors are the **ZKNox** authors — the same people whose ETHDILITHIUM primitives
+  `evm/lib/zknox/` vendors. The EIP is, in effect, the standardisation of the library
+  this project already builds on.
+- Its design choices independently corroborate two of §7's: the `0x13` variant replaces
+  SHAKE256 with a Keccak-based PRNG, and its 20,512-byte public-key input carries the
+  matrix expanded with `t1` **already in NTT domain** — precisely the "register it once,
+  never re-transform it" move in §7 point 1.
+
+Combined with this project's **ML-DSA adaptor result** (`docs/03-results/MLDSA_HINT_EXPERIMENT.md`)
+— LAS built on FIPS 204 as specified, with unmodified `crypto_sign_verify` accepting the
+*adapted* signature — a precompile-based settlement is a coherent design: verify the
+adapted signature in the precompile, settle in the same call, keep `Ext` off-chain.
+
+**Four constraints that must travel with that claim**, or it overstates:
+
+1. **It is not deployed.** EIP-8051 is **Draft**, and is listed under **"Declined for
+   Inclusion"** in the Glamsterdam hardfork meta ([EIP-7773](https://eips.ethereum.org/EIPS/eip-7773)).
+   The Ethereum Foundation's post-quantum roadmap ([pq.ethereum.org](https://pq.ethereum.org/))
+   places PQ signature-verification precompiles in 2027–2028 forks. No ML-DSA precompile
+   is callable on Ethereum today, so **any figure for this route is a conditional model
+   computed from the EIP's own constant, never a measurement** — and must be labelled so.
+2. **NIST level II only.** The EIP explicitly covers **ML-DSA-44**. This project's
+   headline set is ML-DSA-65-aligned (D3). Taking this route means dropping a security
+   level, which the report must state rather than quietly compare across.
+3. **`0x13` is not FIPS 204.** It replaces SHAKE256. So "accepted by the *stock* FIPS-204
+   verifier" and "verified by the EVM-optimised variant" cannot both be claimed; only
+   `0x12` is the FIPS-faithful one.
+4. **The adaptor security caveat still applies.** The ML-DSA adaptor construction is a
+   *functional* demonstration; the security of committing to `HighBits(w+Y)` is not
+   analysed (out of scope — no security proofs in this project).
+
+The two routes are complementary, and the honest framing is that they answer different
+questions. §7 answers *"can it be done on the EVM as it exists?"* with a measurement.
+§8 answers *"what is the path to it being cheap?"* with a citation and a stated timeline.
+
+---
+
 ## Mini-glossary
 
 - **Gas** — Ethereum's unit for "how much work a computation is." You pay for it.

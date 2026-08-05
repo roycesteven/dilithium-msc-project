@@ -22,7 +22,7 @@ identical parameters and primitives, which isolates the adaptor layer's cost; a 
 elliptic-curve (ECDSA) adaptor provides a functionality-matched ``price of post-quantum''
 baseline. At the core measurement boundary the adaptor layer is almost free in
 computation: PreSign, PreVerify and Adapt each add at most $+\ovMaxAll\%$ over the basic
-operation they mirror, and Extract is the cheapest operation of all. The real cost is
+operation they mirror, and Extract is the cheapest of all. The real cost is
 \emph{communication} --- the signature is \zPctTarget\% lattice response vector, and an
 adaptor swap additionally transmits a public-key-sized statement --- and that cost
 reappears as computation once the byte boundary is included, raising the premium to

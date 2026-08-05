@@ -42,8 +42,12 @@ echo "fixture: evm/test/las_sig.bin = ${SIG_BYTES} B (re-exported from ref/)"
 } > "$OUT/environment.txt"
 
 # --- 3. measure ----------------------------------------------------------------
+# -vv so the console.log tables are captured too: TwoLegSwapGas's per-leg rows and
+# LASGasBreakdown's stage attribution + the single-transaction total. Those tables are
+# the only place execution and INTRINSIC gas are reported together, and --gas-report
+# alone never shows calldata cost.
 cd "$REPO/evm"
-forge test --gas-report 2>&1 | tee "$OUT/gas_report.log"
+forge test --gas-report -vv 2>&1 | tee "$OUT/gas_report.log"
 
 ln -sfn "$RUN_ID" "$REPO/evidence/onchain/latest"
 

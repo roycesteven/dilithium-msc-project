@@ -14,12 +14,12 @@
 \contentsline {section}{\numberline {1.3}Project category, aim, and objectives}{15}{section.1.3}%
 \contentsline {paragraph}{Category.}{15}{section*.14}%
 \contentsline {paragraph}{Aim.}{15}{section*.15}%
-\contentsline {paragraph}{Objectives.}{16}{section*.16}%
+\contentsline {paragraph}{Objectives.}{15}{section*.16}%
 \contentsline {section}{\numberline {1.4}Dissertation structure}{16}{section.1.4}%
 \contentsline {chapter}{\numberline {2}Methodology}{17}{chapter.2}%
 \contentsline {section}{\numberline {2.1}The LAS construction}{17}{section.2.1}%
 \contentsline {section}{\numberline {2.2}Implementation strategy: reuse, do not reinvent}{18}{section.2.2}%
-\contentsline {paragraph}{Data types and the matrix product.}{18}{section*.17}%
+\contentsline {paragraph}{Data types and the matrix product.}{19}{section*.17}%
 \contentsline {paragraph}{Hash, challenge, and samplers.}{19}{section*.18}%
 \contentsline {paragraph}{Simplifications, and the modulus.}{19}{section*.19}%
 \contentsline {section}{\numberline {2.3}Serialization and the on-chain interface}{19}{section.2.3}%
@@ -27,19 +27,19 @@
 \contentsline {section}{\numberline {2.5}An independent second implementation: the Rust port}{20}{section.2.5}%
 \contentsline {section}{\numberline {2.6}Benchmarking methodology and fair comparison}{21}{section.2.6}%
 \contentsline {paragraph}{Measurement boundaries.}{21}{section*.20}%
-\contentsline {paragraph}{Implementation of record, repeatability, and machine.}{22}{section*.21}%
+\contentsline {paragraph}{Implementation of record, repeatability, and machine.}{21}{section*.21}%
 \contentsline {paragraph}{Per-operation reporting, not cumulative.}{22}{section*.22}%
 \contentsline {paragraph}{The primary comparison: LAS against its own simplified base.}{22}{section*.23}%
 \contentsline {paragraph}{Rejection sampling: the expected attempt count.}{22}{section*.24}%
-\contentsline {paragraph}{Rejection sampling: the run-validity gate.}{23}{section*.25}%
+\contentsline {paragraph}{Rejection sampling: the run-validity gate.}{22}{section*.25}%
 \contentsline {paragraph}{Parameter sensitivity and component sizes.}{23}{section*.26}%
-\contentsline {paragraph}{The classical baseline: functionality-matched, not security-matched.}{23}{section*.27}%
+\contentsline {paragraph}{The classical baseline: functionality-matched, not security-matched.}{24}{section*.27}%
 \contentsline {section}{\numberline {2.7}Application methodology: the UTXO swap study}{24}{section.2.7}%
 \contentsline {paragraph}{The venue, and why it is modelled.}{24}{section*.28}%
-\contentsline {paragraph}{What a settled transaction contains, and what the adaptor layer changes.}{25}{section*.29}%
+\contentsline {paragraph}{What a settled transaction contains, and what the adaptor layer changes.}{24}{section*.29}%
 \contentsline {paragraph}{Three configurations, and what is controlled.}{25}{section*.30}%
 \contentsline {paragraph}{The Groth16 circuit.}{26}{section*.31}%
-\contentsline {paragraph}{Measurement.}{26}{section*.32}%
+\contentsline {paragraph}{Measurement.}{27}{section*.32}%
 \contentsline {chapter}{\numberline {3}Results and discussion}{28}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Correctness and robustness}{28}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Computation cost}{28}{section.3.2}%
@@ -85,5 +85,5 @@
 \contentsline {section}{\numberline {A.8}Test types and parameter notation}{65}{section.A.8}%
 \contentsline {section}{\numberline {A.9}Full benchmark data tables}{65}{section.A.9}%
 \contentsline {section}{\numberline {A.10}Auditing the reuse claim}{66}{section.A.10}%
-\contentsline {section}{\numberline {A.11}Selected code listing: Adapt and Extract}{67}{section.A.11}%
-\contentsline {chapter}{Bibliography}{71}{appendix*.44}%
+\contentsline {section}{\numberline {A.11}Selected code listing: Adapt and Extract}{68}{section.A.11}%
+\contentsline {chapter}{Bibliography}{72}{appendix*.44}%

@@ -823,3 +823,118 @@ NEXT
   (amortisation both provers, STARK, LaBRADOR) -- the direction is closed, not open.
 - Still owed: 6-8 min slides; frontmatter \TODO (Royce only).
 - Optional: measure zk=0 vs zk=1 to price zero-knowledge (one-flag change).
+
+## Checkpoint — 2026-08-05 — report updated for the three new results; STARK excluded
+
+Branch: report. No commits. Royce: "report update and polish! jangan masukkan STARK karena
+belum ZKP!" then, mid-trim: "jangan sampai pengurangan kata reduce quality ya" and
+"you may tighten Context and motivation as well".
+
+WHAT CHANGED IN THE REPORT
+- 05-conclusion.tex future work: the two bullets the new experiments ANSWERED were rewritten
+  from open questions into measured verdicts.
+  * "Shrink the statement" -> "A statement that is small by design": compression tested and
+    fails; truncation invisible to the adaptor's own functions, fatal at base Verify and Ext;
+    seed derivation compresses completely and hands over the witness. Open question restated
+    as a different hard relation, not a better encoding.
+  * "Reduce the proof": both proposed routes measured, both fail at this scale. Batching
+    amortises the wrong cost (Groth16 constant proof / LaZer pays several times the compute);
+    succinct+PQ+zk run under LaBRADOR loses to the deployed prover on every axis.
+- STARK deliberately ABSENT from the report (Royce's instruction): it is not zk, so not a
+  valid pi per 4.1, and including a disqualified prover would overclaim. Recorded as a rule
+  in CLAUDE.md so a later session cannot reintroduce it.
+- No numbers were added to the report for these results -- the bullets are qualitative, which
+  avoids hardcoding figures that have no macros yet. Evidence lives in docs/03-results/.
+
+WORD COUNT: 9030 at session start (already OVER the 9,000 ceiling, drifted from the 8,990 in
+the live block) -> 9131 after the bullets -> trimmed to 8999. Builds clean: 74 pages, 0
+undefined references, 0 undefined citations.
+Trims were prose-efficiency only, per Royce's constraint that trimming must not cost quality:
+Ch5 (strategic-choice, target-selection, demonstrators, live-network bullet), Ch2 (modulus,
+Rust caveat, three-configurations, parameter-sensitivity, venue, settled-transaction --
+the last de-duplicated against fig:txstruct's caption, which is free), Ch1 (dropped a
+throat-clearing framing sentence and the "this section reviews only..." signpost), plus
+single filler words. Royce REJECTED one Ch2 cut that removed real signal ("where Y enters
+and where y is revealed") -- correct call; the rule is cut filler, never signal.
+
+NOTATION FIX: my first draft of the statement bullet used $\mathbf{Az}-c\mathbf{t}$ and
+\textsc{Ext}; the report uses $A\vecz - c\,t$ and \textsc{Extract}. Corrected.
+
+NEXT
+- 6-8 min slides (last Meeting-8 deliverable).
+- Frontmatter \TODO (Royce only).
+- If these results ever need numbers in the report, add macros via scripts/gen_report_data.py
+  rather than typing them -- there are no macros for the three new experiments yet.
+
+## Checkpoint — 2026-08-05 (later) — audit of the word-trim: three substantive cuts restored
+
+Royce asked whether, BEFORE he stopped me, I had cut load-bearing content. Audited via
+git diff rather than memory. Answer: YES, three cuts took real substance and one created
+an overclaim. All restored.
+
+RESTORED:
+1. "methodological" in "If one METHODOLOGICAL result deserves to outlive this
+   dissertation". Dropping it broadened the claim to the single most durable result of the
+   whole dissertation, competing with the technical findings. This was an OVERCLAIM I
+   introduced -- the worst of the three.
+2. "No module depends on a mode-specific constant" (Ch2 modulus) -- the REASON identical
+   code runs at every parameter set. A concrete implementation fact, replaced by nothing.
+3. "and exposed every timing conclusion to an independent harness" (Ch5 reflection) --
+   the third distinct benefit of the Rust port.
+Also restored: "a deployment figure for" (my version changed the claim from the FIGURE
+being blocked to the SWAP being blocked), "implementation-level" (feasibility estimate),
+"confirmation" (latency).
+
+DELIBERATELY KEPT CUT, flagged to Royce: the enumeration of off-chain objects in sec 2.7
+("statement Y, proof pi, both pre-signatures" / "and its own sigma-hat_2"). Both appear
+verbatim in fig:txstruct's caption and figure box, and captions are word-count FREE, so
+this is de-duplication rather than loss -- but the body now depends on the figure for it.
+Royce can overrule.
+
+HOW THE RESTORATION WAS PAID FOR (the rule is: trimming must not reduce quality):
+Not from existing prose -- results and evaluation are tightly written and further cuts
+would have cost content. Paid from MY OWN new future-work bullets instead, where I know
+what is load-bearing, including two genuine duplications with the Conclusions section
+("the role-A proof dominates a swap" and the ML-DSA signature/statement restatement).
+
+FINAL: 8,999 words, under the 9,000 ceiling. Builds clean, 74 pages, 0 undefined
+references, 0 undefined citations.
+
+LESSON FOR FUTURE TRIMMING (do not repeat): compressing a sentence can silently BROADEN a
+claim. "If one methodological result" -> "If one result" cost one word and turned a
+scoped claim into an overclaim. When trimming, check whether a dropped qualifier was
+narrowing a claim -- those words are load-bearing even when they look like filler.
+
+## Checkpoint — 2026-08-05 — CLAUDE.md: standing "DO NOT REPEAT" rules for all sessions
+
+Royce: "perintahkan semua sesi untuk tidak melakukan kesalahan yang sama lagi dan lagi."
+Earlier in the same exchange he specified the target state for CLAUDE.md (no contradictory
+status, no chronology/duplicated results, detail via pointers, scannable) and then said not
+to restructure if the current shape is already effective. Assessed it: the structure already
+follows that shape, so NO restructure -- only targeted fixes.
+
+ADDED: a "🚫 DO NOT REPEAT" section near the top, 9 numbered rules, each one line with an
+arrow to the section holding the full rule. Contents are the mistakes that have each cost
+work more than once: pre-writing conclusions; retyping numbers; trusting stale figures;
+trimming that cuts signal; recording unverified facts; appending instead of merging; claiming
+more than a gate proves; self-starting measurements/builds; reading the parameter set off
+setup.h defaults.
+
+FIXED (defects against Royce's own rules):
+- Two blocks on one subject (rule 4): the STARK had a Status block AND a separate
+  "must not enter the report" block. Merged into the block that owns it.
+- Duplicated experiment results (rule 2): statement-compression (14 lines) and amortisation
+  (20 lines) blocks compressed to gate + mechanism + framings + pointer.
+- Stale facts: `01-introduction.tex:79` -> :75 (my own intro trim moved it); "overridden
+  explicitly twice" -> rule form (LaBRADOR and the report work came after, so the count was
+  wrong); "both new experiments" -> "every experiment listed in Status" (there are five now);
+  two "verified" dates refreshed.
+
+PAID FOR IT (rule 1, compress in the same edit) by cutting narrative Royce's spec says not to
+keep: the "On record" anecdote, Meeting-7 items already discharged, the promoted-future-work
+"he was told and chose it anyway" story, and the STARK's size/time framings (now only in the
+write-up, since it is barred from the report anyway).
+
+NET: 720 -> 732 lines. Over the ~700 budget by design -- Royce's latest instruction is to
+prioritise consistency and startup usefulness over line reduction. All 9 arrow targets in the
+new section verified to resolve to real sections.
