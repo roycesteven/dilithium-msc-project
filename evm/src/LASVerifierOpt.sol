@@ -30,8 +30,10 @@ import {LASShake} from "./LASShake.sol";
 ///     32-byte word per 23-bit coefficient, 304,292 bytes of calldata ABI-decoded
 ///     into ~300 KB of memory. They now arrive as packed `bytes` (4 bytes big-endian
 ///     per coefficient, 8 per word) and are read straight from CALLDATA by the
-///     multiply loops, never copied to memory. Calldata falls to ~50 KB and the
-///     quadratic memory term largely disappears.
+///     multiply loops, never copied to memory. Calldata falls to ~50 KB (measured).
+///     The intent is also to shrink the EVM's quadratic memory term, but that component
+///     is NOT separately metered — only the end-to-end totals and the per-stage split in
+///     test/LASGasBreakdown.t.sol are measured, so no figure is claimed for it.
 ///
 ///  3. A SPONGE THAT DOES NOT CHURN. See LASShake: the vendored context spends 200
 ///     memory words on 200 buffer bytes, absorbs one bounds-checked byte at a time,

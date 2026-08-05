@@ -54,3 +54,6 @@ SHA256SUMS
 # Rust build artefacts
 **/target/
 **/amhl.h
+# scratch handoff between script/OneTxClaim.s.sol and scripts/run_onchain_one_tx.sh
+evm/onetx/
+ref/*.o

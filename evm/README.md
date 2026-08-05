@@ -36,6 +36,27 @@ verification differs, so the gas difference is attributable to the signature:
   model, but omitted the real Solidity SHAKE256 cost, the z-decode, packing, ABI/memory
   and settlement overhead.
 
+- `claimLASVerifiedOpt` — the **same predicate, inside one transaction**. `src/LASVerifierOpt.sol`
+  (+ `src/LASShake.sol`, `src/LASRegister.sol`) computes exactly what `LASVerify` computes —
+  same q, κ, bounds, `SHAKE256(pack(t)‖pack(w')‖M)` preimage and FIPS 204 SampleInBall — but
+  registers `t` in NTT domain and folds `−c·t` in before a single inverse NTT (24 transforms →
+  12, the inverse NTT being linear), reads `A'`/`t̂` straight from **packed calldata** instead of
+  ABI-decoding ~300 KB into memory, replaces the vendored sponge's per-byte absorb and
+  per-permutation re-allocations, and does the z-decode, norm gate and `pack(w')` word-wise in
+  Yul. Pinned to the baseline and to C ground truth by `test/LASVerifierOpt.t.sol` (packed `w'`
+  byte-identical to `w_prime.bin`; same ACCEPT/REJECT bit as `LASVerify` on the golden signature
+  and three tamperings) and `test/LASShakeEquiv.t.sol` (sponge vs the vendored SHAKE256 at ten
+  length classes around the 136-byte rate). **Gated twice:**
+  `test/LASGasBreakdown.t.sol` fails unless the modelled **EIP-7623** charge
+  — `21000 + max(4·tokens, 10·tokens ...)`, see `LASTxGas`, *not* EIP-2028 — is under the cap,
+  and asserts the baseline still exceeds it; then `../scripts/run_onchain_one_tx.sh` settles the
+  swap on **anvil at a pinned `osaka` hardfork with `--enable-tx-gas-limit`**, in separate
+  fund/claim transactions (cold storage), under an explicit `--gas-limit`, and takes the verdict
+  from the **receipt**. That run verifies its own instrument first with a differential control
+  (same transfer accepted at the cap, refused at cap+1) and preserves a client rejection as a
+  recorded negative result. Numbers: `evidence/onchain/latest/` and
+  `evidence/onchain_onetx/latest/` — never from prose.
+
 The *cost* of that native verification — the thing the floor leaves out — is then
 measured separately by `src/LASVerifyCost.sol` + `test/LASVerifyCost.t.sol`, a probe
 that reproduces the exact arithmetic op-budget of one `base_verify` at the D3 set

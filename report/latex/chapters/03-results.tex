@@ -105,9 +105,8 @@ parameter set, and the two operations unique to an adaptor signature cost no mor
 verification each (\cref{fig:overhead}, appendix).
 
 At the packed boundary the premium grows to $+\packedOvPreSign\%$,
-$+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- an order of magnitude higher. The gap
-is serialization, not adaptor arithmetic: each operation additionally decodes the
-public-key-sized statement $Y$ (\stmtBytesTarget~B). The object dominating
+$+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- an order of magnitude higher, and the
+gap is the statement's decode rather than adaptor arithmetic. The object dominating
 \emph{communication} cost thus reappears as the dominant \emph{computation} cost once
 bytes are included, so a deployment verifying from bytes should budget for the packed row
 --- and reported lattice timings are notoriously sensitive to this boundary
@@ -269,11 +268,10 @@ the practical cost of moving from a classical adaptor signature to a post-quantu
 LAS is instantiated at \emph{Simplified Dilithium-II} and only there: secp256k1 offers
 roughly 128-bit classical security, so those dimensions are the most like-for-like
 engineering match, while -III or -V would pit the classical scheme against a deliberately
-stronger configuration. Following
-the tier rule, LAS appears at both its boundaries while the classical scheme sits at its
-\emph{hybrid native-API boundary}, so the comparison is read conservatively --- but the
-conclusions survive either reading, resting on order-of-magnitude gaps rather than
-percent-level differences (\cref{tab:classical}).
+stronger configuration. The boundaries differ between the two libraries, so
+\cref{tab:classical} matches them per operation and the comparison is read
+conservatively --- the conclusions rest on order-of-magnitude gaps, not percent-level
+differences.
 
 \begin{table}[htbp]
   \centering
@@ -383,39 +381,63 @@ makes the second party's final step \emph{guaranteed} rather than merely expecte
 Module-SIS uniqueness argument of \cite{esgin2020post} the extracted witness equals the
 proven ternary one, so the adapted signature is certain to clear the verification bound
 --- without $\pi$ a malicious counterparty could claim and leave an unadaptable
-pre-signature behind. The proof measures approximately 31 kilobytes at a knowledge error
-below $2^{-127}$ and is exchanged off-chain only.
+pre-signature behind. The proof measures \piProofBytes\,B at a knowledge error below
+$2^{-\piKnowledgeError}$ and is exchanged off-chain only.
 
 As a supporting check on deployability, native on-chain LAS verification was
-\emph{implemented} and measured on a real Solidity stack. One full verified settlement
-costs approximately \gasLasVerifiedM{} million gas (\cref{tab:onchain};
-\cref{fig:onchain}), roughly \gasRatioVerified{}$\times$ the classical ECDSA-adaptor
-claim, which verifies in a native precompile whereas LAS runs entirely in EVM bytecode
---- exceeding the EIP-7825 per-transaction cap of $16\,777\,216$ gas. An \emph{optimistic}
-(Naysayer) alternative makes honest settlement cheap ($\approx$\gasNaysayClaimM{} million
-gas) but leaves a worst-case fraud proof at $\approx$\gasNaysayDigestM{} million, also
-over the cap, and a fraud proof that cannot be mined is not one (\cref{app:naysayer}).
+\emph{implemented} and measured on a real Solidity stack: one claim transaction running
+full verification and releasing one leg's escrow costs $\approx$\gasLasVerifiedM{} million
+gas (\cref{tab:onchain}; \cref{fig:onchain}), $\approx$\gasRatioVerified{}$\times$ the
+classical claim and over the EIP-7825 cap. An \emph{optimistic} (Naysayer) alternative
+makes the honest path cheap ($\approx$\gasNaysayClaimM{} million) but leaves a worst-case
+fraud proof at $\approx$\gasNaysayDigestM{} million, also over the cap, and a fraud proof
+that cannot be mined is not one (\cref{app:naysayer}).
 These measurements are why the application was taken to a UTXO chain.
+
+That figure measures one \emph{implementation}, not the scheme. A restructured verifier
+--- same parameters, bounds and challenge preimage, differing in how the computation is
+expressed --- was mined by a real client, running full LAS verification and releasing the
+escrow at \gasOptReceipt{} gas: \gasOptCapPct\% of the EIP-7825 cap, which bounds the
+transaction gas limit and so covers calldata as well as execution. Its equivalence is
+conditional on a registration invariant, and both are set out in \cref{tab:onchain}.
+On-chain verification therefore fits in one transaction at \emph{Simplified
+Dilithium-III} for the 32-byte signed message measured, with a thin margin that is a
+message-length budget rather than slack. The change of venue stands: the UTXO constraint
+is a transaction \emph{weight} limit one settlement sits well inside
+(\cref{sec:res-txstruct}).
 
 \begin{table}[htbp]
   \centering
-  \caption[On-chain settlement gas: classical vs.\ post-quantum]{On-chain settlement gas
-  for the atomic swap's claim step, measured on a local EVM (Foundry
-  \texttt{forge\ --gas-report}). Gas is deterministic for the fixed bytecode, EVM
-  revision, inputs, and contract state, and is independent of the host CPU. The ratios
-  compare complete settlement calls, including calldata, memory, state transition, event
-  emission, transfer, and verification. Both the classical path and the full LAS path perform
-  \emph{complete} signature verification --- the difference is that ECDSA verifies in the
-  native \texttt{ecrecover} precompile whereas LAS runs its entire verifier in EVM
-  bytecode. \texttt{claimLAS} is a floor that performs \emph{no} lattice verification
-  (calldata for the \sigBytesTarget-byte signature plus one \texttt{keccak256}), a strict
-  lower bound. \texttt{claimLASVerified} runs the complete native \texttt{base\_verify}
-  (\cref{sec:construction}) --- decode, the norm bound, $w'=A\vecz-c\,t$, and the SHAKE256
-  challenge check --- assembled from the vendored ZKNox ETHDILITHIUM primitives and
-  validated end-to-end against the C reference. At $\approx$\gasLasVerifiedM{}\,M gas it exceeds the
-  EIP-7825 per-transaction cap ($16\,777\,216 = 2^{24}$) by $\approx$3.4$\times$, so it
-  cannot execute as a single mainnet transaction; its raw demand is below the 60-million
-  default block gas limit, but the per-transaction cap is the binding ceiling.}
+  \caption[On-chain settlement gas: classical vs.\ post-quantum]{On-chain gas for the
+  swap's claim step, measured on a local EVM (\texttt{forge\ --gas-report}); EVM gas is
+  deterministic for fixed bytecode, revision, inputs and state. \textbf{These are
+  \emph{execution} figures}: they cover the work done inside the call, but not the
+  21{,}000 intrinsic charge or the per-byte calldata cost a real transaction also pays
+  under EIP-7623 --- which is why the under-the-cap claim below rests on a client receipt
+  rather than on this table. \texttt{claimLAS} is a floor performing \emph{no} lattice
+  verification (calldata plus one \texttt{keccak256}), a strict lower bound. The two
+  \texttt{claimLASVerified*} rows decide the same predicate as \texttt{base\_verify}
+  (\cref{sec:construction}) --- decode, norm bound, $w'=A\vecz-c\,t$, SHAKE256 challenge
+  check --- the first mirroring its steps directly from the vendored ZKNox primitives and
+  validated against the C reference, the second \emph{restructuring} them: the public key
+  registered in the NTT domain and $c\,t$ folded before a single inverse transform;
+  parameters read from calldata rather than decoded into memory; a sponge without the
+  per-byte absorb. ECDSA, by contrast, verifies in the native \texttt{ecrecover}
+  precompile, whereas both LAS rows run in EVM bytecode. The restructured verifier
+  reproduces the first's packed $w'$ byte-for-byte on the C golden vectors and agrees with
+  it on accept/reject for the golden signature and a tampered response, challenge and
+  message. \textbf{One condition qualifies that equivalence}: it consumes the registered
+  $\hat t$ rather than deriving it, so the two agree where $\hat t=\mathrm{NTT}(t)$ for the
+  key whose bytes are hashed; the fund-time commitment binds both representations against
+  substitution but does not \emph{prove} their consistency, which remains the registrant's
+  obligation. The separate client run --- anvil at a pinned \texttt{osaka} revision with
+  EIP-7825 enforced --- mined a claim sent at an explicit capped gas limit at
+  \gasOptReceipt{} gas over \gasOptCalldata{}\,B of calldata, releasing the exact escrowed
+  amount. Scope: \emph{Simplified Dilithium-III}, a 32-byte signed message, that revision;
+  no other parameter set was evaluated, the verifier's dimensions being fixed at build
+  time. The \gasOptHeadroom{}\,gas of headroom is measured; that it corresponds to a few
+  hundred further bytes of signed message is \emph{derived} from it and the measured
+  per-permutation hash cost.}
   \label{tab:onchain}
   \small
   \setlength{\tabcolsep}{5pt}
@@ -429,6 +451,8 @@ These measurements are why the application was taken to a UTXO chain.
       & none (calldata + \texttt{keccak256})   & \gasLasFloor{}    & \gasRatioFloor{}$\times$ \\
     LAS full verify (\texttt{claimLASVerified})
       & full \texttt{base\_verify}, in Solidity & \gasLasVerified{} & \gasRatioVerified{}$\times$ \\
+    LAS full verify, restructured (\texttt{claimLASVerifiedOpt})
+      & full \texttt{base\_verify}, in Solidity & \gasLasOpt{} & \gasRatioOpt{}$\times$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -436,17 +460,17 @@ These measurements are why the application was taken to a UTXO chain.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/fig_onchain}
-  \caption[On-chain settlement gas for the three claim paths]{On-chain settlement gas for
-  the three atomic-swap claim paths (\cref{tab:onchain}), measured on a local EVM
-  (\texttt{forge --gas-report}; deterministic EVM gas), on a logarithmic axis. The
-  classical \texttt{claimClassical} (\gasClassical{} gas) verifies in the native \texttt{ecrecover}
-  precompile; \texttt{claimLAS} (\gasLasFloor{}) is a settlement floor doing \emph{no} lattice
-  verification; and \texttt{claimLASVerified} (\gasLasVerified{}, $\approx$\gasRatioVerified{}$\times$ the
-  classical claim) runs the complete native LAS \texttt{base\_verify} in EVM bytecode. The
-  dashed line is the EIP-7825 per-transaction gas cap ($16\,777\,216 = 2^{24}$); the full
-  verifier's bar crosses it, which is exactly why it cannot execute as a single mainnet
-  transaction and why a deployable path needs a precompile, a succinct proof, or an
-  optimistic (Naysayer) scheme.}
+  \caption[On-chain settlement gas for the four claim paths]{The claim paths of
+  \cref{tab:onchain} on a logarithmic axis, which is what makes the spread legible: the
+  classical claim, the LAS floor doing \emph{no} lattice verification, and the two full
+  verifiers. The dashed line is the EIP-7825 cap on the transaction gas limit
+  ($16\,777\,216 = 2^{24}$). The baseline verifier's bar crosses it; the restructured
+  \texttt{claimLASVerifiedOpt} --- same scheme, same predicate, different expression ---
+  falls below, which is what changes the conclusion from ``a deployable path needs a
+  precompile, a succinct proof or an optimistic scheme'' to ``at this parameter set and
+  message length it fits, narrowly''. All four bars come from one \texttt{--gas-report}
+  table and so are mutually comparable; the under-the-cap claim itself rests on the
+  separate real-client run described in \cref{tab:onchain}.}
   \label{fig:onchain}
 \end{figure}
 
@@ -617,8 +641,8 @@ limit --- \btcThreePctStd\,\% of it --- and the \btcMaxBlockWeight{}\,WU block l
 admits an upper bound of \btcThreePerBlock{} settlements per block against
 \btcOnePerBlock{} classical ones, ignoring competing transactions. A UTXO chain does
 impose a limit, then, but a weight limit rather than a gas limit, and one swap sits well
-inside it --- the contrast with the EVM, where native verification exceeded the gas limit
-outright and forced the change of venue.
+inside it --- the contrast with the EVM, where the first native verifier exceeded the
+transaction gas cap outright and forced the change of venue.
 
 Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
 verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340

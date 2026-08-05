@@ -439,7 +439,8 @@ def parse_mldsa(ev_dir):
 def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over, onchain, packed_l2, mldsa=None):
+                rust_packed_over, onchain, packed_l2, mldsa=None, onetx=None,
+                pi_params=None):
     t = timing[TARGET]
     o = over[TARGET]
     c = comm[TARGET]
@@ -578,6 +579,25 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
             m.append(("gasNaysayClaimM", "%.1f" % (onchain["claim"] / 1e6)))
         if "naysayDigest" in onchain:
             m.append(("gasNaysayDigestM", "%.1f" % (onchain["naysayDigest"] / 1e6)))
+        if "claimLASVerifiedOpt" in onchain:
+            # same --gas-report table as the rows above, so directly comparable with them
+            m.append(("gasLasOpt", g("claimLASVerifiedOpt")))
+            m.append(("gasRatioOpt", "%.0f" % (onchain["claimLASVerifiedOpt"]
+                                               / onchain["claimClassical"])))
+
+    if pi_params:
+        m.append(("piKnowledgeError", pi_params["knowledge_error"]))
+        m.append(("piProofBytes", pi_params["proof_bytes"]))
+
+    # The one-transaction result, from a real client's receipt (NOT the harness).
+    if onetx:
+        cap = 16_777_216
+        m.append(("gasOptReceipt", "{:,}".format(onetx["gasUsed"]).replace(",", "\\,")))
+        m.append(("gasOptCapPct", "%.1f" % (100.0 * onetx["gasUsed"] / cap)))
+        m.append(("gasOptHeadroom",
+                  "{:,}".format(cap - onetx["gasUsed"]).replace(",", "\\,")))
+        m.append(("gasOptCalldata",
+                  "{:,}".format(onetx["calldata"]).replace(",", "\\,")))
     # Rust port (protocol driver mirrors the C driver; Criterion is the
     # statistical harness)
     m.append(("rustOvPreSign", pct(rust_over["PreSign vs Sign"])))
@@ -747,7 +767,7 @@ def parse_onchain_gas(path):
     """
     if not path.exists():
         return None
-    want = ["claimClassical", "claimLAS", "claimLASVerified",
+    want = ["claimClassical", "claimLAS", "claimLASVerified", "claimLASVerifiedOpt",
             "claim", "naysayDigest", "naysayNorm", "naysayWprime"]
     got = {}
     for line in path.read_text(errors="replace").splitlines():
@@ -760,6 +780,76 @@ def parse_onchain_gas(path):
         if len(nums) >= 4:
             got[cells[0]] = int(nums[3])
     return got or None
+
+
+def parse_pi_params(path):
+    """Knowledge error and proof size from the COMMITTED LaZer parameter header.
+
+    ref/relation_zk_params.h is emitted by the SageMath codegen and checked in, so
+    these are the parameter set's own reported figures -- not a measurement of a
+    run, and not to be conflated with the on-the-wire proof bytes observed in the
+    Stage-2 study, which are smaller.  The header states the size in KiB; that unit
+    is carried through to the report rather than silently rewritten as kB.
+    """
+    if not path.exists():
+        return None
+    txt = path.read_text(errors="replace")
+    ke = re.search(r"knowledge error <= 2\^\(-([0-9.]+)\)", txt)
+    sz = re.search(r"Proof size\s*\n//\s*~\s*([0-9.]+)\s*KiB", txt)
+    if not ke or not sz:
+        return None
+    # The header labels the figure KiB, and that label checks out: the value times
+    # 1024 is an exact integer (times 1000 it is not), so the tool divided bytes by
+    # 1024.  Report BYTES anyway -- every other size in the report is in bytes, which
+    # also makes this directly comparable with the on-the-wire proof of tab:stage2-comm.
+    kib = float(sz.group(1))
+    b = kib * 1024.0
+    if abs(b - round(b)) > 1e-6:
+        die("ref/relation_zk_params.h reports %s KiB, which is not a whole number of "
+            "bytes -- the unit in that header may not be KiB after all" % sz.group(1))
+    return {"knowledge_error": ("%g" % float(ke.group(1))),
+            "proof_bytes": "{:,}".format(int(round(b))).replace(",", "\\,")}
+
+
+def parse_onchain_onetx(d):
+    """The ONE-TRANSACTION result, taken from a real client's own receipt.
+
+    evidence/onchain_onetx/latest/ holds what anvil (pinned `osaka`, EIP-7825
+    enforcement on) reported for a claim sent at an explicit --gas-limit: the
+    receipt (status, gasUsed) and the mined transaction (the gasLimit actually
+    on it).  This is the AUTHORITATIVE figure for "fits in one transaction" --
+    a client's accounting, with no test-harness inspector in the measured frame.
+    The forge --gas-report row for the same function is a different measurement
+    and is reported separately; the two must never be conflated.
+
+    Absent directory -> None, so the pipeline still runs without this evidence.
+    """
+    import json
+    rec, tx = d / "claim_receipt.json", d / "claim_tx.json"
+    if not rec.exists() or not tx.exists():
+        return None
+
+    def num(v):
+        v = str(v)
+        return int(v, 16) if v.startswith("0x") else int(v)
+
+    r = json.loads(rec.read_text())
+    t = json.loads(tx.read_text())
+    status = num(r["status"])
+    if status != 1:
+        die("evidence/onchain_onetx/latest: the claim transaction did not "
+            "succeed (receipt status %d) -- refusing to emit a macro for it" % status)
+    gas_used = num(r["gasUsed"])
+    gas_limit = num(t.get("gas", t.get("gasLimit")))
+    cap = 16_777_216
+    if gas_limit > cap:
+        die("evidence/onchain_onetx/latest: the mined gasLimit (%d) exceeds the "
+            "EIP-7825 cap (%d)" % (gas_limit, cap))
+    if gas_used >= cap:
+        die("evidence/onchain_onetx/latest: gasUsed (%d) is not under the "
+            "EIP-7825 cap (%d)" % (gas_used, cap))
+    return {"gasUsed": gas_used, "gasLimit": gas_limit,
+            "calldata": (len(t["input"]) - 2) // 2}
 
 
 def emit_tab_classical(out, meta, timing, comm, classical, packed_l2):
@@ -951,6 +1041,10 @@ def main(argv=None):
     classical = parse_classical(ev / "logs" / "classical.log")
     onchain = parse_onchain_gas(Path(__file__).resolve().parent.parent
                                 / "evidence" / "onchain" / "latest" / "gas_report.log")
+    onetx = parse_onchain_onetx(Path(__file__).resolve().parent.parent
+                                / "evidence" / "onchain_onetx" / "latest")
+    pi_params = parse_pi_params(Path(__file__).resolve().parent.parent
+                                / "ref" / "relation_zk_params.h")
     mldsa = parse_mldsa(Path(__file__).resolve().parent.parent
                         / "evidence" / "mldsa_hint" / "latest")
     (rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
@@ -981,7 +1075,7 @@ def main(argv=None):
     emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over, onchain, packed_l2, mldsa)
+                rust_packed_over, onchain, packed_l2, mldsa, onetx, pi_params)
     emit_tab_timing(out, meta, params, timing)
     emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over)
     emit_tab_components(out, meta, params, comm)

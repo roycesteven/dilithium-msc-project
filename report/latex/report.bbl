@@ -8,6 +8,13 @@ Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Kristina
 \newblock In {\em International Conference on the Theory and Application of
   Cryptology and Information Security}, pages 635--664. Springer, 2021.
 
+\bibitem{eip7773}
+Tim Beiko.
+\newblock {EIP-7773}: Hardfork meta --- glamsterdam.
+\newblock Ethereum Improvement Proposals, no.~7773, 2024.
+\newblock Records which proposals are scheduled for, or declined from, the
+  Glamsterdam upgrade. \url{https://eips.ethereum.org/EIPS/eip-7773}.
+
 \bibitem{bitcoincorepolicy}
 {Bitcoin Core developers}.
 \newblock Transaction relay and mining policy limits
@@ -38,6 +45,12 @@ Maxime Buser, Rafael Dowsley, Muhammed Esgin, Cl{\'e}mentine Gritti, Shabnam
 \newblock {CRYSTALS-Dilithium} reference implementation.
 \newblock Software repository, 2023.
 \newblock \url{https://github.com/pq-crystals/dilithium}, commit 2374d22.
+
+\bibitem{eip8051}
+Renaud Dubois and Simon Masson.
+\newblock {EIP-8051}: Precompile for {ML-DSA} signature verification.
+\newblock Ethereum Improvement Proposals, no.~8051, October 2025.
+\newblock Draft. \url{https://eips.ethereum.org/EIPS/eip-8051}.
 
 \bibitem{ducas2018crystals}
 L{\'e}o Ducas, Eike Kiltz, Tancrede Lepoint, Vadim Lyubashevsky, Peter Schwabe,

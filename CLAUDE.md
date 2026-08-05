@@ -82,6 +82,41 @@ session that repeats one of these has failed even when its output looks right.
    non-zero-knowledge argument offered as π. → Measurement gates, Status
 8. **Never self-start a measurement, build or benchmark.** → Guardrails, WORK-PRIORITY RULE
 9. **Read the parameter set from the Makefile**, never from `setup.h` defaults. → naming section
+10. **Never state a claim that has not been run, calculated or cited.** → EVIDENCE-OR-SILENCE
+
+## ⚠️ EVIDENCE-OR-SILENCE — no claim without a test, a calculation, or a citation (Royce, 2026-08-05)
+
+**If it has not been measured, derived from measured quantities, or cited, it does not get
+stated — in the report, in `docs/`, in code comments, in commit messages, or in this file.**
+Caught live: a claim that on-chain verification "breaks at D5" was written from plausibility
+alone — D5 was never built or measured, and `LASVerifyOpt`'s parameters are compile-time
+D3-only, so the library cannot even run it. A sentence that *sounds* like a result and is not
+one is worse than no sentence, because the reader cannot tell the two apart, and an examiner
+who finds one stops trusting the rest.
+
+Every claim carries exactly one of three warrants, and the prose must make clear which:
+
+1. **MEASURED** — a real run. Name the evidence path; never retype the number (→ FOCUS).
+2. **DERIVED** — arithmetic on measured quantities. Say *derived*, show the inputs, and never
+   let it read as measured. A derivation is not a measurement and must not be reported as one.
+3. **CITED** — someone else's result, with the reference that supports *that specific* claim.
+
+Anything else is an **open question** and is written as one — "not evaluated", "not measured
+at …" — never as a finding. Further, standing:
+
+- **Scope is part of the claim.** Parameter set, message/input length, configuration, and the
+  machine or EVM revision travel WITH it. "It works" with none of them attached is an overclaim.
+- **Negative claims need the same warrant** — "X does not fit", "does not scale", "breaks",
+  "is infeasible" are claims. This project has already had to retract one ("exceeds the block
+  gas limit") for exactly this reason; that retraction is the precedent, not the exception.
+- **Never claim more than the gate proves** — no gadget described as a complete proof, no
+  non-zero-knowledge argument offered as π, no model reported as a client result.
+- **Self-contained references**: never a bare "Fig. 1" — say which paper's figure. No
+  misattribution to cited work; label ceilings as upper bounds; check that each citation
+  actually supports the claim it is attached to.
+
+When an unevidenced claim is found, the fix is to **delete or downgrade it in the same edit**,
+not to plan an experiment that would justify it later.
 
 ## ⚠️ FOCUS — the primary comparison (READ FIRST; gotten wrong repeatedly)
 
@@ -137,18 +172,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-05 10:59 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-05 19:20 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD ae8366f · 2026-08-04 · labrador
-- Working tree: 15 modified tracked file(s), 211 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD bc2fe4a · 2026-08-05 · unfinished evm
+- Working tree: 47 modified tracked file(s), 217 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `bc2fe4a 2026-08-05 unfinished evm`
   - `ae8366f 2026-08-04 labrador`
   - `a44468a 2026-08-04 CLAUDE.md update`
   - `931d37b 2026-08-04 investigate statement compression`
   - `aa71cbf 2026-07-31 utxo bitcoin implementation correction real tx vs paper tx`
-  - `4aef1f7 2026-07-29 meeting 7`
 
 ### Target parameter set — anchors parsed from source
 
@@ -161,10 +196,10 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 - Stage-1 benchmark suite: `evidence/latest` → `runs/20260804_101750` (dir mtime 2026-08-04)
 - Stage-2 UTXO swap: `evidence/stage2/latest` → `20260730_162109` (dir mtime 2026-07-30)
-- On-chain gas (EVM): `evidence/onchain/latest` → `20260730_164836` (dir mtime 2026-07-30)
+- On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8999** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8997** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -302,16 +337,54 @@ decomposition `[A|−A|0]·(r₊‖r₋‖e)=t′`; committed params `ref/relati
 from `scripts/las_pi_params.py`; Rust twin `relation_zk.rs` FFIs the same C bridge behind cargo
 feature `relation-zk` (default off, KAT gate intact). π is **off-chain only**; opt-in targets.
 
-**On-chain verification (EVM) — retained as evidence, not as the deliverable.**
-`evm/src/LASVerifier.sol` is a complete native verifier (vendored ZKNox ETHDILITHIUM
-SHAKE256/NTT/SampleInBall), validated end-to-end against C and bound by a fund-time
-`keccak256(A′,t,M)` commitment. Its cost is **far above EIP-7825's per-transaction cap** —
-precisely *why* Stage 2 moved to Bitcoin/UTXO. The Naysayer (optimistic) variant is a **negative
-result**: honest path fits, the `naysayDigest` fraud proof does not, and a fraud proof that
-cannot be mined is not one. Gas figures come only from a captured `forge --gas-report` log parsed
-by `scripts/plot_onchain_gas.py`; nothing hardcoded. Detail:
-`docs/03-results/GAS_LIMIT_INVESTIGATION.md`, `docs/02-methodology/EVM_TX_STRUCTURE.md`.
-**IPFS off-chain storage** is documented as a **fallback, NOT adopted**
+**⚠️ ON-CHAIN VERIFICATION FITS IN ONE TRANSACTION AT D3 — RUN 2026-08-05 (Royce-directed).**
+`evm/src/LASVerifierOpt.sol` + `LASShake.sol` + `LASRegister.sol`, entrypoint
+`AdaptorSwap.claimLASVerifiedOpt`; mechanism, numbers and caveats in §7 of
+`docs/03-results/GAS_LIMIT_INVESTIGATION.md`. **Same predicate, same scheme** — the baseline
+measured the *expression*, not LAS. Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`)
+**and** a real client receipt (`scripts/run_onchain_one_tx.sh` → `evidence/onchain_onetx/<ts>/`).
+- **Never present it as faster-because-weaker** — pinned to `LASVerify` and C ground truth
+  (`test/LASVerifierOpt.t.sol`, `test/LASShakeEquiv.t.sol`); do not weaken those pins.
+  **`claimLASVerified` stays as the measured baseline — do not delete it.**
+- **⚠️ SCOPE IS PART OF THE CLAIM (→ EVIDENCE-OR-SILENCE).** Measured **at D3 with a 32-byte
+  signed message** (the Bitcoin sighash case), on the EVM revision named in the evidence.
+  Headroom is a small percentage of the cap and is effectively a *message-length budget*,
+  since the preimage is `pack(t)‖pack(w')‖M` and the sponge dominates execution. **D2/D5 are
+  NOT evaluated** — `LASVerifyOpt`'s parameters are compile-time D3-only, so the library cannot
+  run them; say "not evaluated", never that it fails there. The message-length limit is a
+  *derivation*, labelled as such in the write-up — not a measurement.
+- **⚠️ NEVER MEASURE A CAP GATE UNDER `--gas-report`** (cost a false FAIL once): Foundry's
+  inspector is metered inside the measured frame and inflates **both** `gasleft()` deltas and
+  `vm.lastCallGas()` by more than the whole headroom, so the gate fails for a reporting reason
+  while a real client mines the same transaction. `run_onchain_gas.sh` runs gates in a pass
+  **without** the flag and the table in a pass with the gate contracts **excluded**, capturing
+  **each pass's exit status separately** — a single `{...} | tee` reports only the last command,
+  hiding a failed gate behind a green table. `LasVerifiedOptSwapGas` (report-only) and
+  `LasVerifiedOptSwapGate` (asserts) are twins over one base for this reason — never merge them
+  or add an assertion to the reporting one.
+- **⚠️ GAS ACCOUNTING IS EIP-7623, NEVER EIP-2028** (cost real work once): the charge is
+  `21000 + max(4·tokens, 10·tokens)`, `tokens = zero + 4·nonzero` — see `LASTxGas`. The floor
+  branch binds for calldata-heavy/compute-light transactions, so the old 16-gas-per-nonzero-byte
+  model **understates** them; every reported total must say which branch bound.
+  (`TwoLegSwapGas.t.sol`'s helper models only the standard branch — never copy it for a gate.)
+- **⚠️ EIP-8051 (ML-DSA precompile) is a CITATION, NOT A ROUTE**: status **Draft**, **Declined
+  for Inclusion** in Glamsterdam (EIP-7773), EF roadmap puts PQ precompiles in 2027–28, and it
+  covers **NIST level II / ML-DSA-44 only** — not the D3 headline set. Its ETH variant replaces
+  SHAKE256, so "stock FIPS-204 verifier accepts it" and "use the ETH variant" cannot both be
+  claimed. Any figure from it is a **conditional model computed from the EIP's own constant,
+  never a measurement** — label it so. §8 of the same write-up.
+
+**On-chain verification (EVM) — the baseline, retained as evidence.** `evm/src/LASVerifier.sol`,
+a complete native verifier over vendored ZKNox ETHDILITHIUM primitives, validated against C and
+bound by a fund-time `keccak256(A′,t,M)` commitment; its cost is far above EIP-7825's cap.
+Naysayer (optimistic) variant = **negative result**: honest path fits, the `naysayDigest` fraud
+proof does not, and an unmineable fraud proof is not one. Gas figures come only from a captured
+`forge --gas-report` log parsed by `scripts/plot_onchain_gas.py`; nothing hardcoded.
+**⚠️ Meeting 7 is NOT retracted by the one-transaction result above** — the Bitcoin/UTXO pivot
+also rests on fees-not-gas-limits, heavy work staying off-chain, and adaptor swaps being used on
+UTXO chains in practice; on-chain LAS stays orders of magnitude above a classical `ecrecover`
+claim. Do not re-open Stage 2's venue. Detail: `docs/03-results/GAS_LIMIT_INVESTIGATION.md`,
+`docs/02-methodology/EVM_TX_STRUCTURE.md`. **IPFS off-chain storage** = **fallback, NOT adopted**
 (`docs/04-evaluation/IPFS_OFFCHAIN_STORAGE.md`): the swap needs none of it (π is a direct
 party-to-party message), and for the optimistic verifier a data-availability failure becomes a
 *soundness* failure.
@@ -338,27 +411,25 @@ party-to-party message), and for the optimistic verifier a data-availability fai
   the report: the report's succinct-PQ story is **LaBRADOR only**. Kept as internal evidence,
   never cited as a result.
 **pi under LaBRADOR — succinct + PQ + ZERO-KNOWLEDGE; RUN 2026-08-04 (Royce-directed).**
-`ref/relation_zk_labrador.{c,h}` (the THIRD and last vendored-proof-library TU, after the two
-LNP22 bridges) + `ref/test/bench_labrador_role_a.c`; runner `scripts/run_labrador_role_a.sh`
-→ `evidence/labrador_role_a/<ts>/`; write-up §6 of `SUCCINCT_PQ_PROOF_EXPERIMENT.md`.
-Encoding: `[A|−A]w − q·g = t'`, `w` binary via LaBRADOR's **native BIN norm type** (so
-`‖r‖∞≤1` is proven), `g` an l2-bounded quotient — needed because LaBRADOR works over its own
-prime; **the g bound is load-bearing** (unbounded g satisfies the equation for any `t'`).
-**Result — the direction is CLOSED:** LaBRADOR is the only prover tested that satisfies all
-three of succinct/PQ/zk, and at this statement size it **loses to the deployed LNP22 on every
-axis**. Same lesson as the STARK: succinctness is asymptotic and one role-A relation is far
-too small to reach it. **Caveat that must travel:** the encoding is ours and may not be
-LaBRADOR's best (LaZer's `python/labrados.py` has its own mod-q lifting helpers), and its
-proof size is the library's printed *estimate*, not byte-exact like LNP22's `prooflen` —
-never compare the two silently.
+`ref/relation_zk_labrador.{c,h}` (the THIRD and last vendored-proof-library TU) +
+`ref/test/bench_labrador_role_a.c`; runner `scripts/run_labrador_role_a.sh` →
+`evidence/labrador_role_a/<ts>/`; encoding, derivation and numbers in §6 of
+`SUCCINCT_PQ_PROOF_EXPERIMENT.md`. **In the encoding `[A|−A]w − q·g = t'`, the g bound is
+load-bearing** — unbounded g satisfies the equation for any `t'`.
+**Result — the direction is CLOSED:** the only prover tested satisfying all of
+succinct/PQ/zk, and at this statement size it **loses to the deployed LNP22 on every axis**.
+Same lesson as the STARK: succinctness is asymptotic; one role-A relation is far too small.
+**Caveats that must travel:** the encoding is ours and may not be LaBRADOR's best; its proof
+size is the library's printed *estimate*, not byte-exact like LNP22's `prooflen` — never
+compare the two silently.
 **Gate names `PI_LAB_*`** — do not rename/alias `PI_ROWS`/`PI_COLS`/`PI_DEG` or `PI_BATCH_*`.
 **⚠️ THREE TRAPS (each cost time once):** (1) `src/labrados` is a **git submodule the README's
 LaZer clone does NOT fetch** — `git submodule update --init src/labrados`, then
 `make liblabrador38.so`; (2) LaZer's shipped `src/labradosNN_py.h` declares internal `N 64`
-while the submodule it builds defines `N 256` — struct layouts disagree, so **always** use
+while the submodule defines `N 256` — struct layouts disagree, so **always** use
 `src/labrados/labrados_python.h` with `-DLOGQ=NN -DNDEBUG -Isrc/labrados`; (3) labrados'
 `simple_verify`/`verify` return **1 on SUCCESS**, opposite to the setters in the same header.
-**LOGQ=38 is forced** by the lifting bound (uses ~78% of `p/2`; LOGQ=36 overflows).
+**LOGQ=38 is forced** by the lifting bound (LOGQ=36 overflows).
 - No Groth16 wrap anywhere in `las-stark` — it would defeat post-quantum security.
 
 **ML-DSA adaptor experiment — COMPLETE 2026-08-03.** LAS built on FIPS 204 **as specified**
@@ -394,24 +465,25 @@ Meeting-8 freeze).** Quote the write-ups for numbers, never this file.
   different hard relation whose statement is smaller by design.**
 - **Proof amortisation — BOTH provers measured; question CLOSED, batching fails on both for
   opposite reasons.** Groth16: `rust/las-swap/src/bin/bench_amortise.rs` +
-  `BatchedRelationCircuit` (relation factored into `emit_instance` and shared by the single and
-  batched circuits, plus a per-batch tamper check, so a batch cannot prove something weaker) →
-  `evidence/amortise/latest` (⚠️ three runs that day — **`latest` is the one to quote**). LaZer:
-  `ref/relation_zk_batch.{c,h}` (block-diagonal, so the batch is the conjunction of k copies of
-  the *deployed* statement) + `ref/relation_zk_lazer_batch.{c,h}` (the **second** TU that may
-  include `lazer.h`) + committed `relation_zk_params_k{2,4,8}.h` ⇐
-  `scripts/gen_lazer_batch_params.sh` (SageMath at `~/micromamba/envs/lazer-sage/bin/sage`),
-  `scripts/run_lazer_amortise.sh` → `evidence/lazer_amortise/<ts>/`; **k=1 dispatches to the
-  COMMITTED `las_pi_params`**. Write-up `docs/03-results/PROOF_AMORTISATION_EXPERIMENT.md`.
+  `BatchedRelationCircuit` (relation shared by single and batched circuits + a per-batch tamper
+  check, so a batch cannot prove something weaker) → `evidence/amortise/latest` (⚠️ three runs
+  that day — **`latest` is the one to quote**). LaZer: `ref/relation_zk_batch.{c,h}`
+  (block-diagonal = the conjunction of k copies of the *deployed* statement) +
+  `ref/relation_zk_lazer_batch.{c,h}` (the **second** TU that may include `lazer.h`) + committed
+  `relation_zk_params_k{2,4,8}.h` ⇐ `scripts/gen_lazer_batch_params.sh` (SageMath at
+  `~/micromamba/envs/lazer-sage/bin/sage`), `scripts/run_lazer_amortise.sh`; **k=1 dispatches to
+  the COMMITTED `las_pi_params`**. Write-up `PROOF_AMORTISATION_EXPERIMENT.md`.
   **Framings:** Groth16's proof is constant in k so per-swap bytes fall `1/k` **but bytes were
   never the bottleneck** — a statement about *Groth16*, not about batching; LaZer's proof/swap
   drops but per-swap prove+verify gets several times worse (superlinear). ⚠️ **NOT wired into
   the swap**; batched param sets **not independently reviewed**, no security claim about
   batching.
 - **NOT attempted, and why** (not a shortfall of effort): *analysing the ML-DSA variant's
-  security* is barred by the out-of-scope ruling (a reduction, not code); *one-transaction
-  on-chain verification* needs a SHAKE256 precompile, a Merkle-opened dispute, or a succinct
-  proof of verification. Both stay in Chapter 5 future work.
+  security* is barred by the out-of-scope ruling (a reduction, not code). It stays in Ch. 5.
+  ⚠️ **SUPERSEDED 2026-08-05:** this bullet also said one-transaction on-chain verification
+  "needs a SHAKE256 precompile, a Merkle-opened dispute, or a succinct proof". That was an
+  unevidenced prediction and it is now **falsified** — it was achieved at D3 with none of the
+  three (see the ON-CHAIN block). Do not restore it to Ch. 5 future work.
 
 **⚠️ AMHL is DROPPED (Royce, 2026-08-03).** Multi-hop locks are **out of the project** — not a
 bonus, not future work, not a deliverable. Do not build on `ref/amhl.{c,h}`, do not revive it,
@@ -659,9 +731,7 @@ captions, figure labels — never one in isolation):
 - challenge weight **`κ` is per parameter set** (60 / 39 / 49 / 60 for paper/D2/D3/D5) — never
   hard-code `κ=60` as a global.
 
-**Claim precision (strict-review standard):** self-contained references (never a bare "Fig. 1"
-— say which paper's figure); no overclaiming and no misattribution to cited work; label ceilings
-as upper bounds; verify that each citation supports the specific claim it is attached to.
+Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 
 ## Guardrails (standing — never do these without an explicit instruction)
 

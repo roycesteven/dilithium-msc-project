@@ -280,8 +280,10 @@ Because LaZer proves per-partition binary coefficients or exact Euclidean norms,
 ternary statement is encoded by binary decomposition,
 $[\mathbf{A} \mid -\mathbf{A}]\,(r_{+}\,\|\,r_{-}) = Y$ with both halves proven binary,
 which is equivalent to knowledge of a ternary preimage $r' = r_{+} - r_{-}$. The
-generated parameter set reports a knowledge error below $2^{-127}$ under Module-SIS and
-a proof size of approximately 31 kilobytes, with proving and verifying each completing
+generated parameter set reports a knowledge error below $2^{-\piKnowledgeError}$ under
+Module-SIS and a proof size of \piProofBytes\,B --- the parameter set's own figure, larger
+than the proof bytes observed on the wire in \cref{tab:stage2-comm} and not to be
+conflated with them --- with proving and verifying each completing
 well under a second. A dedicated test suite asserts completeness, rejection of every
 sampled single-byte tamper, rejection against a wrong statement, and that the prover
 refuses a non-ternary witness. A small ledger abstraction --- accounts with balances, a
@@ -294,7 +296,7 @@ both parties recover their funds.
 \section{The optimistic (Naysayer) on-chain verifier}
 \label{app:naysayer}
 
-Because the native Solidity verifier exceeds the per-transaction gas cap
+Because the first native Solidity verifier exceeds the per-transaction gas cap
 (\cref{sec:res-app}), an \emph{optimistic} alternative was also implemented and
 measured: \texttt{LASNaysayer}, a poqeth-inspired Naysayer verifier
 \cite{kysil2025poqeth} for the lattice setting --- poqeth itself implements only

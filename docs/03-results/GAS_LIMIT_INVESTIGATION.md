@@ -272,19 +272,124 @@ the vendored `LASVerify` on all four. The rewritten sponge is separately pinned 
 vendored SHAKE256 in `evm/test/LASShakeEquiv.t.sol` at ten input lengths chosen around
 the 136-byte rate.
 
-**The gate.** `evm/test/LASGasBreakdown.t.sol::test_optimised_fits_in_one_transaction`
-**fails** unless execution + 21,000 + EIP-2028 calldata is strictly under 16,777,216 —
-the same "fail loudly rather than publish a plausible-looking number" discipline as the
-rejection-rate gate on the C/Rust benchmark drivers. A companion test asserts the
-**baseline still exceeds** the cap, so the comparison cannot go stale in either direction.
+**The gate, at two levels.** A claim this specific should not rest on our own arithmetic,
+so it is checked twice, by instruments that can fail independently.
 
-> **Numbers.** Every figure for this path comes from a real run:
-> `./scripts/run_onchain_gas.sh` → `evidence/onchain/latest/gas_report.log`, which now
-> also carries a per-stage attribution (decode, SampleInBall, forward NTTs, w', SHAKE,
-> preimage assembly) and a `claimLASVerifiedOpt` row directly comparable with
-> `claimLASVerified` in the same `--gas-report` table. **Do not quote a figure for this
-> section from prose — read it from the log.** Until that run exists, the honest
-> statement is "designed and gated to fit", not "fits".
+*Level 1 — the model.* `evm/test/LASGasBreakdown.t.sol::test_optimised_fits_in_one_transaction`
+fails unless the modelled transaction charge is strictly under 16,777,216, and a companion
+test asserts the **baseline still exceeds** it, so the comparison cannot go stale in either
+direction. The charge is **EIP-7623**, not EIP-2028:
+
+```text
+tokens = zero_bytes·1 + nonzero_bytes·4
+charge = 21000 + max( 4·tokens + execution , 10·tokens )
+```
+
+The first branch reproduces the familiar 16-gas-per-non-zero-byte schedule; the second is
+a **floor** that binds when a transaction carries a lot of calldata relative to how much
+computing it does — the exact shape of a lattice-signature claim. Modelling only the first
+branch understates the charge for any calldata-heavy, compute-light transaction, so
+`LASTxGas` (in `evm/src/LASRegister.sol`) implements the real `max` and every reported
+total says **which branch bound**. (For the D3 claim the crossover sits near 1M gas of
+execution.) `TwoLegSwapGas.t.sol`'s helper models only the standard branch; its published
+rows are all execution-dominated, so none of them moves — but the gate uses the correct
+rule regardless.
+
+*Level 2 — a real client.* `./scripts/run_onchain_one_tx.sh` settles the swap on
+**anvil at a pinned `osaka` hardfork with `--enable-tx-gas-limit`**, so EIP-7825 is
+enforced by the node rather than by us, and the evidence is the **receipt**:
+
+- fund and claim are **separate mined transactions**, so the claim's escrow reads are
+  genuinely **cold** — funding inside the measured call would pre-warm the slots it reads;
+- the claim is sent by `cast send --gas-limit 16777216` — an explicit cap, not an
+  estimate — and the limit **actually on the mined transaction** is read back and asserted,
+  rather than assumed from the flag;
+- before trusting any of it, a **differential control** sends the same trivial transfer at
+  the cap and at cap+1. Only *accepted at the cap, refused one gas over it* attributes the
+  refusal to EIP-7825; a bare non-zero exit code would equally mean a bad nonce or a dead
+  RPC. Accepted at both ⇒ the cap is not enforced and the run aborts; refused at both ⇒
+  inconclusive, and explicitly **not** read as "enforced";
+- the calldata the node received is compared **byte for byte** against what was built from
+  the freshly exported vectors (equal length is not equal bytes), and that expected
+  calldata is retained in the evidence directory so the check is auditable afterwards;
+- the escrow payout is asserted **exactly**, so a partial or misdirected transfer fails;
+- the vectors are re-exported by `ref/test/export_verify_vector` *for the run*, and their
+  digests recorded, so the receipt cannot later be attributed to a different signature;
+- **a client rejection is preserved as a result**: the node's own error text, its log, the
+  control outcome and an enumerated list of every unmet post-condition are written to
+  `evidence/onchain_onetx/<ts>/verdict.txt` and the script exits non-zero.
+
+### The result (measured 2026-08-05)
+
+**A real client mined it.** `evidence/onchain_onetx/latest/` — anvil at `osaka` with
+`--enable-tx-gas-limit`, claim sent at an explicit `--gas-limit 16777216`:
+
+| | |
+|---|---:|
+| `gasUsed`, from the client's receipt | **16,413,275** |
+| EIP-7825 per-transaction cap | 16,777,216 |
+| headroom | **363,941 gas (2.2%)** |
+| beneficiary paid | exactly the escrowed 1 ETH |
+| calldata received vs expected | byte-identical, 50,148 B |
+
+The cap-enforcement control passed on the way in: the node accepted a trivial transfer at
+exactly the cap and refused it one gas over with `tx.gas_limit > env.cfg.tx_gas_limit_cap`,
+so the acceptance means what it claims. The untraced in-test model agrees with the receipt
+to **0.2%** (16,443,126 modelled swap-level total vs 16,413,275 charged), which is the
+cross-check that makes the cheap `forge test` gate trustworthy between node runs.
+
+The baseline remains ~3.2× the cap. Stage attribution of the optimised path (execution
+15,654,854) — from `evidence/onchain/latest/gas_report.log`, pass 1:
+
+| stage | gas | share |
+|---|---:|---:|
+| **SHAKE256 over the 12,320-byte preimage** | **10,572,481** | **68%** |
+| w′ = pointwise + 6 inverse NTTs + pack | 3,237,053 | 21% |
+| 6 forward NTTs (z_bot, c) | 1,098,741 | 7% |
+| decode z + norm gate | 577,760 | 4% |
+| SampleInBall | 154,229 | 1% |
+| preimage assembly | 8,703 | <1% |
+
+Arithmetic fell from 20,730,606 to 5,076,486 (≈4×) and the hash from 26,335,785 to
+10,572,481 (≈2.5×). **The sponge is now the whole story**, at ≈116,181 gas per Keccak-f
+permutation across 91 permutations.
+
+**⚠️ Two caveats that must travel with this result.**
+
+1. **It fits, but only just — and the margin is a message-length budget.** The measured
+   headroom is 363,941 gas. *Derived* from that and the measured per-permutation cost
+   (10,572,481 ÷ 91 = 116,181 gas): the spare gas is worth ≈3.1 Keccak-f permutations,
+   i.e. **≈400 bytes of additional signed message** before the cap is reached, since the
+   preimage is `6144 + 6144 + |M|` and each additional 136 bytes costs one permutation.
+   **That 400-byte figure is a derivation, not a measurement** — no run at a longer message
+   has been made. What *is* measured is the 32-byte case, which is the realistic one: in the
+   Bitcoin/UTXO setting the signed value is a 32-byte sighash.
+
+   **D2 and D5 are NOT evaluated.** `LASVerifyOpt`'s parameters (`N_LAS`, `ELL`,
+   `CTILDE_BYTES`, `Z_BITS`, …) are compile-time constants fixed to D3, so the library
+   cannot be run at another set without being re-parameterised first. Nothing here supports
+   a claim that it fails, or succeeds, at D2 or D5 — that is an open question, not a result.
+   *(An earlier draft of this document asserted it "breaks at D5". That was written from
+   plausibility, never measured or calculated, and is retracted.)*
+
+   Do not state "on-chain LAS verification fits in one transaction" without the parameter
+   set, the message length and the EVM revision attached.
+2. **`--gas-report` inflates in-test gas measurement.** Foundry's inspector is metered
+   inside the measured call frame, adding ≈688k gas to `gasleft()` deltas *and* to
+   `vm.lastCallGas()` — **more than the entire headroom**. A cap assertion measured under
+   the flag fails for a reporting reason while a real client mines the same transaction.
+   `run_onchain_gas.sh` therefore runs the gates in a pass **without** `--gas-report` and
+   the reporting table in a pass with the gate contracts **excluded**, capturing each
+   pass's exit status separately so a failing gate cannot hide behind a green table.
+   Foundry's own `--gas-report` table is unaffected; only in-test measurement is.
+
+> **Numbers.** Every figure for this section comes from a real run — `run_onchain_gas.sh`
+> → `evidence/onchain/latest/gas_report.log` (per-stage attribution plus a
+> `claimLASVerifiedOpt` row directly comparable with `claimLASVerified` in the same
+> `--gas-report` table), and `run_onchain_one_tx.sh` →
+> `evidence/onchain_onetx/latest/{verdict.txt,claim_receipt.json}`. **Do not quote a
+> figure for this section from prose — read it from the log.** Until those runs exist, the
+> honest statement is "designed and gated to fit", not "fits".
 
 **What this does and does not change.** If the gate passes, the claim becomes: *native
 on-chain LAS verification at the D3 set is executable as a single Ethereum transaction,

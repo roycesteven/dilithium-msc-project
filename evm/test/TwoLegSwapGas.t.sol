@@ -34,6 +34,10 @@ library console {
         _send(abi.encodeWithSignature("log(string,uint256)", a, b));
     }
 
+    function log(string memory a, uint256 b, uint256 c) internal view {
+        _send(abi.encodeWithSignature("log(string,uint256,uint256)", a, b, c));
+    }
+
     function log(string memory a, uint256 b, uint256 c, uint256 d) internal view {
         _send(abi.encodeWithSignature("log(string,uint256,uint256,uint256)", a, b, c, d));
     }

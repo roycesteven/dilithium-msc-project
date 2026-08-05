@@ -94,8 +94,10 @@ $\approx$\gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the EIP-7825
 per-transaction cap, and an optimistic variant then made honest settlement cheap while
 leaving a worst-case fraud proof that also exceeds it. That negative result is quantified
 rather than assumed, and it motivated rebuilding the protocol over a UTXO ledger of the
-kind \cite{esgin2020post} assumes. The two together --- why the smart-contract venue does
-not work, and what the alternative costs --- are stronger than either alone.
+kind \cite{esgin2020post} assumes. That ceiling later proved to bound the
+\emph{implementation} rather than the scheme: a claim transaction running a restructured
+verifier was mined inside the cap, at the target parameter set and message length
+(\cref{sec:res-app}). The venue decision therefore rests on cost, not impossibility.
 
 \section{Implementation challenges}
 \label{sec:eval-challenges}
