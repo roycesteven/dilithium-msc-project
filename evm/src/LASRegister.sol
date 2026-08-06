@@ -81,6 +81,57 @@ library LASRegister {
     {
         return keccak256(abi.encode(aHatPacked, tHatPacked, tPacked, message));
     }
+
+    /// Domain separator for the bound claim message.
+    bytes32 internal constant CLAIM_DOMAIN = keccak256("LAS-ADAPTOR-SWAP-CLAIM-v1");
+
+    /// The message an adapted LAS signature must be over to settle escrow `id`.
+    ///
+    /// eprint 2020/845 Fig. 1 signs tx1 and tx2 — the transactions that move the coins —
+    /// not an opaque blob. The EVM gives a contract no transaction object it can hash, so
+    /// this digest stands in for one: it names the chain, the escrow contract, the escrow,
+    /// and the payment that escrow will make. A signature over it cannot be replayed onto
+    /// another chain, another contract, another escrow, or a payment with a different
+    /// beneficiary or amount — which is what makes two settled legs evidence of a swap
+    /// rather than evidence of two valid signatures.
+    ///
+    /// NO LEG INDEX. The two legs live on different chains, in different contracts, under
+    /// different escrow ids, so `chainId ‖ swapContract ‖ id` already separates them. A leg
+    /// field would have to be stored at fund time or supplied by the claimer, and a
+    /// claimer-supplied field is exactly the unbound input this derivation removes.
+    ///
+    /// EXACTLY 32 BYTES, which keeps the signed-message length — and with it the SHAKE256
+    /// preimage `pack(t) ‖ pack(w') ‖ M` that dominates verification gas — identical to the
+    /// measured one-transaction configuration.
+    ///
+    /// `internal`, so it inlines into the contract and into tests/scripts with no library
+    /// deployment. Off-chain parties do not re-implement it: they read the same digest back
+    /// from the chain via `AdaptorSwap.legMessage` / `legMessagePreview`, so what they sign
+    /// is what the contract will check.
+    function claimMessage(
+        uint256 chainId,
+        address swapContract,
+        uint256 id,
+        address payer,
+        address beneficiary,
+        uint256 amount
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encode(CLAIM_DOMAIN, chainId, swapContract, id, payer, beneficiary, amount));
+    }
+
+    /// The bound path's fund-time commitment: the verification parameters only.
+    ///
+    /// The message is deliberately NOT committed here — it is DERIVED from escrow state at
+    /// claim time, so storing it would be redundant and would create a second place for the
+    /// two to drift apart. (A funder cannot compute it before *broadcasting* the fund call,
+    /// since it depends on the id that call assigns; it is readable immediately afterwards.)
+    function contextBound(bytes memory aHatPacked, bytes memory tHatPacked, bytes memory tPacked)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(aHatPacked, tHatPacked, tPacked));
+    }
 }
 
 /// @title LASTxGas — what an Ethereum node actually charges for a transaction.

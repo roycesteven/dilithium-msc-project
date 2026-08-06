@@ -172,18 +172,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-05 19:20 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-06 15:48 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD bc2fe4a · 2026-08-05 · unfinished evm
-- Working tree: 47 modified tracked file(s), 217 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 6c161f4 · 2026-08-05 · evm full
+- Working tree: 7 modified tracked file(s), 12 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `6c161f4 2026-08-05 evm full`
   - `bc2fe4a 2026-08-05 unfinished evm`
   - `ae8366f 2026-08-04 labrador`
   - `a44468a 2026-08-04 CLAUDE.md update`
   - `931d37b 2026-08-04 investigate statement compression`
-  - `aa71cbf 2026-07-31 utxo bitcoin implementation correction real tx vs paper tx`
 
 ### Target parameter set — anchors parsed from source
 
@@ -221,7 +221,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.c` (2026-08-04 17:24) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-05.
+- `CLAUDE.md` hand-written sections last touched 2026-08-06.
 
 <!-- END AUTO-CONTEXT -->
 

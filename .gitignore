@@ -56,4 +56,9 @@ SHA256SUMS
 **/amhl.h
 # scratch handoff between script/OneTxClaim.s.sol and scripts/run_onchain_one_tx.sh
 evm/onetx/
+# same, for the two-leg swap: script/TwoLeg.s.sol <-> scripts/run_onchain_two_leg.sh.
+# The swap vectors are regenerated per run (each leg's message comes from its chain), so
+# unlike evm/test/vectors/*.bin they are scratch and are not committed.
+evm/twoleg/
+evm/test/vectors/swap/
 ref/*.o

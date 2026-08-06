@@ -420,6 +420,39 @@ test/export_naysayer_vectors: test/export_naysayer_vectors.c serialize.c seriali
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
 	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
 
+# --- two-leg atomic swap against a real client (eprint 2020/845 Fig. 1) --------
+# The off-chain half of the swap, run in phases because each leg's signed message
+# is a digest the CHAIN produces (AdaptorSwapBound.legMessage, or a BIP341
+# sighash) and so does not exist until the funding transactions are mined.
+# Deliberately NOT reusing export_verify_vector's msg.bin: a signature over a
+# fixed message proves nothing about which payment it authorised.
+SWAP_VEC_DEPS = test/export_swap_vectors.c serialize.c serialize.h basesig.c basesig.h \
+  relation.c relation.h las.c las.h setup.c setup.h las_types.h poly.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+
+# Without pi. `setup` then REFUSES to run unless given --no-pi, so omitting Fig. 1's
+# proof-of-knowledge step is always a deliberate, recorded choice.
+test/export_swap_vectors: $(SWAP_VEC_DEPS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
+
+# With pi (the variant the runner uses). Needs the vendored LaZer build, exactly
+# like test/test_zkp3 -- see the LAZER_DIR block above.
+test/export_swap_vectors_pi: $(SWAP_VEC_DEPS) relation_zk.c relation_zk.h \
+  relation_zk_lazer.h relation_zk_lazer.o
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 -DLAS_WITH_PI \
+	  -o $@ $< serialize.c basesig.c relation.c relation_zk.c las.c setup.c \
+	  randombytes.c $(KECCAK_SOURCES) relation_zk_lazer.o $(LAZER_LIBS)
+
+# u2's half: Ext from the signature OBSERVED ON CHAIN, then Adapt the other leg.
+# A separate program on purpose -- it takes the observed signature as a path
+# argument and cannot reach the copy the adapting party produced.
+test/extract_and_adapt: test/extract_and_adapt.c serialize.c serialize.h basesig.c basesig.h \
+  relation.c relation.h las.c las.h setup.c setup.h las_types.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
+
 # Classical adaptor baseline (objectives B2.ii). Requires the vendored library:
 #   git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
 #       ../third_party/secp256k1-zkp
