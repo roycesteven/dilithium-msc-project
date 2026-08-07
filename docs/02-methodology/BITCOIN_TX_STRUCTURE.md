@@ -15,6 +15,15 @@ object sizes (`SIGNATURE_BYTES`, `PUBLIC_KEY_BYTES`, from
 `evidence/stage2/latest/bench_swap.log`). Nothing here is a benchmark result and nothing
 here was estimated.
 
+**⚠️ SINCE 2026-08-06, THE ARITHMETIC IN §5 IS NO LONGER ONLY DERIVED — IT IS VALIDATED.**
+Transactions of these shapes were built, relayed and mined on a stock Bitcoin Core v31.1
+regtest node, and the client's own `vsize`/`weight` were read back:
+`evidence/btc_regtest/latest/`, write-up
+`docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. §5.1's 110 vB and §2's 111 vB were
+reproduced exactly by a real client. Where a figure below is now measured rather than
+derived, the section says so. This does not make §5 a benchmark: it makes the size model
+one that a client has checked.
+
 ---
 
 ## 1. The standard Bitcoin transaction
@@ -111,6 +120,30 @@ From Bitcoin Core `src/policy/policy.h` and the script interpreter:
 | `MAX_STANDARD_P2WSH_SCRIPT_SIZE` | 3600 B | policy | max standard witnessScript |
 | `MAX_STANDARD_TX_WEIGHT` | **400,000 WU** | policy | max weight Core will relay or mine |
 | `MAX_BLOCK_WEIGHT` | **4,000,000 WU** | consensus | |
+
+**Two of these were verified against the source actually being run, and one was measured.**
+Reading the pinned v31.1 tree (`src/script/interpreter.cpp`, `ExecuteWitnessScript`) settles
+a question this table left implicit — whether the 520-byte limit applies to the *initial
+witness stack* or only to pushes performed by the script:
+
+```cpp
+// Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
+for (const valtype& elem : stack) {
+    if (elem.size() > MAX_SCRIPT_ELEMENT_SIZE) return set_error(serror, SCRIPT_ERR_PUSH_SIZE);
+}
+```
+
+It applies to the initial stack, at **consensus** level. So neither a 6,736-byte signature
+nor a 4,416-byte public key can reach a script as one element, however permissive the relay
+policy: chunking is required, not merely prudent.
+
+The 80-byte tapscript standardness limit was then **measured** rather than cited. A
+transaction carrying those objects as 520-byte witness chunks was offered to two v31.1 nodes
+differing only in policy: the default node refused it with its own reason string,
+`bad-witness-nonstandard`, while the permissive node accepted it, mined it, and **the
+default node accepted the containing block**. Standardness and validity are different
+questions, and the run separates them
+(`evidence/btc_regtest/latest/A3_testmempoolaccept_default.json`).
 
 ---
 
@@ -247,6 +280,22 @@ severity:
    preferable**; the point here is only that Bitcoin as it stands cannot settle
    configurations 2 and 3.
 
+   **The second of those routes has since been built and run** (2026-08-06):
+   `OP_CHECKLASSIGVERIFY` at a BIP342 `OP_SUCCESSx` slot, patched into Bitcoin Core
+   v31.1, verifying `ref/basesig.c base_verify_packed` over the BIP341 sighash. A
+   transaction whose only authorisation is a LAS signature was accepted and mined by the
+   patched node, while a stock node of the same release — for which `0xbb` is still
+   `OP_SUCCESS` — accepted the same block. Patch, controls and scope:
+   `bitcoin/patches/0001-op-checklassigverify-v31.1.patch`,
+   `evidence/btc_las_node/latest/`, write-up
+   `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md` §3.
+
+   **This does not change the sentence above, and must not be read as changing it.**
+   Demonstrating that one route *can* be implemented is not a position on which route
+   *should* be adopted, and a patched node is not Bitcoin: as deployed, Bitcoin still
+   cannot settle configurations 2 and 3. The demonstration carries no security analysis
+   and no costing of the new opcode.
+
    What eprint 2020/845 §4 assumes is narrower than any of those routes: it assumes the
    *venue*, "a UTXO-based blockchain like Bitcoin *where the signature algorithm is
    replaced with a lattice-based signature scheme*". That is an assumption about the
@@ -257,9 +306,18 @@ severity:
 2. **The stack-element limits bind independently of that change.** A 6,736-byte
    signature is **12.9x** over the 520-byte consensus `MAX_SCRIPT_ELEMENT_SIZE` and
    **84x** over the 80-byte standardness limit for P2WSH/tapscript stack items; the
-   4,416-byte public key is 8.5x and 55x over the same two. Any deployment would have
-   to raise those limits as well, or split each object across multiple stack items and
-   reconcatenate — which needs `OP_CAT`, currently disabled.
+   4,416-byte public key is 8.5x and 55x over the same two.
+
+   **Resolved in practice without raising either limit, and without `OP_CAT`.** An
+   earlier version of this paragraph said a deployment would have to raise the limits or
+   reconcatenate with `OP_CAT`. There is a third option, and it is what the Stage-3 patch
+   does: **the opcode reassembles the operands itself** from a fixed number of
+   fixed-length witness chunks — `ceil(6736/520) = 13` and `ceil(4416/520) = 9` — with
+   every chunk length checked, so a short or transposed chunk cannot shift the
+   reconstruction. Nothing in the interpreter's limits changes; the new rule simply reads
+   more than one stack item. Whether that is the *right* design is a separate question
+   this project does not answer, but "the limits must be raised" was too strong and is
+   withdrawn.
 
 Neither obstacle is caused by the adaptor layer. Both are properties of lattice
 signature sizes, and they would apply equally to a plain (non-adaptor) post-quantum

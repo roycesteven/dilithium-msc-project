@@ -90,7 +90,7 @@ dominating because of rejection sampling.
   Error bars are the sample standard deviation over \benchReps{} repetitions of
   \benchItersSign{} (sign-class) / \benchItersVerify{} (verify-class) iterations on the
   machine of record (\cref{sec:benchmethod}); the same comparison across all four parameter
-  sets is the scaling check in \cref{fig:overhead} (appendix).}
+  sets is the scaling check in \cref{fig:overhead}.}
   \label{fig:timing}
 \end{figure}
 
@@ -102,7 +102,23 @@ the witness vector; Extract merely subtracts $z-\hat z$ and checks $A\,y=Y$. Non
 the asymptotic work. This is the headline of the standalone-signature evaluation:
 \emph{at the core tier} adaptor functionality costs single-digit percentages at every
 parameter set, and the two operations unique to an adaptor signature cost no more than a
-verification each (\cref{fig:overhead}, appendix).
+verification each (\cref{fig:overhead}).
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/fig_overhead}
+  \caption[Adaptor overhead across the parameter sets (sensitivity check)]{Parameter
+  sensitivity of the adaptor overhead: each LAS adaptor operation as a percentage over the
+  basic operation it mirrors, at the four parameter sets of \cref{tab:params}. PreSign is
+  paired with Sign; PreVerify and Adapt with Verify; Extract has no basic analogue and is
+  omitted. The core-tier premium stays in the single digits everywhere, so adding adaptor
+  functionality does not become more expensive as the scheme is scaled up. This is a
+  secondary robustness check on the headline of \cref{fig:timing}, not a result about
+  scaling: the primary comparison is the per-operation overhead at the target setting,
+  \cref{tab:overhead-l3}. The absolute timings behind every bar are \cref{tab:timing}
+  (appendix).}
+  \label{fig:overhead}
+\end{figure}
 
 At the packed boundary the premium grows to $+\packedOvPreSign\%$,
 $+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- an order of magnitude higher, and the
@@ -374,7 +390,8 @@ exactly the kind of claim \cref{sec:eval-limitations} declares out of scope.
 
 The implementation drives an end-to-end post-quantum atomic swap following the swap
 protocol \cite{esgin2020post} \emph{verbatim}, including its proof of knowledge $\pi$
-(\cref{app:swapdemo}). Two results matter. First, the protocol runs and every step is
+(\cref{fig:swapflow,app:swapdemo}). Two results matter. First, the protocol runs and
+every step is
 asserted, including the counterfactuals that a pre-adaptation signature fails basic
 verification and that $\pi$ is rejected against any other statement. Second, $\pi$ is what
 makes the second party's final step \emph{guaranteed} rather than merely expected: by the
@@ -383,6 +400,66 @@ proven ternary one, so the adapted signature is certain to clear the verificatio
 --- without $\pi$ a malicious counterparty could claim and leave an unadaptable
 pre-signature behind. The proof measures \piProofBytes\,B at a knowledge error below
 $2^{-\piKnowledgeError}$ and is exchanged off-chain only.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize,
+      hdr/.style={font=\footnotesize\bfseries, align=center, text width=37mm,
+                  anchor=north},
+      act/.style={draw, rounded corners, text width=34mm, align=left,
+                  inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
+      led/.style={draw, dashed, rounded corners, fill=black!8, text width=38mm,
+                  align=center, inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
+      msg/.style={font=\scriptsize, align=center},
+      >={Stealth[]}]
+
+    %% Two party columns (0mm / 104mm) with the ledgers in the gap between them.
+    \node[hdr] (h1) at (0mm,0)   {$u_1$ (holds $y$)};
+    \node[hdr] (h2) at (104mm,0) {$u_2$};
+
+    \node[act] (s1) at (0mm,-9mm)
+      {\textbf{1.} $(Y,y) \leftarrow$ Gen; $\pi \leftarrow$ Prove$(Y,y)$;\\
+       $\hat{\sigma}_1 \leftarrow$ \textsc{PreSign}$(\mathit{sk}_1, Y, m_1)$};
+    \node[act] (s2) at (104mm,-27mm)
+      {\textbf{2.} verify $\pi$, then \textsc{PreVerify} $\hat{\sigma}_1$ ---
+       abort if either fails;\\
+       $\hat{\sigma}_2 \leftarrow$ \textsc{PreSign}$(\mathit{sk}_2, Y, m_2)$};
+    \node[act] (s3) at (0mm,-47mm)
+      {\textbf{3.} \textsc{PreVerify} $\hat{\sigma}_2$;\\
+       $\sigma_2 \leftarrow$ \textsc{Adapt}$(\hat{\sigma}_2, y)$; publish};
+    \node[led] (l2) at (52mm,-64mm)
+      {chain 2 settles: $\mathit{tx}_2 + \sigma_2$\\ \emph{$u_1$ takes $u_2$'s coin}};
+    \node[act] (s4) at (104mm,-72mm)
+      {\textbf{4.} $y \leftarrow$ \textsc{Extract}$(\sigma_2, \hat{\sigma}_2)$;\\
+       $\sigma_1 \leftarrow$ \textsc{Adapt}$(\hat{\sigma}_1, y)$; publish};
+    \node[led] (l1) at (52mm,-92mm)
+      {chain 1 settles: $\mathit{tx}_1 + \sigma_1$\\ \emph{$u_2$ takes $u_1$'s coin}};
+
+    \draw[->] (s1.east) -- (s2.west)
+      node[msg, midway, above] {$\{Y,\ \pi,\ \hat{\sigma}_1,\ \mathit{tx}_1\}$\\ off-chain};
+    \draw[->] (s2.west) -- (s3.east)
+      node[msg, midway, above] {$\{\hat{\sigma}_2,\ \mathit{tx}_2\}$\\ off-chain};
+    \draw[->] (s3.south) |- (l2.west);
+    \draw[->] (l2.east) -- (s4.west)
+      node[msg, midway, above, xshift=1mm] {$\sigma_2$ is public};
+    \draw[->] (s4.south) |- (l1.east);
+  \end{tikzpicture}
+  \caption[The atomic swap, message by message]{The swap protocol as implemented, with
+  every object the two parties exchange. $u_1$ generates the statement/witness pair, so
+  it moves first and claims first. The signed message $m_i$ is the signature hash of the
+  unsigned template $\mathit{tx}_i$, not the transaction itself (\cref{sec:stage2method}).
+  Step~2 is the abort gate: $u_2$ commits nothing until both $\pi$ and $u_1$'s
+  pre-signature verify, and at that point neither pre-signature is spendable by anyone.
+  Step~4 needs no message from $u_1$ at all --- $u_2$ reads $\sigma_2$ off chain~2 and
+  subtracts its own pre-signature from it, and that leak is what makes the exchange
+  atomic rather than merely simultaneous. Only the two dashed boxes reach a ledger: the
+  statement, the proof and both pre-signatures never do, and the witness $y$ is
+  transmitted by nobody. The two off-chain arrows and the two dashed boxes are exactly
+  the message rows of \cref{tab:stage2-comm}, and the operations named in the boxes are
+  the phases timed in \cref{tab:stage2-time}.}
+  \label{fig:swapflow}
+\end{figure}
 
 As a supporting check on deployability, native on-chain LAS verification was
 \emph{implemented} and measured on a real Solidity stack: one claim transaction running
@@ -672,7 +749,7 @@ Two further factors are specific to \cref{sec:res-stage2}. The UTXO ledger is a 
 rather than a node (\cref{app:utxomodel}): real transaction objects, real serialised sizes
 and the real leak channel atomicity depends on, but no fees or confirmation latency, so
 on-chain byte counts are the honest proxy. That limit belongs to the venue rather than the
-study, since configurations~2 and~3 cannot settle on a real node without a consensus
-change. Finally, the Stage-2 timings come from a single desktop machine
+study: configurations~2 and~3 need a consensus change, built and run in
+\cref{app:btcnode}. Finally, the Stage-2 timings come from a single desktop machine
 (\stageTwoCpu{}), so the usability discussion is an extrapolation, not a measurement on
 constrained hardware.

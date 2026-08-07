@@ -158,4 +158,10 @@ Pieter Wuille, Jonas Nick, and Anthony Towns.
 \newblock Bitcoin Improvement Proposal, 2020.
 \newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki}.
 
+\bibitem{bip342}
+Pieter Wuille, Jonas Nick, and Anthony Towns.
+\newblock {BIP} 342: Validation of taproot scripts.
+\newblock Bitcoin Improvement Proposal, 2020.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki}.
+
 \end{thebibliography}

@@ -159,9 +159,29 @@ difference is the cryptography, not the chain.
 **Limitation to state in the report.** This is an in-process model: no p2p, no mempool
 policy, no fee market, no reorgs, no script interpreter. It gives real transaction
 objects, real serialised sizes, and the real leak channel (`spending_signature`), but
-not real fees or confirmation latency. Running configurations 2 and 3 against a *real*
-bitcoind regtest is not possible without a consensus change — Bitcoin Script has no
-ML-DSA opcode — which is itself the finding that motivates the paper's assumption.
+not real fees or confirmation latency.
+
+**Superseded in part, 2026-08-06.** This paragraph used to end: "Running configurations 2
+and 3 against a *real* bitcoind regtest is not possible without a consensus change —
+Bitcoin Script has no ML-DSA opcode." Both halves have since been tested rather than
+asserted, and they came apart:
+
+- **Carriage needs no consensus change.** A transaction carrying a real LAS signature and
+  public key was built with Bitcoin Core's own helpers, broadcast and mined on a **stock**
+  v31.1 regtest node. It is non-standard under default relay policy
+  (`bad-witness-nonstandard`) but consensus-valid, and the default-policy node accepted the
+  block. The spend was authorised by an ordinary Schnorr signature — **stock Bitcoin
+  verified nothing lattice-based** — so this bounds the claim to carriage.
+- **Verification needs one, and one was built.** `OP_CHECKLASSIGVERIFY` at a BIP342
+  `OP_SUCCESSx` slot, patched into v31.1: a transaction whose only authorisation is a LAS
+  signature was accepted and mined by the patched node.
+
+So the accurate statement is now: *configurations 2 and 3 cannot settle on Bitcoin **as
+deployed**; a minimal consensus change is sufficient, and has been demonstrated on
+regtest.* The model ledger remains a model — none of this turns `utxo.rs` into a node, and
+the two-leg swap over the new opcode was not run. Evidence `evidence/btc_regtest/latest/`
+and `evidence/btc_las_node/latest/`; write-up
+`docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`.
 
 ---
 
@@ -225,7 +245,7 @@ Gas does not exist here, so per §16.3 the axes are **time** and **communication
 
 | Risk | Assessment |
 |---|---|
-| **Bitcoin Script cannot verify an LAS signature.** | Not required by the paper, which *assumes* a UTXO chain whose signature algorithm is Algorithm 1 (§4). It does mean a real bitcoind regtest cannot settle configurations 2–3 without a consensus change — recorded as the limitation in §5, not worked around. |
+| **Bitcoin Script cannot verify an LAS signature.** | Not required by the paper, which *assumes* a UTXO chain whose signature algorithm is Algorithm 1 (§4). Recorded as the limitation in §5 rather than worked around — and since 2026-08-06 **tested rather than assumed**: stock v31.1 carries and mines the bytes but verifies nothing lattice-based, while a v31.1 patched with `OP_CHECKLASSIGVERIFY` accepts and mines a spend authorised *only* by a LAS signature. The limitation stands for Bitcoin **as deployed**; §5 now states it that way. |
 | **Configuration 2 needs a Groth16 circuit over a lattice statement.** | **Resolved — built** (`rust/las-swap/src/groth16_circuit.rs`, arkworks 0.4 / BN254). The feared blow-up did not materialise, and the reason is worth reporting: `r ↦ A r` is **linear with public coefficients**, so it costs *no* multiplication constraints in R1CS. Only two things need constraining — the ternary bound (`r³ = r`, 2 constraints/coefficient) and the reduction mod `q` (a range-checked quotient per row). Total ≈ 28.7 k constraints. It would have been intractable had the relation involved products of two *secret* polynomials. |
 | Groth16's trusted setup and proof randomness. | Both must use real entropy: a reproducible CRS would leave the toxic waste recoverable (soundness void), and reused proof randomness breaks zero-knowledge. Setup and every `prove` call therefore draw from the OS RNG — the **one** deliberate exception to this harness's pinned-seed reproducibility. Proof size and timing are unaffected; only the exact proof bytes differ between runs, and those are not a reported quantity. |
 | Reading `A` out of the KAT-locked port. | The circuit needs `A` as public constants, but `PublicParams` keeps it `pub(crate)` in the NTT domain. Added `relation::apply_a` — an additive, read-only wrapper over the existing private `amul`; the matrix is then recovered column-by-column by evaluating the map on unit vectors, so the circuit uses *the map the scheme actually computes with* rather than a re-derivation that could drift. **KAT digest re-verified unchanged** (`cargo test --test las_kat` passes). No C twin was added: `ref/` has no caller. |

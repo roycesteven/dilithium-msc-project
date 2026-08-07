@@ -23,7 +23,73 @@ $c = H(\mathit{pk}, w + Y, M)$, and rejects at the \emph{tighter} bound
 $\gamma-\kappa-1$; \textsc{PreVerify}, which recomputes $w' = A\vecz - c\,t$ and checks
 $c = H(\mathit{pk}, w'+Y, M)$; \textsc{Adapt}, which adds the witness,
 $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier accepts; and
-\textsc{Extract}, which recovers $y = \vecz - \hat{\vecz}$.
+\textsc{Extract}, which recovers $y = \vecz - \hat{\vecz}$ (\cref{fig:lasfuncs}).
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize,
+      ttl/.style={draw, rounded corners, fill=orange!15, text width=29mm,
+                  align=center, inner xsep=1.5mm, inner ysep=1.2mm,
+                  anchor=north, font=\scriptsize\bfseries},
+      pan/.style={draw, rounded corners, text width=29mm, align=left,
+                  inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
+      io/.style={text width=31mm, align=center, font=\scriptsize\itshape,
+                 inner xsep=0pt, inner ysep=1mm, anchor=north}]
+
+    %% Four independent panels, one per added function: in / computes / out.
+    %% Column pitch 37mm at a 29mm text width keeps the picture inside the
+    %% 145mm text block.
+    %% ---------------- (a) PreSign ----------------
+    \node[ttl] (ta) at (0mm,0)     {(a) \textsc{PreSign}};
+    \node[io]  (ia) at (ta.south)  {in: secret $r$, statement $Y$, message $M$};
+    \node[pan] (pa) at (ia.south)  {commitment $w$\\[1pt]
+        $c = H(\mathit{pk},\,w+Y,\,M)$\\[1pt]
+        restart while\\
+        $\inftynorm{\hat{\vecz}} > \gamma-\kappa-1$};
+    \node[io]  (oa) at (pa.south)  {out: $\hat{\sigma} = (\tilde c,\hat{\vecz})$};
+
+    %% ---------------- (b) PreVerify ----------------
+    \node[ttl] (tb) at (37mm,0)    {(b) \textsc{PreVerify}};
+    \node[io]  (ib) at (tb.south)  {in: $Y$, key $t$, $\hat{\sigma}$, $M$};
+    \node[pan] (pb) at (ib.south)  {$w' = A\hat{\vecz} - c\,t$\\[1pt]
+        accept iff\\
+        $c = H(\mathit{pk},\,w'+Y,\,M)$\\[1pt]
+        and $\inftynorm{\hat{\vecz}} \le \gamma-\kappa-1$};
+    \node[io]  (ob) at (pb.south)  {out: accept / reject};
+
+    %% ---------------- (c) Adapt ----------------
+    \node[ttl] (tc) at (74mm,0)    {(c) \textsc{Adapt}};
+    \node[io]  (ic) at (tc.south)  {in: $\hat{\sigma}$, witness $y$};
+    \node[pan] (pc) at (ic.south)  {\emph{runs (b) first}\\[1pt]
+        $\vecz \leftarrow \hat{\vecz} + y$\\[1pt]
+        $\inftynorm{y} \le 1$, so\\
+        $\inftynorm{\vecz} \le \gamma-\kappa$};
+    \node[io]  (oc) at (pc.south)  {out: $\sigma = (\tilde c,\vecz)$, an ordinary
+        signature};
+
+    %% ---------------- (d) Extract ----------------
+    \node[ttl] (td) at (111mm,0)   {(d) \textsc{Extract}};
+    \node[io]  (id) at (td.south)  {in: $\sigma$, $\hat{\sigma}$, $Y$};
+    \node[pan] (pd) at (id.south)  {$y \leftarrow \vecz - \hat{\vecz}$\\[1pt]
+        return $y$ iff $A\,y = Y$\\[1pt]
+        \emph{needs only public data}};
+    \node[io]  (od) at (pd.south)  {out: the witness $y$};
+  \end{tikzpicture}
+  \caption[The four functions LAS adds to the base signature]{The four functions LAS
+  adds to the base signature, one panel each: what goes in, what the function computes,
+  and what comes out. \textsc{KeyGen}, \textsc{Sign} and \textsc{Verify} are reused
+  unchanged and are not shown. Two asymmetries are the whole construction. Only (a) and
+  (b) touch the statement $Y$, and only in one place --- the challenge hash --- which is
+  why the adaptor layer inherits the base scheme's arithmetic rather than replacing it;
+  only (c) and (d) touch the witness $y$, and they are the two functions a basic
+  signature has no counterpart for. The bound in (a) is the one quantity that must not be
+  relaxed: pre-signing rejects one unit tighter than \cref{eq:signbound} precisely so that
+  the addition in (c) cannot carry the adapted response past the bound the base verifier
+  enforces. How the four compose, and why publishing $\sigma$ is what makes a swap
+  atomic, is \cref{fig:flow}.}
+  \label{fig:lasfuncs}
+\end{figure}
 
 \begin{equation}
   \label{eq:signbound}
@@ -35,7 +101,7 @@ The single subtle design point is the bound budget. The witness is ternary, so
 $\inftynorm{y}\le 1$, and because \textsc{PreSign} rejects at $\gamma-\kappa-1$ the response
 after \textsc{Adapt} clears \cref{eq:signbound}; loosening it to $\gamma-\kappa$ would let
 adapted signatures exceed the bound and be rejected.
-\Cref{fig:flow} shows the resulting data flow.
+\Cref{fig:flow} shows the data flow.
 
 \begin{figure}[htbp]
   \centering

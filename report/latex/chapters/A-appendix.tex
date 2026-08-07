@@ -444,25 +444,6 @@ the core block of \cref{tab:overhead-l3}); \cref{tab:components} gives the compo
 byte sizes at every parameter set (the target setting is the body table
 \cref{tab:complete-l3}).
 
-\Cref{fig:overhead} is the parameter-sensitivity check referred to in
-\cref{sec:res-compute}: it repeats the primary base-versus-adaptor comparison at all four
-parameter sets and confirms that the core-tier adaptor premium stays in the single digits as the
-dimensions are scaled up, so the headline result is not specific to the target setting.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.92\linewidth]{figures/fig_overhead}
-  \caption[Adaptor overhead across the parameter sets (sensitivity check)]{Parameter
-  sensitivity of the adaptor overhead: each LAS adaptor operation as a percentage over the
-  basic operation it mirrors, at the four parameter sets of \cref{tab:params}. PreSign is
-  paired with Sign; PreVerify and Adapt with Verify; Extract has no basic analogue and is
-  omitted. The core-tier premium stays in the single digits everywhere, so adding adaptor
-  functionality does not become more expensive as the scheme is scaled up. This is a
-  secondary robustness check; the primary comparison is the per-operation overhead at the
-  target setting, \cref{tab:overhead-l3}.}
-  \label{fig:overhead}
-\end{figure}
-
 \begin{table}[h]
   \centering
   \caption[Per-operation timing across the parameter sets]{Per-operation timing,
@@ -567,3 +548,73 @@ int las_ext(las_sk *y, const las_sig *sig, const las_sig *presig,
   return 0;
 }
 \end{lstlisting}
+
+\section{Settling on a real node}\label{app:btcnode}
+
+The transaction sizes of \cref{sec:res-stage2} are arithmetic over the serialisation of
+\cite{bip141,bip144,bip341}. This appendix records what happened when transactions of those
+shapes were put to a real Bitcoin client, in two stages that must not be conflated: the
+first carries lattice-sized objects past a \emph{stock} node, the second verifies a lattice
+signature on a \emph{patched} one. Full method, scope and caveats are in
+\texttt{docs/03-results/TWO\_LEG\_REAL\_CLIENT\_EXPERIMENT.md}; the evidence is under
+\texttt{evidence/btc\_regtest/} and \texttt{evidence/btc\_las\_node/}.
+
+\paragraph{Carriage on stock Bitcoin Core.}
+Against an unmodified Bitcoin Core \btcNodeTag{} regtest node (source commit
+\texttt{\btcNodeCommit}), three transactions were constructed with the client's own test
+framework, offered to two nodes differing only in relay policy, broadcast and mined.
+
+\begin{center}\small
+\begin{tabular}{lrrl}
+\toprule
+transaction & vsize (vB) & weight (WU) & default relay policy \\
+\midrule
+1-in/1-out P2WPKH, signed by the node & \btcMeasWpkhVsize & \btcMeasWpkhWeight & \btcMeasWpkhPolicy \\
+1-in/1-out P2TR key path & \btcMeasTrVsize & \btcMeasTrWeight & \btcMeasTrPolicy \\
+carriage of a LAS signature and key & \btcMeasCarriageVsize & \btcMeasCarriageWeight & \texttt{\btcMeasCarriagePolicy} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Three observations. The two reference spends reproduced the published figures the size
+model self-checks against, so that model is now one a client has confirmed rather than one
+this study asserts. The carriage transaction is refused by default relay policy --- the
+reason string is the node's own --- yet is consensus-valid, was mined, and the
+default-policy node accepted the containing block: standardness and validity are distinct
+questions, and only the second bears on whether a post-quantum settlement is possible.
+Finally, because a signature of \btcTwoSig{} bytes and a key of \btcTwoPk{} bytes each
+exceed the \btcChunkWidth-byte consensus limit on a witness stack item, they travel as
+\btcSigChunks{} and \btcPkChunks{} chunks respectively, which is why this transaction
+carries \btcCarriageItems{} witness items where an ordinary payment carries two.
+
+Nothing here verifies a lattice signature. Stock Script has no such opcode; the spend is
+authorised by an ordinary Schnorr signature and the lattice bytes are discarded from the
+stack.
+
+\paragraph{Verification on a patched node.}
+\cite{bip342} reserves the \texttt{OP\_SUCCESS} opcodes as an upgrade path. Taking one of
+them (\btcLasOpcode) and defining it as a lattice verification opcode over the byte
+interface of \cref{sec:serialize}, with the signed message being the transaction
+digest of \cite{bip341}, gives a node that can settle a spend carrying no elliptic-curve
+signature at all. Such a spend was accepted and mined
+(\btcLasVsize\,vB, \btcLasWeight\,WU, \btcLasItems{} witness items); the consensus diff is
+recorded as a patch against the same release
+(\texttt{sha256:\btcLasPatchSha}) and applies to a pristine checkout of it.
+
+That a node accepts a transaction proves little on its own, so each case was put to both the
+patched node and a stock one. On the stock node the opcode is still \texttt{OP\_SUCCESS},
+so it accepts every variant unconditionally --- which is what makes it a control, since it
+cannot be reacting to the signature. \btcLasControls{} mutations were tried: altering the
+payment's value or destination, spending a different coin, computing the digest against a
+false input value, presenting a signature made for another transaction or over something
+that is not a transaction digest at all, truncating or transposing a chunk, and substituting
+a key the output never committed to. Every one was refused by the patched node and accepted
+by the stock node, which attributes the refusals to the new rule rather than to some other
+defect.
+
+Three limits travel with this. A patched node is not Bitcoin, so the claim that
+configurations~2 and~3 cannot settle on Bitcoin as deployed is unaffected. Implementing one
+of the routes sketched in \cref{sec:res-stage2} demonstrates feasibility and takes no
+position on which route should be adopted. And the exercise is functional only: no security
+argument is offered for the new rule, its validation cost is not measured, and it is not
+wired into the swap protocol.

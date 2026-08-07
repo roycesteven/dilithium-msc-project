@@ -332,8 +332,21 @@ def main() -> None:
     # witness. Configurations 2 and 3 share one signature scheme, so they share
     # one projection: a Taproot-shaped output committing to a 32-byte hash of
     # the public key, which the witness then reveals alongside the signature.
+    #
+    # THE CLASSICAL WITNESS IS DER-SHAPED, NOT THE HARNESS'S 64 BYTES.
+    # `bench_swap` reports libsecp256k1's 64-byte compact signature, which is the
+    # right number for a communication measurement but is NOT a valid P2WPKH
+    # witness item: Bitcoin requires DER plus a sighash byte. Projecting the
+    # compact form understated the classical baseline and so inflated every
+    # post-quantum ratio below.
+    #
+    # This is settled by measurement rather than by argument. In
+    # `evidence/btc_regtest/latest`, a 1-in/1-out P2WPKH spend signed BY A REAL
+    # BITCOIN CORE NODE reports total 191 B / weight 437 / vsize 110 vB — exactly
+    # what REF_P2WPKH_SIG (71) produces here, and exactly what the self-check
+    # already required. Use the reference witness shape; keep the measured pk.
     proj = {
-        1: TxProjection(SPK_P2WPKH, [cfgs[1]["sig"], cfgs[1]["pk"]]),
+        1: TxProjection(SPK_P2WPKH, [REF_P2WPKH_SIG, cfgs[1]["pk"]]),
         2: TxProjection(SPK_P2TR, [cfgs[2]["sig"], cfgs[2]["pk"]]),
         3: TxProjection(SPK_P2TR, [cfgs[3]["sig"], cfgs[3]["pk"]]),
     }
