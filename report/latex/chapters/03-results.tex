@@ -291,31 +291,19 @@ differences.
 
 \begin{table}[htbp]
   \centering
-  \caption[Classical vs.\ post-quantum adaptor signature]{Classical vs.\ post-quantum adaptor signature: same functionality, different
-  security foundation. Classical secp256k1 ($\approx$128-bit \emph{classical} security)
-  versus LAS at the \emph{Simplified Dilithium-II} parameters ($n=4$, $\ell=4$, $M=8$,
-  $\kappa=39$, $\gamma=79\,872$, $d=256$, $q=8\,380\,417$). The Dilithium-II dimensions are
-  an engineering match to the $\approx$128-bit (NIST level~2) target, \emph{not} a formal
-  security-equivalence claim (\cref{tab:params}); the stronger LAS settings are reserved for
-  the parameter-sensitivity study (\cref{sec:res-compute}) and would overstate the
-  post-quantum cost here. Timings $\mu$s/op (classical: mean $\pm$ SD over \clReps{} runs
-  $\times$ \clIters{} iterations; LAS: \benchReps{} repetitions $\times$
-  \benchItersSign{}/\benchItersVerify{} iterations; same machine); sizes in bytes.
-  Measurement boundaries (\cref{sec:benchmethod}): the classical column is the library's
-  \emph{hybrid} native-API boundary --- PreSign/PreVerify/Adapt/Extract pack or parse the
-  162-byte pre-signature \emph{inside} the timed calls (packed-like), while
-  KeyGen/Sign/Verify exchange in-memory structs with their wire codecs outside
-  (core-like); LAS is
-  shown at both its core and packed tiers, measured on the C implementation. KeyGen
-  also produces the statement/witness, which take the public-key/secret-key size. The
-  classical pre-signature is a syntactically distinct object (an ECDSA signature plus a
-  discrete-logarithm-equality proof), whereas the LAS pre-signature shares the signature
-  format. The final column is \emph{tier-matched}: LAS is taken at whichever of its two
-  tiers corresponds to the classical library's boundary for that operation --- the core
-  tier for KeyGen/Sign/Verify, whose wire codecs sit outside the timed call on both
-  sides, and the packed tier for the four adaptor operations, whose codecs sit inside it
-  on both sides. Comparing every row against a single LAS tier would count the codec on
-  one side only for four of the seven operations.}
+  \caption[Classical vs.\ post-quantum adaptor signature]{Classical vs.\ post-quantum
+  adaptor signature: same functionality, different security foundation. Classical
+  secp256k1 ($\approx$128-bit \emph{classical} security) against LAS at the
+  \emph{Simplified Dilithium-II} parameters of \cref{tab:params}. Those dimensions are an
+  engineering match to the $\approx$128-bit (NIST level~2) target, \emph{not} a formal
+  security-equivalence claim; the stronger LAS settings are reserved for the
+  parameter-sensitivity study (\cref{sec:res-compute}) and would overstate the
+  post-quantum cost here. Timings $\mu$s/op (mean $\pm$ SD, machine of record); sizes in
+  bytes. The two libraries draw their measurement boundaries differently, so the final
+  column is \emph{tier-matched} --- each LAS row taken at whichever of its two tiers
+  corresponds to the classical library's boundary for that operation. Why that matching is
+  necessary, the boundaries themselves, the repetition counts, and the object-level
+  differences behind the size rows are set out in \cref{app:methoddetail}.}
   \label{tab:classical}
   \small
   \input{generated/tab_classical}
@@ -494,27 +482,24 @@ is a transaction \emph{weight} limit one settlement sits well inside
   rather than on this table. \texttt{claimLAS} is a floor performing \emph{no} lattice
   verification (calldata plus one \texttt{keccak256}), a strict lower bound. The two
   \texttt{claimLASVerified*} rows decide the same predicate as \texttt{base\_verify}
-  (\cref{sec:construction}) --- decode, norm bound, $w'=A\vecz-c\,t$, SHAKE256 challenge
-  check --- the first mirroring its steps directly from the vendored ZKNox primitives and
-  validated against the C reference, the second \emph{restructuring} them: the public key
-  registered in the NTT domain and $c\,t$ folded before a single inverse transform;
-  parameters read from calldata rather than decoded into memory; a sponge without the
-  per-byte absorb. ECDSA, by contrast, verifies in the native \texttt{ecrecover}
-  precompile, whereas both LAS rows run in EVM bytecode. The restructured verifier
-  reproduces the first's packed $w'$ byte-for-byte on the C golden vectors and agrees with
-  it on accept/reject for the golden signature and a tampered response, challenge and
-  message. \textbf{One condition qualifies that equivalence}: it consumes the registered
-  $\hat t$ rather than deriving it, so the two agree where $\hat t=\mathrm{NTT}(t)$ for the
-  key whose bytes are hashed; the fund-time commitment binds both representations against
-  substitution but does not \emph{prove} their consistency, which remains the registrant's
-  obligation. The separate client run --- anvil at a pinned \texttt{osaka} revision with
-  EIP-7825 enforced --- mined a claim sent at an explicit capped gas limit at
-  \gasOptReceipt{} gas over \gasOptCalldata{}\,B of calldata, releasing the exact escrowed
-  amount. Scope: \emph{Simplified Dilithium-III}, a 32-byte signed message, that revision;
-  no other parameter set was evaluated, the verifier's dimensions being fixed at build
-  time. The \gasOptHeadroom{}\,gas of headroom is measured; that it corresponds to a few
-  hundred further bytes of signed message is \emph{derived} from it and the measured
-  per-permutation hash cost.}
+  (\cref{sec:construction}); the second \emph{restructures} that computation rather than
+  changing it, and is validated against both the first and the C reference
+  (\cref{app:methoddetail}). ECDSA, by contrast, verifies in the native
+  \texttt{ecrecover} precompile, whereas both LAS rows run in EVM bytecode.
+  \textbf{Both rows hold under a registration invariant, and neither checks it}: each
+  consumes public parameters already transformed rather than deriving them --- $\hat A'$
+  in both rows, $\hat t$ additionally in the restructured one --- so each decides
+  \texttt{base\_verify} only where $\hat A'$ is the transform of the agreed matrix and
+  $\hat t$ the transform of the key whose packed bytes enter the challenge preimage. The
+  fund-time commitment binds all of them against substitution by the claimer but proves
+  nothing about their consistency; where the invariant fails, what is decided is a
+  different predicate (\cref{app:methoddetail}). The separate client run reported
+  in the text was made on anvil at a pinned \texttt{osaka} revision with EIP-7825 enforced,
+  over \gasOptCalldata{}\,B of calldata. \textbf{Scope}: \emph{Simplified Dilithium-III}, a
+  32-byte signed message, that revision; no other parameter set was evaluated, the
+  verifier's dimensions being fixed at build time. The \gasOptHeadroom{}\,gas of headroom
+  is \emph{measured}; that it corresponds to a few hundred further bytes of signed message
+  is \emph{derived} from it and the measured per-permutation hash cost.}
   \label{tab:onchain}
   \small
   \setlength{\tabcolsep}{5pt}
@@ -542,7 +527,8 @@ is a transaction \emph{weight} limit one settlement sits well inside
   classical claim, the LAS floor doing \emph{no} lattice verification, and the two full
   verifiers. The dashed line is the EIP-7825 cap on the transaction gas limit
   ($16\,777\,216 = 2^{24}$). The baseline verifier's bar crosses it; the restructured
-  \texttt{claimLASVerifiedOpt} --- same scheme, same predicate, different expression ---
+  \texttt{claimLASVerifiedOpt} --- same scheme, same predicate under the registration
+  invariant of \cref{tab:onchain}, different expression ---
   falls below, which is what changes the conclusion from ``a deployable path needs a
   precompile, a succinct proof or an optimistic scheme'' to ``at this parameter set and
   message length it fits, narrowly''. All four bars come from one \texttt{--gas-report}
@@ -596,9 +582,14 @@ LAS configurations passed the rejection gate (\cfgTwoRejMeasured{} attempts per
 \begin{table}[htbp]
   \centering
   \caption[Communication cost of the swap]{Communication cost of one complete swap,
-  in bytes, observed from the transmitted buffers over \stageTwoRuns{} swaps. A
-  range indicates a message whose size varied between runs. Off-chain messages are
-  counted, not only what reaches a ledger.}
+  in bytes, observed from the transmitted buffers over \stageTwoRuns{} swaps.
+  Off-chain messages are counted, not only what reaches a ledger. \textbf{A range
+  indicates a message whose size varied between runs, and only configuration~3's
+  proof does so}: LaZer packs the proof's Gaussian response vectors with a
+  variable-length code and then reports the length its encoder actually reached, so
+  the packed size depends on the values sampled for that particular proof. Every
+  other object here has a size fixed by its encoding, and the two ranged totals
+  inherit that single varying term.}
   \label{tab:stage2-comm}
   \small
   \begin{tabular}{@{}l r r r@{}}
@@ -703,14 +694,18 @@ only if it first reproduces two published reference figures.
 \end{table}
 
 \paragraph{The witness discount absorbs more than half of the post-quantum penalty.}
-In raw bytes the post-quantum settlement is \btcRawRatio$\times$ the classical one; in
-virtual size --- what fees are charged on --- only \btcVsizeRatio$\times$. SegWit bills
-witness bytes at one weight unit and all others at four, and a post-quantum signature is
-\emph{entirely} witness data. That decision, taken long before anyone considered lattice
-signatures on Bitcoin, removes \btcDiscountSaving\,\% of the size penalty. It is a
-concrete argument for UTXO chains as the venue, with no counterpart on the EVM, where
-calldata carries no comparable discount and native verification cost
-\gasLasVerifiedM{}\,M gas (\cref{tab:onchain}).
+This rests on a transaction structure Bitcoin did not originally have. Before SegWit
+\cite{bip141,bip144} a signature travelled in the input script, where every byte was billed
+alike; the segregated witness bills witness bytes at one weight unit against four, and
+Taproot \cite{bip341} supplies the output form used here. In raw bytes the post-quantum
+settlement is \btcRawRatio$\times$ the classical one; in virtual size --- what fees are
+charged on --- only \btcVsizeRatio$\times$, a post-quantum signature being \emph{entirely}
+witness data. That decision, taken long before anyone considered lattice signatures on
+Bitcoin, removes \btcDiscountSaving\,\% of the size penalty; on the original structure the
+same settlement would pay the undiscounted rate throughout. It is a concrete argument for
+UTXO chains as the venue, with no counterpart on the EVM, where calldata carries no
+comparable discount and native verification cost \gasLasVerifiedM{}\,M gas
+(\cref{tab:onchain}).
 
 \paragraph{It fits the size limits, but not the verification rules.}
 A settlement weighs \btcThreeWeight{}\,WU against the \btcMaxStdWeight{}\,WU standardness
@@ -731,6 +726,19 @@ limits that exist regardless: the signature is \btcSigOverElement$\times$ over t
 consensus stack-item limit and \btcSigOverStdElement$\times$ over the 80\,B standardness
 limit \cite{bitcoincorepolicy}. Both obstacles apply equally to an ordinary post-quantum
 payment: they are properties of lattice signature sizes, not of adaptor signatures.
+
+\paragraph{Both obstacles were put to a real client.} A stock Bitcoin Core node carries the
+lattice objects --- refused by default relay policy, yet consensus-valid and mined --- but
+verifies nothing: an ordinary Schnorr signature authorises it. Adding one consensus
+rule, an \texttt{OP\_SUCCESS} opcode \cite{bip342} over the byte interface of
+\cref{sec:serialize}, gives a node mining a spend with no elliptic-curve signature, all
+\btcLasControls{} mutations tried being refused by it and accepted by an unmodified node ---
+the control attributing the refusals to the new rule. The blocker is a consensus rule, not
+engineering. Its cost was measured: one verification runs
+\btcLasVerifyUs\,$\mu$s against the curve baseline it is compared with, a BIP340 Schnorr
+check's \btcSchnorrVerifyUs\,$\mu$s --- \btcLasRatioSchnorr$\times$ --- and a signature that
+fails late costs about as much as one that verifies. A patched node is not Bitcoin, so that
+conclusion stands; the exercise is functional, with no security argument (\cref{app:btcnode}).
 
 \section{Threats to validity}
 \label{sec:res-validity}

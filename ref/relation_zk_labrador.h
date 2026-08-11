@@ -15,19 +15,78 @@
  *   rust/las-stark proves the same relation succinctly but is NOT zk, so it is
  *   not a valid pi.  LaBRADOR is succinct, post-quantum AND zk -- its parameter
  *   generation takes an explicit zk flag -- which makes it the right target.
+ *   ⚠️ Those three are properties of the LIBRARY, and they land differently here;
+ *   never carry them over as a block.  Post-quantum survives the encoding intact.
+ *   Succinctness is not lost either -- but it is asymptotic, and the size advantage
+ *   it promises is not visible at this statement size, where the measured proof is
+ *   the largest of the four systems compared.  What the contract below bars is
+ *   neither of those: it is the composite claim this bridge was built for, and it
+ *   is barred TWICE OVER, on the statement handed to the library rather than on the
+ *   library -- once on privacy (BLOCKER 1) and once on faithfulness to the target
+ *   relation (BLOCKER 2).  The two are independent; fixing one leaves the other.
  *
  * WHAT IS PROVEN
- *   The same statement configurations 2 and 3 prove:
+ *   The TARGET relation is the one configurations 2 and 3 prove:
  *
  *       exists r : A r = t'  and  ||r||inf <= 1,     A = [I_n | A'].
  *
- *   encoded as LaBRADOR constraints over its own ring:
+ *   The ENCODED statement is a different object -- LaBRADOR constraints over its
+ *   own ring, plus two declared l2 bounds:
  *
  *       [A | -A] * w  -  q * g  =  t'          (one constraint per output row)
+ *       ||w||^2 <= w_normsq   (w BINARY, native norm type)
+ *       ||g||^2 <= g_normsq
  *
- *   with w = (r_plus || r_minus) proven BINARY by LaBRADOR's native binary norm
- *   type -- the same decomposition the deployed LNP22 path uses, so ||r||inf<=1
- *   is proven, not assumed -- and g an l2-bounded quotient.
+ *   with w = (r_plus || r_minus) -- the same decomposition the deployed LNP22 path
+ *   uses, so ||r||inf<=1 is proven, not assumed -- and g the mod-q quotient.
+ *
+ * ⚠️ WHAT MAY AND MAY NOT BE CLAIMED  (the seam's contract; a claim outside it is
+ *   an overclaim wherever it appears -- report, docs, commit message, comment)
+ *
+ *   MAY:      on the instances run, LaBRADOR proves the encoded statement, and a
+ *             witness satisfying it yields one for the target relation (the lifting
+ *             argument below) -- so ||r||inf <= 1 is proven and not assumed.
+ *             That is the SOUNDNESS direction only.
+ *   MAY NOT:  that the encoding is FAITHFUL to the target relation, or that this is
+ *             a fully satisfactory zero-knowledge proof of exactly that relation.
+ *
+ *   Two blockers stand between the two, both open.  Neither touches the
+ *   experiment's VERDICT (this loses to the deployed LNP22 on size and time);
+ *   they bar the qualitative claim.
+ *
+ *   BLOCKER 1 -- PRIVACY, AND IT IS NOT A ZK FAILURE.  zk=1 IS passed to py_gen_params
+ *     and the proof IS zero-knowledge FOR THE ENCODED STATEMENT; what follows is a
+ *     defect in that statement, not in the proof.  py_init_statement takes an l2
+ *     bound PER WITNESS VECTOR (proofsystem.h: "squared l2-norm bound for each
+ *     witness vector"), verify() enforces ||s_i||^2 <= normsq[i], and py_verify
+ *     consumes that same statement -- so the declared bounds are verifier-side
+ *     data, not prover-side hygiene.  This function does not choose w_normsq; its
+ *     caller does, and bench_labrador_role_a.c passes the honest witness's EXACT
+ *     norm, which for binary w IS the Hamming weight of the ternary r'.  The
+ *     statement, and the parameters generated from it, are therefore a function of
+ *     the secret.  The zk flag cannot repair this: zk bounds what the PROOF adds
+ *     beyond the statement, and the leak is in the statement.  Scope it honestly --
+ *     one statistic of r', of unanalysed consequence for LAS, not a broken proof
+ *     system.  The fix is a witness-independent bound: ||w||^2 <= (n+ell)*d, since
+ *     r_plus and r_minus are never both 1 in a coefficient.  Widening it can only
+ *     raise LaBRADOR's widths (polxvec_setwidths1 divides normsq by n*N), so a
+ *     corrected run should not come out smaller or faster -- a reading of the
+ *     library, not a measurement.
+ *
+ *   BLOCKER 2 -- FAITHFULNESS: THE ENCODING IS NOT SHOWN COMPLETE.  ||g||^2 <= g_normsq is an
+ *     EXTRA constraint the target relation does not contain, so faithfulness needs
+ *     every honest witness of the target relation to satisfy it -- and nothing here
+ *     shows that.  The driver's G_NORMSQ_BOUND is a constant, so (unlike w) it
+ *     leaks nothing; what is missing is completeness, its whole justification being
+ *     a runtime assert that the SAMPLED instance sits inside it.  No bound holding
+ *     for ALL honest witnesses has been derived that also fits under LaBRADOR's
+ *     exact-l2 cap -- the naive aligned worst case in the driver (|g|inf <= 641)
+ *     implies ||g||^2 up to ~6.3e8, several times the declared 1e8.  Honest-prover
+ *     failure is thus UNQUANTIFIED: not shown to be zero, and not shown to be
+ *     positive either -- the true worst case over honest witnesses has never been
+ *     computed, so it may well BE zero.  Two things not to write: "no
+ *     witness-independent bound exists" (the defect is completeness, not
+ *     dependence), and "the failure probability is not zero" (unwarranted negative).
  *
  * WHY THE QUOTIENT g EXISTS, AND WHY ITS BOUND IS LOAD-BEARING
  *   LaBRADOR works over ITS OWN prime p, not our q, so `A r = t' (mod q)` is not
@@ -35,8 +94,13 @@
  *   `A r - t' = q g` and proving that in R_p is exact for an honest prover.  For
  *   SOUNDNESS the l2 bound on g is essential: q is invertible mod p, so an
  *   unbounded g satisfies the equation for ANY claimed t'.  With w binary and g
- *   bounded every coefficient stays well inside p/2, so the R_p identity lifts
- *   back to Z.  This is the same argument the STARK needed.
+ *   bounded every coefficient stays under p/2, so the R_p identity lifts back to Z.
+ *   This is the same argument the STARK needed, and it runs in the SOUNDNESS
+ *   direction only -- a verifying proof establishes the bound, hence the lift;
+ *   BLOCKER 2 is about the other direction and is not touched by it.
+ *   ⚠️ Do not write "well inside": at the declared ||g||^2 <= 1e8 the worst case is
+ *   ~78% of LOGQ=38's p/2 (see SUCCINCT_PQ_PROOF_EXPERIMENT.md), which is why 38 is
+ *   forced and 36 overflows.  It is inside the budget, not comfortably so.
  *
  * SCOPE: an experiment.  Nothing here is wired into the swap; configuration 3
  * continues to use the k=1 LNP22 module.

@@ -4,17 +4,24 @@ pragma solidity ^0.8.25;
 import {nttFw, nttInv} from "../lib/zknox/ZKNOX_NTT_dilithium.sol";
 import {LASShake} from "./LASShake.sol";
 
-/// @title LASVerifyOpt — the same LAS `base_verify` as `LASVerify`, re-expressed to
-/// fit inside ONE Ethereum transaction.
+/// @title LASVerifyOpt — the same LAS `base_verify` as `LASVerify` under the
+/// registration invariant stated below, re-expressed to fit inside ONE Ethereum
+/// transaction.
 ///
 /// `LASVerify` (src/LASVerifier.sol) is numerically complete and validated against C
 /// golden vectors, but a verified claim measures ≈56.6M gas execution plus ≈1.65M
 /// intrinsic — ≈3.6× EIP-7825's per-transaction cap of 16,777,216, so it cannot be
-/// mined as a single transaction. This library computes the IDENTICAL predicate over
-/// the IDENTICAL scheme — same q, same κ, same bounds, same SHAKE256 preimage
+/// mined as a single transaction. This library computes the same predicate over the
+/// same scheme — same q, same κ, same bounds, same SHAKE256 preimage
 /// `pack(t) ‖ pack(w') ‖ M`, same FIPS 204 SampleInBall — and is pinned to
 /// `LASVerify` byte-for-byte by `test/LASVerifierOpt.t.sol`. Nothing about LAS
 /// changes; only how the EVM is asked to evaluate it.
+///
+/// ⚠️ That equivalence is CONDITIONAL, and the condition is NOT checked here: it holds
+/// exactly where the registered parameters are well formed, in the sense fixed by
+/// REGISTRATION OBLIGATION below. Unconditionally, this function decides a *different*
+/// predicate — the one parameterised by whatever `aHatPacked`/`tHatPacked`/`tPacked`
+/// it is handed. Do not describe it as `base_verify` without that qualifier.
 ///
 /// Where the gas went, and what replaced it:
 ///
@@ -46,12 +53,42 @@ import {LASShake} from "./LASShake.sol";
 ///
 /// REGISTRATION OBLIGATION (unchanged in kind from `LASVerify`). `aHatPacked` and
 /// `tHatPacked` are supplied already in NTT domain and are NOT re-derived here, and
-/// `tPacked` is the normal-domain hash preimage of the same `t`. Their mutual
-/// consistency is a well-formedness obligation of whoever registers them, discharged
-/// by the fund-time `lasContext` commitment that binds all of them together — the
-/// caller cannot substitute, and an inconsistent registration can only make the
-/// registrant's own escrow unclaimable. `LASVerify` has the identical property for
-/// `AprimeHat`; this library adds `tHatPacked` to the same commitment.
+/// `tPacked` is the normal-domain hash preimage of the same `t`. The invariant this
+/// function assumes, and never verifies, is
+///
+///     aHatPacked = NTT(A')  ∧  tHatPacked = NTT(t)  ∧  tPacked = pack(t)
+///
+/// for one key `t` and one matrix `A'`. `LASVerify` assumes the first conjunct for
+/// `AprimeHat` already; this library adds the two for `t`.
+///
+/// What the fund-time `lasContext` commitment does and does not do: it binds all three
+/// against substitution BY THE CLAIMER — hash the wrong bytes in and the claim reverts
+/// before any arithmetic — but it commits to them jointly and proves nothing about
+/// their mutual consistency, and no on-chain check derives one from another.
+///
+/// ⚠️ AN INCONSISTENT REGISTRATION MAKES THE PREDICATE DIFFERENT, AND SOME SUCH
+/// REGISTRATIONS MAKE IT WEAKER. Different is what holds in general: the function
+/// decides the predicate parameterised by the bytes it was handed, which for a broken
+/// invariant is simply not `base_verify` — it may be unsatisfiable, or satisfiable only
+/// by a key nobody holds, and no claim is made about which. Weaker is what holds for
+/// some, and one is enough to matter: take `aHatPacked = tHatPacked = 0`; every product
+/// vanishes, so `w' = z_top` and acceptance collapses to
+/// `c_tilde == SHAKE256(tPacked ‖ pack(z_top) ‖ M)[0:48]` — satisfiable by anyone, for
+/// any in-bound `z`, with no secret key and no LAS signature. The escrow is then
+/// claimable *without* the adapted signature ever being published, which is precisely
+/// the leak the swap's atomicity depends on.
+///
+/// In that case the loss still falls on the registrant, and only on the registrant: the
+/// beneficiary is fixed at fund time and the claim entrypoint pays that address whoever
+/// calls it, so a bad registration cannot redirect coins — it costs the funder the
+/// atomicity the escrow was buying (the counterparty's witness never leaks), not
+/// custody. That is why this stays a registrant's obligation rather than a protocol
+/// hole; it is NOT a reason to call the failure benign, and NOT a substitute for
+/// checking the invariant, which no analysis here covers in general. Re-deriving
+/// `NTT(t)` from `tPacked` once at fund time, off the verification path, would
+/// discharge the two `t` conjuncts on chain — NOT the `A'` one, which needs the
+/// untransformed `A'` (or the seed it expands from) at registration too. Neither is
+/// implemented.
 ///
 /// D3 parameters: n=6, ell=5, d=256, q=8380417, κ=49, γ=κ·d·(n+ℓ)=137984.
 library LASVerifyOpt {

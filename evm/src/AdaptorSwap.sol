@@ -182,6 +182,16 @@ contract AdaptorSwap {
     /// and `tPacked` (the normal-domain hash preimage of the same key). Both are supplied
     /// rather than derived, so both must be committed — otherwise a claimer could hand in
     /// a t̂ unrelated to the t that gets hashed.
+    ///
+    /// ⚠️ BINDING IS NOT WELL-FORMEDNESS. The commitment stops the CLAIMER substituting;
+    /// it does not establish that the FUNDER registered `NTT(A')`, `NTT(t)` and `pack(t)`
+    /// of one key pair, and nothing here checks that. Under a registration that breaks
+    /// the invariant this entrypoint decides a DIFFERENT predicate from `base_verify` —
+    /// not necessarily a weaker one, but some are weaker, and the degenerate case in
+    /// LASVerifierOpt's REGISTRATION OBLIGATION is satisfiable with no key at all. That
+    /// header also gives the mechanism and why the resulting loss (of atomicity, not of
+    /// custody) falls on the funder who registered it. Statements that this path "runs
+    /// full base_verify" must carry the invariant as a condition.
     function claimLASVerifiedOpt(
         uint256 id,
         bytes calldata sigPacked,

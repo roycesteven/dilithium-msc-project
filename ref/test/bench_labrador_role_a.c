@@ -131,6 +131,28 @@ int main(void) {
       wvec[(size_t)i * DEG + k]                 = (v ==  1);
       wvec[(size_t)(N_PLUS_ELL + i) * DEG + k]  = (v == -1);
     }
+  /* ⚠️ KNOWN DEFECT, DELIBERATELY NOT FIXED IN THIS BINARY -- see BLOCKER 1 in
+   * relation_zk_labrador.h.  This is the honest witness's EXACT l2 norm, i.e. the
+   * Hamming weight of the ternary r', and it is declared to LaBRADOR as the
+   * STATEMENT's bound on vector 0 (proofsystem.h: "squared l2-norm bound"; verify()
+   * enforces it; py_verify consumes that statement).  The statement is therefore
+   * secret-dependent, which no zk flag can repair -- zk bounds what the PROOF adds
+   * beyond the statement, and this leak is in the statement.
+   *
+   * Note what this is NOT: zk=1 is passed and the proof IS zero-knowledge for the
+   * encoded statement.  The defect is in the statement, which zk cannot repair.
+   *
+   * The fix would be a witness-INDEPENDENT bound, ||w||^2 <= N_PLUS_ELL * DEG,
+   * valid because r_plus and r_minus are never both 1 in a coefficient.
+   *
+   * ⚠️ RULED NOT TO BE APPLIED (Royce, 2026-08-10).  Do not apply it and do not
+   * re-run: evidence/labrador_role_a/latest stays reproducible against this exact
+   * binary.  The reason is not effort -- the fix clears the privacy blocker ONLY,
+   * while BLOCKER 2 (the g bound is not proven complete) survives it, so no project
+   * decision moves either way.  Nor is the cost verdict at stake: a wider declared
+   * bound cannot REDUCE LaBRADOR's configured widths -- it may leave them unchanged
+   * or increase them, since polxvec_setwidths1 divides normsq by n*N and the result
+   * is discretised.  That is a reading of the library, not a measurement. */
   for(i = 0; i < (unsigned int)PI_LAB_WCOLS * DEG; ++i)
     w_normsq += (uint64_t)(wvec[i] * wvec[i]);
 

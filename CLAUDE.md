@@ -74,8 +74,12 @@ session that repeats one of these has failed even when its output looks right.
 3. **Regenerate before trusting any figure** — word count, evidence, wire sizes. → WORD COUNT
 4. **Trim filler, never signal.** A dropped qualifier can silently widen a claim into an
    overclaim; pay word debts out of new prose, not existing argument. → WORD COUNT
-5. **Verify before recording.** Line references, dates and "both"/"twice" quantifiers go stale
-   silently; an unverified fact recorded here is how contradictions get in.
+5. **Verify before recording — including review feedback Royce relays.** Line references, dates
+   and "both"/"twice" quantifiers go stale silently. Critiques passed on from another model are
+   *claims*, not rulings: one on 2026-08-10 was materially wrong (the `g` bound called
+   witness-dependent when it is a constant — the defect is completeness, not dependence), and
+   complying with it would have written a false statement into the repo. Check each against the
+   code, say which way it went, then act. → OUTPUT
 6. **Merge into the section that owns the subject** — never a second block on one topic.
    → HOW TO WRITE IN THIS FILE
 7. **Never claim more than a gate proves** — no gadget described as a complete proof, no
@@ -178,18 +182,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-07 11:12 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-11 11:45 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 358a69e · 2026-08-06 · btc evm two leg ref/ bitcoin/ report/latex/ scripts/
-- Working tree: 21 modified tracked file(s), 217 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 688ffbc · 2026-08-07 · report meeting 8 pdf
+- Working tree: 25 modified tracked file(s), 223 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `688ffbc 2026-08-07 report meeting 8 pdf`
+  - `780c0be 2026-08-07 CLAUDE.md dan report untuk meeting 9`
   - `358a69e 2026-08-06 btc evm two leg ref/ bitcoin/ report/latex/ scripts/`
   - `be94485 2026-08-06 btc evm two leg`
   - `6c161f4 2026-08-05 evm full`
-  - `bc2fe4a 2026-08-05 unfinished evm`
-  - `ae8366f 2026-08-04 labrador`
 
 ### Target parameter set — anchors parsed from source
 
@@ -220,14 +224,14 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Supervisor meetings on record
 
-- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8 (`meetingN_cleaned_transcript.md`)
-- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 7, 8
+- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9 (`meetingN_cleaned_transcript.md`)
+- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 7, 8, 9
 - ⚠ **NOT in that file**: meeting 6 — read the transcript/summary directly before planning work it touches (meeting 6 is held in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` by design)
 
 ### Freshness tripwires
 
-- ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.c` (2026-08-04 17:24) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-07.
+- ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
+- `CLAUDE.md` hand-written sections last touched 2026-08-11.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -302,15 +306,32 @@ any of these fails; the rejection gate above is the same discipline for the acce
 Live sizes, digests, evidence ids and word counts are in the auto block; this section says
 **what is built and what it means**, never the numbers.
 
+*Audited against source 2026-08-10 (ten claims were wrong; superseded wording is in git history,
+not here). Statements below are the corrected state — trust them over any older copy of this
+file, and re-verify against the code before extending one.*
+
 **Stage 1 — scheme + benchmark (complete).** LAS variant B in C (`ref/las.c`, `basesig.c`,
 `setup.c`, `relation.c`) and Rust (`rust/fips204-las/src/`); **Rust is the naming authority**,
 KAT-locked to C byte-for-byte.
-- Correctness: `test_las` (1000 iters), `test_basesig`, `test_contract` (8-point itemised
-  contract), `test_serde` (every single-byte flip rejected), `test_kat` (pinned cross-language
-  digest).
-- Serialization + byte-level verifier `ref/serialize.{c,h}`: six typed pack/unpack pairs, a
-  *validating* decoder, and `base_verify_packed` = the byte interface an on-chain verifier
-  consumes. Wire form `c_tilde ‖ BitPack(z)`; `z` is ~99.3% of the signature.
+- Correctness: `test_las` (1000 iters), `test_basesig`, `test_serde` (round-trip; **low-bit flip
+  of every packed-signature byte** rejected by `base_verify_packed` — *not* every possible
+  single-byte mutation, do not widen it; plus a packed pre-signature must fail), `test_kat`
+  (pinned cross-language digest). All current seven-type code.
+- ⚠️ **`test_contract` is NOT a live test, and `make all` is broken on it.** `test_contract.c`
+  still uses `las_pp`/`las_pk`/`las_sk`/`las_sig`/`las_signature_det`, none of which exist in the
+  headers its target compiles against — yet `ref/Makefile`'s `all` includes `test/test_contract3`,
+  so keeping it in `all` breaks a clean build. (Source-level, established by reading; no build
+  run.) **Dropped from `all` 2026-08-10**; the rule is kept so the breakage stays visible. The
+  itemised contract that *does* run is `test_mldsa_las{2,3,5}`. **Do not repair
+  `test_contract.c`** — dead by design.
+- Serialization `ref/serialize.{c,h}` — **codec ONLY**, six typed pack/unpack pairs. Validation
+  is asymmetric and deliberately so: *packing* rejects out-of-range input (e.g. a non-ternary
+  secret key), while **`unpack_signature` is PERMISSIVE** (`c_tilde` raw, `z` via FIPS
+  BitUnpack) — **the norm rejection belongs to Verify**, so never call the decoder "validating"
+  flatly. **`base_verify_packed` is in `ref/basesig.{c,h}`, NOT serialize** (it lives there so
+  the codec stays pure); it is the byte interface an on-chain verifier consumes, and it uses the
+  codec internally. Wire form `c_tilde ‖ BitPack(z)`;
+  **`z` dominates the signature** (share = macro, → rule 3).
 - Deterministic API + pinned KATs: `base_keygen_seed` / `base_sign_det` / `las_presign_det`, mask
   seed `SHAKE256(tag‖sk‖[Y]‖M)`; reproducible across machines.
 - Benchmarks: `bench_levels` (primary fair base-vs-LAS, ≥5 runs, mean±SD), `bench_las`,
@@ -319,44 +340,56 @@ KAT-locked to C byte-for-byte.
   per Meeting 2. Headline: the price of post-quantum here is **communication, not computation**;
   LAS's adaptor overhead is small, where the classical adaptor pays ~4× for its DLEQ proof.
 
-**Stage 2 — the application (complete, Bitcoin/UTXO).** `rust/las-swap/` implements the eprint
-2020/845 §4.1 Fig. 1 atomic swap over a UTXO ledger model (ledger takes the signature algorithm
-as a parameter, as §4 assumes) and benchmarks **three configurations**: (1) classical ECDSA
-adaptor, (2) LAS + Groth16, (3) LAS + LaZer. Honest path plus timeout/refund, one pinned master
-seed, measured on **time + communication** including off-chain messages.
+**Stage 2 — the application (complete, Bitcoin/UTXO).** `rust/las-swap/` = eprint 2020/845 §4.1
+Fig. 1 atomic swap over a UTXO ledger model (ledger takes the signature algorithm as a parameter,
+as §4 assumes), benchmarking **three configurations**: (1) classical ECDSA adaptor, (2) LAS +
+Groth16, (3) LAS + LaZer, from one pinned master seed.
+- ⚠️ **What is measured is the HONEST path only** — time + communication, including off-chain
+  messages. `bench_swap` runs the timeout/**refund** edge case once per configuration
+  **outside the timed set**, and its transcript does **not** enter `CommSummary` — so never
+  present refund as a measured phase.
 - **Attribution rule:** **2→3 is the controlled comparison** (same signature, same relation, only
   the prover differs — lead with it); 1→2/3 is a whole-stack comparison, *not* the cost of the PQ
   signature alone.
-- Bitcoin transaction structure: `scripts/gen_bitcoin_tx_data.py` projects measured object sizes
-  onto Bitcoin's real wire format (BIP141/144/341), self-checking against two published vB
-  figures before emitting → `generated/btcmacros.tex` + `tab:btctx`, plus the
-  original-vs-modified diagram in Ch. 2. Prose: `docs/02-methodology/BITCOIN_TX_STRUCTURE.md`.
-- **Legacy C Stage-2 is deliberately dead:** `ref/amhl.{c,h}`, `ref/chain.{c,h}`,
-  `ref/test/{test_contract,test_swap,test_pcn,bench_app}.c` use the pre-seven-type API and **do
-  not compile**; superseded by the Rust Stage-2 evaluation — **do not repair them**.
-  `STAGE1_ONLY=1` skips them and still regenerates everything the report consumes.
+- `scripts/gen_bitcoin_tx_data.py` projects measured object sizes onto Bitcoin's real wire format
+  (BIP141/144/341), self-checking against two published vB figures before emitting →
+  `generated/btcmacros.tex` + `tab:btctx`; prose `docs/02-methodology/BITCOIN_TX_STRUCTURE.md`.
+  ⚠️ **Config 1 must be projected from a DER witness item, never the 64-byte compact ECDSA
+  signature** — that error understated the classical baseline and inflated every PQ ratio.
+- **Deliberately dead, do NOT repair:** `ref/amhl.{c,h}`, `ref/chain.{c,h}`, and
+  `ref/test/{test_contract,test_pcn,bench_app}.c` — pre-seven-type (`las_pp`/`las_pk`/`las_sk`/
+  `las_sig`), superseded by the Rust evaluation. `STAGE1_ONLY=1` skips them and still regenerates
+  everything the report consumes. ⚠️ **`test_swap.c` is NOT dead**: it is current seven-type code,
+  built by `test/test_swap3`, kept out of `all` only because it needs the vendored proof library.
 
-**⚠️ REAL CLIENTS, THREE STAGES — RUN 2026-08-06 (Royce-directed).** Write-up + all numbers,
+**⚠️ REAL CLIENTS, THREE STAGES.** Write-up + all numbers,
 scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
 `run_onchain_two_leg.sh` / `run_btc_regtest_carriage.sh` / `run_btc_las_node.sh` →
 `evidence/{onchain_twoleg,btc_regtest,btc_las_node}/latest`.
 - **Two-leg EVM swap**, two anvils on two chain ids, whole of Fig. 1 incl. π verify + both
-  PreVerify gates; leg A's witness is sliced out of leg B's MINED calldata. Needed a new
+  PreVerify gates. **⚠️ What comes off the chain is the adapted signature σ₂, NOT the witness**
+  (runner steps 9→10): σ₂ is recovered from leg B's
+  MINED transaction, then `test/extract_and_adapt` runs **Ext** on those chain bytes to get the
+  witness and Adapts leg A. It is a **separate binary with no access to the local copy**, which
+  is what makes the extraction real rather than assumed. Needed a new
   `evm/src/AdaptorSwapBound.sol` — `AdaptorSwap`'s message is a funder-chosen blob binding
   neither chain/contract/escrow/beneficiary/amount, and its `claimLAS` floor path drains any
   escrow without verifying. **`AdaptorSwap` is untouched** (a mode flag would move the
   measured baselines' gas); binding controls in `evm/test/AdaptorSwapBound.t.sol`.
-- **Bitcoin carriage on STOCK Core v31.1** — built with Core's own `test_framework`; pins are
-  gates (binary tag == HEAD == tag commit, clean tree). A3 is `bad-witness-nonstandard` under
-  default policy yet consensus-valid and mined. **Carriage only — verifies nothing.**
+- **Bitcoin carriage on STOCK Core v31.1** (Core's own `test_framework`). **Three separate pin
+  gates — not one equality, since a version string is not a commit:** the binary's reported
+  version string must *contain* the pinned tag; the source tree's `HEAD` must *be* the tag's
+  commit
+  (**not** `git describe`, which also matches commits made after the tag); `git status
+  --porcelain` must be empty. A3 is `bad-witness-nonstandard` under default policy yet
+  consensus-valid and mined. **Carriage only — verifies nothing.**
 - **`OP_CHECKLASSIGVERIFY` (0xbb, a BIP342 OP_SUCCESSx) patched into v31.1**, over
   `base_verify_packed` via `bitcoin/las_consensus/` (C, not C++: ref headers use C11
-  `_Static_assert`; aborting `randombytes`; consensus seed = SHA-256 of a documented
-  preimage). Patch `bitcoin/patches/0001-…patch` applies to a pristine v31.1.
-  **Differential control is load-bearing:** a STOCK node still sees 0xbb as OP_SUCCESS and
-  accepts everything, so patched-REJECTS/stock-ACCEPTS is what attributes a refusal to the
-  new rule. Verdicts come from `generateblock submit=false` (**consensus**, not
-  `testmempoolaccept`'s policy); only `TestBlockValidity failed:` counts as a rejection.
+  `_Static_assert`; aborting `randombytes`; consensus seed = SHA-256 of a documented preimage);
+  patch applies to a pristine v31.1. **Differential control is load-bearing:** a STOCK node
+  still sees 0xbb as OP_SUCCESS and accepts everything, so patched-REJECTS/stock-ACCEPTS is what
+  attributes a refusal to the new rule. Verdicts come from `generateblock submit=false`
+  (**consensus**, not `testmempoolaccept`'s policy); only `TestBlockValidity failed:` counts.
 - **Framings that must not drift:** a patched node is **not** Bitcoin — "cannot settle on
   Bitcoin as it stands" stays true; implementing one of `BITCOIN_TX_STRUCTURE.md` §5.4's
   three routes is **not** a position on which should be adopted; no security analysis, no
@@ -364,52 +397,65 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   (BIP341 sighash has no chain id) — the EVM leg does; state the asymmetry.
 - **It corrected a report number:** `gen_bitcoin_tx_data.py` projected config 1 from the
   64-byte *compact* ECDSA signature, not a DER witness item, understating the classical
-  baseline and inflating every PQ ratio. A node-signed P2WPKH measured 110 vB — exactly what
-  the script's own self-check demanded. Fixed; macros regenerated.
+  baseline and inflating every PQ ratio. Fixed; macros regenerated.
 
-**Proof of knowledge π (Fig. 1) — Royce-directed scope extension.** `ref/relation_zk.{c,h}`
-(`relation_prove`/`relation_proof_verify`; non-ternary witnesses refused) over vendored **LaZer**,
-with `ref/relation_zk_lazer.c` as the only TU that includes `lazer.h`. Ternary via binary
-decomposition `[A|−A|0]·(r₊‖r₋‖e)=t′`; committed params `ref/relation_zk_params.h` ⇐ LaZer codegen
-from `scripts/las_pi_params.py`; Rust twin `relation_zk.rs` FFIs the same C bridge behind cargo
-feature `relation-zk` (default off, KAT gate intact). π is **off-chain only**; opt-in targets.
+**Proof of knowledge π (Fig. 1)** — in scope by the exception recorded under Scope discipline.
+`ref/relation_zk.{c,h}` (`relation_prove`/`relation_proof_verify`; **non-ternary witnesses
+refused**, return −1 and no proof) over vendored **LaZer**, bridged by `relation_zk_lazer.c`.
+Ternary via binary decomposition `[A|−A|0]·(r₊‖r₋‖e)=t′` with `r₊,r₋` proven binary. Committed
+params `ref/relation_zk_params.h` ⇐ LaZer codegen from `scripts/las_pi_params.py` — so the
+deployed statement is **witness-independent**, unlike the LaBRADOR bridge's. Rust twin
+`relation_zk.rs` FFIs the same C bridge behind cargo feature `relation-zk` (default off, KAT gate
+intact). π is **off-chain only**; opt-in targets. ⚠️ **Exactly TWO TUs may include `lazer.h`** —
+`relation_zk_lazer.c` and `relation_zk_lazer_batch.c`; never call either "the only" one.
 
-**⚠️ ON-CHAIN VERIFICATION FITS IN ONE TRANSACTION AT D3 — RUN 2026-08-05 (Royce-directed).**
+**⚠️ ON-CHAIN VERIFICATION FITS IN ONE TRANSACTION AT D3.**
 `evm/src/LASVerifierOpt.sol` + `LASShake.sol` + `LASRegister.sol`, entrypoint
 `AdaptorSwap.claimLASVerifiedOpt`; mechanism, numbers and caveats in §7 of
-`docs/03-results/GAS_LIMIT_INVESTIGATION.md`. **Same predicate, same scheme** — the baseline
-measured the *expression*, not LAS. Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`)
-**and** a real client receipt (`scripts/run_onchain_one_tx.sh` → `evidence/onchain_onetx/<ts>/`).
+`docs/03-results/GAS_LIMIT_INVESTIGATION.md`. The baseline measured the *expression*, not LAS.
+Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real client receipt
+(`scripts/run_onchain_one_tx.sh` → `evidence/onchain_onetx/<ts>/`).
+- **⚠️ "SAME PREDICATE" IS CONDITIONAL ON A REGISTRATION INVARIANT NOTHING CHECKS** (2026-08-10).
+  Equality needs `aHatPacked=NTT(A')` (both verifiers) plus, in the Opt path,
+  `tHatPacked=NTT(t)` **and** `tPacked=pack(t)` for the *same* `t` (only `pack(t)` is hashed —
+  `A'` never is). `lasContext` binds the values **supplied**, blocking substitution by the
+  claimer; `claimLASVerifiedOpt` then hands all three to the verifier **separately**, and the
+  verifier derives none from another — so nothing anywhere checks consistency. Break it and the
+  predicate is **different** — *not necessarily weaker*; **some** are (`aHat=tHat=0` ⇒
+  satisfiable with **no key**, so the escrow pays out without the adapted signature being
+  published, the leak atomicity needs). Beneficiary is fixed at funding, so the loss is the
+  **registrant's**: *atomicity, not custody*. Never write "full `base_verify`" without the
+  condition. The fix is a **derive-and-compare, not another commitment**: recompute `NTT` from
+  the submitted `tPacked` at fund time and *require equality* with the submitted `tHatPacked` —
+  that discharges the `t` conjuncts only, **never** `A'`. → §7 caveat 3, `tab:onchain` appendix.
 - **Never present it as faster-because-weaker** — pinned to `LASVerify` and C ground truth
   (`test/LASVerifierOpt.t.sol`, `test/LASShakeEquiv.t.sol`); do not weaken those pins.
   **`claimLASVerified` stays as the measured baseline — do not delete it.**
-- **⚠️ SCOPE IS PART OF THE CLAIM (→ EVIDENCE-OR-SILENCE).** Measured **at D3 with a 32-byte
-  signed message** (the Bitcoin sighash case), on the EVM revision named in the evidence.
-  Headroom is a small percentage of the cap and is effectively a *message-length budget*,
-  since the preimage is `pack(t)‖pack(w')‖M` and the sponge dominates execution. **D2/D5 are
-  NOT evaluated** — `LASVerifyOpt`'s parameters are compile-time D3-only, so the library cannot
-  run them; say "not evaluated", never that it fails there. The message-length limit is a
-  *derivation*, labelled as such in the write-up — not a measurement.
-- **⚠️ NEVER MEASURE A CAP GATE UNDER `--gas-report`** (cost a false FAIL once): Foundry's
-  inspector is metered inside the measured frame and inflates **both** `gasleft()` deltas and
-  `vm.lastCallGas()` by more than the whole headroom, so the gate fails for a reporting reason
-  while a real client mines the same transaction. `run_onchain_gas.sh` runs gates in a pass
-  **without** the flag and the table in a pass with the gate contracts **excluded**, capturing
-  **each pass's exit status separately** — a single `{...} | tee` reports only the last command,
-  hiding a failed gate behind a green table. `LasVerifiedOptSwapGas` (report-only) and
-  `LasVerifiedOptSwapGate` (asserts) are twins over one base for this reason — never merge them
-  or add an assertion to the reporting one.
-- **⚠️ GAS ACCOUNTING IS EIP-7623, NEVER EIP-2028** (cost real work once): the charge is
-  `21000 + max(4·tokens, 10·tokens)`, `tokens = zero + 4·nonzero` — see `LASTxGas`. The floor
-  branch binds for calldata-heavy/compute-light transactions, so the old 16-gas-per-nonzero-byte
-  model **understates** them; every reported total must say which branch bound.
-  (`TwoLegSwapGas.t.sol`'s helper models only the standard branch — never copy it for a gate.)
-- **⚠️ EIP-8051 (ML-DSA precompile) is a CITATION, NOT A ROUTE**: status **Draft**, **Declined
-  for Inclusion** in Glamsterdam (EIP-7773), EF roadmap puts PQ precompiles in 2027–28, and it
-  covers **NIST level II / ML-DSA-44 only** — not the D3 headline set. Its ETH variant replaces
-  SHAKE256, so "stock FIPS-204 verifier accepts it" and "use the ETH variant" cannot both be
-  claimed. Any figure from it is a **conditional model computed from the EIP's own constant,
-  never a measurement** — label it so. §8 of the same write-up.
+- **⚠️ SCOPE IS PART OF THE CLAIM (→ EVIDENCE-OR-SILENCE).** Measured **at D3, 32-byte signed
+  message**, on the EVM revision in the evidence. Headroom is effectively a *message-length
+  budget* (preimage `pack(t)‖pack(w')‖M`; the sponge dominates) and is a **derivation, not a
+  measurement**. **D2/D5 NOT evaluated** — parameters are compile-time D3-only; say "not
+  evaluated", never that it fails there.
+- **⚠️ NEVER MEASURE A CAP GATE UNDER `--gas-report`** (cost a false FAIL once): the inspector is
+  metered inside the measured frame and inflates `gasleft()` deltas **and** `vm.lastCallGas()` by
+  more than the whole headroom. `run_onchain_gas.sh` runs gates **without** the flag, the table
+  with gate contracts **excluded**, capturing **each pass's exit status separately** (one
+  `{...} | tee` hides a failed gate behind a green table). `LasVerifiedOptSwapGas` (report-only)
+  and `LasVerifiedOptSwapGate` (asserts) are twins for this reason — never merge them.
+- **⚠️ GAS ACCOUNTING IS EIP-7623, NEVER EIP-2028** (cost real work once). Charge is
+  `21000 + max(4·tokens + execution, 10·tokens)`, `tokens = zero + 4·nonzero`. **The
+  `+ execution` is load-bearing** — without it the floor always binds and "which branch bound"
+  is meaningless. Authority = `LASTxGas`, mirrored in §7. The
+  floor binds for calldata-heavy/compute-light txs, so the old 16-per-nonzero-byte model
+  **understates** them; every total must say which branch bound. (`TwoLegSwapGas.t.sol`'s helper
+  models only the standard branch — never copy it for a gate.)
+- **⚠️ EIP-8051 (ML-DSA precompile) is a CITATION, NOT A ROUTE**: **Draft**, **Declined for
+  Inclusion** in Glamsterdam (EIP-7773), **ML-DSA-44 only** — not D3. ⚠️ **Attach no date**:
+  pq.ethereum.org places PQ sig precompiles at milestone `J*` in a *relative* order with **no
+  fixed date**, so no year may be cited to it. Its ETH variant
+  replaces SHAKE256, so "stock FIPS-204 verifier accepts it" and "use the ETH variant" cannot
+  both be claimed. Any figure from it is a **conditional model from the EIP's own constant,
+  never a measurement**. §8 of the same write-up.
 
 **On-chain verification (EVM) — the baseline, retained as evidence.** `evm/src/LASVerifier.sol`,
 a complete native verifier over vendored ZKNox ETHDILITHIUM primitives, validated against C and
@@ -426,8 +472,8 @@ claim. Do not re-open Stage 2's venue. Detail: `docs/03-results/GAS_LIMIT_INVEST
 party-to-party message), and for the optimistic verifier a data-availability failure becomes a
 *soundness* failure.
 
-**Succinct PQ proving — both directions RUN 2026-08-04 (Royce-directed); numbers, derivations
-and framings in `docs/03-results/SUCCINCT_PQ_PROOF_EXPERIMENT.md`.**
+**Succinct PQ proving — both directions run; numbers, derivations and framings in
+`docs/03-results/SUCCINCT_PQ_PROOF_EXPERIMENT.md`.**
 - **`rust/las-stark` — TWO modules, never conflate.** `relation_air` (WIP gadget): FRI-STARK
   over the *arithmetic core* of `base_verify`; the Fiat–Shamir hashes are **not** in the AIR,
   so `z` is bound to `(A′,t,c,w')` but **not** `(c̃,M)` — **never** call it a complete proof of
@@ -437,70 +483,90 @@ and framings in `docs/03-results/SUCCINCT_PQ_PROOF_EXPERIMENT.md`.**
   §4.1 needs π to HIDE the witness (if u₂ learned `r` it could adapt σ̂₁ and take both sides),
   so π must be ZERO-KNOWLEDGE and this STARK is not. Internal evidence only, never a result.
   No Groth16 wrap anywhere in `las-stark` — it would defeat post-quantum security.
-- **π under LaBRADOR — succinct + PQ + zk.** `ref/relation_zk_labrador.{c,h}` (THIRD and last
-  vendored-proof-library TU) + `bench_labrador_role_a.c`; runner `run_labrador_role_a.sh`. In
-  the encoding `[A|−A]w − q·g = t'` **the g bound is load-bearing** (unbounded g satisfies it
-  for any `t'`). **Direction CLOSED:** the only prover satisfying all three, and at this
-  statement size it loses to the deployed LNP22 on every axis — succinctness is asymptotic and
-  one role-A relation is far too small. **Caveats:** the encoding is ours; its proof size is
-  the library's printed *estimate*, not byte-exact like LNP22's `prooflen` — never compare
-  silently. **Gate names `PI_LAB_*`** — never rename/alias `PI_ROWS`/`PI_COLS`/`PI_DEG` or
-  `PI_BATCH_*`. **THREE TRAPS:** `src/labrados` is a submodule the README's LaZer clone does
-  NOT fetch (`git submodule update --init src/labrados`, then `make liblabrador38.so`); LaZer's
-  `src/labradosNN_py.h` declares `N 64` while the submodule uses `N 256`, so **always** use
-  `src/labrados/labrados_python.h` with `-DLOGQ=NN -DNDEBUG -Isrc/labrados`; labrados'
-  `simple_verify`/`verify` return **1 on SUCCESS**. **LOGQ=38 forced** (36 overflows).
+- **π under LaBRADOR.** `ref/relation_zk_labrador.{c,h}` (THIRD and last vendored-proof-library
+  TU) + `bench_labrador_role_a.c`; runner `run_labrador_role_a.sh`. Encoding
+  `[A|−A]w − q·g = t'`; **the g bound is load-bearing** (unbounded g satisfies it for any `t'`).
+  **CLOSED ON COST, and cost only:** in the encoding and run tested it loses to the deployed
+  LNP22 on **the three measured axes** (proof size, prove, verify) — succinctness is asymptotic
+  and one role-A relation far too small. **That verdict stands** (Royce, 2026-08-10).
+  **⚠️ NOT closed as a working π — never claim it is** (2026-08-10). Obey the header's
+  MAY/MAY-NOT contract everywhere. **MAY:** LaBRADOR proves the encoded statement, and a witness
+  for it yields one for the target relation (*soundness direction only*). **MAY NOT:** that the
+  encoding is faithful to the target relation, or that this is a zk proof of exactly it. Two
+  independent blockers — fixing one leaves the other:
+  **(1) PRIVACY (not a ZK failure)** — `zk=1` IS passed and the proof *is* zk **for the encoded
+  statement**; the defect is that the driver declares the honest witness's **exact** ‖w‖²
+  (= Hamming weight of ternary `r'`) as part of that statement, so the statement itself leaks a
+  witness statistic. zk bounds what the *proof* adds beyond the statement and cannot repair one.
+  Fix would be witness-independent `‖w‖² ≤ (n+ℓ)·d`. **⚠️ RULED: do NOT apply it, do NOT re-run**
+  (Royce, 2026-08-10) — keep `evidence/labrador_role_a/latest` reproducible; it clears privacy
+  only, blocker 2 survives, so no project decision moves.
+  **(2) FAITHFULNESS (nothing to do with ZK)** — `‖g‖² ≤ G_NORMSQ_BOUND` is an *extra*
+  constraint, justified only by an assert that the *sampled* instance fits. The bound **is**
+  witness-independent (never say otherwise — the defect is completeness, not dependence), and
+  honest-prover failure is **unquantified: not shown zero, not shown positive** — never write
+  "not zero", the same unwarranted-negative trap EVIDENCE-OR-SILENCE owns.
+  **⚠️ NEVER collapse the three properties into one verdict word** (this conflation has been
+  reintroduced three times): PQ survives the encoding; succinctness is intact but its size
+  advantage is *unrealised at this statement size*; zk holds for the encoded statement, and what
+  fails is the **composite** claim — a zk proof of exactly the *target* relation.
+  **Caveats:** the encoding is ours; proof size is the library's printed *estimate*, not
+  byte-exact like LNP22's `prooflen` — never compare silently. **Gate names `PI_LAB_*`** — never
+  rename/alias `PI_ROWS`/`PI_COLS`/`PI_DEG` or `PI_BATCH_*`. **THREE TRAPS:** `src/labrados` is a
+  submodule the README's LaZer clone does NOT fetch (`git submodule update --init src/labrados`,
+  then `make liblabrador38.so`); LaZer's `src/labradosNN_py.h` declares `N 64` while the
+  submodule uses `N 256`, so **always** use `src/labrados/labrados_python.h` with
+  `-DLOGQ=NN -DNDEBUG -Isrc/labrados`; labrados' `simple_verify`/`verify` return **1 on
+  SUCCESS**. **LOGQ=38 forced** (36 overflows; soundness budget at the declared g bound).
 
-**ML-DSA adaptor experiment — COMPLETE 2026-08-03.** LAS built on FIPS 204 **as specified**
-(hint, Power2Round, high/low-bit split all enabled), zero upstream functions modified, control
-verifier = stock `crypto_sign_verify`. `ref/mldsa_las.{c,h}` + `test_mldsa_hint{2,3,5}`
-(diagnostic — a FAILS row *is* a result), `test_mldsa_las{2,3,5}` (13/13 contract),
-`bench_mldsa_compare{2,3,5}` (both constructions in ONE binary). Runner
-`scripts/run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`; numbers and discussion in
+**ML-DSA adaptor experiment.** LAS on FIPS 204 **as specified** (hint, Power2Round, high/low-bit
+split all enabled), zero upstream functions modified, control verifier = stock
+`crypto_sign_verify`. `ref/mldsa_las.{c,h}` + `test_mldsa_hint{2,3,5}` (diagnostic — a FAILS row
+*is* a result), `test_mldsa_las{2,3,5}`, `bench_mldsa_compare{2,3,5}` (both constructions in ONE
+binary); runner `run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`, write-up
 `docs/03-results/MLDSA_HINT_EXPERIMENT.md`. **Never mix its numbers with `evidence/latest/`.**
-Durable findings:
-- **It CORRECTED the project's own claim** — correct claim now: *PreSign and PreVerify are
-  necessarily new algorithms; `Verify` is not.* With the whole commitment path (committed high
-  bits, low-bits rejection test **and** `MakeHint`) on `w+Y` and PreSign tightened to
-  `GAMMA1−BETA−ETA`, all adaptor properties hold at ML-DSA-44/65/87, **including unmodified FIPS
-  204 `crypto_sign_verify` accepting the adapted signature**. Never restate the superseded
-  "reference optimisations must be disabled" version.
-- **Caveat that travels with the claim:** functional demonstration only — the security of
-  committing to `HighBits(w+Y)` is NOT analysed.
-- Adaptor overhead is single-digit percent on **both** constructions. **`Y` is byte-identical in
-  both** (`K` full-width polynomials either way) while ML-DSA halves signature and public key —
-  so **any future size work must target `Y`, not the signature.**
+- **The claim, in its corrected form:** *PreSign and PreVerify are necessarily new algorithms;
+  `Verify` is not.* With the whole commitment path (committed high bits, low-bits rejection test
+  **and** `MakeHint`) on `w+Y` and PreSign tightened to `GAMMA1−BETA−ETA`, all adaptor properties
+  hold at ML-DSA-44/65/87, **including unmodified FIPS 204 `crypto_sign_verify` accepting the
+  adapted signature**. ⚠️ Never restate the superseded "reference optimisations must be disabled"
+  version.
+- **Caveat that travels with it:** functional demonstration only — the security of committing to
+  `HighBits(w+Y)` is NOT analysed.
+- **`Y` is byte-identical in both** constructions (`K` full-width polynomials either way) while
+  ML-DSA halves signature and public key — so **any future size work must target `Y`, not the
+  signature.**
 
-**Two former future-work items, promoted and RUN 2026-08-04 (Royce-directed override of the
-Meeting-8 freeze).** Quote the write-ups for numbers, never this file.
+**Statement compression and proof amortisation — both RUN, both CLOSED.** Quote the write-ups
+for numbers, never this file.
 - **Statement compression** — `ref/test/test_statement_compress.c` (+`{2,3,5}`, in `all`),
-  `scripts/run_statement_compress.sh` → `evidence/statement_compress/latest`, write-up
+  `run_statement_compress.sh` → `evidence/statement_compress/latest`, write-up
   `docs/03-results/STATEMENT_COMPRESSION_EXPERIMENT.md`. Hard gate: the full-statement control
   must hold the contract or nothing is attributable. **Verdict CONFIRMED with a mechanism:**
   truncation is invisible to the adaptor's own functions and fatal at both boundaries
-  (`base_verify` never sees a statement; Ext's acceptance test IS the exact relation) — at every
-  depth, not marginally; the seed candidate compresses totally **and hands the receiver the
-  witness**. **Do not reopen `Y` compression inside this construction; the open question is a
-  different hard relation whose statement is smaller by design.**
+  (`base_verify` never sees a statement; Ext's acceptance test IS the exact relation), and fails
+  outright rather than marginally; the seed candidate compresses totally **and hands the receiver
+  the witness**. ⚠️ **Scope: the sweep is `b = 1, 2, 4, 8, 13` — say "every truncation depth
+  TESTED"**, never "at every depth". **Do not reopen `Y` compression
+  inside this construction; the open question is a different hard relation whose statement is
+  smaller by design.**
 - **Proof amortisation — BOTH provers measured; question CLOSED, batching fails on both for
-  opposite reasons.** Groth16: `rust/las-swap/src/bin/bench_amortise.rs` +
-  `BatchedRelationCircuit` (relation shared by single and batched circuits + a per-batch tamper
-  check, so a batch cannot prove something weaker) → `evidence/amortise/latest` (⚠️ three runs
-  that day — **`latest` is the one to quote**). LaZer: `ref/relation_zk_batch.{c,h}`
-  (block-diagonal = the conjunction of k copies of the *deployed* statement) +
-  `ref/relation_zk_lazer_batch.{c,h}` (the **second** TU that may include `lazer.h`) + committed
-  `relation_zk_params_k{2,4,8}.h` ⇐ `scripts/gen_lazer_batch_params.sh` (SageMath at
-  `~/micromamba/envs/lazer-sage/bin/sage`), `scripts/run_lazer_amortise.sh`; **k=1 dispatches to
-  the COMMITTED `las_pi_params`**. Write-up `PROOF_AMORTISATION_EXPERIMENT.md`.
-  **Framings:** Groth16's proof is constant in k so per-swap bytes fall `1/k` **but bytes were
-  never the bottleneck** — a statement about *Groth16*, not about batching; LaZer's proof/swap
-  drops but per-swap prove+verify gets several times worse (superlinear). ⚠️ **NOT wired into
-  the swap**; batched param sets **not independently reviewed**, no security claim about
-  batching.
-- **NOT attempted, and why** (not a shortfall of effort): *analysing the ML-DSA variant's
-  security* is barred by the out-of-scope ruling (a reduction, not code). It stays in Ch. 5.
-  ⚠️ **SUPERSEDED 2026-08-05:** the old "needs a SHAKE256 precompile / Merkle dispute /
-  succinct proof" prediction was unevidenced and is falsified (ON-CHAIN block). Never restore it.
+  opposite reasons.** Groth16: `bench_amortise.rs` + `BatchedRelationCircuit` (one relation
+  shared by single and batched circuits + a per-batch tamper check, so a batch cannot prove
+  something weaker) → `evidence/amortise/latest` (⚠️ three runs that day — **`latest` is the one
+  to quote**). LaZer: `ref/relation_zk_batch.{c,h}` (block-diagonal = the conjunction of k copies
+  of the *deployed* statement) + `ref/relation_zk_lazer_batch.{c,h}` (the **second** TU that may
+  include `lazer.h`) + committed `relation_zk_params_k{2,4,8}.h` ⇐ `gen_lazer_batch_params.sh`
+  (SageMath at `~/micromamba/envs/lazer-sage/bin/sage`); **k=1 dispatches to the COMMITTED
+  `las_pi_params`**. Write-up `PROOF_AMORTISATION_EXPERIMENT.md`. **Framings:** Groth16's proof
+  is constant in k so per-swap bytes fall `1/k` **but bytes were never the bottleneck** — a
+  statement about *Groth16*, not about batching; LaZer's proof/swap drops but per-swap
+  prove+verify gets several times worse (superlinear). ⚠️ **NOT wired into the swap**; batched
+  param sets **not independently reviewed**, no security claim about batching.
+- **Not attempted, by ruling not by shortfall:** *analysing the ML-DSA variant's security* is
+  out of scope (a reduction, not code). It stays in Ch. 5. ⚠️ Never restore the superseded
+  "needs a SHAKE256 precompile / Merkle dispute / succinct proof" prediction — unevidenced, and
+  falsified by the ON-CHAIN block.
 
 **⚠️ AMHL is DROPPED (Royce, 2026-08-03).** Multi-hop locks are **out of the project** — not a
 bonus, not future work, not a deliverable. Do not build on `ref/amhl.{c,h}`, do not revive it,
@@ -510,34 +576,92 @@ do not re-add it to any status list or work queue.
 *this project's* artefacts or results → must go; (b) literature/background about *other
 people's* work → may stay.**
 
-**Reproducibility spine:** `README.md` (build/run/reproduce, upstream commit `2374d22` and
-toolchain recorded), `docs/02-methodology/FUNCTION_MAP.md` (every Dilithium function
-classified call-as-is / modify / new — headline: **zero upstream functions modified**),
-two-branch diff view (`dilithium-baseline` vs `main`), and runner scripts under `scripts/`
-that each write a timestamped evidence directory with raw tool output, an environment/commit
-record, a `latest` symlink, and automatic macro/figure regeneration.
+**Reproducibility spine:** `README.md` = build/run entry point, delegating to
+`docs/A-appendix/REPRODUCE_LAS_{C,RUST}.md`. ⚠️ The upstream pin `2374d22` is **not in README**
+(it says only "pinned commit") — cite `FUNCTION_MAP.md`, `CODE_DIFF_VIEW.md` or
+`REPRODUCE_LAS_C.md` for it. `docs/02-methodology/FUNCTION_MAP.md` classifies every Dilithium
+function call-as-is / modify / new — headline: **zero upstream Dilithium source functions
+modified** (the `Makefile` does gain additive targets; keep that qualifier). Two-branch diff =
+`dilithium-baseline` (pristine) vs `main`, mapped in `CODE_DIFF_VIEW.md`. Each runner under
+`scripts/` writes a timestamped run directory with raw tool output plus a provenance record, and
+updates a `latest` pointer. ⚠️ **That is the SHAPE, not a uniform contract:** the provenance
+filename (`environment.txt`, but `metadata.txt` in the Stage-1 `run_benchmark_suite.sh`), whether
+branch as well as commit is recorded, whether `latest` is a symlink or a copy-fallback, and
+whether macros/figures regenerate all **vary by runner** — read the one you mean before asserting
+any of it.
 
-## What remains (verified 2026-08-05)
+## What remains (re-derived 2026-08-07 from Meeting 9)
 
-1. **6–8 minute presentation slides** — Wang's deliverable. `report/slides/` currently holds
-   only `stage1_summary.html` (2026-07-25); the deck does not exist yet.
+1. **6–8 minute presentation slides — DELIVERED LIVE TO WANG NEXT WEEK** (Royce chose next
+   week over the week after). `report/slides/` holds only `stage1_summary.html` (2026-07-25);
+   the deck does not exist yet. Now the top item on Wang's own priority.
 2. **Frontmatter `\TODO`s** in `report/latex/report.tex` (student id, prior degrees,
    acknowledgements) — **Royce only**.
 3. **AMHL doc cleanup** in `docs/` under the (a)/(b) test above.
 
-**Done — do not re-queue:** the two Chapter 5 future-work bullets those experiments answered
-(statement compression, proof reduction) are **rewritten as measured verdicts** in
-`05-conclusion.tex` — do not restore them as open questions; the ML-DSA hint result is folded
-into Ch. 4 (`04-evaluation.tex` §"Reference optimisations appear to fight the adaptor identity"
-records the corrected "sufficient route, not a necessary one" claim); the `q≈2^24` bullet is
-gone from Ch. 5; the `Adapt`-vs-ECDSA gap is explained (`03-results.tex:322`, detail in
-`docs/03-results/LAS-08-performance-measured.md`); every experiment listed in Status is RUN
-with evidence and a write-up; Meeting-8's transaction breakdown + diagrams, terminology split,
-Chapter 5 title and functions-not-protocols wording are satisfied. **Its figure rulings are
-satisfied too (2026-08-07):** the four functions have their own side-by-side panel figure
-(`fig:lasfuncs`, Ch. 2), the swap protocol has a message-flow figure whose arrows are exactly
-the rows of `tab:stage2-comm` (`fig:swapflow`, Ch. 3), and **no figure remains in the
-appendix** — `fig:overhead` moved into §res-compute. Never move a chart back to the appendix.
+**⚠ PATCHED-CLIENT BENCHMARK — RUN 2026-08-08; Wang's Meeting-9 measurement ask is DONE.**
+Write-up `docs/03-results/BTC_LAS_CONSENSUS_BENCHMARK.md`; bench
+`bitcoin/las_consensus/bench_las_consensus.c`, runner `scripts/run_btc_las_bench.sh` →
+`evidence/btc_las_bench/latest`, macros via `scripts/gen_btc_las_bench_data.py`. Times
+`LASConsensusVerify` against BIP340 Schnorr and ECDSA per input. Corroborated: it lands
+within a few percent of the Stage-1 harness's independent D3 packed `Verify`.
+- **Four design rules, each cost a rejected draft — do not undo:** (1) **both sides start
+  from serialized bytes**, parsing *inside* the timed call, or the wire codec is charged to
+  LAS only; (2) **reject = valid signature + wrong 32-byte digest**, never a byte flip, which
+  short-circuits; (3) **-O3 on both sides** — the secp objects are -O3 and the shim Makefile
+  defaulted to -O2; (4) the runner **force-rebuilds** (`clean` + `-B`), since a flag-only
+  change leaves a stale binary looking current.
+- **⚠ Never gate on the reject/accept ratio.** Late-failing is established by the input
+  *construction*, not by timing; a ratio near 1 is a consequence, not evidence for it.
+- **⚠ Claim scope — four overclaims caught in review, do not reintroduce:** the baseline is a
+  pinned **libsecp256k1-zkp** (a *fork*, NOT Core's vendored copy — never "Bitcoin Core's
+  numbers"); say **"32-byte digest"**, never "BIP341 sighash" across baselines (P2WPKH is
+  BIP143); Schnorr is the **comparison baseline**, not something the opcode is shown to
+  *displace*; only **`\btcLasControls` mutations tried** were refused, not "every mutation".
+  On rejection the *only* supported reading is that a late-failing signature costs ~an
+  acceptance — **not** that invalid input buys an attacker no amplification.
+- **Two security caveats stay SEPARATE:** (a) the consensus modification's security is
+  unanalysed — a timing figure is not a safety argument; (b) the levels are unmatched —
+  secp256k1 ≈ D2, the node runs D3, so the ratio **overstates** the rule's cost.
+- **It corrected the report twice:** body and `app:btcnode` both said the validation cost
+  "is not measured". Fixed; only the *security* remains unmeasured.
+
+**The seven Meeting-9 report fixes are DONE (2026-08-08)** — §1.4 Contributions; **the
+succinct-proof conclusion made consistent with the numbers (M9 items 3–4)**: the future-work
+bullet states the *numbers'* verdict — LNP22 wins on **size and time** — with the reason
+(succinctness is asymptotic, this statement far too small), and **reports no LaBRADOR figures at
+all**, because Wang ruled the un-refined direction stays *discussion without actual numbers*.
+⚠️ Never "helpfully" add those figures back — **the appendix is part of the report**, so an
+"appendix-only, fully caveated" LaBRADOR table is the same violation, and the appendix being
+word-count-free is not a reason (a reviewing model proposed exactly this on 2026-08-11). Never
+write "loses on every axis" either (only three axes were measured). ⚠️ §reflection-achieved must NOT say all three optimisations closed their
+direction: compression and amortisation did, the succinct-PQ one is closed **on cost, at this
+statement size, through our encoding** — the same section's own bullet says what is still open,
+and the two must agree. LaBRADOR size is labelled the library's estimate;
+proof-size range explained in `tab:stage2-comm`'s caption (LaZer Huffman-codes the Gaussian
+responses, so length follows the sampled values); `tab:classical`/`tab:onchain` captions cut
+with the mechanism moved to `app:methoddetail` (each fell from a **full page to ~68%**, not
+Wang's ≤half — the floor is the mandatory EIP-7623 / equivalence / scope / measured-vs-derived
+caveats plus the table bodies; going lower means deleting a caveat, which needs Royce's call); SegWit/Taproot cited as the original-vs-improved
+contrast (SegWit fixes the *fee* treatment, **not** the 520 B push limit — do not re-widen that);
+the node experiment's result + conclusion now in §res-txstruct with detail left in `app:btcnode`;
+negative results in §reflection-achieved. **Paid for by moving the two-page `tab:challenges`
+longtable to `app:challenges`** — hand-written tabular *bodies* count toward the word budget,
+so that move both satisfied Wang's oversized-table ruling and recovered 449 words; back to
+**8,999**. Do not move that table back into Ch. 4.
+
+**Done — do not re-queue** (and **Meeting 9 accepted all of it**): the two Chapter 5 future-work
+bullets those experiments answered (statement compression, proof reduction) are **rewritten as
+measured verdicts** in `05-conclusion.tex` — do not restore them as open questions; the ML-DSA
+hint result is folded into Ch. 4 (`04-evaluation.tex` §"Reference optimisations appear to fight
+the adaptor identity" records the corrected "sufficient route, not a necessary one" claim); the
+`q≈2^24` bullet is gone from Ch. 5; the `Adapt`-vs-ECDSA gap is explained (`03-results.tex:322`,
+detail in `docs/03-results/LAS-08-performance-measured.md`); every experiment listed in Status is
+RUN with evidence and a write-up. **Meeting 8 is fully satisfied (2026-08-07):** transaction
+breakdown + diagrams, terminology split, Chapter 5 title, functions-not-protocols, and the figure
+rulings — `fig:lasfuncs` (four functions side by side, Ch. 2), `fig:swapflow` (arrows = the rows
+of `tab:stage2-comm`, Ch. 3), and **no figure in the appendix** (`fig:overhead` moved into
+§res-compute). Never move a chart back to the appendix.
 
 ### ⚠️ WORK-PRIORITY RULE — nothing here is "optional" (Royce, 2026-08-03)
 
@@ -553,12 +677,46 @@ about order, ask Royce rather than silently reordering.
 
 ## Supervisor rulings in force
 
-Spec: `las-context-consolidated.md` (§16 = Meeting 7, §17 = Meeting 8). Transcripts:
+Spec: `las-context-consolidated.md` (§16 = M7, §17 = M8, §18 = M9). Transcripts:
 `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`); Meeting-6 directives live in
 `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`. **Read §16 before planning application
 work.**
 
-**Meeting 8 (2026-07-31) — latest word.** *"You don't need to contain all the stuff — you just
+**Meeting 9 (2026-08-07) — LATEST WORD; report work + one benchmark, no new experiments.**
+Transcript `meeting9_cleaned_transcript.md` (single ASR source, no summary/recording — its §A
+lists what could not be resolved). **Everything Royce reported was accepted**, including the
+Meeting-8 transaction breakdown (*"now it's much clearer"*) and the figures (*"much better
+than I thought"*). Rulings, each mandatory:
+
+- **⚠ Benchmark the patched Bitcoin client.** *"When you modify something … people will always
+  ask, okay, if we achieved this a better security — so what have I lost?"* The only
+  measurement asked for. **DONE 2026-08-08** — see the patched-client benchmark block above.
+  Framing is unchanged: carriage-only vs patched node, security of the modification still
+  not analysed.
+- **⚠ Add §1.4 "Contributions" to Chapter 1**, after the objectives, **before** the
+  dissertation-structure subsection; keep existing content. 3–4 sentences on the most
+  important findings **and whether the objectives were achieved — all or some**. It is in
+  Wang's own report guideline; he called it a strong suggestion, not a rubric requirement.
+- **⚠ Conclusions must be consistent with the numbers reported** — the succinct-proof text
+  reads as if LaBRADOR wins while the numbers say LaZer/LNP22 wins on size *and* time. State
+  the numbers' verdict plus the reason (succinctness is asymptotic; this statement is tiny).
+  *"Otherwise people will easily challenge you."* For the direction **not** refined: discussion
+  only, **without reporting the actual numbers**, so no conflicting results appear.
+- **⚠ Explain why the proof size is a range**, not a fixed number — in the text, not left to
+  the reader. **⚠ Shrink the oversized table to ≤ half a page.** **⚠ Cite the Bitcoin
+  improvement solutions (SegWit/Taproot)** wherever the report says the original structure
+  cannot carry a LAS signature and the improved one can. **⚠ Bitcoin experiment:** main
+  results and a conclusion in the body, detail referred out to the appendix (Royce's call).
+- **⚠ Negative results are results** — write up the failed statement-Y compression *with its
+  reason* in the critical reflection. Confirms, does not reopen, the closed verdict.
+- **Bounded, NOT a directive:** another hash function against the SHAKE-dominated gas — Wang
+  bounded it himself (security/guarantee risks; *"we have one [working] version; even if it's
+  not very efficient, it's still acceptable"*). **Nothing here reopens a frozen scope item.**
+- ⚠ **A garbled transcript line at ≈38:44** (cleaned file §17) sounds like on-chain verification
+  failing at another Dilithium level. It is not evidence — D2/D5 were never evaluated. Never
+  mine it into a claim. → EVIDENCE-OR-SILENCE, which already owns this exact trap.
+
+**Meeting 8 (2026-07-31).** *"You don't need to contain all the stuff — you just
 need to make sure that what you have done looks good, looks perfect, looks great."*
 - **Results accepted; stop measuring.** Groth16 = slower generation, smaller proof; LaZer =
   fast generation, much larger proof; PQ proof sizes far above classical. *"It's what we
@@ -574,9 +732,8 @@ need to make sure that what you have done looks good, looks perfect, looks great
   is titled "Conclusion, critical reflection and future work".
 - **Sequencing:** finish Bitcoin/UTXO before any further EVM/Naysayer work; the EVM is a
   discussion of a more advanced solution *after* a complete Bitcoin solution.
-- Satisfied since: the Bitcoin transaction breakdown + two diagrams, the hint experiment
-  (reframed by Royce — see Scope discipline), the EVM and IPFS write-ups, the `Adapt`
-  explanation. Outstanding from this meeting: the 6–8 minute slide deck.
+- **All of it is satisfied and M9-accepted** — see "Done — do not re-queue" above. Its one
+  outstanding deliverable, the 6–8 minute deck, is now M9's item 1 (delivered live next week).
 
 **Meeting 7 (2026-07-24) — Stage 2 retargets from the EVM to Bitcoin/UTXO.**
 - Target chain is **Bitcoin / a UTXO chain**: native on-chain LAS verification is infeasible

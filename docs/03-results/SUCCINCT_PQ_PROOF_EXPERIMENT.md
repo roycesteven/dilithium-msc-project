@@ -19,9 +19,12 @@ Code: `rust/las-stark/src/role_a_air.rs`, `rust/las-stark/src/bin/bench_role_a.r
 > This was originally written here as a scope caveat. That was too weak: it is a
 > disqualification, and the correct next step is a proof system that is succinct, PQ **and**
 > zk — LaBRADOR, which LaZer ships. **That has now been run: see §6.** Its verdict closes the
-> direction — LaBRADOR qualifies on all three counts and still loses to the deployed LNP22 on
-> every axis at this statement size, because succinctness is asymptotic and one role-A
-> relation is far too small to reach it.
+> direction — LaBRADOR is succinct, post-quantum and zk as a *system*, and still loses to the
+> deployed LNP22 on all three measured axes at this statement size, because succinctness is asymptotic and
+> one role-A relation is far too small to reach it. It closes the direction on **cost**, and
+> that is enough; it does **not** amount to a working π, because the statement §6's bridge
+> hands the library is secret-dependent and its encoding is not shown complete (§6, blockers
+> 1 and 2). Both failures are the encoding's, not the library's.
 
 **Headline: it works, it is genuinely post-quantum and transparent, and at this statement
 size it does not pay** — and it is not zero-knowledge, so it does not qualify as π. The
@@ -159,6 +162,44 @@ quotient exists because LaBRADOR works over its own prime `p`, not our `q`; its 
 load-bearing, since `q` is invertible mod `p` and an unbounded `g` satisfies the equation for
 *any* claimed `t'`.
 
+**⚠️ The encoded statement is not the target relation, and the gap is where the claims
+die.** `py_init_statement` takes an ℓ₂ bound *per witness vector* — `proofsystem.h`:
+"squared l2-norm bound for each witness vector" — `verify()` enforces
+`‖s_i‖² ≤ normsq[i]`, and `py_verify(st, pp, pi)` consumes that same statement. The two
+declared bounds are therefore **verifier-side data, part of the statement**, not
+prover-side hygiene. The seam's contract is in `relation_zk_labrador.h`; in short:
+
+- **MAY claim:** on the instances run, LaBRADOR proves the encoded statement, and a witness
+  satisfying it yields one for the target relation (the lifting argument). *Soundness
+  direction only.*
+- **MAY NOT claim:** that the encoding is faithful to the target relation, or that this is a
+  fully satisfactory zero-knowledge proof of exactly that relation.
+
+Two independent blockers sit in between; fixing one leaves the other.
+
+**BLOCKER 1 — privacy: the statement is secret-dependent.** `bench_labrador_role_a.c`
+passes the honest witness's **exact** ℓ₂ norm as vector 0's bound, which for a binary `w`
+*is* the Hamming weight of the ternary `r'`. The statement, and the parameters generated
+from it, are thus a function of the secret. **The `zk` flag cannot repair this** — zk bounds
+what the *proof* adds beyond the statement, and the leak is in the statement. Scope it
+honestly: one statistic of `r'`, of unanalysed consequence for LAS, not a broken proof
+system. The fix is a witness-independent bound, `‖w‖² ≤ (n+ℓ)·d`, valid because `r₊` and
+`r₋` are never both 1 in a coefficient; it is **not applied**, so the binary still matches
+the evidence, and applying it needs a re-run.
+
+**BLOCKER 2 — faithfulness: the encoding is not shown complete.** `‖g‖² ≤ G_NORMSQ_BOUND`
+is an **extra** constraint the target relation does not contain, so faithfulness requires
+*every* honest witness of the target relation to satisfy it — and nothing here shows that.
+Note what is *not* wrong: the bound is a constant, so unlike `w` it leaks nothing. What is
+missing is completeness; its whole justification is the runtime assert that the **sampled**
+instance fits. Never write "no witness-independent bound exists" — the defect is
+completeness, not dependence.
+
+**Neither blocker changes the verdict below**, and blocker 1's fix can only *widen* the
+declared bound, which LaBRADOR's widths scale with (`polxvec_setwidths1` divides `normsq`
+by `n·N`) — so a corrected run should not come out smaller or faster. That is a reading of
+the library, not a measurement.
+
 **LOGQ = 38 is forced.** Soundness needs `|[A|−A]w| + |q·g| + |t'| < p/2`. With the declared
 bound `‖g‖² ≤ 10⁸` that worst case is ≈1.07×10¹¹ against LOGQ = 38's `p/2 ≈ 1.37×10¹¹` —
 **78% of the budget**, and it overflows LOGQ = 36's.
@@ -179,11 +220,17 @@ the sum has cancellation, and the measured `|g|∞` is ~25–31. So `‖g‖² �
 | Groth16 (config 2) | 128 B | 494.1 | 12.7 | yes | **no** | yes |
 | **LNP22 (config 3, deployed)** | **30 723 B** | **158.8** | **75.2** | **no** | yes | yes |
 | FRI-STARK (§4) | 77 809 B | 266.0 | 1.4 | yes | yes | **no** |
-| **LaBRADOR (this)** | **110.90 KB** | **1588.7 ± 288.8** | **739.1 ± 87.8** | yes | yes | **yes** |
+| **LaBRADOR (this)** | **110.90 KB** | **1588.7 ± 288.8** | **739.1 ± 87.8** | yes | yes | yes\* |
 
-**LaBRADOR is the only row that satisfies all three requirements — and at this statement size
-it loses to the deployed LNP22 on every axis**: ~3.7× the proof, ~10× the proving time, ~10×
-the verification time.
+The three property columns are properties of the **systems**, which is what makes the rows
+comparable — they are not certificates for the encoding each was run through. **\*** For
+LaBRADOR read the `zk` cell with the two blockers above attached: the library is zk, and the
+statement this bridge hands it is secret-dependent, so the run does not deliver the witness
+privacy §4.1 asks of π.
+
+**LaBRADOR is the only row whose system has all three properties — and at this statement size
+it loses to the deployed LNP22 on all three axes measured here**: ~3.7× the proof, ~10× the
+proving time, ~10× the verification time. Those three are the only axes measured; no other was.
 
 That is the same lesson the STARK taught, from the other direction. **Succinctness is
 asymptotic, and one role-A relation is nowhere near large enough to reach it.** LaBRADOR is
@@ -203,7 +250,17 @@ overhead.
   `-fvisibility=hidden`. LNP22's 30 723 B *is* byte-exact. Never compare the two silently.
 - **Proving time is noisy** (±289 ms on 1589, ~18%).
 - Not wired into the swap; no security analysis of the encoding beyond the norm-bound
-  argument above.
+  argument above — which runs in the **soundness** direction only (a verifying proof
+  establishes the bound, hence the lift back to `Z`). Completeness is blocker 2.
+- **The bound on `g` is not proven complete.** `‖g‖² ≤ 10⁸` is asserted for the sampled
+  instance, not derived for all honest witnesses, and the only worst case on record — the
+  driver's own naive `|g|∞ ≤ 641` — implies `‖g‖²` up to ≈6.3×10⁸, several times it. So the
+  honest-prover failure probability is **unquantified: not shown to be zero, and not shown to
+  be positive either** — the true worst case over honest witnesses has never been computed, so
+  it may well *be* zero. Do not write "not zero"; that is an unwarranted negative claim, the
+  same fault in the opposite direction. (This is **completeness**, and it is independent of
+  why LOGQ = 38 is forced — that follows from the *soundness/lifting* budget at the declared
+  bound, and holds whether or not honest witnesses always meet it.)
 
 ### Two traps recorded for whoever touches this next
 

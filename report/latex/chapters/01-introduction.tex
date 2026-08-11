@@ -32,10 +32,9 @@ publishing a valid signature to the simultaneous revelation of a secret witness
 \cite{poelstra2017,aumayr2021generalized}. That single primitive underpins
 ``scriptless'' atomic swaps and payment-channel networks: it lets two parties exchange
 assets, even across different chains, so that either both transfers happen or neither
-does, without trusted intermediaries or heavy on-chain scripts. In the classical setting
-these constructions are mature and deployed; in the post-quantum setting they are mostly
-paper-only, which makes the adaptor signature a representative, high-value exotic scheme
-to implement and evaluate.
+does, without trusted intermediaries or heavy on-chain scripts. Classically these
+constructions are mature and deployed; post-quantum they are mostly paper-only, making the
+adaptor signature a representative, high-value exotic scheme.
 
 Cross-chain exchange first relied on custodial intermediaries; hash-time-locked contracts
 removed the custodian by locking both transfers under one hash preimage, so claiming one
@@ -54,7 +53,7 @@ still correlate the legs.
 \paragraph{Exotic signatures for post-quantum blockchains.}
 The motivating survey \cite{buser2023survey} catalogues exotic signature families and
 identifies the shortage of efficient PQ-secure blockchain implementations as an open
-challenge. This project contributes one such implementation and evaluation.
+challenge.
 
 \paragraph{Lattice signatures and Dilithium.}
 CRYSTALS-Dilithium is a lattice signature in the ``Fiat--Shamir with aborts'' family
@@ -78,9 +77,9 @@ paths \cite{malavolta2019anonymous}.
 \paragraph{Post-quantum adaptor signatures.}
 Esgin, Ersoy and Erkin proposed LAS, a lattice-based adaptor signature on a
 Dilithium-style base \cite{esgin2020post}; it is the design implemented here. Their work
-is primarily theoretical --- definitions, a construction and security proofs --- so a
-practical, benchmarked, blockchain-facing implementation is this dissertation's
-contribution. poqeth studies how PQ primitives are integrated and costed on Ethereum
+is primarily theoretical --- definitions, a construction and security proofs --- leaving
+the practical, benchmarked, blockchain-facing implementation open. poqeth studies how PQ
+primitives are integrated and costed on Ethereum
 \cite{kysil2025poqeth}, providing a template for the on-chain side.
 
 \paragraph{Classical baseline.}
@@ -95,9 +94,7 @@ security parameters explicitly so the comparison is fair (\cref{ch:methodology})
 \paragraph{Category.}
 This is a \emph{systems implementation and evaluation} project grounded in existing
 research, not a proposal of a new cryptographic protocol: its emphasis is practical
-implementation and benchmarking. The contribution is a reliable, tested, benchmarked
-realisation of an existing exotic scheme (LAS, \cite{esgin2020post}) and its
-demonstration in a blockchain atomic-swap application.
+implementation and benchmarking.
 
 \paragraph{Aim.}
 To implement and evaluate a post-quantum exotic signature scheme --- a lattice-based
@@ -121,6 +118,25 @@ in a post-quantum blockchain atomic-swap application.
         --- following the protocol of \cite{esgin2020post} verbatim, including its
         zero-knowledge proof of knowledge $\pi$ --- and discuss its feasibility.
 \end{enumerate}
+
+\section{Contributions}
+\label{sec:contributions}
+
+This dissertation contributes a tested, independently cross-validated implementation of a
+post-quantum adaptor signature, and measurements of its cost. Four findings carry it.
+Adaptor functionality proves close to free in computation but expensive in communication:
+its price is bytes, not time (\cref{sec:res-compute,sec:res-comm}). The design assertion the implementation rests on ---
+that an adaptor needs an exact verification identity --- was tested, not argued, and proved
+half wrong: \textsc{PreSign} and \textsc{PreVerify} must indeed be new algorithms, yet
+an unmodified FIPS~204 verifier accepts the adapted signature (\cref{sec:res-mldsa}). At
+application scale the bottleneck is not the signature but the zero-knowledge proof, leaving
+the fully post-quantum swap the faster of the two such configurations and the only one Shor
+does not break (\cref{sec:res-stage2}). And native on-chain verification, first
+measured far above the transaction gas cap, fits under it once the same predicate is
+re-expressed --- at the single parameter set and message length measured --- while a settled
+swap sits well inside a UTXO chain's weight limit (\cref{sec:res-app,sec:res-txstruct}). All
+five objectives were met (\cref{tab:objectives}), subject to two limits throughout: no
+concrete security is formally analysed, and nothing ran on a live network.
 
 \section{Dissertation structure}
 \label{sec:structure}

@@ -1,12 +1,13 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 7 + 8)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 7 + 8 + 9)
 
 > Meeting-6 directives are held separately in
 > `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`, not in this file.
-> **Meeting 7 (§16) retargets Stage 2 from the EVM to Bitcoin/UTXO. Meeting 8 (§17) is
-> the LATEST WORD: no new features — break down the Bitcoin transaction, polish the
-> report, prepare the presentation. Read both before planning any further work.**
+> **Meeting 7 (§16) retargets Stage 2 from the EVM to Bitcoin/UTXO. Meeting 8 (§17) froze
+> the feature set. Meeting 9 (§18) is the LATEST WORD: everything reported was accepted —
+> what remains is report work plus ONE benchmark (the patched Bitcoin client) and the
+> presentation. Read §16 and §18 before planning any further work.**
 >
-> **THE canonical objectives/context file** (merges Meetings 1, 2, 3, 4, 5, 7 and 8). As
+> **THE canonical objectives/context file** (merges Meetings 1, 2, 3, 4, 5, 7, 8 and 9). As
 > of 2026-06-13 the older `LAS_OBJECTIVES_FOR_TOP_MARK.md`, `las-objectives-meeting2.md`
 > and `docs/archive/LAS_PROJECT_HANDOFF.md` have been **deleted** — their content is
 > fully captured here (objectives), in `CLAUDE.md` (project context), and in
@@ -15,8 +16,8 @@
 > Provenance tags: **[M1]** = Meeting 1 · **[M2]** = Meeting 2 (2026-06-08) ·
 > **[M3]** = Meeting 3 (2026-06-18) · **[M4]** = Meeting 4 (June 2026, exact date
 > not in transcript) · **[M5]** = Meeting 5 (2026-07-06) · **[M7]** = Meeting 7
-> (2026-07-24) · **[M8]** = Meeting 8 (2026-07-31) · **[M1→M2]** = set in M1,
-> revised in M2.
+> (2026-07-24) · **[M8]** = Meeting 8 (2026-07-31) · **[M9]** = Meeting 9 (2026-08-07) ·
+> **[M1→M2]** = set in M1, revised in M2.
 > Where the meetings conflict, the **later meeting wins** (M2 over M1; M3 over M2
 > for evaluation rigour / fairness — M3 raised the Stage-1 bar, see §13; **M4 raised
 > the Stage-1 *presentation* bar and showed Stage 1 is NOT yet supervisor-signed-off**,
@@ -24,7 +25,9 @@
 > diagrams, C⇄Rust cross-check, README split — that must accompany the Stage-1
 > figures**, see §15; **M7 moved Stage 2 to Bitcoin/UTXO**, see §16; **M8 froze the
 > feature set and made the Bitcoin transaction breakdown the single remaining
-> requirement**, see §17). **M8 is the latest word.**
+> requirement**, see §17; **M9 accepted that breakdown and everything else reported, and
+> turned the queue into report fixes + one benchmark**, see §18). **M9 is the latest
+> word.**
 
 ---
 
@@ -820,7 +823,109 @@ efficient, and asked him to check that algorithm. **This explanation is still ow
 
 **Next meeting:** next week (i.e. week of 2026-08-07).
 
-## 18. Reference links
+## 18. Meeting-9 directives [M9, 2026-08-07 — everything accepted; report fixes + one benchmark]
+
+Source: `meeting9_cleaned_transcript.md`. **Single ASR source** — no summary file and no
+recording exist for this meeting, so there is no second source to cross-check against;
+§A of that file lists every fragment that could not be resolved. **Speaker polarity is
+back to the Meeting-7 convention** — Speaker 1 = Royce, Speaker 2 = Wang.
+
+M9 **added no scope and reopened nothing**. Wang accepted the M8 transaction breakdown
+(*"now it's much clearer"*), the figures (*"much better than I thought"*), the ML-DSA
+result, the failed statement-Y compression, and the succinct-proof comparison. **Where
+M9 refines earlier meetings, M9 is the latest word.**
+
+### 18.1 What Royce reported and Wang accepted
+
+- **Bitcoin carriage settled.** What a transaction signs is a *hash* of the transaction,
+  carried in the **witness**. Bitcoin's 520-byte script chunk limit forces chunking of
+  the LAS signature, but the binding constraint is **block weight** (4,000,000 WU); the
+  LAS spend sits at ≈2.9% of the standard-transaction limit. Wang's conclusion: *"we have
+  some space [to] install the large LAS signature."*
+- **Both M8-era open questions answered:** LAS verification **fits in one EVM
+  transaction** under EIP-7825's per-transaction gas cap (contrasted in the meeting with
+  the ~30M *block* gas limit), and **a stock Bitcoin node can carry LAS objects**.
+- **ML-DSA:** an adapted signature verifies under an **unmodified** ML-DSA verification
+  function; PreVerify cannot naively reuse ML-DSA, because high bits *and* low bits must
+  both carry commitment + `Y` or verification fails.
+- **Bitcoin's real problem is verification, not carriage.** Two experiments: classical
+  Schnorr (carriage only) and a modified client that verifies LAS directly, which
+  *"can generate the exact [measurement], not only the projection"*.
+
+### 18.2 The one measurement asked for — benchmark the patched client
+
+**⚠ Benchmark the modified Bitcoin client.** Wang's rule, stated generally: *"when you
+modify something … [people] will always ask, okay, if we achieved this — a better
+security — so what have I lost?"*
+
+**DONE 2026-08-08.** `LASConsensusVerify` timed per input against BIP340 Schnorr and ECDSA,
+both sides parsing serialized bytes inside the timed call; reject path = a valid signature
+against a different 32-byte digest. Write-up
+`docs/03-results/BTC_LAS_CONSENSUS_BENCHMARK.md`; runner `scripts/run_btc_las_bench.sh` →
+`evidence/btc_las_bench/latest`. Quote the generated macros, never a retyped figure.
+Framing is unchanged: carriage-only vs patched node, and the security of the modification
+is still **not analysed** — a timing figure is not a safety argument. The comparison's
+security levels are also **not matched** (secp256k1 ≈ Dilithium-II, the node runs
+Dilithium-III), so the ratio **overstates** the rule's cost; and the curve baseline is a
+pinned libsecp256k1-**zkp** fork, not the library Bitcoin Core vendors.
+
+### 18.3 THE central report ask — summarise the contributions in the introduction
+
+**⚠ Add a §1.4 "Contributions" subsection to Chapter 1**, after the objectives/aims and
+**before** the dissertation-structure subsection, keeping the existing content. It must
+summarise the most important findings and say **whether the objectives were achieved —
+all of them or only some**. Wang: *"in the guideline of the report I've mentioned that
+you should also summarise your main contributions in the introduction"*; and *"people
+will ask you: can you give me 3 or 4 sentences to summarise what you've done? Have you
+already achieved the objectives? Because here we don't know."* He framed it as academic
+practice (reviewers read the abstract and first two pages) and as a strong suggestion
+rather than a rubric requirement.
+
+### 18.4 Consistency — conclusions must match the numbers reported
+
+**⚠** The succinct-proof text reads as if LaBRADOR wins, while the reported numbers say
+LaZer/LNP22 wins on proof size **and** time. Wang: *"just make sure the conclusion and
+the results, they are consistent … otherwise people will easily challenge you."* State
+the numbers' verdict and the reason (LaBRADOR's succinctness is **asymptotic**; this
+statement is far too small). For the direction that was **not** refined: keep it as
+**discussion without reporting the actual numbers**, so no conflicting results appear.
+
+### 18.5 The remaining report fixes
+
+1. **⚠ Explain why the proof size is a range**, not a fixed number — in the text.
+   *"Otherwise people will ask, okay, why?"*
+2. **⚠ Shrink the oversized table to at most half a page.**
+3. **⚠ Cite the Bitcoin improvement solutions (SegWit/Taproot)** wherever the report says
+   the original transaction structure cannot carry a LAS signature and the improved one
+   can — readers may not know they exist.
+4. **⚠ Bitcoin experiment placement:** main results and a conclusion in the body, detail
+   referred out to the **appendix**. Wang left the final call to Royce.
+5. **⚠ Write up the failed statement-Y compression as a negative result, with its
+   reason**, in the **critical reflection**. *"Even if it's failed, some negative results
+   are still helpful."* This confirms — it does not reopen — the closed verdict.
+6. Make sure **all results are nailed down** and confirmed before the final version.
+
+### 18.6 Bounded, and explicitly NOT a directive
+
+Trying **another hash function** against the SHAKE-dominated on-chain gas. Wang raised
+it and bounded it himself: there may be security/guarantee issues, and *"we have one
+[working] version; even if it's not very efficient, it's still acceptable."*
+
+### 18.7 Presentation
+
+**⚠ Deliver the 6–8 minute presentation live to Wang next week** for feedback — Royce
+chose next week over the week after. This is the M8 slide deliverable, now scheduled.
+
+### 18.8 One transcript line that must not become a claim
+
+At ≈38:44 Royce says something garbled about fitting at Dilithium-3 but not at another
+level. **On-chain verification is measured at D3 only** — `LASVerifyOpt`'s parameters are
+compile-time D3-only, so D2/D5 were never evaluated (`docs/03-results/
+GAS_LIMIT_INVESTIGATION.md` §7). "Not evaluated" is the only supportable wording.
+
+**Next meeting:** next week, with the mock presentation.
+
+## 19. Reference links
 
 - LAS spec: https://eprint.iacr.org/2020/845
 - Survey: https://eprint.iacr.org/2022/1151

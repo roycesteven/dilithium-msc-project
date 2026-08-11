@@ -1,26 +1,26 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces Parameter sets used in the evaluation}}{24}{table.2.1}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces The three measured configurations}}{26}{table.2.2}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces Parameter sets used in the evaluation}}{25}{table.2.1}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces The three measured configurations}}{27}{table.2.2}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract}}{29}{table.3.1}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces Adaptor overhead at the target setting, both timing tiers}}{29}{table.3.2}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces Rejection-sampling statistics: model vs measurement}}{32}{table.3.3}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces Per-operation timing: C implementation vs Rust port}}{34}{table.3.4}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces Serialized size of every LAS object}}{36}{table.3.5}%
-\contentsline {table}{\numberline {3.6}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{37}{table.3.6}%
-\contentsline {table}{\numberline {3.7}{\ignorespaces On-chain settlement gas: classical vs.\ post-quantum}}{41}{table.3.7}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract}}{30}{table.3.1}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Adaptor overhead at the target setting, both timing tiers}}{30}{table.3.2}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Rejection-sampling statistics: model vs measurement}}{33}{table.3.3}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Per-operation timing: C implementation vs Rust port}}{35}{table.3.4}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Serialized size of every LAS object}}{37}{table.3.5}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{38}{table.3.6}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces On-chain settlement gas: classical vs.\ post-quantum}}{42}{table.3.7}%
 \contentsline {table}{\numberline {3.8}{\ignorespaces Per-phase execution time of the swap}}{43}{table.3.8}%
-\contentsline {table}{\numberline {3.9}{\ignorespaces Communication cost of the swap}}{43}{table.3.9}%
-\contentsline {table}{\numberline {3.10}{\ignorespaces The settled transaction, field by field}}{45}{table.3.10}%
+\contentsline {table}{\numberline {3.9}{\ignorespaces Communication cost of the swap}}{44}{table.3.9}%
+\contentsline {table}{\numberline {3.10}{\ignorespaces The settled transaction, field by field}}{46}{table.3.10}%
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {4.1}{\ignorespaces Objectives against evidence}}{50}{table.4.1}%
-\contentsline {table}{\numberline {4.2}{The six implementation challenges}}{51}{table.4.2}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {A.1}{\ignorespaces The four test types}}{68}{table.A.1}%
-\contentsline {table}{\numberline {A.2}{\ignorespaces Security and scheme parameter notation}}{69}{table.A.2}%
-\contentsline {table}{\numberline {A.3}{\ignorespaces The three measurement boundaries}}{70}{table.A.3}%
-\contentsline {table}{\numberline {A.4}{\ignorespaces Per-operation timing across the parameter sets}}{71}{table.A.4}%
-\contentsline {table}{\numberline {A.5}{\ignorespaces LAS objects by component (packed bytes)}}{71}{table.A.5}%
-\contentsline {table}{\numberline {A.6}{\ignorespaces Source files: reused, modified, and added}}{72}{table.A.6}%
+\contentsline {table}{\numberline {A.1}{The six implementation challenges}}{67}{table.A.1}%
+\contentsline {table}{\numberline {A.2}{\ignorespaces The four test types}}{69}{table.A.2}%
+\contentsline {table}{\numberline {A.3}{\ignorespaces Security and scheme parameter notation}}{70}{table.A.3}%
+\contentsline {table}{\numberline {A.4}{\ignorespaces The three measurement boundaries}}{71}{table.A.4}%
+\contentsline {table}{\numberline {A.5}{\ignorespaces Per-operation timing across the parameter sets}}{72}{table.A.5}%
+\contentsline {table}{\numberline {A.6}{\ignorespaces LAS objects by component (packed bytes)}}{72}{table.A.6}%
+\contentsline {table}{\numberline {A.7}{\ignorespaces Source files: reused, modified, and added}}{73}{table.A.7}%

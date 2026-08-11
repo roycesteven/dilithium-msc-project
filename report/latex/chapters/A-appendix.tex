@@ -189,6 +189,67 @@ calls rather than on the two per swap the protocol itself performs: over so few 
 the five-sigma band is wider than the distance from the expected attempt rate to a
 loop that never rejects at all, so a gate on that sample would have been vacuous.
 
+\paragraph{Matching the boundaries of the classical comparison.}
+The two libraries of \cref{tab:classical} do not draw their measurement boundaries in the
+same place, so the comparison states both. The classical column is the library's
+\emph{hybrid} native-API boundary: \textsc{PreSign}, \textsc{PreVerify}, \textsc{Adapt} and
+\textsc{Extract} pack or parse the 162-byte pre-signature \emph{inside} the timed call
+(packed-like), whereas KeyGen, Sign and Verify exchange in-memory structs with their wire
+codecs outside it (core-like). LAS is therefore shown at both its core and its packed tier,
+measured on the C implementation, and the tier-matched column pairs each operation with
+whichever LAS tier corresponds to the classical boundary for that operation --- the core
+tier for KeyGen/Sign/Verify and the packed tier for the four adaptor operations. Timings
+are the mean $\pm$ sample standard deviation over \clReps{} runs $\times$ \clIters{}
+iterations classically and \benchReps{} repetitions $\times$
+\benchItersSign{}/\benchItersVerify{} iterations for LAS, on the same machine. Comparing every row against a single LAS tier
+instead would count the wire codec on one side only, for four of the seven operations,
+which is why the matching is done per operation rather than per table. Two
+object-level differences lie behind the size rows: LAS KeyGen also produces the
+statement and witness, which take the public-key and secret-key size, and the classical
+pre-signature is a syntactically distinct object --- an ECDSA signature plus a
+discrete-logarithm-equality proof --- whereas the LAS pre-signature shares the signature
+format exactly.
+
+\paragraph{What the restructured on-chain verifier changes, and how it was checked.}
+The two \texttt{claimLASVerified*} rows of \cref{tab:onchain} decide the same predicate as
+\texttt{base\_verify}: decode, norm bound, $w'=A\vecz-c\,t$, and the SHAKE256 challenge
+check. The first mirrors those steps directly from the vendored ZKNox primitives and is
+validated against the C reference. The second re-expresses them: the public key is
+registered in the number-theoretic-transform domain and $c\,t$ folded before a single
+inverse transform, parameters are read from calldata rather than decoded into memory, and
+the sponge avoids the per-byte absorb. It reproduces the first verifier's packed $w'$
+byte-for-byte on the C golden vectors, and agrees with it on accept and reject for the
+golden signature and for a tampered response, challenge and message.
+
+\paragraph{The registration invariant, and what is \emph{not} enforced.}
+Neither verifier derives its public parameters: the matrix arrives already transformed in
+both, and the restructured one additionally takes the public key twice --- transformed for
+the arithmetic, packed for the challenge preimage
+$\mathrm{pack}(t)\,\|\,\mathrm{pack}(w')\,\|\,M$, which is the only one of the three the
+hash ever sees. Equality with \texttt{base\_verify} therefore holds exactly where three
+things are true together: the registered matrix is $\mathrm{NTT}(A')$ for the agreed $A'$,
+the registered key is $\mathrm{NTT}(t)$ for some key $t$, and the packed bytes that are
+hashed are $\mathrm{pack}(t)$ for that \emph{same} $t$. The escrow contract commits to all
+three at funding and re-derives that commitment at claim time, which stops a \emph{claimer}
+substituting; it establishes nothing about their mutual consistency, and no on-chain step
+recomputes one from another. The obligation rests on whoever funds the escrow.
+
+What follows from breaking it is, in general, only that a \emph{different} predicate is
+decided --- not that a weaker one is, and no analysis here covers the general case. Some
+registrations are weaker, though, and one suffices to show the condition is load-bearing
+rather than pedantic: register both transformed objects as zero and every product
+vanishes, leaving $w'=\vecz_{\mathrm{top}}$ and an acceptance test that anyone can satisfy
+for any in-bound $\vecz$, with no key and no signature. The escrow would then pay out
+without the adapted signature ever reaching a chain --- and that publication is exactly
+what leaks the witness and makes the swap atomic. Custody is unaffected, since the
+beneficiary is fixed at funding and the claim entrypoint pays that address whoever calls
+it; what a bad registration costs its own funder is the atomicity the escrow was bought
+for. Recomputing $\mathrm{NTT}(t)$ from the packed bytes once at funding, off the
+verification path, would discharge the two conjuncts about $t$; the one about $A'$ would
+need the untransformed matrix, or the seed it expands from, supplied at registration as
+well. Neither is implemented, neither is costed here, and the measured figures are for the
+verification path as it stands.
+
 \paragraph{One deliberate exception to reproducibility.}
 Every other input derives from the pinned seed, but Groth16's trusted setup and each
 of its proofs draw fresh operating-system entropy. Both are security requirements
@@ -329,6 +390,94 @@ does \emph{not}, in this baseline, bring the worst-case dispute within a single
 transaction; doing so would require opening only the single disputed matrix row through
 a Merkle commitment rather than sending the whole matrix, and a hash dispute that
 avoids a full SHAKE256 pass.
+
+\section{The six implementation challenges}
+\label{app:challenges}
+
+The themes drawn from these six challenges are discussed in \cref{sec:eval-challenges}; the table itself is placed here because it runs to more
+than a page.
+
+% This table is taller than one page, so it is a longtable (breaks across pages
+% with a repeated header) rather than a float.
+\begingroup
+\small
+\singlespacing
+\setlength{\LTcapwidth}{\textwidth}
+\begin{longtable}{@{}L{0.21\linewidth}L{0.38\linewidth}L{0.33\linewidth}@{}}
+    \caption[The six implementation challenges]{\normalsize The six challenges that
+    shaped the implementation. A seventh, cross-cutting difficulty --- reproducing the
+    C scheme byte-for-byte in Rust, down to how each language's uniform sampler
+    discards rejected blocks --- is discussed with the cross-validation results
+    (\cref{sec:res-rust}); the pinned digest is what turned it into a mechanical
+    process. One caveat belongs with the gas figure of challenge~5: the reused ZKNox
+    primitives come from a self-described non-production library, so the measurement is
+    the honest cost of \emph{a} numerically-correct verifier, not an endorsement of
+    that library.}
+    \label{tab:challenges} \\
+    \toprule
+    Challenge & The problem & Resolution and lesson \\
+    \midrule
+    \endfirsthead
+    \multicolumn{3}{@{}l@{}}{\emph{\tablename~\thetable{} --- continued from the
+      previous page}} \\[2pt]
+    \toprule
+    Challenge & The problem & Resolution and lesson \\
+    \midrule
+    \endhead
+    \midrule
+    \multicolumn{3}{@{}r@{}}{\emph{continued on the next page}} \\
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    1. The rejection-bound budget
+      & PreSign must reject at $\gamma-\kappa-1$, one tighter than \cref{eq:signbound}.
+        At $\gamma-\kappa$ instead, PreSign, PreVerify and Extract all still succeed, but
+        the \emph{adapted} signature can exceed the bound and be rejected by ordinary
+        Verify --- silently, probabilistically, two operations from the cause.
+      & Prevented by reasoning through the norm budget ($\inftynorm{y}\le 1$, hence
+        $\inftynorm{\hat{\vecz}+y}\le\gamma-\kappa$) rather than found by testing. \\[3pt]
+    2. Reference optimisations appear to fight the adaptor identity
+      & Power2Round, the hint vector and high/low-bit decomposition discard low-order
+        information, which appeared to rule out the exact identity
+        $A\vecz - c\,t = w + Y$; disabling them was treated as a design requirement.
+      & Establishing \emph{which} to disable was a prerequisite to a working PreVerify.
+        The belief that they \emph{had} to be was later tested and proved too strong:
+        with the whole commitment path moved onto $w+Y$ the adaptor works with all three
+        enabled (\cref{sec:res-mldsa}): a sufficient route, not a necessary one. \\[3pt]
+    3. Living in another scheme's namespace
+      & The reference globally defines single-letter parameter macros --- its
+        \texttt{N} is the ring degree, its \texttt{K} the module rank --- while LAS
+        needs different dimensions with the same natural names, so a constant silently
+        inherits the wrong value through the preprocessor instead of failing to
+        compile.
+      & Forced prefixed parameters and a documented C--Rust--paper name map. \\[3pt]
+    4. Benchmarking a variable-time scheme fairly
+      & Rejection sampling makes sign-class timings heavy-tailed. An acceptance rate
+        inferred from a timing ratio was biased ($\approx\!23\%$ where direct counting
+        gives \rejAccBase\%), and the two languages' base signing paths initially used
+        different norm-check strategies \emph{inside} the timed loop --- invisible to the
+        known-answer test, but a work-profile asymmetry biasing the comparison.
+      & Attempts are now counted and gated against theory, the drivers mirror each
+        other line-for-line, and every boundary is declared
+        (\cref{sec:benchmethod}). \\[3pt]
+    5. An error that was self-consistent
+      & Porting the verifier to Solidity, the public matrix $A'$ --- stored by the
+        reference \emph{already in the NTT domain} --- was transformed a second time. The
+        recomputed commitment and challenge agreed \emph{with each other}, so every
+        primitive passed in isolation while the whole disagreed with the C
+        implementation.
+      & Found only by recomputing the challenge digest against the reference's;
+        thereafter the port was validated in stages against exported vectors. \\[3pt]
+    6. A constraint system that was asymptotically wrong
+      & The Groth16 circuit first accumulated its dense rows with ordinary field-element
+        arithmetic, cloning the accumulated linear combination on each addition and so
+        costing work quadratic in the row width. The symptom was an apparent hang, the
+        work happening during setup before the driver prints.
+      & Rebuilding each row once as an explicit linear combination against the low-level
+        constraint-system interface made the cost linear; setup now completes in
+        \cfgTwoSetupTime{}. \\
+\end{longtable}
+\endgroup
 
 \section{Test types and parameter notation}
 \label{app:tests}
@@ -615,6 +764,43 @@ defect.
 Three limits travel with this. A patched node is not Bitcoin, so the claim that
 configurations~2 and~3 cannot settle on Bitcoin as deployed is unaffected. Implementing one
 of the routes sketched in \cref{sec:res-stage2} demonstrates feasibility and takes no
-position on which route should be adopted. And the exercise is functional only: no security
-argument is offered for the new rule, its validation cost is not measured, and it is not
-wired into the swap protocol.
+position on which route should be adopted. And the exercise is functional: no security
+argument is offered for the new rule, and it is not wired into the swap protocol.
+
+\paragraph{What the rule charges a validating node.}
+Changing a consensus rule buys something and charges something, and the charge falls on every
+node that ever validates the chain, so the cost was measured rather than left as a remark.
+The quantity that matters is script-validation time per input, since that is what scales with
+the number of signatures in a block. Timed over \btcLasBenchReps{} repetitions $\times$
+\btcLasBenchIters{} iterations, paired and interleaved, one \texttt{OP\_CHECKLASSIGVERIFY}
+costs \btcLasVerifyUs$\pm$\btcLasVerifySd\,$\mu$s against
+\btcSchnorrVerifyUs$\pm$\btcSchnorrVerifySd\,$\mu$s for a BIP340 Schnorr check and
+\btcEcdsaVerifyUs\,$\mu$s for ECDSA --- \btcLasRatioSchnorr$\times$ and
+\btcLasRatioEcdsa$\times$ respectively. Both sides start from \emph{serialized} bytes and
+parse inside the timed call, as the interpreter does per input; timing a packed lattice
+verifier against an already-parsed curve key would charge the wire codec to one side only.
+The reject path is a \emph{valid} signature checked against a different 32-byte digest, so
+every stage before the final challenge comparison must still run --- a corrupted signature
+can trip an early structural check, which would measure how quickly the verifier gives up
+rather than what a rejection costs. Rejection comes to \btcLasRejectUs\,$\mu$s,
+\btcLasRejectRatio$\times$ an acceptance. The narrow reading is the only one supported: a LAS
+signature that fails at the final comparison costs a node approximately as much as one that
+verifies, so there is no early exit to be had on this path. It says nothing about the rule's
+denial-of-service surface more broadly --- malformed inputs take other paths, which were not
+timed. Runner \texttt{scripts/run\_btc\_las\_bench.sh}; evidence under
+\texttt{evidence/btc\_las\_bench/}.
+
+Three caveats bound those figures, and they are separate claims. First, the curve baseline is
+a pinned \texttt{libsecp256k1-zkp} --- a fork of \texttt{libsecp256k1} running the same
+verification algorithms, but not the library the patched client links, so these are not
+Bitcoin Core's own numbers. Second, the security of the consensus modification remains
+unanalysed: a timing figure is not a safety argument, and soundness, denial-of-service
+surface and upgrade path are all untouched. Third, the two schemes are not at a matched
+security level --- \texttt{secp256k1} offers roughly 128-bit \emph{classical} security, whose
+engineering match is Simplified Dilithium-II, while the node compiles the rule at Simplified
+Dilithium-III because that is what it actually runs. The ratios therefore measure the curve
+against a deliberately stronger lattice setting and so \emph{overstate} what the rule costs
+relative to a level-matched pairing; stating the direction of that bias is the point, and
+neither pairing is a security-equivalence claim. Finally, this is a per-input cryptographic
+cost only: block download, UTXO lookup, script parsing and signature caching are excluded,
+and the unmodified client pays those too.

@@ -39,8 +39,7 @@ one, the one with the weaker trust assumption, and the only one Shor does not br
 paying for all three in bytes.
 
 All five objectives were met (\cref{tab:objectives}). The principal qualification is
-scope: no concrete security is formally analysed, and both applications run on modelled
-ledgers rather than live networks.
+scope: no concrete security is formally analysed, and nothing settled on a live network.
 
 \section{Critical reflection}
 \label{sec:reflection}
@@ -65,6 +64,15 @@ converted an apparent size deficit into a precisely attributed one. And counting
 rejection attempts rather than inferring them from a timing ratio corrected a materially
 wrong earlier figure, a lesson now institutionalised as a gate every run must pass.
 
+A third result belongs here because it reads as failure and is not. Three optimisations
+this dissertation could have left as speculation --- compressing the statement inside the
+construction, amortising the proof across a batch, and trying the relation under a
+succinct post-quantum system --- were implemented and measured instead, and none paid
+off (\cref{sec:future}). An untested future-work suggestion costs
+nothing to write and tells a reader nothing; each of these instead names the mechanism
+that defeats it and closes two of the three directions, which is worth more than the
+optimisation would have been.
+
 \subsection{What fell short}
 \label{sec:reflection-shortfalls}
 
@@ -79,11 +87,11 @@ inferring that local optimisation could not close the gap. Re-expressing the sam
 closed it (\cref{sec:res-app}): an inference asserted rather than measured, which cost the
 project that question for as long as it stood. What remains unsolved is cost --- settlement
 far dearer than a classical claim, fitting by a thin margin at one parameter set and one
-message length, on no live network.
+message length.
 
-Second, the applications are \textbf{exploratory demonstrators, not products}. Both
-settle over modelled ledgers and assert the properties that matter, but neither runs
-against a live network. For the UTXO study this is partly forced: Bitcoin Script cannot
+Second, the applications are \textbf{exploratory demonstrators, not products}. Both are
+measured over ledger models; the real-client runs that settle them are local nodes, never
+a live network. For the UTXO study this is partly forced: Bitcoin Script cannot
 verify a lattice signature, so the post-quantum configurations could not settle on a real
 node without a consensus change --- exactly the assumption \cite{esgin2020post} makes.
 The reported costs are therefore an implementation-level feasibility estimate rather than
@@ -129,10 +137,12 @@ days, not weeks.
         at this scale. Batching amortises the wrong
         cost --- the Groth16 proof is constant in the batch and never the bottleneck,
         while the LaZer proof shrinks per swap only by making proving and verification
-        several times worse. A \emph{succinct} post-quantum system that is
-        also zero-knowledge, which \cite{esgin2020post} requires of $\pi$, run under
-        LaBRADOR, loses to the deployed prover on every axis: succinctness is
-        asymptotic, and one instance of this relation is too small to reach it. What
+        several times worse. The second --- a system succinct, post-quantum and
+        zero-knowledge at once, as \cite{esgin2020post} requires of $\pi$ --- was
+        measured under LaBRADOR, which in this encoding loses to the deployed prover on
+        size, by that library's own estimate rather than a packed proof, and on time
+        outright: succinctness
+        is asymptotic, and one instance of this relation is too small to reach it. What
         is open is a construction whose proof is small at \emph{this} scale.
   \item \textbf{Reduce the cost of one-transaction verification, and carry it across
         parameter sets.} Fitting under the cap was proposed here as future work and then

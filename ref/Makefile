@@ -57,8 +57,15 @@ all: \
   test/test_serde_l2 \
   test/test_serde_l3 \
   test/test_serde_l5 \
-  test/test_kat3 \
-  test/test_contract3
+  test/test_kat3
+
+# test/test_contract3 is NOT in `all`: test/test_contract.c is pre-seven-type
+# (las_pp / las_pk / las_sk / las_sig / las_signature_det), none of which the
+# current headers declare, so keeping the target in `all` breaks a clean build.
+# (Source-level incompatibility, established by reading; no build was run.)
+# The file is dead BY DESIGN -- do not repair it.  The itemised correctness
+# contract that does run is test/test_mldsa_las{2,3,5}.  The rule below is kept
+# so the breakage stays visible rather than silently disappearing.
 
 nistkat: \
   nistkat/PQCgenKAT_sign2 \

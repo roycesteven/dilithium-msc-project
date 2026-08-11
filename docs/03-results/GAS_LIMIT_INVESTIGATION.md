@@ -239,10 +239,12 @@ It shows that *this* Solidity verifier does not fit. It does **not** show that t
 predicate itself is too big for the cap — nobody had asked how much of the 56.5M was
 LAS and how much was the way LAS had been expressed in Solidity.
 
-So we asked. `src/LASVerifierOpt.sol` (+ `src/LASShake.sol`) computes the **identical
-predicate over the identical scheme** — same q, same κ, same bounds, same
+So we asked. `src/LASVerifierOpt.sol` (+ `src/LASShake.sol`) computes **the same
+predicate over the same scheme** — same q, same κ, same bounds, same
 `SHAKE256(pack(t)‖pack(w')‖M)` preimage, same FIPS 204 SampleInBall — restructured
-along four lines:
+along four lines. **That equivalence is conditional on the registration invariant of
+caveat 3 below, which the contract does not check**; state it with the condition
+attached, never as "identical predicate" full stop.
 
 1. **Half the transforms.** The baseline runs 12 forward + 12 inverse NTTs. `t` is fixed
    public-key material, so it is registered once in NTT domain exactly as `A'` already
@@ -354,7 +356,7 @@ Arithmetic fell from 20,730,606 to 5,076,486 (≈4×) and the hash from 26,335,7
 10,572,481 (≈2.5×). **The sponge is now the whole story**, at ≈116,181 gas per Keccak-f
 permutation across 91 permutations.
 
-**⚠️ Two caveats that must travel with this result.**
+**⚠️ Three caveats that must travel with this result.**
 
 1. **It fits, but only just — and the margin is a message-length budget.** The measured
    headroom is 363,941 gas. *Derived* from that and the measured per-permutation cost
@@ -382,6 +384,41 @@ permutation across 91 permutations.
    the reporting table in a pass with the gate contracts **excluded**, capturing each
    pass's exit status separately so a failing gate cannot hide behind a green table.
    Foundry's own `--gas-report` table is unaffected; only in-test measurement is.
+3. **The equivalence to `base_verify` is conditional on a registration invariant that
+   nothing on chain checks.** `LASVerifyOpt.verify` is handed `aHatPacked`, `tHatPacked`
+   and `tPacked` and derives none of them, so it reproduces `base_verify` exactly where
+
+   ```text
+   aHatPacked = NTT(A')   ∧   tHatPacked = NTT(t)   ∧   tPacked = pack(t)
+   ```
+
+   holds for **one** matrix `A'` and **one** key `t`. (`LASVerify` already assumes the
+   first conjunct; the optimised path adds the two for `t`, since `t` now arrives twice —
+   transformed for the arithmetic, packed for the challenge preimage, which is the only
+   one of the three the hash ever sees. `A'` is never hashed.) `AdaptorSwap`'s fund-time
+   `lasContext` commits to all three jointly and re-derives that commitment at claim time,
+   which stops a **claimer** substituting — it says nothing about their mutual consistency,
+   and no step recomputes one from another.
+
+   What a broken invariant gives you, **in general, is only a *different* predicate** —
+   possibly unsatisfiable, possibly satisfiable only by a key nobody holds; nothing here
+   analyses the general case, so do not write "weaker". **Some** registrations are weaker,
+   and one is enough to make the condition load-bearing: with `aHatPacked = tHatPacked = 0`
+   every product vanishes, `w' = z_top`, and acceptance collapses to
+   `c_tilde == SHAKE256(tPacked ‖ pack(z_top) ‖ M)[0:48]` — satisfiable by anyone for any
+   in-bound `z`, with no key and no signature. The escrow would pay out **without the
+   adapted signature ever being published**, which is the leak the swap's atomicity rests
+   on. Custody is not at risk (the beneficiary is fixed at funding and the entrypoint pays
+   that address whoever calls), so the loss lands on the funder who registered it — as lost
+   atomicity, not lost coins. That is why it is a registrant's obligation; it is **not** a
+   reason to call the failure benign.
+
+   Re-deriving `NTT(t)` from `tPacked` once at fund time, off the verification path, would
+   discharge the two `t` conjuncts on chain. It would **not** discharge the `A'` one, which
+   needs the untransformed `A'` (or the seed it expands from) supplied at registration as
+   well. Neither is implemented and neither is costed; the numbers above are for the path
+   as it stands. Written up for the report in the appendix paragraph attached to
+   `tab:onchain`.
 
 > **Numbers.** Every figure for this section comes from a real run — `run_onchain_gas.sh`
 > → `evidence/onchain/latest/gas_report.log` (per-stage attribution plus a
@@ -429,9 +466,16 @@ adapted signature in the precompile, settle in the same call, keep `Ext` off-cha
 1. **It is not deployed.** EIP-8051 is **Draft**, and is listed under **"Declined for
    Inclusion"** in the Glamsterdam hardfork meta ([EIP-7773](https://eips.ethereum.org/EIPS/eip-7773)).
    The Ethereum Foundation's post-quantum roadmap ([pq.ethereum.org](https://pq.ethereum.org/))
-   places PQ signature-verification precompiles in 2027–2028 forks. No ML-DSA precompile
-   is callable on Ethereum today, so **any figure for this route is a conditional model
-   computed from the EIP's own constant, never a measurement** — and must be labelled so.
+   places PQ signature-verification precompiles at milestone **`J*`**, in a *relative*
+   sequence (`I* → J* → L* → M*`) with **no fixed date**; the only year it names is 2029, and
+   for L1 protocol upgrades broadly rather than for `J*`, with detailed milestone placement
+   deferred to strawmap.org. ⚠️ **An earlier version of this document read "2027–2028 forks"
+   off that page. It does not say that** — a misattributed citation, corrected 2026-08-10; do
+   not reintroduce a date the source does not carry. What is safe to state is the status —
+   Draft, Declined for Inclusion, ML-DSA-44 only — which is what makes this a citation rather
+   than a route. No ML-DSA precompile is callable on Ethereum today, so **any figure for this
+   route is a conditional model computed from the EIP's own constant, never a measurement** —
+   and must be labelled so.
 2. **NIST level II only.** The EIP explicitly covers **ML-DSA-44**. This project's
    headline set is ML-DSA-65-aligned (D3). Taking this route means dropping a security
    level, which the report must state rather than quietly compare across.
