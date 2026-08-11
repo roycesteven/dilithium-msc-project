@@ -1,0 +1,165 @@
+=== Stage 2: atomic swap on UTXO chains (eprint 2020/845 Fig. 1) ===
+
+Master seed        : 6c61732d737761702f657072696e742d323032302d3834352f666967312f7631
+Seed source        : pinned default
+Swaps per config   : 10  (statistical floor 5)
+Chains             : chain 1 (Bitcoin-like, 600 s blocks) <-> chain 2 (Litecoin-like, 150 s blocks)
+LAS parameter setup: 956.572µs  (one-time, shared by configs 2 and 3)
+
+Timing tier        : PACKED — every operation includes wire encode/decode.
+                      Not comparable with Stage-1 core-tier numbers.
+
+--------------------------------------------------------------------
+Configuration 1: Classical adaptor signature (ECDSA)
+  signature : ECDSA adaptor signature (libsecp256k1-zkp)  [secp256k1, 256-bit group, ~128-bit classical security (no post-quantum security)]
+  role-A pi : none required
+              ECDSA adaptors have no knowledge gap: Ext recovers the discrete log exactly, so pre-signature adaptability is unconditional and Fig. 1's proof of witness knowledge is unnecessary. (The construction's own DLEQ proves pre-signature well-formedness by the pre-signer — a different claim — and is counted under the signature's communication cost, inside the pre-signature overhead.)
+  binding   : e9bd349c4e73a797 (∃y : Y = y·G  (secp256k1 discrete log))
+  fully PQ  : no
+
+  Execution time, per protocol phase (mean +/- sample SD over 10 swaps):
+    KeyGen x2 + Gen                58.4 +/-       9.7 us
+    PreSign (u1, tx1)             114.9 +/-      18.4 us
+    PreVerify (u2 gate)           147.6 +/-      35.1 us
+    PreSign (u2, tx2)             107.1 +/-      14.5 us
+    Adapt (u1 -> sigma2)          138.4 +/-      16.4 us
+    Settle chain 2                 51.9 +/-      16.7 us
+    Ext (u2)                       25.3 +/-       4.5 us
+    Adapt (u2 -> sigma1)          132.7 +/-      19.3 us
+    Settle chain 1                 43.4 +/-       7.8 us
+    end-to-end                    819.7 +/-      93.1 us   (context only, not the headline)
+    one-time setup         signature 38.502µs, proof n/a
+      (setup is excluded from every phase above)
+
+  Communication cost, per message (observed over 10 swaps, identical in every run):
+    Y (statement)                    33 B   u1 -> u2 (off-chain)
+    sigma_hat_1                     162 B   u1 -> u2 (off-chain)
+    tx1                             114 B   u1 -> u2 (off-chain)
+    sigma_hat_2                     162 B   u2 -> u1 (off-chain)
+    tx2                             114 B   u2 -> u1 (off-chain)
+    tx2 + sigma_2                   178 B   published on chain 2
+    tx1 + sigma_1                   178 B   published on chain 1
+    ---------------------- --------------
+    subtotal                        585 B   off-chain
+    subtotal                        356 B   on-chain
+    TOTAL                           941 B   per swap
+
+  Object sizes (fixed per scheme, reported once):
+    public key       33 B   secret key       32 B
+    statement        33 B   witness          32 B
+    signature        64 B   pre-signature   162 B  (overhead 98 B)
+
+--------------------------------------------------------------------
+Configuration 2: LAS (post-quantum) + Groth16 proof of ∃r : A r = t ∧ ‖r‖∞ ≤ 1
+  signature : LAS (simplified Dilithium-III)  [n=6, ell=5, n+ell=11, d=256, kappa=49, gamma=137984, q=8380417]
+  role-A pi : Groth16 over BN254 (pairing-based zk-SNARK)
+              classical (NOT post-quantum) proof of ∃r : A r = t ∧ ‖r‖∞ ≤ 1; the ternary bound is enforced by r³ = r per coefficient and the modular reduction by a range-checked quotient per row; requires a trusted per-circuit setup
+              setup: trusted, per circuit (soundness requires the setup secret to be destroyed) (1.225142318s)
+  binding   : 33c1947f2ba13f98 (∃r : A r = t ∧ ‖r‖∞ ≤ 1  (module-lattice preimage))
+  fully PQ  : no
+
+  Rejection gate: 2.8510 attempts/PreSign over 2000 calls
+                  expected 2.77483, tolerance +/- 0.2481 (5 sigma)
+
+  Execution time, per protocol phase (mean +/- sample SD over 10 swaps):
+    KeyGen x2 + Gen               540.7 +/-      75.3 us
+    Prove (pi)                 645621.6 +/-   57578.0 us
+    PreSign (u1, tx1)            1065.3 +/-     480.7 us
+    ProofVerify (pi)            13718.1 +/-     740.4 us
+    PreVerify (u2 gate)           364.9 +/-      32.3 us
+    PreSign (u2, tx2)            1070.1 +/-     843.7 us
+    Adapt (u1 -> sigma2)          392.5 +/-      37.7 us
+    Settle chain 2                253.0 +/-      26.0 us
+    Ext (u2)                      185.2 +/-      10.2 us
+    Adapt (u2 -> sigma1)          353.8 +/-      37.5 us
+    Settle chain 1                243.0 +/-      29.5 us
+    end-to-end                 663808.3 +/-   57331.6 us   (context only, not the headline)
+    role-A proof share         659339.7 us   (99.3% of end-to-end)
+    one-time setup         signature 0ns, proof 1.225142318s
+      (setup is excluded from every phase above)
+
+  Communication cost, per message (observed over 10 swaps, identical in every run):
+    Y (statement)                  4416 B   u1 -> u2 (off-chain)
+    pi                              128 B   u1 -> u2 (off-chain)
+    sigma_hat_1                    6736 B   u1 -> u2 (off-chain)
+    tx1                            4497 B   u1 -> u2 (off-chain)
+    sigma_hat_2                    6736 B   u2 -> u1 (off-chain)
+    tx2                            4497 B   u2 -> u1 (off-chain)
+    tx2 + sigma_2                 11233 B   published on chain 2
+    tx1 + sigma_1                 11233 B   published on chain 1
+    ---------------------- --------------
+    subtotal                      27010 B   off-chain
+    subtotal                      22466 B   on-chain
+    TOTAL                         49476 B   per swap
+
+  Object sizes (fixed per scheme, reported once):
+    public key     4416 B   secret key      704 B
+    statement      4416 B   witness         704 B
+    signature      6736 B   pre-signature  6736 B  (overhead 0 B)
+
+--------------------------------------------------------------------
+Configuration 3: LAS (post-quantum) + LaZer proof of ∃r : A r = t ∧ ‖r‖∞ ≤ 1
+  signature : LAS (simplified Dilithium-III)  [n=6, ell=5, n+ell=11, d=256, kappa=49, gamma=137984, q=8380417]
+  role-A pi : LaZer (LNP22 linear relation with norms)
+              post-quantum proof of ∃r : A r = t ∧ ‖r‖∞ ≤ 1, via binary decomposition r = r₊ − r₋; knowledge error ≤ 2⁻¹²⁷ under M-SIS, zero-knowledge under M-LWE; exchanged off-chain only (paper §4.1)
+              setup: transparent (public-coin; no trusted party) (0ns)
+  binding   : 33c1947f2ba13f98 (∃r : A r = t ∧ ‖r‖∞ ≤ 1  (module-lattice preimage))
+  fully PQ  : yes
+
+  Rejection gate: 2.8510 attempts/PreSign over 2000 calls
+                  expected 2.77483, tolerance +/- 0.2481 (5 sigma)
+
+  Execution time, per protocol phase (mean +/- sample SD over 10 swaps):
+    KeyGen x2 + Gen               503.2 +/-      18.2 us
+    Prove (pi)                 216080.6 +/-   81290.2 us
+    PreSign (u1, tx1)            1065.7 +/-     441.9 us
+    ProofVerify (pi)            90720.8 +/-    7577.8 us
+    PreVerify (u2 gate)           380.2 +/-      26.7 us
+    PreSign (u2, tx2)             966.7 +/-     811.2 us
+    Adapt (u1 -> sigma2)          380.5 +/-      49.7 us
+    Settle chain 2                239.9 +/-      15.4 us
+    Ext (u2)                      183.6 +/-       8.0 us
+    Adapt (u2 -> sigma1)          340.9 +/-      13.6 us
+    Settle chain 1                234.9 +/-       6.5 us
+    end-to-end                 311097.1 +/-   83471.0 us   (context only, not the headline)
+    role-A proof share         306801.4 us   (98.6% of end-to-end)
+    one-time setup         signature 0ns, proof 0ns
+      (setup is excluded from every phase above)
+
+  Communication cost, per message (observed over 10 swaps, sizes VARY between runs):
+    Y (statement)                  4416 B   u1 -> u2 (off-chain)
+    pi                     30711..30760 B   u1 -> u2 (off-chain)
+    sigma_hat_1                    6736 B   u1 -> u2 (off-chain)
+    tx1                            4497 B   u1 -> u2 (off-chain)
+    sigma_hat_2                    6736 B   u2 -> u1 (off-chain)
+    tx2                            4497 B   u2 -> u1 (off-chain)
+    tx2 + sigma_2                 11233 B   published on chain 2
+    tx1 + sigma_1                 11233 B   published on chain 1
+    ---------------------- --------------
+    subtotal               57593..57642 B   off-chain
+    subtotal                      22466 B   on-chain
+    TOTAL                  80059..80108 B   per swap
+
+  Object sizes (fixed per scheme, reported once):
+    public key     4416 B   secret key      704 B
+    statement      4416 B   witness         704 B
+    signature      6736 B   pre-signature  6736 B  (overhead 0 B)
+
+====================================================================
+Comparison
+
+Config  Stack                                End-to-end us     Bytes/swap
+1       Classical adaptor signature (ECDS…           819.7            941
+2       LAS (post-quantum) + Groth16 proo…        663808.3          49476
+3       LAS (post-quantum) + LaZer proof …        311097.1   80059..80108
+
+Controlled comparison 2 -> 3 (identical signature, A and inputs;
+only the role-A proof system differs):
+  time       663808.3 ->     311097.1 us   (-53.1%)
+  bytes         49476 -> 80059..80108      (+61.9%)
+  proof           128 -> 30711..30760 B
+
+Note: 1 -> 2/3 changes the signature scheme, the relation, and whether a
+role-A proof exists at all. Report it as classical baseline versus
+post-quantum stack, not as the cost of the signature alone; the
+signature-only comparison is the Stage-1 result (docs/LAS.md 8.3).

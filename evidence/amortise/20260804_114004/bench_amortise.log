@@ -1,0 +1,68 @@
+=== Does the role-A proof amortise across swaps? ===
+
+Master seed   : 6c61732d737761702f657072696e742d323032302d3834352f666967312f7631
+Seed source   : pinned default
+Proof system  : Groth16 over BN254
+Relation      : exists r : A r = t and ||r||inf <= 1   (per instance)
+Public input  : 1536 field elements per instance
+Repetitions   : 5 per batch size (statistical floor 5)
+
+  measured k = 1
+  measured k = 2
+  measured k = 4
+  measured k = 8
+
+--- Cost of ONE proof covering k statements (totals) ---
+
+    k          setup (ms)          prove (ms)       verify (us)   proof (B)
+    1       666.8 +- 32.2       494.1 +- 32.0   12720.7 +- 808.8         128
+    2      1326.3 +- 50.3      1026.5 +- 105.7   23847.8 +- 539.5         128
+    4      2766.3 +- 144.8      2178.4 +- 35.1   47097.9 +- 2560.6         128
+    8      5687.3 +- 429.5      5227.1 +- 1022.1   94879.7 +- 5204.6         128
+
+--- Amortised PER SWAP (total / k) ---
+
+    k      prove (ms)     verify (us)       proof (B)      proof vs k=1
+    1           494.1         12720.7           128.0             1.00x
+    2           513.2         11923.9            64.0             0.50x
+    4           544.6         11774.5            32.0             0.25x
+    8           653.4         11860.0            16.0             0.12x
+
+--- What this shows ---
+
+Proof size is the only column that amortises, and it amortises perfectly:
+one Groth16 proof is three group elements regardless of how many instances
+it covers, so k = 8 carries the same 128 B as k = 1 and the per-swap share
+falls to 16.0 B.
+
+Proving does not amortise: per-swap proving went from 494.1 ms at k = 1 to
+653.4 ms at k = 8. The constraint system grows with the batch, so the work
+is paid per instance either way -- batching moves it, it does not remove it.
+
+Verification does not amortise either: the public input is 1536 field
+elements per instance, so a verifier of a k-batch reads k times as much.
+
+THE PRACTICAL READING -- and it is a NEGATIVE result for configuration 2.
+Batching amortises the cost that was already negligible and leaves the one
+that dominates untouched. In the swap benchmark configuration 2 spends about
+646 ms in Prove(pi), which is ~97% of the whole swap and 47x the next phase,
+while the proof it produces is 128 B against a 4416 B statement and a 6736 B
+signature. So the 1/k column above shrinks something that was never the
+problem, and the flat proving column is the problem.
+
+That is a statement about GROTH16, not about batching in general: the same
+1/k would land on a cost that matters for a proof system whose proof is
+large. LaZer is exactly that case -- fast generation, much larger proof --
+and it is NOT measured here, so this run does not settle it.
+
+Batching also changes the protocol, in ways no column above prices: a batch
+must be proved BEFORE any of its statements is used, so a party has to know
+its next k swaps in advance; every counterparty verifies the whole batch to
+use one statement of it, and receives public input for k-1 statements that
+are not theirs; and the statements in a batch become linked, since anyone
+seeing two of them knows they were proved together.
+
+SCOPE: Groth16 only, and Groth16 is not post-quantum -- it is configuration
+2's prover, kept as the controlled comparison against LaZer. Nothing here
+measures LaZer, whose proof grows with the relation, and nothing here is a
+security claim about batching.

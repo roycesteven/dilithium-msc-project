@@ -1,0 +1,7 @@
+=== LAS known-answer tests (mode 3, 4 vectors) ===
+  vector 0: contract OK, deterministic, serialised
+  vector 1: contract OK, deterministic, serialised
+  vector 2: contract OK, deterministic, serialised
+  vector 3: contract OK, deterministic, serialised
+  KAT digest: bb6ad0dab998c1f90ca4d3cc0f5d3dfa723e89f79aff18fce2698a08c96e260c
+=== KAT digest matches pinned expected value. ===

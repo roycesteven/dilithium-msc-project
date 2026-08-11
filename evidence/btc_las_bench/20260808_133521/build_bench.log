@@ -1,0 +1,8 @@
+make: Entering directory '/home/melly/dilithium-msc-project/bitcoin/las_consensus'
+cc -O3 -w -I../../third_party/secp256k1-zkp -I../../third_party/secp256k1-zkp/src -DENABLE_MODULE_ECDSA_ADAPTOR=1 -DENABLE_MODULE_SCHNORRSIG=1 -DENABLE_MODULE_EXTRAKEYS=1 -c ../../third_party/secp256k1-zkp/src/secp256k1.c -o secp_bench.o
+cc -O3 -w -I../../third_party/secp256k1-zkp -I../../third_party/secp256k1-zkp/src -c ../../third_party/secp256k1-zkp/src/precomputed_ecmult.c -o secp_bench_ecmult.o
+cc -O3 -w -I../../third_party/secp256k1-zkp -I../../third_party/secp256k1-zkp/src -c ../../third_party/secp256k1-zkp/src/precomputed_ecmult_gen.c -o secp_bench_ecmult_gen.o
+cc -O3 -fomit-frame-pointer -Wall -Wextra -Wshadow -Wpointer-arith -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 -I. -I../../ref -I../../third_party/secp256k1-zkp/include \
+  bench_las_consensus.c las_consensus.c randombytes_abort.c ../../ref/basesig.c ../../ref/serialize.c ../../ref/setup.c ../../ref/relation.c ../../ref/las.c ../../ref/poly.c ../../ref/polyvec.c ../../ref/ntt.c ../../ref/reduce.c ../../ref/rounding.c ../../ref/fips202.c ../../ref/symmetric-shake.c ../../ref/packing.c ../../ref/sign.c \
+  secp_bench.o secp_bench_ecmult.o secp_bench_ecmult_gen.o -lpthread -lm -o bench_las_consensus
+make: Leaving directory '/home/melly/dilithium-msc-project/bitcoin/las_consensus'

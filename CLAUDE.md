@@ -182,18 +182,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-11 11:45 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-11 12:51 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 688ffbc · 2026-08-07 · report meeting 8 pdf
-- Working tree: 25 modified tracked file(s), 223 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD b8ee428 · 2026-08-11 · labrador issue
+- Working tree: 9 modified tracked file(s), 221 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `b8ee428 2026-08-11 labrador issue`
   - `688ffbc 2026-08-07 report meeting 8 pdf`
   - `780c0be 2026-08-07 CLAUDE.md dan report untuk meeting 9`
   - `358a69e 2026-08-06 btc evm two leg ref/ bitcoin/ report/latex/ scripts/`
   - `be94485 2026-08-06 btc evm two leg`
-  - `6c161f4 2026-08-05 evm full`
 
 ### Target parameter set — anchors parsed from source
 

@@ -18,11 +18,15 @@ the Rust toolchain is stable \texttt{rustc} (the committed run used 1.96.0) in
 release profile.
 
 \begin{lstlisting}[language=bash,caption={Fair benchmark and tests (first-stage
-evaluation). The suite script runs everything below, saves the logs and parsed
-tables as a timestamped evidence run, and regenerates every figure, table, and
-inline number of this report from that run.},label={lst:benchfair}]
-# the one supported evidence pipeline (all tests + all benchmarks + report sync)
-scripts/run_benchmark_suite.sh
+evaluation). The suite script runs the Stage-1 tests and benchmarks below, saves the
+logs and parsed tables as a timestamped evidence run, and regenerates this report's
+Stage-1 figures, tables and inline numbers from that run.},label={lst:benchfair}]
+# the supported evidence pipeline: Stage-1 tests + benchmarks, then report sync.
+# STAGE1_ONLY=1 skips the four application targets -- test_contract3, test_pcn3 and
+# bench_app3, superseded pre-seven-type files that no longer compile, and test_swap3,
+# which is current but needs the LaZer build below.
+# This is how the Stage-1 run of record (evidence/latest) was produced.
+STAGE1_ONLY=1 scripts/run_benchmark_suite.sh
 
 # or individually:
 cd ref
@@ -32,9 +36,10 @@ make test/bench_levels2      && ./test/bench_levels2
 make test/bench_levels3      && ./test/bench_levels3   # target setting
 make test/bench_levels5      && ./test/bench_levels5
 # correctness, serialization/tamper, known-answer tests
-make test/test_las3   && ./test/test_las3
-make test/test_serde3 && ./test/test_serde3
-make test/test_kat3   && ./test/test_kat3
+# (test_serde_l3 is the TARGET set (6,5,49); test_serde3 builds the paper dims)
+make test/test_las3     && ./test/test_las3
+make test/test_serde_l3 && ./test/test_serde_l3
+make test/test_kat3     && ./test/test_kat3
 # end-to-end atomic swap incl. the proof of knowledge pi
 # (needs the one-time LaZer build below)
 make test/test_zkp3   && ./test/test_zkp3
@@ -113,7 +118,7 @@ Input: parameter set (n, l, kappa); fixed pp seed; fixed 33-byte message
         |mean - E| <= 5 * E*sqrt(1-1/E) / sqrt(R*N)
     where E = 1/p_acc is the closed-form expectation; abort on failure
 12  repeat steps 3-11 at the packed boundary (packed bytes in /
-    packed bytes out, validating decode + encode inside the call)
+    packed bytes out, decode + encode inside the call)
 13  emit packed sizes (communication is fixed: measured once, no SD)
 \end{lstlisting}
 
@@ -280,19 +285,26 @@ makes when it states its applications over a UTXO-based chain \emph{whose signat
 algorithm is replaced with a lattice-based signature scheme}, and the reason that
 sentence is stated as an assumption rather than left implicit.
 
-\section{Wire encoding and the validating decoder}
+\section{Wire encoding and the typed codec}
 \label{app:serialize}
 
 The packed field widths behind \cref{sec:serialize} are 23 bits per coefficient for the
 public key and statement, 2 bits for the ternary secret and witness, and 18 or 19 bits
 for the response $z$ depending on the parameter set, since that field must hold
-$2(\gamma-\kappa)$ and $\gamma$ grows with $\kappa\,d\,(n+\ell)$. Because a verifier
-cannot trust its input, the decoder is defensive: it rejects a public-key coefficient
-$\ge q$, the invalid ternary code, and any response field outside the parameter set's
-band, while the encoder symmetrically rejects a non-ternary secret or a response
-exceeding $\gamma-\kappa$. This is the interface a Solidity, precompile or
-zero-knowledge-circuit verifier would expose, and it is the object the tamper test of
-\cref{sec:res-correctness} attacks.
+$2(\gamma-\kappa)$ and $\gamma$ grows with $\kappa\,d\,(n+\ell)$. Validation is
+deliberately \emph{asymmetric}, and the asymmetry is worth stating precisely because it
+decides where a bad object is caught. Decoding rejects a public-key or statement
+coefficient $\ge q$ and the invalid ternary code, but a signature decodes
+\emph{permissively}: $\tilde c$ is copied raw and $z$ is read with the FIPS~204
+\textsf{BitUnpack} of \cite{1274601}, under which every field value is in range by
+construction, so there is no decode-time norm test to fail. The norm rejection belongs
+to Verify, which recomputes the challenge from the decoded response and compares
+digests. Encoding is the strict direction: it refuses a non-ternary secret or witness
+and a response exceeding $\gamma-\kappa$, so a malformed object cannot be produced by
+this implementation even though one can be handed to it. The byte-level entry point
+\texttt{base\_verify\_packed} decides the predicate over these bytes, and it --- not the
+decoder --- is what rejects all \tamperFlips{} tampered signatures in
+\cref{sec:res-correctness}.
 
 One encoding decision is worth recording. Following FIPS~204 \cite{1274601}, the wire
 format carries not the challenge polynomial $c$ but only the digest $\tilde c$ from
@@ -568,7 +580,7 @@ than a page.
       & in-memory structures in, structures out
       & what the adaptor \emph{algebra} costs, isolated from encoding \\[3pt]
     Packed tier
-      & packed wire bytes in and out, including the validating decode of every input
+      & packed wire bytes in and out, including the decode of every input
         and encode of every output (\cref{sec:serialize})
       & what a wire or on-chain consumer pays per call with nothing cached; one
         operation's byte boundary, \emph{not} a whole-protocol cost \\[3pt]

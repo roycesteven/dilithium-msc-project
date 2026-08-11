@@ -1,0 +1,61 @@
+=== Adaptor cost: NIST ML-DSA vs the LAS paper's simplified Dilithium ===
+build: commit aa71cbf branch report | ML-DSA-44 vs Simplified Dilithium-III (n=4, l=4, kappa=39)
+protocol: 5 repetitions x 500 (sign-class) / 1000 (verify-class) iterations, mean +/- SD, same process
+
+--- run-validity gates (a failure invalidates every timing above) ---
+rejection gate [simplified Dilithium: Algorithm 1 Sign]: 2500 calls, measured 2.7916 attempts/call (acceptance 35.82%) vs exact theory 2.7189 (36.78%), 5-sigma tolerance +-0.2162 => OK
+rejection gate [simplified Dilithium: Algorithm 2 PreSign]: 2500 calls, measured 2.8280 attempts/call (acceptance 35.36%) vs exact theory 2.7896 (35.85%), 5-sigma tolerance +-0.2234 => OK
+rejection gate [ML-DSA: Sign (matched, no statement)]: 2500 calls, measured 4.4492 attempts/call (acceptance 22.48%) vs FIPS 204 published 4.2500 (23.53%), 5-sigma tolerance +-0.3717 => OK
+rejection gate [ML-DSA: PreSign (adaptor)]: 2500 calls, measured 4.4796 attempts/call (acceptance 22.32%) vs FIPS 204 published 4.2500 (23.53%), 5-sigma tolerance +-0.3717 => OK
+
+--- per-operation timing (us/op, mean +/- SD over 5 repetitions) ---
+  operation  Simplified Dilithium-III              ML-DSA-44 ML-DSA/simp
+  KeyGen              34.19 +/-  0.37          63.55 +/-  0.89      1.86x
+  Sign               323.12 +/- 15.44         310.69 +/-  9.90      0.96x
+  Verify              77.38 +/-  3.74          70.57 +/-  2.31      0.91x
+  PreSign            332.45 +/- 16.29         325.57 +/- 21.71      0.98x
+  PreVerify           77.58 +/-  2.64          69.70 +/-  0.49      0.90x
+  Adapt               78.73 +/-  2.03          73.61 +/-  1.04      0.94x
+  Extract             29.16 +/-  0.48          56.28 +/-  4.52      1.93x
+  (ML-DSA Sign row is the MATCHED partner; stock crypto_sign_signature
+   measured 308.41 +/- 9.65 us in the same run)
+
+--- sign-class cost per ATTEMPT (rejection luck divided out) ---
+                             Simplified Dilithium-III            ML-DSA-44
+  Sign, us/attempt                    115.74 +/-  1.17       69.82 +/-  0.72
+  PreSign, us/attempt                 117.54 +/-  3.23       72.64 +/-  1.01
+
+--- adaptor overhead WITHIN each construction (the primary comparison) ---
+  pair                       Simplified Dilithium-III            ML-DSA-44
+  PreSign vs Sign (per attempt)                     1.5%                 4.0%
+  PreVerify vs Verify                            0.3%                -1.2%
+  Adapt vs Verify                                1.8%                 4.3%
+  PreSign vs Sign (per call)                     2.9%                 4.8%
+  (Extract has no basic analogue in either construction. The per-attempt
+   PreSign figure is the algorithmic one; the per-call figure additionally
+   carries the difference in realised restart counts, which is why the two
+   can disagree in sign at this sample size.)
+
+--- rejection sampling (counted directly, never inferred) ---
+                             Simplified Dilithium-III            ML-DSA-44
+  attempts/Sign                                2.7916               4.4492
+  attempts/PreSign                             2.8280               4.4796
+
+--- communication (bytes on the wire) ---
+  object                     Simplified Dilithium-III            ML-DSA-44      ratio
+  public key                                     2944                 1312      0.45x
+  signature                                      4640                 2420      0.52x
+  pre-signature                                  4640                 2420      0.52x
+  statement Y                                    2944                 2944      1.00x
+  witness                                         512                  384      0.75x
+  swap payload (sig + Y)                         7584                 5364      0.71x
+
+NOTE: this is a COST comparison between two engineering routes to the
+same adaptor functionality. It is NOT a security comparison: the two
+constructions have different parameters and different security
+arguments, and neither is analysed here (out of scope).
+
+OK: rejection gates, attempt-counter checks and success-path
+    assertions all passed. Caveat: the two constructions are measured
+    sequentially within one process, so intra-run drift is not
+    controlled for.

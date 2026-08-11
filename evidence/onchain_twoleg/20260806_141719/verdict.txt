@@ -1,0 +1,20 @@
+legB claim tx        : 0x49002c37e41bbd826d6e5be64cdcebc46d1d49e47695ef07fb169d22f4661f3d
+legB status          : SUCCESS
+legB gasLimit on tx  : 16777216  (cap 16777216)
+legB gasUsed         : 16413616
+legB calldata        : 50148 received / 50148 expected, byte-equal YES
+legA claim tx        : 0x843a57137bac6b0a3a3db33cf6cd9794562810998b492ea9279b66ed644429fe
+legA status          : SUCCESS
+legA gasLimit on tx  : 16777216  (cap 16777216)
+legA gasUsed         : 16413420
+legA calldata        : 50148 received / 50148 expected, byte-equal YES
+sigma_2 recovered from chain : 6736 bytes, identical to local copy: YES
+replay control               : cast exit 1, contract reason matched: YES
+u1 payout on chain 2 (leg B) : 1000000000000000000 wei, fee-adjusted (escrow was 1000000000000000000)
+u2 payout on chain 1 (leg A) : 1000000000000000000 wei, fee-adjusted (escrow was 1000000000000000000)
+escrow balances after        : legA 0 wei, legB 0 wei (both must be 0)
+
+RESULT: a two-leg atomic swap settled across TWO real Ethereum clients on two
+        chain ids, each leg verified on-chain inside one capped transaction, with
+        leg A's witness recovered from the bytes chain 2 actually carried, and a
+        replay of leg B's message onto leg A refused by the contract.

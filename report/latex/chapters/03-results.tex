@@ -17,10 +17,16 @@ swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
 
 \begin{table}[htbp]
   \centering
-  \caption[The adaptor-signature correctness contract]{The adaptor-signature correctness contract, each clause checked and passed
-  by \texttt{test\_contract} (corroborated at scale by the 1000-iteration functional
-  suite on modes 2/3/5, the 256-instance serialization suite, and the pinned
-  known-answer test).}
+  \caption[The adaptor-signature correctness contract]{The adaptor-signature
+  correctness contract at the target setting, with the test that checks each clause
+  in the evidence run of record (\texttt{\benchRunId}); all pass. Clauses~1--4
+  and~5a are asserted on every one of the 1000 randomised iterations of the
+  functional suite \texttt{test\_las}; 5b and~6 by \texttt{test\_serde}, which also
+  performs 256 randomised serialization round trips; 7 by the known-answer test
+  \texttt{test\_kat}, whose pinned cross-language digest binds the packed public
+  key, secret key, signature, pre-signature and adapted signature over four fixed
+  vectors. PreVerify and Extract are asserted in all three tests, but produce no
+  object the digest absorbs.}
   \label{tab:contract}
   \small
   \begin{tabular}{@{}l L{0.74\linewidth} c@{}}
@@ -32,8 +38,8 @@ swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
     3 & Adapt yields a signature that basic Verify accepts & pass \\
     4 & Extract recovers the witness \emph{exactly} ($y'=y$) & pass \\
     5a & a tampered message fails Verify & pass \\
-    5b & every one of the \tamperFlips{} single-byte flips of the packed signature is rejected & pass \\
-    6 & malformed packed bytes are rejected ($pk\!\ge\!Q$, ternary code-3, $z$ out of band) & pass \\
+    5b & the low bit of each of the \tamperFlips{} packed-signature bytes, flipped in turn, is rejected & pass \\
+    6 & malformed bytes rejected on decode ($pk\!\ge\!Q$, ternary code-3); out-of-range objects rejected on encode ($z$, non-ternary secret) & pass \\
     7 & the deterministic API is byte-identical on re-run & pass \\
     \bottomrule
   \end{tabular}
@@ -183,9 +189,9 @@ The scheme exists twice (\cref{sec:rustport}), and the two implementations agree
 level at which they can be compared. At the byte level agreement is exact: the same packed
 sizes (public key \pkBytesTarget{}~B, signature \sigBytesTarget{}~B, checked
 programmatically on every Rust run) and the same pinned known-answer digest
-(\texttt{\katDigestHead\ldots\katDigestTail}). Since that digest covers key generation,
-signing, the four adaptor operations and the serialization, a divergence anywhere in
-either implementation's sampling, algebra or encoding would flip it.
+(\texttt{\katDigestHead\ldots\katDigestTail}). Since that digest binds the packed key
+pair, signature, pre-signature and adapted signature, a divergence escapes it only by
+leaving every one of those bytes unchanged.
 
 \begin{table}[htbp]
   \centering
@@ -220,8 +226,9 @@ not of one codebase, compiler or harness.
   \centering
   \includegraphics[width=\linewidth]{figures/fig_criterion_presign}
   \caption[Criterion.rs sampling distribution for PreSign]{The statistical harness's
-  own report for PreSign at the target setting, reproduced unmodified from
-  Criterion.rs (its SVG output converted to PDF): \critSamples{} timed samples
+  own report for PreSign at the target setting, reproduced from Criterion.rs (its SVG
+  output converted to PDF, with the type enlarged and the margins re-flowed to fit it;
+  no plotted value, curve or classification is altered): \critSamples{} timed samples
   (dots), the kernel-density estimate of the sampling distribution (shaded), the mean
   (vertical blue line), and Criterion's automatic outlier classification (mild /
   severe, orange / red). This is the evidence behind the Criterion column of
@@ -393,44 +400,48 @@ $2^{-\piKnowledgeError}$ and is exchanged off-chain only.
   \centering
   \begin{tikzpicture}[
       font=\scriptsize,
-      hdr/.style={font=\footnotesize\bfseries, align=center, text width=37mm,
+      hdr/.style={font=\footnotesize\bfseries, align=center, text width=42mm,
                   anchor=north},
-      act/.style={draw, rounded corners, text width=34mm, align=left,
+      act/.style={draw, rounded corners, text width=38mm, align=left,
                   inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
-      led/.style={draw, dashed, rounded corners, fill=black!8, text width=38mm,
+      led/.style={draw, dashed, rounded corners, fill=black!8, text width=40mm,
                   align=center, inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
-      msg/.style={font=\scriptsize, align=center},
+      msg/.style={font=\scriptsize, align=center, fill=white, inner sep=1pt},
       >={Stealth[]}]
 
-    %% Two party columns (0mm / 104mm) with the ledgers in the gap between them.
+    %% Two party columns (0mm / 100mm) with the ledgers in the gap between them.
+    %% Every arrow is routed orthogonally (|- / -|) so the flow reads as a
+    %% staircase down the page and each label sits on its own horizontal run.
     \node[hdr] (h1) at (0mm,0)   {$u_1$ (holds $y$)};
-    \node[hdr] (h2) at (104mm,0) {$u_2$};
+    \node[hdr] (h2) at (100mm,0) {$u_2$};
 
-    \node[act] (s1) at (0mm,-9mm)
+    \node[act] (s1) at (0mm,-8mm)
       {\textbf{1.} $(Y,y) \leftarrow$ Gen; $\pi \leftarrow$ Prove$(Y,y)$;\\
        $\hat{\sigma}_1 \leftarrow$ \textsc{PreSign}$(\mathit{sk}_1, Y, m_1)$};
-    \node[act] (s2) at (104mm,-27mm)
-      {\textbf{2.} verify $\pi$, then \textsc{PreVerify} $\hat{\sigma}_1$ ---
-       abort if either fails;\\
+    \node[act] (s2) at (100mm,-26mm)
+      {\textbf{2.} verify $\pi$, then\\
+       \textsc{PreVerify} $\hat{\sigma}_1$ --- abort if either fails;\\
        $\hat{\sigma}_2 \leftarrow$ \textsc{PreSign}$(\mathit{sk}_2, Y, m_2)$};
-    \node[act] (s3) at (0mm,-47mm)
+    \node[act] (s3) at (0mm,-46mm)
       {\textbf{3.} \textsc{PreVerify} $\hat{\sigma}_2$;\\
-       $\sigma_2 \leftarrow$ \textsc{Adapt}$(\hat{\sigma}_2, y)$; publish};
-    \node[led] (l2) at (52mm,-64mm)
+       $\sigma_2 \leftarrow$ \textsc{Adapt}$(\hat{\sigma}_2, y)$;\\ publish};
+    \node[led] (l2) at (50mm,-62mm)
       {chain 2 settles: $\mathit{tx}_2 + \sigma_2$\\ \emph{$u_1$ takes $u_2$'s coin}};
-    \node[act] (s4) at (104mm,-72mm)
+    \node[act] (s4) at (100mm,-76mm)
       {\textbf{4.} $y \leftarrow$ \textsc{Extract}$(\sigma_2, \hat{\sigma}_2)$;\\
-       $\sigma_1 \leftarrow$ \textsc{Adapt}$(\hat{\sigma}_1, y)$; publish};
-    \node[led] (l1) at (52mm,-92mm)
+       $\sigma_1 \leftarrow$ \textsc{Adapt}$(\hat{\sigma}_1, y)$;\\ publish};
+    \node[led] (l1) at (50mm,-92mm)
       {chain 1 settles: $\mathit{tx}_1 + \sigma_1$\\ \emph{$u_2$ takes $u_1$'s coin}};
 
-    \draw[->] (s1.east) -- (s2.west)
-      node[msg, midway, above] {$\{Y,\ \pi,\ \hat{\sigma}_1,\ \mathit{tx}_1\}$\\ off-chain};
-    \draw[->] (s2.west) -- (s3.east)
-      node[msg, midway, above] {$\{\hat{\sigma}_2,\ \mathit{tx}_2\}$\\ off-chain};
+    \draw[->] (s1.south) |- (s2.west)
+      node[msg, pos=0.72, above]
+      {$\{Y,\ \pi,\ \hat{\sigma}_1,\ \mathit{tx}_1\}$\\ off-chain};
+    \draw[->] (s2.south) |- (s3.east)
+      node[msg, pos=0.72, above]
+      {$\{\hat{\sigma}_2,\ \mathit{tx}_2\}$\\ off-chain};
     \draw[->] (s3.south) |- (l2.west);
-    \draw[->] (l2.east) -- (s4.west)
-      node[msg, midway, above, xshift=1mm] {$\sigma_2$ is public};
+    \draw[->] (l2.east) -| (s4.north)
+      node[msg, pos=0.35, above] {$\sigma_2$ is public};
     \draw[->] (s4.south) |- (l1.east);
   \end{tikzpicture}
   \caption[The atomic swap, message by message]{The swap protocol as implemented, with
@@ -476,30 +487,23 @@ is a transaction \emph{weight} limit one settlement sits well inside
   \caption[On-chain settlement gas: classical vs.\ post-quantum]{On-chain gas for the
   swap's claim step, measured on a local EVM (\texttt{forge\ --gas-report}); EVM gas is
   deterministic for fixed bytecode, revision, inputs and state. \textbf{These are
-  \emph{execution} figures}: they cover the work done inside the call, but not the
-  21{,}000 intrinsic charge or the per-byte calldata cost a real transaction also pays
-  under EIP-7623 --- which is why the under-the-cap claim below rests on a client receipt
-  rather than on this table. \texttt{claimLAS} is a floor performing \emph{no} lattice
-  verification (calldata plus one \texttt{keccak256}), a strict lower bound. The two
-  \texttt{claimLASVerified*} rows decide the same predicate as \texttt{base\_verify}
-  (\cref{sec:construction}); the second \emph{restructures} that computation rather than
-  changing it, and is validated against both the first and the C reference
-  (\cref{app:methoddetail}). ECDSA, by contrast, verifies in the native
-  \texttt{ecrecover} precompile, whereas both LAS rows run in EVM bytecode.
-  \textbf{Both rows hold under a registration invariant, and neither checks it}: each
-  consumes public parameters already transformed rather than deriving them --- $\hat A'$
-  in both rows, $\hat t$ additionally in the restructured one --- so each decides
-  \texttt{base\_verify} only where $\hat A'$ is the transform of the agreed matrix and
-  $\hat t$ the transform of the key whose packed bytes enter the challenge preimage. The
-  fund-time commitment binds all of them against substitution by the claimer but proves
-  nothing about their consistency; where the invariant fails, what is decided is a
-  different predicate (\cref{app:methoddetail}). The separate client run reported
-  in the text was made on anvil at a pinned \texttt{osaka} revision with EIP-7825 enforced,
-  over \gasOptCalldata{}\,B of calldata. \textbf{Scope}: \emph{Simplified Dilithium-III}, a
-  32-byte signed message, that revision; no other parameter set was evaluated, the
-  verifier's dimensions being fixed at build time. The \gasOptHeadroom{}\,gas of headroom
-  is \emph{measured}; that it corresponds to a few hundred further bytes of signed message
-  is \emph{derived} from it and the measured per-permutation hash cost.}
+  \emph{execution} figures} --- they exclude the 21{,}000 intrinsic charge and the
+  per-byte calldata a real transaction also pays under EIP-7623, which is why the
+  under-the-cap claim in the text rests on a client receipt rather than on this table.
+  \texttt{claimLAS} performs \emph{no} lattice verification and is a strict lower bound;
+  ECDSA verifies in the native \texttt{ecrecover} precompile, whereas both LAS rows run
+  in EVM bytecode. The two \texttt{claimLASVerified*} rows decide the same predicate as
+  \texttt{base\_verify} (\cref{sec:construction}), the second restructuring that
+  computation rather than changing it --- but \textbf{only under a registration invariant
+  that neither row checks}, and where it fails a \emph{different} predicate is decided;
+  the equivalence testing, the invariant and the cost of breaking it are set out in
+  \cref{app:methoddetail}. The client run reported in the text used anvil at a pinned
+  \texttt{osaka} revision with EIP-7825 enforced, over \gasOptCalldata{}\,B of calldata.
+  \textbf{Scope}: \emph{Simplified Dilithium-III}, a 32-byte signed message, that
+  revision; no other parameter set was evaluated, the verifier's dimensions being fixed
+  at build time. The \gasOptHeadroom{}\,gas of headroom is \emph{measured}; that it
+  corresponds to a few hundred further bytes of signed message is \emph{derived} from it
+  and the measured per-permutation hash cost.}
   \label{tab:onchain}
   \small
   \setlength{\tabcolsep}{5pt}

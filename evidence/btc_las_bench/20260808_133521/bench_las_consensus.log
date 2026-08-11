@@ -1,0 +1,53 @@
+OP_CHECKLASSIGVERIFY: what the new consensus rule costs a validating node
+=======================================================================
+parameter set   : Simplified Dilithium-III (n=6, ell=5, kappa=49) -- what the
+                  patched node compiles and therefore what it really costs
+LAS signature   : 6736 B     LAS public key : 4416 B
+message         : a 32-byte message digest (the paths do not share a sighash
+                  algorithm: BIP341 for the Taproot spend the LAS opcode lives
+                  in, BIP143 for a P2WPKH ECDSA input -- only the width is common)
+curve baseline  : pinned libsecp256k1-zkp (a FORK of libsecp256k1, not the copy
+                  Bitcoin Core vendors -- same algorithms, not Core's numbers)
+boundary        : every path starts from SERIALIZED bytes and parses inside the
+                  timed call, as the script interpreter does per input
+reject path     : a VALID signature against a different 32-byte digest (fails late)
+protocol        : 10 repetitions x 200 iterations, paired and interleaved
+
+per verification (microseconds, mean +- sample SD over 10 repetitions)
+  OP_CHECKLASSIGVERIFY  (accept)         373.97 +-   9.26
+  OP_CHECKLASSIGVERIFY  (reject)         372.17 +-   4.68
+  BIP340 Schnorr        (accept)          33.00 +-   3.30
+  BIP340 Schnorr        (reject)          32.26 +-   0.57
+  ECDSA                 (accept)          31.72 +-   1.34
+  ECDSA                 (reject)          31.84 +-   0.88
+
+what the rule costs, per input
+  vs Taproot key path (Schnorr) : 11.33x
+  vs P2WPKH (ECDSA)             : 11.79x
+  reject vs accept, LAS         : 1.00x
+  reject vs accept, Schnorr     : 0.98x
+  reject vs accept, ECDSA       : 1.00x
+
+WHAT THIS SHOWS: the marginal cost of the new rule is one lattice verification
+per input in place of one elliptic-curve verification, both measured from wire
+bytes. The ratio above is that price. It is a per-input cryptographic cost only --
+no block download, UTXO lookup, script parsing or signature cache is included, all
+of which the stock client pays too.
+
+THREE CAVEATS -- do not merge them:
+  (0) THE CURVE BASELINE IS NOT BITCOIN CORE'S BUILD. It is a pinned
+      libsecp256k1-zkp, a fork of libsecp256k1 -- the same verification
+      algorithms, but not the library the patched client links. A like-for-like
+      node comparison would use that client's own libsecp256k1.
+  (a) CONSENSUS-MODIFICATION SECURITY IS NOT ANALYSED. Whether defining an
+      OP_SUCCESS opcode as a lattice verification is safe as a consensus rule
+      (soundness, DoS surface, upgrade path) is evaluated nowhere in this
+      project. A timing figure is not a safety argument.
+  (b) THE SCHEMES ARE NOT AT A MATCHED SECURITY LEVEL. secp256k1 offers roughly
+      128-bit CLASSICAL security, an engineering match to Dilithium-II, while the
+      node runs Simplified Dilithium-III. These ratios therefore measure Bitcoin's
+      curve against a deliberately STRONGER lattice setting and so OVERSTATE the
+      rule's cost relative to a level-matched pairing. Neither pairing is a formal
+      security-equivalence claim.
+
+SUMMARY reps=10 iters=200 las_param_set=D3 secp_level=classical128 las_accept_us=373.9737 las_accept_sd=9.2632 las_reject_us=372.1665 las_reject_sd=4.6835 schnorr_accept_us=33.0040 schnorr_accept_sd=3.3009 schnorr_reject_us=32.2617 schnorr_reject_sd=0.5690 ecdsa_accept_us=31.7180 ecdsa_accept_sd=1.3396 ecdsa_reject_us=31.8427 ecdsa_reject_sd=0.8842 ratio_schnorr=11.3312 ratio_ecdsa=11.7906 las_sig_bytes=6736 las_pk_bytes=4416

@@ -1,0 +1,12 @@
+run_id=20260804_173459
+git=a44468a
+branch=report
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+labrador_logq=38
+labrador_submodule= 3f95485139ffaa65fe572da809b90772901372e5 src/labrados (heads/main)
+sources=ref/relation_zk_labrador.c ref/test/bench_labrador_role_a.c
+zero_knowledge=ON (LaBRADOR gen_params zk flag = 1)
+note=proof size is LaBRADOR's own printed estimate, not a byte-exact packed length
+note=not wired into the swap; configuration 3 still uses the k=1 LNP22 module

@@ -1,0 +1,185 @@
+==========================================================================
+ LAS parameter set: n=6 ell=5 kappa=49 gamma=137984  (d=256, Q=8380417)
+   M = n + ell = 11   (dim of sk=r, witness r', mask y, responses z_hat/z)
+   paper notation: pp=(A,H)  pk=t  sk=r  statement Y=t'  witness r'
+   signing mask y -> commitment w = A*y  (hashed into c; NOT transmitted)
+==========================================================================
+ Reproducibility: compiler=13.3.0
+                  built=Jul 29 2026 17:56:01   git=n/a (n/a)
+                  (CPU / OS-WSL / run-date captured per run by
+                   scripts/run_fair_benchmarks.sh into metadata.txt)
+ 5 repetitions x 500 (sign-class) / 1000 (verify-class) iters/op; mean +/- sample SD;
+ single thread, -O3.  Repetition scheme, fixed pp seed and fixed 33-byte message
+ mirror the Rust driver (rust/fips204-las/examples/bench_levels.rs) exactly.
+ Cycles/op via upstream test/cpucycles.{h,c} (rdtsc; invariant-TSC reference
+ cycles), read once per repetition window: measured read overhead 1 cycles,
+ i.e. ~0.0020 cycles/op at the 500-iteration sign-class loop -- negligible, not
+ subtracted.  One setup and one consistent state per run (plus its packed byte
+ image for the end-to-end tier); primary protocol timings first, then
+ diagnostics from the SAME state (cost-attribution / communication aids).
+
+--- WHAT IS COMPARED (separate base/adaptor modules; matched parameters; shared primitives) ---
+ BASE  (simplified Dilithium-style signature; NO adaptor statement t'):
+   Sign      c = H(pk, w,      M)        Verify    c == H(pk, w',      M)
+ LAS ADAPTOR (same scheme; statement/lock Y=t' folded into the hash):
+   PreSign   c = H(pk, w + t', M),  z_hat = y + c*r  (reject |z_hat|inf > gamma-kappa-1)
+   PreVerify c == H(pk, w' + t', M)
+   Adapt     z = z_hat + r'   (final response z;          reject |z|inf > gamma-kappa)
+   Ext       s = z - z_hat   (recovers the witness r')
+   Adapted sig clears ordinary Verify without an explicit +t' because
+     A(z_hat + r') - c*t = (A*z_hat - c*t) + A*r' = w' + t'   (t' = A*r').
+   pi (paper-level off-chain proof of well-formedness) is NOT implemented/measured here.
+ Every operation is timed at BOTH API tiers: TIER 1 core crypto (structs in/out,
+ pure computation) and TIER 2 end-to-end packed (bytes in/out; validating
+ unpack -> core -> pack inside the call, upstream sign.c's boundary).
+
+##########################################################################
+# PRIMARY (protocol-level) timings -- the headline adaptor-overhead table #
+##########################################################################
+--- COMPUTATION, TIER 1: CORE CRYPTO (struct API; pure computation, no codec)
+    (per op: microseconds AND cycles, each mean +/- sample SD) ---
+
+ Shared (public params pp=(A,H); KeyGen -> pk=t, sk=r):
+   Setup             44.51 +/-   0.10 us       169950 +/-       380 cyc
+   KeyGen            48.70 +/-   1.20 us       185958 +/-      4562 cyc
+
+ Base path (simplified Dilithium-style, c = H(pk, w, M); no t'):
+   Sign             446.86 +/-  14.98 us      1706267 +/-     57200 cyc
+   Verify           100.04 +/-   0.67 us       381971 +/-      2537 cyc
+
+ LAS adaptor path (statement t' folded into the hash, c = H(pk, w+t', M)):
+   PreSign          478.64 +/-  33.68 us      1827599 +/-    128584 cyc
+   PreVerify        104.33 +/-   0.84 us       398368 +/-      3191 cyc
+   Adapt            108.78 +/-   0.28 us       415338 +/-      1083 cyc
+   Ext               40.55 +/-   0.08 us       154842 +/-       296 cyc
+
+ Adaptor overhead (adaptor op vs the base op it mirrors; core tier, us):
+   PreSign       vs Sign       478.64 vs   446.86   (+7.1%)
+   PreVerify     vs Verify     104.33 vs   100.04   (+4.3%)
+   Adapt         vs Verify     108.78 vs   100.04   (+8.7%)
+   Ext (separate)               40.55            (no base analogue)
+
+--- COMPUTATION, TIER 2: END-TO-END PACKED (byte API: validating unpack ->
+    core -> pack INSIDE the call -- the boundary upstream sign.c exposes;
+    same repetition scheme and units; Setup has no packed twin) ---
+
+ Shared:
+   KeyGen_packed      158.70 +/-   1.48 us       605976 +/-      5659 cyc
+
+ Base path (bytes in/out):
+   Sign_packed        680.83 +/-  12.62 us      2632606 +/-     60399 cyc
+   Verify_packed      333.44 +/-   6.90 us      1298131 +/-     26871 cyc
+
+ LAS adaptor path (bytes in/out; las_verify_packed = the on-chain-style entry):
+   PreSign_packed     818.57 +/-  26.62 us      3186797 +/-    103642 cyc
+   PreVerify_packed   456.71 +/-   3.44 us      1778032 +/-     13377 cyc
+   Adapt_packed       626.54 +/-   7.65 us      2442507 +/-     30129 cyc
+   Ext_packed         462.98 +/-   0.46 us      1805891 +/-      1801 cyc
+
+ Adaptor overhead at the packed boundary (adaptor op vs base op, us):
+   PreSign_packed   vs Sign_packed      818.57 vs   680.83   (+20.2%)
+   PreVerify_packed vs Verify_packed    456.71 vs   333.44   (+37.0%)
+   Adapt_packed     vs Verify_packed    626.54 vs   333.44   (+87.9%)
+   Ext_packed (separate)                462.98            (no base analogue)
+   NOTE: these packed-boundary overheads fold in EXTRA CODEC WORK, not just
+   adaptor math -- PreSign_packed/PreVerify_packed additionally decode the
+   pk-sized statement t'; Adapt_packed additionally decodes t' and the witness
+   r' and re-packs the adapted signature.  The CORE tier above isolates the
+   pure adaptor computation (the headline overhead); the codec-cost table
+   below prices the byte boundary itself.
+
+ Codec boundary cost (packed minus core, per op, us -- the price of the
+ byte boundary: validating unpack of the inputs + pack of the output;
+ differences of independently measured means, so small values sit within
+ the SDs above):
+   KeyGen_packed    - KeyGen        +110.00   (+225.9%)
+   Sign_packed      - Sign          +233.97   ( +52.4%)
+   Verify_packed    - Verify        +233.41   (+233.3%)
+   PreSign_packed   - PreSign       +339.93   ( +71.0%)
+   PreVerify_packed - PreVerify     +352.38   (+337.8%)
+   Adapt_packed     - Adapt         +517.76   (+476.0%)
+   Ext_packed       - Ext           +422.43   (+1041.7%)
+
+##########################################################################
+# DIAGNOSTICS (secondary; cost-attribution & communication; SAME state)  #
+##########################################################################
+--- A. REJECTION-SAMPLING DISTRIBUTION (2000 signing calls each;
+       attempts read directly from base_attempts / las_attempts) ---
+   operation                   avg accept%   min   max   p50   p95
+   Base Sign (no t')         2.753   36.3%     1    16     2     7
+   LAS PreSign (folds t')    2.654   37.7%     1    23     2     7
+   avg = mean attempts/sig; accept% = 1/avg; both schemes reject under
+   Fiat-Shamir-with-aborts at the bound gamma-kappa (Base Sign) /
+   gamma-kappa-1 (LAS PreSign).
+   Run-validity gates below cover the 5 x 500 TIMED sign-class calls of EACH
+   tier of the primary table -- the packed sign-class calls wrap the same
+   rejection loop -- (same 5-sigma check and line format as the Rust drivers):
+rejection gate [Algorithm 1 Sign]: 2500 calls, measured 2.6828 attempts/call (acceptance 37.27%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.2162 => OK
+rejection gate [Algorithm 2 PreSign]: 2500 calls, measured 2.7660 attempts/call (acceptance 36.15%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.2219 => OK
+rejection gate [Algorithm 1 Sign (packed tier)]: 2500 calls, measured 2.6788 attempts/call (acceptance 37.33%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.2162 => OK
+rejection gate [Algorithm 2 PreSign (packed tier)]: 2500 calls, measured 2.7972 attempts/call (acceptance 35.75%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.2219 => OK
+per-attempt diagnostic (rejection-normalised): Sign 166.6 +/- 6.4 us | PreSign 173.0 +/- 7.4 us | overhead +3.8%
+
+--- B. ADAPT TIMING CLARIFICATION (microseconds, mean +/- SD) ---
+   Adapt checked total       108.777 +/-  0.284   (PROTOCOL: las_adapt above, incl. internal PreVerify)
+   witness-add only            4.443 +/-  0.038   (DIAGNOSTIC ONLY: z=z_hat+r'; not a protocol op)
+   A real Adapt MUST pre-verify first; the witness-add line is a lower bound,
+   not a usable operation.  Use 'Adapt checked total' for protocol cost.
+
+--- C. COMMUNICATION (packed bytes; BYTE-LEVEL only, NOT EVM gas) ---
+   public key    pk = t                4416
+   secret key    sk = r                 704
+   statement     Y = t'               4416   (65.6% of the signature; t' has pk size)
+   witness       r'                    704   (same packed layout as sk = r)
+   challenge     c_tilde                48   (H digest; FIPS 204 lambda/4 for this set)
+   response      z (final)            6688   (99.3% of the signature)
+   response      z_hat (pre-sig)      6688   (same packed layout as z)
+   signature         (c, z)           6736
+   pre-signature     (c, z_hat)       6736   (same size as the signature)
+   final adapted sig (c, z)           6736   (an ordinary signature)
+   commitment    w = A*y            internal computed commitment; hashed into c; not transmitted
+   -- protocol-component catalogue (context; what each object is / why counted or not) --
+   pp=(A,H)  A' seed                    32   (public params; only this 32-byte seed is transmitted)
+   pp=(A,H)  expanded A'             22080   (n*ell polys; DERIVED from the seed, NOT transmitted)
+   y (signing mask, S_gamma)         6688   (n+ell polys; INTERNAL, hashed into c via w, NOT transmitted)
+   w = A*y (commitment)              4416   (n polys; INTERNAL, hashed into c, NOT transmitted)
+   pi (NIZK well-formedness proof)    n/a   (paper-level off-chain proof; NOT implemented / NOT measured)
+   tx metadata (addrs/amounts/nonces) excl   (application/ledger layer; EXCLUDED from this accounting)
+   atomic-swap payload (byte-level only):
+     off-chain   = Y + 2*pre-signature        =  17888   [= t' + 2*(c, z_hat)]
+     settlement  = 2*signature                =  13472   [= 2*(c, z)]
+     settlement incl. escrowed Y = Y + 2*sig  =  17888
+   (EVM/keccak gas for on-chain verification is a separate axis; see evm/.)
+
+--- D. COMPONENT MICROBENCHMARKS (microseconds, mean +/- SD) ---
+   Cost-attribution ESTIMATES timing LOCAL COPIES of the inner steps
+   (behaviourally identical to las.c) -- NOT the protocol entry points above.
+   A-product / commitment w = A*y                         35.237 +/-  0.420
+   challenge hash  c = H(pk, w(+t'), M)                   38.352 +/-  0.111
+   NTT(s)  (n+ell polys; ONCE PER CALL, hoisted)          16.710 +/-  0.019
+   NTT(c)  (one poly; once per attempt / per verify)       1.525 +/-  0.006
+   c*r  (one poly; pointwise+invNTT, operands pre-NTT'd)   2.414 +/-  0.005
+   c*r  per attempt (NTT(c) + n+ell pointwise+invNTT)     28.107 +/-  0.020
+   norm check  |z|inf over n+ell polys                     1.361 +/-  0.012
+   w + t'   (n polys)                                      4.349 +/-  0.022
+   z_hat + witness r'   (n+ell polys)                      4.443 +/-  0.038
+   c*t  per verify (NTT(c) + n x (NTT(t)+pw+invNTT))      25.922 +/-  0.531
+   KeyGen/Gen: sample r (n+ell ternary polys)              5.300 +/-  0.084
+     (KeyGen = sample r + A*r; A*r is the A-product line above; statement Y gen = KeyGen)
+   Ext: s = z - z_hat   (n+ell polys)                      4.566 +/-  0.176
+   Ext: A*s   (recompute statement; = an A-product)       36.670 +/-  0.232
+   Ext: t' == A*s check   (n polys)                        0.378 +/-  0.055
+   note: a full Sign/PreSign attempt applies c*r across N_PLUS_ELL = n+ell = 11
+         response polynomials; Verify-style challenge multiplication applies
+         c*t across LAS_N = n = 6 public-key polynomials.  NTT hoisting
+         follows upstream ref/sign.c: NTT(s) is paid once per CALL (amortised
+         over ~e rejection attempts), NTT(c) once per attempt / per verify.
+
+--- E. NORM-MARGIN DIAGNOSTICS (achieved infinity-norm vs the reject bound;
+       max over the 2000 sampled accepted signatures from section A) ---
+   accepted |z|inf      max    137935   vs accept limit g-k   =    137935   (100.00% of band)
+   accepted |z^|inf     max    137934   vs accept limit g-k-1 =    137934   (100.00% of band)
+   Interpretation: the RESPONSE z/z^ saturates its band (~100%) -- the bound is
+   the binding constraint and is exactly why ~63% of attempts are rejected.
+   Contrast the AMHL cumulative WITNESS ||s_j||inf, which is tiny (<=K) vs the
+   g-k-K band: that bound is extremely loose (see bench_app, the K-series table).

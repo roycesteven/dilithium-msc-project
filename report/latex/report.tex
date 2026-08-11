@@ -17,7 +17,7 @@
 % contents (muthesis.cls: "A word count now (Sep 17) seems to be required").
 % Regenerate word.count first:
 %   texcount -1 -sum -relaxed -inc report.tex > word.count
-\documentclass[12pt,MSc,wordcount]{muthesis}
+\documentclass[12pt,MSc,wordcount,anon]{muthesis}
 
 % ---- packages (keep minimal; add as needed) ----
 \usepackage[T1]{fontenc}
@@ -79,10 +79,17 @@
 % flushed to the end of the chapter, pages away from the text that references them.
 % Loosening them keeps each float on or beside its discussion, which is what a reader
 % needs when the text says "see table N".
-\renewcommand{\topfraction}{0.9}
+%
+% floatpagefraction is the one that decides whether a page may hold floats and
+% NOTHING else. At the default 0.5 -- and still at 0.75 -- two adjacent floats fill
+% enough of a page for LaTeX to give them one of their own, which is how tables 3.1,
+% 3.2, 3.7, 3.8 and figure 3.6 each ended up on a text-free page. Raising it to 0.88
+% (kept below topfraction, so a tall float can still take a page when nothing else
+% will do) makes LaTeX prefer a top float with text under it.
+\renewcommand{\topfraction}{0.92}
 \renewcommand{\bottomfraction}{0.8}
 \renewcommand{\textfraction}{0.07}
-\renewcommand{\floatpagefraction}{0.75}
+\renewcommand{\floatpagefraction}{0.88}
 \setcounter{topnumber}{3}
 \setcounter{bottomnumber}{2}
 \setcounter{totalnumber}{5}
@@ -99,7 +106,7 @@
 \title{Implementing Post-Quantum Secure\\
        Exotic Signature Schemes in Blockchains}
 \author{Royce Steven}
-\stuid{\TODO{student id --- only you can fill this}}
+\stuid{14202489}
 \submitdate{2026}
 
 \beforeabstract          % title page, table of contents, list of tables/figures
@@ -115,14 +122,10 @@
 % These are front matter, so they are excluded from the texcount body count.
 %TC:ignore
 \prefacesection{Statement of qualifications and research}
-\TODO{Only you can write this — state your prior degree(s)/qualifications and
-      any relevant research experience, e.g.\ ``The author holds a BSc in \dots
-      from \dots. No part of the work reported here has been undertaken as part
-      of any previous qualification.''}
+The author holds a Bachelor of Informatics from Institut Sains dan Teknologi Terpadu Surabaya, Indonesia, awarded in 2024. As part of this degree, the author completed an undergraduate final project on Indoor People Counter Using Wireless 802.11 Channel State Information.
 
 \prefacesection{Acknowledgements}
-\TODO{Optional but conventional — e.g.\ thanks to your supervisor
-      Dr Zhipeng Wang, and to anyone else you wish to credit.}
+I would like to express my sincere gratitude to my supervisor, Dr. Zhipeng Wang, for his guidance, support, and valuable feedback throughout this project. I am also deeply grateful to the Indonesia Endowment Fund for Education (LPDP) for its financial support and for providing me with the opportunity to pursue my Master’s degree at the University of Manchester
 %TC:endignore
 
 \afterpreface            % begin body; continue page numbering; running headings

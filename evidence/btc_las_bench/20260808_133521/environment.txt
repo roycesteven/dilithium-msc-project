@@ -1,0 +1,28 @@
+run_id=20260808_133521
+date_utc=2026-08-08T12:35:26Z
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64 GNU/Linux
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+git_commit=688ffbc
+git_dirty=yes
+secp_pin=95b9835
+build=FORCED (make clean + make -B); no stale binary can survive this
+--- what is being timed ---
+predicate=LASConsensusVerify (ref/basesig.c base_verify_packed)
+opcode=OP_CHECKLASSIGVERIFY (0xbb, a BIP342 OP_SUCCESSx slot)
+las_parameter_set=Simplified Dilithium-III (n=6, ell=5, kappa=49)
+baselines=BIP340 Schnorr (Taproot key path) and ECDSA (P2WPKH)
+baseline_library=PINNED libsecp256k1-zkp — a FORK of libsecp256k1, NOT the copy
+baseline_library=Bitcoin Core vendors; same algorithms, but not Core's numbers
+boundary=serialized bytes in, parsing inside the timed call, both sides
+message=a 32-byte digest; the paths do NOT share a sighash algorithm (BIP341 for
+message=the Taproot spend the opcode lives in, BIP143 for P2WPKH) — only the width
+reject_path=valid signature vs a different 32-byte message digest (fails late)
+build_flags=-O3 -fomit-frame-pointer on BOTH sides (secp objects and LAS verifier)
+--- caveats that travel with every figure ---
+caveat_0=curve baseline is libsecp256k1-zkp, not the patched client's libsecp256k1
+caveat_a=consensus-modification security NOT analysed; timing is not a safety argument
+caveat_b=security levels NOT matched: node runs D3, secp256k1 matches D2, so the
+caveat_b=ratios OVERSTATE the rule's cost vs a level-matched pairing
+scope=per-input cryptographic cost only; no block download, UTXO lookup, script
+scope=parsing or signature cache included (the stock client pays those too)

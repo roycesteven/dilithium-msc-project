@@ -1,0 +1,44 @@
+=== A succinct post-quantum proof for the role-A relation ===
+
+Relation      : exists r : A r = t'  and  ||r||inf <= 1
+Proof system  : Winterfell FRI-STARK over Goldilocks (Blake3)
+Trace         : 4096 rows x (63 main + 13 aux) columns
+Setup         : transparent (public coin) -- no trusted setup
+Repetitions   : 5, after an untimed warm-up
+
+--- Measured ---
+
+  proof size    : 77809 B
+  prove         : 266.0 +- 11.6 ms
+  verify        : 1.4 +- 0.3 ms
+
+--- Against the two deployed provers, same relation ---
+
+  prover                          proof (B)   prove (ms)  verify (ms)   PQ   TS 
+  Groth16 over BN254 (config 2)         128        494.1         12.7   NO   NO 
+  LaZer LNP22 (config 3)              30723        158.8         75.2  yes  yes 
+  FRI-STARK (this binary)             77809        266.0          1.4  yes  yes 
+
+  PQ = post-quantum   TS = transparent (no trusted setup)
+  baseline source: Groth16 over BN254 (config 2)  evidence/amortise/latest, k=1 row
+  baseline source: LaZer LNP22 (config 3)         evidence/lazer_amortise/latest, k=1 row
+
+--- What this shows ---
+
+Against the only other POST-QUANTUM prover here, the STARK proof is 2.53x the
+size of LaZer's (77809 B vs 30723 B). Succinctness is asymptotic: at this statement
+size the FRI commitment overhead has not yet paid for itself, which is the
+honest reading and not a defect of the construction.
+
+Against Groth16 the proof is far larger (77809 B vs 128 B): a constant-size pairing
+proof is unbeatable on bytes. But Groth16 is NOT post-quantum and needs a trusted
+per-circuit setup, which is precisely why configuration 3 exists -- so the
+comparison that matters for a post-quantum swap is the LaZer row.
+
+Time: prove 266.0 ms vs LaZer's 158.8 ms, verify 1.4 ms vs 75.2 ms.
+
+SCOPE: no concrete-security analysis of this AIR has been done, and Winterfell's
+prover adds no zero-knowledge randomisation -- this is a succinct ARGUMENT of
+knowledge, not a zk one, and a deployed use would pay extra for zk. The relation
+proven is exactly the deployed one (same ternary bound, same A'), so the SIZES
+and TIMES are comparable; the security levels are not claimed to be.

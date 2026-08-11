@@ -1,0 +1,15 @@
+[
+  {
+    "txid": "f553daf307a04bfad5f4b253e7995fa64349f71a038fb84902fabe679969491f",
+    "wtxid": "c5f2ea9c5239ee88dbba43d8cc7e750f36874bbe107311bcbc6e77f63d06cd90",
+    "allowed": true,
+    "vsize": 110,
+    "fees": {
+      "base": 0.00100000,
+      "effective-feerate": 0.00909090,
+      "effective-includes": [
+        "c5f2ea9c5239ee88dbba43d8cc7e750f36874bbe107311bcbc6e77f63d06cd90"
+      ]
+    }
+  }
+]

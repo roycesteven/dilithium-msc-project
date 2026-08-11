@@ -656,8 +656,8 @@ def emit_tab_timing(out, meta, params, timing):
 def emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over):
     """Adaptor overhead at the target setting, at BOTH measurement boundaries:
     the core tier (structures in/out; isolates the adaptor arithmetic) and the
-    full-protocol tier (packed bytes in/out; incl. the validating decode +
-    encode a wire/on-chain consumer pays).  The tier rule: whenever both tiers
+    full-protocol tier (packed bytes in/out; incl. the decode + encode a
+    wire/on-chain consumer pays).  The tier rule: whenever both tiers
     are measured, both are presented."""
     t = timing[TARGET]
     o = over[TARGET]
@@ -684,7 +684,7 @@ def emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over):
           % mean_sd(t["Ext"]))
     b += "  \\midrule\n"
     b += ("  \\multicolumn{4}{@{}l}{\\textit{Packed tier (wire bytes "
-          "in/out --- incl.\\ validating decode + encode)}} \\\\\n")
+          "in/out --- incl.\\ decode + encode)}} \\\\\n")
     b += ("  KeyGen             & %s & %s (shared) & --- \\\\\n"
           % (mean_sd(p["KeyGen"]), mean_sd(p["KeyGen"])))
     b += ("  Sign / PreSign     & %s & %s & $+%s\\%%$ \\\\\n"

@@ -1,0 +1,3 @@
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wvla -Wpointer-arith -O3 -fomit-frame-pointer -DLAS_GIT_COMMIT=\"aa71cbf\" -DLAS_GIT_BRANCH=\"report\" -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+  -o test/bench_mldsa_compare3 test/bench_mldsa_compare.c mldsa_las.c basesig.c las.c setup.c relation.c serialize.c \
+  randombytes.c sign.c packing.c polyvec.c poly.c ntt.c reduce.c rounding.c fips202.c symmetric-shake.c -lm

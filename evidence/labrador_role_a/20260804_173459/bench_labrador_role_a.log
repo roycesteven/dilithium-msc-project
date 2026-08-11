@@ -1,0 +1,39 @@
+=== Role-A pi under LaBRADOR (succinct + post-quantum + ZERO-KNOWLEDGE) ===
+
+Relation      : exists r : A r = t'  and  ||r||inf <= 1
+Encoding      : [A | -A] w - q g = t', w BINARY (native norm type),
+                g the mod-q quotient with an exact l2 bound
+Witness       : 22 binary polys + 6 quotient polys, degree 256
+Constraints   : 6 (one per output row)
+
+  ||w||^2            : 1867  (binary)
+  ||g||^2            : 98581   (declared bound 100000000, |g|inf = 25)
+
+--- LaBRADOR, zero-knowledge ON (5 reps after an untimed warm-up) ---
+Estimated proof size: 110.90KB
+Estimated proof size: 110.90KB
+Estimated proof size: 110.90KB
+Estimated proof size: 110.90KB
+Estimated proof size: 110.90KB
+Estimated proof size: 110.90KB
+
+  encoding gate (simple_verify) : ACCEPT
+  proof verifies                : ACCEPT (every rep)
+  params  :      0.6 +-   0.2 ms
+  prove   :   1588.7 +- 288.8 ms
+  verify  :    739.1 +-  87.8 ms
+
+--- What this shows ---
+
+This is the first prover measured in this project that is succinct,
+post-quantum AND zero-knowledge at once -- i.e. the first one that
+actually satisfies what eprint 2020/845 Section 4.1 asks of pi while
+also being succinct. The FRI-STARK measured earlier is succinct and PQ
+but NOT zk, so it was never a valid pi; LNP22 (configuration 3) is zk
+and PQ but its proof is linear-ish in the statement, not succinct.
+
+Proof size: LaBRADOR reports it through its own parameter generation
+(the 'Estimated proof size' line above, printed by the library). That
+is NOT the same measurement as LNP22's byte-exact prooflen, because the
+function returning the packed length is hidden by -fvisibility=hidden.
+Compare the two with that difference stated, never silently.

@@ -5,11 +5,11 @@
 \contentsline {figure}{\numberline {2.3}{\ignorespaces Repository structure: two implementations over reused primitives}}{22}{figure.2.3}%
 \contentsline {figure}{\numberline {2.4}{\ignorespaces Standard payment versus adaptor swap settlement}}{26}{figure.2.4}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{31}{figure.3.1}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{32}{figure.3.2}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Cumulative probability of acceptance at the target setting}}{34}{figure.3.3}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{32}{figure.3.1}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{34}{figure.3.2}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Cumulative probability of acceptance at the target setting}}{35}{figure.3.3}%
 \contentsline {figure}{\numberline {3.4}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{36}{figure.3.4}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces The atomic swap, message by message}}{40}{figure.3.5}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces The atomic swap, message by message}}{41}{figure.3.5}%
 \contentsline {figure}{\numberline {3.6}{\ignorespaces On-chain settlement gas for the four claim paths}}{43}{figure.3.6}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }

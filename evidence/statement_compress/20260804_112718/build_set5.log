@@ -1,0 +1,2 @@
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wvla -Wpointer-arith -O3 -fomit-frame-pointer -DDILITHIUM_MODE=5 -DLAS_N=8 -DELL=7 -DKAPPA=60 \
+  -o test/test_statement_compress5 test/test_statement_compress.c serialize.c basesig.c relation.c las.c setup.c randombytes.c sign.c packing.c polyvec.c poly.c ntt.c reduce.c rounding.c fips202.c symmetric-shake.c

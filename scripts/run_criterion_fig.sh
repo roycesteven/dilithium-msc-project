@@ -61,13 +61,13 @@ cp "$SRC/report/pdf.svg"     "$OUT/presign_pdf.svg"
 
 ln -sfn "$RUN_ID" "$REPO/evidence/criterion/latest"
 
-# SVG -> PDF, so the report ships Criterion's OWN plot (not a redrawing of it)
-python3 - "$OUT/presign_pdf.svg" "$REPO/report/latex/figures/fig_criterion_presign.pdf" <<'PY'
-import sys
-import cairosvg
-cairosvg.svg2pdf(url=sys.argv[1], write_to=sys.argv[2])
-print("wrote", sys.argv[2])
-PY
+# SVG -> PDF, so the report ships Criterion's OWN plot (not a redrawing of it).
+# gen_criterion_figure.py enlarges only the type and re-flows the margins the
+# larger type needs -- at Criterion's native 12-unit type the labels render at
+# about 4.2 pt when included at \linewidth.  No plotted value is touched.
+python3 "$REPO/scripts/gen_criterion_figure.py" \
+        "$OUT/presign_pdf.svg" \
+        "$REPO/report/latex/figures/fig_criterion_presign.pdf"
 
 echo
 echo "evidence written: evidence/criterion/$RUN_ID/"

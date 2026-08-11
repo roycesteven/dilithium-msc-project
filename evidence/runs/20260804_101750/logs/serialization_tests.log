@@ -1,0 +1,11 @@
+=== LAS serialisation tests (mode 3) ===
+packed sizes: pk/statement=4416 B  sk/witness=704 B  sig/pre-sig=6736 B
+round-trip + verify-from-bytes: 256 iterations OK
+end-to-end packed tier: keygen/sign/verify/presign/preverify/adapt/ext OK
+tamper: low-bit flip of all 6736 bytes rejected
+validation: unpack rejects coeff>=Q (pk) and code-3 sk; sig decode is upstream-permissive
+validation: pack rejects non-ternary sk and out-of-band z
+=== All serialisation tests passed. ===
+These packed sizes are the realistic on-wire / on-chain object sizes for
+the simplified scheme; base_verify_packed is the byte-level verifier an
+on-chain integration (poqeth-style) would call.

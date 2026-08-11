@@ -1,0 +1,154 @@
+Statement-compression experiment -- LAS parameter set (n=8, ell=7, kappa=60, d=256)
+100 iterations per candidate; fresh keys, statement and message each time.
+Statement Y = 5888 B on the wire, against a 9184 B signature.
+
+=== C0 -- CONTROL: the statement in full ===
+  Y transmitted as STATEMENT_BYTES of 23-bit canonical packing: the scheme
+  exactly as it stands. Every row must read `holds`, otherwise nothing below
+  is attributable to compression.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain  100 / 100   holds
+  P4 Ext recovers the exact witness             <-- atomicity  100 / 100   holds
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+
+=== C2 -- SEED: send the 32-byte generator seed instead of Y ===
+  The receiver reruns Gen and recomputes Y = A r' itself. Y is reproduced
+  EXACTLY, so this is not an approximation and every functional property is
+  expected to hold. It is also the largest compression available.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain  100 / 100   holds
+  P4 Ext recovers the exact witness             <-- atomicity  100 / 100   holds
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+
+  size            : 5888 B -> 32 B  (184x smaller)
+  witness recovered by the receiver : 100 / 100
+
+  VERDICT: inadmissible, and the row above is the demonstration rather
+  than an argument. Gen derives BOTH Y and r' from this one seed, so the
+  compressed statement IS the witness. A counterparty who can recompute Y
+  can adapt the pre-signature and take both sides of the swap. The
+  compression is total and so is the break.
+
+
+########  C1 -- TRUNCATE: drop the b low bits of every coefficient  ########
+
+This is precisely the move that shrinks ML-DSA's public key t to t1. Both
+parties use the truncated statement, so the compression is consistent and
+the hash agrees on both sides -- the fairest version of the idea.
+
+=== C1(b=1) -- statement truncated to 22 bits/coefficient ===
+  Statement 5888 B -> 5632 B (saves 256 B, 4%), applied identically at
+  PreSign, PreVerify, Adapt and Ext.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain    0 / 100   FAILS
+  P4 Ext recovers the exact witness             <-- atomicity    0 / 100   FAILS
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+  coefficients actually moved by truncation : 102294 / 204800
+
+=== C1(b=2) -- statement truncated to 21 bits/coefficient ===
+  Statement 5888 B -> 5376 B (saves 512 B, 9%), applied identically at
+  PreSign, PreVerify, Adapt and Ext.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain    0 / 100   FAILS
+  P4 Ext recovers the exact witness             <-- atomicity    0 / 100   FAILS
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+  coefficients actually moved by truncation : 153528 / 204800
+
+=== C1(b=4) -- statement truncated to 19 bits/coefficient ===
+  Statement 5888 B -> 4864 B (saves 1024 B, 17%), applied identically at
+  PreSign, PreVerify, Adapt and Ext.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain    0 / 100   FAILS
+  P4 Ext recovers the exact witness             <-- atomicity    0 / 100   FAILS
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+  coefficients actually moved by truncation : 191785 / 204800
+
+=== C1(b=8) -- statement truncated to 15 bits/coefficient ===
+  Statement 5888 B -> 3840 B (saves 2048 B, 35%), applied identically at
+  PreSign, PreVerify, Adapt and Ext.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain    0 / 100   FAILS
+  P4 Ext recovers the exact witness             <-- atomicity    0 / 100   FAILS
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+  coefficients actually moved by truncation : 204002 / 204800
+
+=== C1(b=13) -- statement truncated to 10 bits/coefficient ===
+  Statement 5888 B -> 2560 B (saves 3328 B, 57%), applied identically at
+  PreSign, PreVerify, Adapt and Ext.
+
+  P1 PreVerify accepts the pre-signature          100 / 100   holds
+  P2 Adapt succeeds                               100 / 100   holds
+  P3 base Verify ACCEPTS the adapted signature  <-- the chain    0 / 100   FAILS
+  P4 Ext recovers the exact witness             <-- atomicity    0 / 100   FAILS
+  P5 adapted ||z||inf < BOUND_SIGN                100 / 100   holds
+  coefficients actually moved by truncation : 204781 / 204800
+
+
+=== What this shows ===
+Read the P3 and P4 rows of the C1 sweep against their P1 and P2 rows.
+
+Truncation is INVISIBLE to the adaptor's own functions and FATAL to the two
+that connect it to the outside world. PreSign and PreVerify both hash the
+statement they were given, so they agree with each other whatever that
+statement is; Adapt only re-runs PreVerify before adding the witness. But:
+
+  (a) P3 fails because base Verify never sees a statement. It recomputes
+      A z - c t, which for an adapted signature equals w + Y with the TRUE
+      Y -- since A r' = Y exactly -- and hashes that. The pre-signature
+      committed to w + Y_truncated. The two digests differ, so an unmodified
+      verifier rejects. Nothing on the chain can be told about the
+      compression, because the compression is not in the algebra.
+  (b) P4 fails because Ext's acceptance test IS the exact relation: it
+      returns s = z - z_hat only if A s == Y, and A s == Y_true, never
+      Y_truncated. Atomicity is exactly this test, so a swap built on a
+      truncated statement cannot complete its second leg.
+
+The obstruction is not the norm budget and not the packing. It is that Y
+enters the verification identity BEFORE any rounding, while ML-DSA's t
+enters after -- which is what makes t compressible and Y not.
+
+=== Why a hint cannot rescue the truncation ===
+ML-DSA compresses t because the VERIFIER INDEPENDENTLY RECOMPUTES an
+approximation of the rounded quantity, and the hint only has to repair the
+last carry. No party can compute anything near Y without the witness --
+that is the hardness assumption the statement rests on -- so a hint has no
+approximation to correct and must instead carry the dropped bits outright:
+
+  b=1    truncation saves    256 B   exact repair costs    256 B   net +0 B
+  b=2    truncation saves    512 B   exact repair costs    512 B   net +0 B
+  b=4    truncation saves   1024 B   exact repair costs   1024 B   net +0 B
+  b=8    truncation saves   2048 B   exact repair costs   2048 B   net +0 B
+  b=13   truncation saves   3328 B   exact repair costs   3328 B   net +0 B
+
+The accounting is net zero BY CONSTRUCTION, not by coincidence: the bits a
+hint would have to carry are exactly the bits truncation dropped.
+
+The remaining escape -- sample r' so that A r' already has b zero low bits,
+making the truncation lossless -- costs a factor 2^(b*n*d) in rejections:
+  b=1 is 2^-2048 per attempt.
+
+=== The compression already applied (the baseline to beat) ===
+  one int32 per coefficient : 8192 B
+  23-bit canonical packing  : 5888 B   (-28%, and lossless)
+
+Y is 2048 coefficients that are uniform in [0,Q) under the MLWE assumption
+the statement rests on, so 23 bits each is its entropy, not its encoding
+overhead. A lossless encoder cannot do better; the C1 sweep is what happens
+to a lossy one, and C2 is what happens when the loss is moved into the seed.
+
+SCOPE: this harness settles FUNCTIONAL admissibility only. It shows which
+compressions break the adaptor contract and where. It does not analyse the
+security of any compression that survives -- no such candidate is reported
+here, and security analysis is out of scope for the project.

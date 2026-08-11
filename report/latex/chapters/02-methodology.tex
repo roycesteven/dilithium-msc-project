@@ -154,7 +154,7 @@ clean split: the entire lattice core is reused unchanged, the only modified file
 \texttt{Makefile}, and the scheme, serialization, application and evaluation are new. No upstream function is modified, so the security-critical arithmetic is exactly
 the published reference code and every adaptor-specific line is isolated. The vendored
 \texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer \cite{lazer} are unmodified too, the
-latter behind a single-file bridge.
+latter behind a dedicated bridge.
 
 \paragraph{Data types and the matrix product.}
 LAS is a self-contained module over the reference's degree-$d$ polynomial type. Because
@@ -184,9 +184,10 @@ mode-specific constant, so identical code runs at every parameter set.
 \label{sec:serialize}
 
 A deployable scheme exchanges \emph{bytes}, not in-memory structs, so a bit-packed wire
-encoding, a \emph{validating} decoder and a verify-from-bytes entry point were implemented.
-Two decisions matter. The decoder is \emph{defensive}: it is the interface an on-chain
-verifier would expose, and the object the tamper test attacks. And, following FIPS~204
+encoding, a typed codec and a verify-from-bytes entry point were implemented.
+Two decisions matter. Validation is \emph{asymmetric}: keys and witnesses are checked on
+decode, a signature is not, so a tampered response is caught by Verify --- the entry
+point the tamper test attacks. And, following FIPS~204
 \cite{1274601}, a signature carries not the challenge polynomial $c$ but the digest
 $\tilde c$ from which every consumer re-derives it, under the standard's $\lambda/4$ rule
 (\cref{app:serialize}).

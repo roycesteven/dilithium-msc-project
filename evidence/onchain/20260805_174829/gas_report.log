@@ -1,0 +1,379 @@
+=== PASS 1: cap gates + stage attribution (NO --gas-report; see note in this script) ===
+No files changed, compilation skipped
+
+Ran 1 test for test/LASGasBreakdown.t.sol:LasVerifiedOptSwapGate
+[PASS] test_swap_settlement_fits_in_one_transaction() (gas: 68115574)
+Logs:
+  LAS 1-tx | full on-chain verification, single transaction
+    calldata bytes / tokens 50148 166665
+    exec / EIP-7623 TOTAL / cap 15755466 16443126 16777216
+    EIP-7623 floor binds (1=yes) 0
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 254.31ms (178.19ms CPU time)
+
+Ran 3 tests for test/LASGasBreakdown.t.sol:LASGasBreakdownTest
+[PASS] test_baseline_still_exceeds_the_cap() (gas: 131681201)
+[PASS] test_breakdown_and_totals() (gas: 331572229)
+Logs:
+  EIP-7825 per-transaction gas cap 16777216
+  BASELINE  LASVerify (vendored primitives)
+    calldata bytes / tokens 304260 407379
+    exec / EIP-7623 TOTAL 51680207 53330723
+    EIP-7623 floor binds (1=yes) 0
+  OPTIMISED LASVerifyOpt
+    calldata bytes / tokens 50116 166630
+    exec / EIP-7623 TOTAL 15654854 16342374
+    EIP-7623 floor binds (1=yes) 0
+    TOTAL as percent of the cap 97
+  BASELINE split: arithmetic(decode+SampleInBall+24 NTT+pointwise) 20730606
+  BASELINE split: pack(t)+pack(w')+SHAKE256 oracle 26335785
+  OPTIMISED stage: decode z + norm gate 577760
+  OPTIMISED stage: SampleInBall (challenge) 154229
+  OPTIMISED stage: 6 forward NTTs (z_bot, c) 1098741
+  OPTIMISED stage: w' = pointwise + 6 inverse NTTs + pack 3237053
+  OPTIMISED stage: SHAKE256 over the 12,320-byte preimage 10572481
+  OPTIMISED stage: preimage assembly (calldatacopy t, M) 8703
+
+[PASS] test_optimised_fits_in_one_transaction() (gas: 57358209)
+Logs:
+  one-transaction TOTAL (EIP-7623) 16342202
+  EIP-7825 per-transaction cap 16777216
+  EIP-7623 floor binds (1=yes) 0
+
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 833.97ms (1.32s CPU time)
+
+Ran 2 test suites in 835.36ms (1.09s CPU time): 4 tests passed, 0 failed, 0 skipped (4 total tests)
+
+=== PASS 2: full suite with --gas-report, cap gates excluded (table for the figure) ===
+No files changed, compilation skipped
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:FirstClaimGas
+[PASS] test_gas_firstClaim_classical() (gas: 130924)
+Logs:
+  classical | first claim on leg B: u1 takes c2 (ecrecover precompile)
+    calldata bytes 132
+    exec / intrinsic / TOTAL gas 81021 22356 103377
+  both      | Ext: u2 recovers y from the published signature (OFF-CHAIN)
+    calldata bytes 0
+    exec / intrinsic / TOTAL gas 0 0 0
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 1.41ms (485.12µs CPU time)
+
+Ran 4 tests for test/TwoLegSwapGas.t.sol:SwapFundingGas
+[PASS] test_gas_fund_classical_legA() (gas: 230373)
+Logs:
+  classical | fund leg A (u1 escrows c1 for u2, timeout t1 = LONGER)
+    calldata bytes 132
+    exec / intrinsic / TOTAL gas 195185 22476 217661
+
+[PASS] test_gas_fund_classical_legB() (gas: 232449)
+Logs:
+  classical | fund leg B (u2 escrows c2 for u1, timeout t2 = SHORTER)
+    calldata bytes 132
+    exec / intrinsic / TOTAL gas 195155 22476 217631
+
+[PASS] test_gas_fund_las_legA() (gas: 177172)
+Logs:
+  LAS       | fund leg A (u1 escrows c1 for u2, timeout t1 = LONGER)
+    calldata bytes 68
+    exec / intrinsic / TOTAL gas 154385 21596 175981
+
+[PASS] test_gas_fund_las_legB() (gas: 179219)
+Logs:
+  LAS       | fund leg B (u2 escrows c2 for u1, timeout t2 = SHORTER)
+    calldata bytes 68
+    exec / intrinsic / TOTAL gas 154386 21596 175982
+
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 1.40ms (616.98µs CPU time)
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:SwapSafetyWindowGas
+[PASS] test_safetyWindow_legA_still_locked_when_legB_refundable() (gas: 126104)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 820.19µs (79.15µs CPU time)
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:SecondClaimGas
+[PASS] test_gas_secondClaim_classical() (gas: 121440)
+Logs:
+  classical | second claim on leg A: u2 takes c1 (ecrecover precompile)
+    calldata bytes 132
+    exec / intrinsic / TOTAL gas 81020 22344 103364
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 2.40ms (639.58µs CPU time)
+
+Ran 4 tests for test/AdaptorSwap.t.sol:AdaptorSwapTest
+[PASS] test_ClassicalSwap() (gas: 277624)
+[PASS] test_LASSwap() (gas: 456258)
+[PASS] test_Refund() (gas: 237981)
+[PASS] test_TwoTimeoutSafetyWindow() (gas: 558197)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 3.12ms (2.36ms CPU time)
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:SecondClaimLasGas
+[PASS] test_gas_secondClaim_las_floor() (gas: 1397339)
+Logs:
+  LAS floor | second claim on leg A: u2 takes c1 (NO verification)
+    calldata bytes 6852
+    exec / intrinsic / TOTAL gas 297929 128856 426785
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 7.34ms (5.88ms CPU time)
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:FirstClaimLasGas
+[PASS] test_gas_firstClaim_las_floor() (gas: 1397226)
+Logs:
+  LAS floor | first claim on leg B: u1 takes c2 (NO verification)
+    calldata bytes 6852
+    exec / intrinsic / TOTAL gas 297918 128856 426774
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 12.76ms (11.95ms CPU time)
+
+Ran 2 tests for test/LASNtt.t.sol:LASNttTest
+[PASS] test_ntt_negacyclic_conv_matches_C_golden() (gas: 1525973)
+[PASS] test_ntt_roundtrip() (gas: 1032528)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 14.81ms (14.67ms CPU time)
+
+Ran 2 tests for test/TwoLegSwapGas.t.sol:RefundGas
+[PASS] test_gas_refund_legA_after_t1() (gas: 67703)
+Logs:
+  both      | refund leg A after t1 (payer reclaims c1)
+    calldata bytes 36
+    exec / intrinsic / TOTAL gas 44628 21192 65820
+
+[PASS] test_gas_refund_legB_after_t2() (gas: 67739)
+Logs:
+  both      | refund leg B after t2 (payer reclaims c2)
+    calldata bytes 36
+    exec / intrinsic / TOTAL gas 44629 21192 65821
+
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 1.17ms (191.46µs CPU time)
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:LasOptimisticClaimGas
+[PASS] test_gas_firstClaim_las_optimistic() (gas: 14983818)
+Logs:
+  LAS optim | first claim, optimistic assertion (no verification on chain)
+    calldata bytes 56452
+    exec / intrinsic / TOTAL gas 1353028 382444 1735472
+  LAS optim | finalize after the challenge period (payout credited)
+    calldata bytes 36
+    exec / intrinsic / TOTAL gas 69501 21192 90693
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 139.84ms (79.24ms CPU time)
+
+Ran 3 tests for test/LASSampleZ.t.sol:LASSampleZTest
+[PASS] test_bitpack19_zdecode_matches_C() (gas: 17832530)
+[PASS] test_norm_accepts_golden_rejects_overbound() (gas: 14832428)
+[PASS] test_sampleInBall_matches_C_challenge() (gas: 1193822)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 194.44ms (194.21ms CPU time)
+
+Ran 5 tests for test/ZKNoxShake.t.sol:ZKNoxShakeTest
+[PASS] test_shake256_empty_KAT() (gas: 197398)
+[PASS] test_shake256_empty_viaUpdate() (gas: 203412)
+[PASS] test_shake256_multiAbsorb_equals_oneShot() (gas: 509915)
+[PASS] test_shake256_multiAbsorb_large_blockcrossing() (gas: 52964267)
+[PASS] test_shake256_streamingSqueeze_equals_bulk() (gas: 461562)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 290.85ms (293.52ms CPU time)
+
+Ran 1 test for test/LASGasBreakdown.t.sol:LasVerifiedOptSwapGas
+[PASS] test_gas_claim_las_verified_opt() (gas: 68810682)
+Logs:
+  LAS 1-tx | full on-chain verification, single transaction
+    calldata bytes / tokens 50148 166665
+    exec / EIP-7623 TOTAL / cap 16443126 17130786 16777216
+    EIP-7623 floor binds (1=yes) 0
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 545.02ms (379.51ms CPU time)
+
+Ran 2 tests for test/AdaptorSwapVerified.t.sol:AdaptorSwapVerifiedTest
+[PASS] test_LASVerifiedSwap_rejects_wrong_context() (gas: 20034282)
+[PASS] test_LASVerifiedSwap_settles() (gas: 72585830)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 615.77ms (427.30ms CPU time)
+
+Ran 6 tests for test/LASVerifier.t.sol:LASVerifierTest
+[PASS] test_oracle_with_golden_wprime_matches_ctilde() (gas: 45812885)
+[PASS] test_verify_accepts_golden() (gas: 68155185)
+[PASS] test_verify_rejects_tampered_ctilde() (gas: 68295292)
+[PASS] test_verify_rejects_tampered_message() (gas: 68138826)
+[PASS] test_verify_rejects_tampered_sig() (gas: 68138621)
+[PASS] test_wprime_matches_C_golden() (gas: 39495121)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 615.29ms (1.77s CPU time)
+
+Ran 1 test for test/TwoLegSwapGas.t.sol:FirstClaimLasVerifiedGas
+[PASS] test_gas_firstClaim_las_verified() (gas: 138517900)
+Logs:
+  LAS full  | first claim on leg B: u1 takes c2 (native base_verify in Solidity)
+    calldata bytes 304292
+    exec / intrinsic / TOTAL gas 58495022 1650632 60145654
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 713.62ms (625.94ms CPU time)
+
+Ran 1 test for test/LASVerifyCost.t.sol:LASVerifyCostTest
+[PASS] test_NativeVerifyGas() (gas: 162326014)
+Logs:
+  D3 verify ARITHMETIC (measured, gas)          20782725
+  D3 hash native-keccak256 FLOOR (measured)     2360
+  D3 hash ESTIMATED SHAKE256 (calculated, gas)  2760000
+  D3 TOTAL native verify, hash-floor  (gas)     20785085
+  D3 TOTAL native verify, hash-estimated (gas)  23542725
+  block gas limit (30M)                         30000000
+  classical ecrecover claim (gas)               75709
+  native verify as multiple of classical claim  310
+  native verify as percent of a 30M block       78
+  per forward-NTT (measured, gas)               570392
+  per inverse-NTT (measured, gas)               615018
+  per pointwise   (measured, gas)               71138
+  per coeff-pass  (measured, gas)               71138
+  D3 arith rebuilt from op budget (gas)         20627340
+  D2 (n=4,ell=4) verify ARITHMETIC (gas)        13912055
+  D3 (n=6,ell=5) verify ARITHMETIC (gas)        20782725
+  D5 (n=8,ell=7) verify ARITHMETIC (gas)        29927847
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 775.56ms (775.41ms CPU time)
+
+Ran 3 tests for test/LASShakeEquiv.t.sol:LASShakeEquivTest
+[PASS] test_equals_vendored_across_squeeze_block_boundary() (gas: 1636270)
+[PASS] test_equals_vendored_at_all_length_classes() (gas: 46425779)
+[PASS] test_lane0_is_the_first_eight_output_bytes() (gas: 352976)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 792.23ms (279.76ms CPU time)
+
+Ran 9 tests for test/LASNaysayer.t.sol:LASNaysayerTest
+[PASS] test_contract_recipient_cannot_block_finalize() (gas: 16344622)
+[PASS] test_finalize_window_and_replay_guard() (gas: 33882747)
+[PASS] test_happyPath_finalizes_and_no_naysay_lands() (gas: 189618709)
+[PASS] test_naysayDigest_voids_pure_hash_fault() (gas: 173781482)
+[PASS] test_naysayNorm_voids_over_bound_z() (gas: 16231675)
+[PASS] test_naysayWprime_voids_wrong_coeff() (gas: 43521889)
+[PASS] test_naysay_rejected_after_deadline() (gas: 16282788)
+[PASS] test_optimisticClaim_rejects_malformed_trace() (gas: 16862791)
+[PASS] test_optimisticClaim_rejects_window_past_timeout() (gas: 15686286)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 792.46ms (2.30s CPU time)
+
+Ran 8 tests for test/LASVerifierOpt.t.sol:LASVerifierOptTest
+[PASS] test_opt_accepts_golden() (gas: 43799586)
+[PASS] test_opt_agrees_with_vendored_verifier() (gas: 700496670)
+[PASS] test_opt_rejects_over_bound_z() (gas: 29896171)
+[PASS] test_opt_rejects_tampered_ctilde() (gas: 43800238)
+[PASS] test_opt_rejects_tampered_message() (gas: 43799772)
+[PASS] test_opt_rejects_tampered_sig() (gas: 43799869)
+[PASS] test_tPacked_is_t_bin() (gas: 3933669)
+[PASS] test_wprime_packed_matches_C_golden() (gas: 35543908)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 1.93s (3.02s CPU time)
+
+╭------------------------------------------+-----------------+----------+----------+----------+---------╮
+| src/AdaptorSwap.sol:AdaptorSwap Contract |                 |          |          |          |         |
++=======================================================================================================+
+| Deployment Cost                          | Deployment Size |          |          |          |         |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                  3952903 |           18102 |          |          |          |         |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                          |                 |          |          |          |         |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| Function Name                            | Min             | Avg      | Median   | Max      | # Calls |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| claimClassical                           |           75739 |    75751 |    75751 |    75763 |       6 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| claimLAS                                 |          290640 |   290640 |   290640 |   290640 |       4 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| claimLASVerified                         |         4095080 | 39129969 | 56647414 | 56647414 |       3 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| claimLASVerifiedOpt                      |        16438275 | 16438275 | 16438275 | 16438275 |       1 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| fundClassical                            |          166071 |   182006 |   183195 |   183195 |      15 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| fundLAS                                  |          142249 |   142439 |   142477 |   142477 |       6 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| fundLASVerified                          |          162514 |   162571 |   162520 |   162730 |       4 |
+|------------------------------------------+-----------------+----------+----------+----------+---------|
+| refund                                   |           23911 |    35002 |    39434 |    39439 |       7 |
+╰------------------------------------------+-----------------+----------+----------+----------+---------╯
+
+╭----------------------------------------------+-----------------+----------+----------+----------+---------╮
+| src/LASNaysayer.sol:LASNaysayerSwap Contract |                 |          |          |          |         |
++===========================================================================================================+
+| Deployment Cost                              | Deployment Size |          |          |          |         |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                      3038342 |           13836 |          |          |          |         |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                              |                 |          |          |          |         |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| Function Name                                | Min             | Avg      | Median   | Max      | # Calls |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| CHALLENGE_PERIOD                             |             421 |      421 |      421 |      421 |       6 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| MIN_BOND                                     |             443 |      443 |      443 |      443 |      16 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| credits                                      |            2756 |     2756 |     2756 |     2756 |       6 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| finalize                                     |           23806 |    53056 |    64312 |    64312 |       7 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| fund                                         |          185791 |   201335 |   202891 |   202891 |      11 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| naysayDigest                                 |        28178496 | 28182443 | 28182443 | 28186390 |       2 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| naysayNorm                                   |          291280 |   291310 |   291310 |   291340 |      14 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| naysayWprime                                 |        13118543 | 13151271 | 13148124 | 13184787 |       9 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| optimisticClaim                              |          704560 |  1067619 |  1169171 |  1169327 |      11 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| stateOf                                      |            2455 |     2455 |     2455 |     2455 |       3 |
+╰----------------------------------------------+-----------------+----------+----------+----------+---------╯
+
+╭----------------------------------------------+-----------------+----------+----------+----------+---------╮
+| src/LASVerifyCost.sol:LASVerifyCost Contract |                 |          |          |          |         |
++===========================================================================================================+
+| Deployment Cost                              | Deployment Size |          |          |          |         |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                       735827 |            3184 |          |          |          |         |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                              |                 |          |          |          |         |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| Function Name                                | Min             | Avg      | Median   | Max      | # Calls |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| addpassReps                                  |          140467 |   496167 |   496167 |   851867 |       4 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| invnttReps                                   |          682014 |  3757114 |  3757114 |  6832214 |       4 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| nttReps                                      |          637278 |  3489248 |  3489248 |  6341218 |       4 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| pointwiseReps                                |          140426 |   496126 |   496126 |   851826 |       4 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| verifyArithLevel2                            |        13909154 | 13909154 | 13909154 | 13909154 |       2 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| verifyArithLevel3                            |        20779827 | 20779827 | 20779827 | 20779827 |       2 |
+|----------------------------------------------+-----------------+----------+----------+----------+---------|
+| verifyArithLevel5                            |        29924953 | 29924953 | 29924953 | 29924953 |       2 |
+╰----------------------------------------------+-----------------+----------+----------+----------+---------╯
+
+╭------------------------------------------+-----------------+---------+---------+---------+---------╮
+| test/LASNaysayer.t.sol:Rejector Contract |                 |         |         |         |         |
++====================================================================================================+
+| Deployment Cost                          | Deployment Size |         |         |         |         |
+|------------------------------------------+-----------------+---------+---------+---------+---------|
+|                                   246015 |             946 |         |         |         |         |
+|------------------------------------------+-----------------+---------+---------+---------+---------|
+|                                          |                 |         |         |         |         |
+|------------------------------------------+-----------------+---------+---------+---------+---------|
+| Function Name                            | Min             | Avg     | Median  | Max     | # Calls |
+|------------------------------------------+-----------------+---------+---------+---------+---------|
+| claim                                    |         1200219 | 1200219 | 1200219 | 1200219 |       1 |
+|------------------------------------------+-----------------+---------+---------+---------+---------|
+| doWithdraw                               |           38991 |   38991 |   38991 |   38991 |       1 |
+╰------------------------------------------+-----------------+---------+---------+---------+---------╯
+
+╭--------------------------------------------------+-----------------+----------+----------+----------+---------╮
+| test/LASVerifierOpt.t.sol:LASOptHarness Contract |                 |          |          |          |         |
++===============================================================================================================+
+| Deployment Cost                                  | Deployment Size |          |          |          |         |
+|--------------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                          1876971 |            8507 |          |          |          |         |
+|--------------------------------------------------+-----------------+----------+----------+----------+---------|
+|                                                  |                 |          |          |          |         |
+|--------------------------------------------------+-----------------+----------+----------+----------+---------|
+| Function Name                                    | Min             | Avg      | Median   | Max      | # Calls |
+|--------------------------------------------------+-----------------+----------+----------+----------+---------|
+| decodeNormOk                                     |          580464 |   580464 |   580464 |   580464 |       2 |
+|--------------------------------------------------+-----------------+----------+----------+----------+---------|
+| verify                                           |          580250 | 13978078 | 15652713 | 15653113 |       9 |
+|--------------------------------------------------+-----------------+----------+----------+----------+---------|
+| wprimePacked                                     |         5077578 |  5077578 |  5077578 |  5077578 |       1 |
+╰--------------------------------------------------+-----------------+----------+----------+----------+---------╯
+
+
+Ran 20 test suites in 1.93s (7.45s CPU time): 57 tests passed, 0 failed, 0 skipped (57 total tests)

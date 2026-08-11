@@ -1,0 +1,17 @@
+level,pair,adaptor_us,base_us,overhead_pct
+paper,PreSign vs Sign,264.55,257.05,2.9
+paper,PreVerify vs Verify,71.57,70.01,2.2
+paper,Adapt vs Verify,73.65,70.01,5.2
+paper,Ext (separate),25.97,,
+L2,PreSign vs Sign,328.44,313.9,4.6
+L2,PreVerify vs Verify,75.21,74.09,1.5
+L2,Adapt vs Verify,77.84,74.09,5.1
+L2,Ext (separate),28.36,,
+L3,PreSign vs Sign,521.6,489.16,6.6
+L3,PreVerify vs Verify,115.12,110.7,4.0
+L3,Adapt vs Verify,118.3,110.7,6.9
+L3,Ext (separate),43.67,,
+L5,PreSign vs Sign,539.57,517.79,4.2
+L5,PreVerify vs Verify,146.35,139.27,5.1
+L5,Adapt vs Verify,150.77,139.27,8.3
+L5,Ext (separate),59.08,,

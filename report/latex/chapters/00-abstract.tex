@@ -12,7 +12,7 @@ end-to-end in a post-quantum atomic swap.
 
 The artefact is built \emph{additively}: the entire lattice core is reused unchanged,
 with no upstream function modified, while the adaptor layer (PreSign, PreVerify, Adapt,
-Extract), a bit-packed wire encoding with a validating decoder, and the application are
+Extract), a bit-packed wire encoding with a typed codec, and the application are
 added as new code. It passes functional, serialization, tamper and known-answer tests,
 and an independent second implementation in Rust reproduces the wire format and the
 pinned digest byte-for-byte under a different compiler and statistical harness.

@@ -1,0 +1,51 @@
+{
+  "agree": true,
+  "label": "A3",
+  "model": {
+    "base_size": 94,
+    "total_size": 11471,
+    "vsize": 2939,
+    "weight": 11753,
+    "witness_size": 11377
+  },
+  "node": {
+    "total_size": 11471,
+    "vsize": 2939,
+    "weight": 11753
+  },
+  "script_pubkey_lengths": [
+    34
+  ],
+  "script_sig_lengths": [
+    0
+  ],
+  "witness_item_lengths": [
+    [
+      64,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      496,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      256,
+      56,
+      33
+    ]
+  ]
+}

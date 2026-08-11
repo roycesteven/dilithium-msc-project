@@ -1,0 +1,3 @@
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wvla -Wpointer-arith -O3 -fomit-frame-pointer -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
+  -o test/bench_lazer_amortise test/bench_lazer_amortise.c relation.c relation_zk_batch.c setup.c randombytes.c sign.c packing.c polyvec.c poly.c ntt.c reduce.c rounding.c fips202.c symmetric-shake.c \
+  relation_zk_lazer_batch.o /home/melly/dilithium-msc-project/third_party/lazer/liblazer.a -L/home/melly/micromamba/envs/lazer-build/lib -Wl,-rpath,/home/melly/micromamba/envs/lazer-build/lib -lmpfr -lgmp -lm /home/melly/dilithium-msc-project/third_party/lazer/third_party/hexl-development/build/hexl/lib64/libhexl.a -lstdc++ -lm

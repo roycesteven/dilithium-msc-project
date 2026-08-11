@@ -1,0 +1,28 @@
+=== Adaptor contract on NIST ML-DSA (FIPS 204 as specified) ===
+ML-DSA-87 | hint vector + Power2Round + high/low-bit split ALL ENABLED
+variant under test: V1 (commitment path shifted onto w+Y)
+iterations: 200 randomised, 64 sampled tampers per object
+
+Positive contract (200 instances):
+  [PASS] 1 PreSign -> PreVerify accepts (completeness)              200/200
+  [PASS] 2 stock ML-DSA Verify REJECTS the pre-signature (tripwire) 200/200
+  [PASS] 3 Adapt -> UNMODIFIED ML-DSA Verify accepts (adaptability) 200/200
+  [PASS] 4 Ext recovers the witness exactly, and A y' = Y           200/200
+  [PASS] 5 adapted ||z||inf < GAMMA1-BETA (ML-DSA's own bound)      200/200
+  [PASS] 6 hint weight <= OMEGA                                     200/200
+  [PASS] 7 statement/witness wire round-trip is the identity        200/200
+
+Negative contract:
+  [PASS] 8 tampered message does not pre-verify                     64/64
+  [PASS] 9 tampered pre-signature does not pre-verify               64/64
+  [PASS] 10 wrong statement does not pre-verify                     64/64
+  [PASS] 11 wrong witness yields no valid signature                 64/64
+  [PASS] 12 malformed statement bytes refused by the decoder        64/64
+
+Reproducibility:
+  [PASS] 13 PreSign is deterministic in (sk, Y, M, rnd)             byte-identical
+
+Wire sizes (bytes): signature 4627 | pre-signature 4627 | public key 2592
+                    statement Y 5888 | witness y 672
+
+PASS: 13/13 contract items hold

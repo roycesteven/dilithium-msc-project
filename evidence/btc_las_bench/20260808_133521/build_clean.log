@@ -1,0 +1,3 @@
+make: Entering directory '/home/melly/dilithium-msc-project/bitcoin/las_consensus'
+rm -f las_btc_tool bench_las_consensus secp_bench.o secp_bench_ecmult.o secp_bench_ecmult_gen.o
+make: Leaving directory '/home/melly/dilithium-msc-project/bitcoin/las_consensus'

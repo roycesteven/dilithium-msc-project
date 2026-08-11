@@ -1,0 +1,80 @@
+=== ML-DSA hint experiment: does LAS compose with FIPS 204 as specified? ===
+ML-DSA-44  (K=4, L=4, TAU=39, GAMMA1=131072, GAMMA2=95232, OMEGA=80, ETA=2)
+hint vector, Power2Round and high/low-bit decomposition are ALL ENABLED.
+iterations per variant: 200
+
+wire sizes: ML-DSA signature 2420 B | public key 1312 B | statement Y 2944 B
+  (the statement is a full R_q^K element: Power2Round compresses the public
+   key, but it cannot compress Y, which enters the verification identity
+   before any rounding.)
+
+control: unmodified ML-DSA sign -> verify : OK
+fidelity gate: mirrored ML-DSA sign (no statement) -> stock verify : 200 / 200
+baseline attempts/Sign (matched, same loop)  : 4.215
+
+--- VARIANT 0 -- the naive port ---
+  ML-DSA's signing path verbatim, with exactly ONE change: the challenge is
+  hashed over HighBits(w + Y) instead of HighBits(w). The committed high bits,
+  the low-bits rejection test and MakeHint are all still taken around w.
+  This is what treating the hint machinery as a black box produces.
+
+  P1 PreVerify accepts pre-signature                        0 / 200     FAILS ALWAYS
+  P2 stock Verify REJECTS pre-signature (tripwire)        200 / 200     HOLDS
+  P3 Adapt succeeds                                         0 / 200     FAILS ALWAYS
+  P4 stock Verify ACCEPTS adapted signature  <-- decisive      0 / 200     FAILS ALWAYS
+  P5 Ext recovers the exact witness                         0 / 200     FAILS ALWAYS
+  P6 adapted ||z||inf < GAMMA1-BETA                         0 / 200     FAILS ALWAYS
+  P7 hint weight <= OMEGA                                 200 / 200     HOLDS
+
+  rejection-sampling attempts/PreSign : 4.415
+  hint weight mean / max / OMEGA      : 62.2 / 80 / 80
+
+--- VARIANT 1 -- the commitment path moved onto w + Y ---
+  The signer knows Y at PreSign time, so the ENTIRE commitment path is taken
+  around w + Y: the committed high bits, the low-bits rejection test and
+  MakeHint. PreSign also rejects at GAMMA1 - BETA - ETA so the adapted z still
+  clears ML-DSA's own bound. This is the most faithful repair available
+  without weakening ML-DSA or handing the adapter a signing key.
+
+  P1 PreVerify accepts pre-signature                      200 / 200     HOLDS
+  P2 stock Verify REJECTS pre-signature (tripwire)        200 / 200     HOLDS
+  P3 Adapt succeeds                                       200 / 200     HOLDS
+  P4 stock Verify ACCEPTS adapted signature  <-- decisive    200 / 200     HOLDS
+  P5 Ext recovers the exact witness                       200 / 200     HOLDS
+  P6 adapted ||z||inf < GAMMA1-BETA                       200 / 200     HOLDS
+  P7 hint weight <= OMEGA                                 200 / 200     HOLDS
+
+  rejection-sampling attempts/PreSign : 4.425
+  hint weight mean / max / OMEGA      : 62.8 / 80 / 80
+
+=== Cost of the adaptor layer on ML-DSA (matched baseline) ===
+  attempts/PreSign vs attempts/Sign : 4.425 vs 4.215  (+5.0%)
+  statement Y on the wire           : 2944 B, against a 2420 B signature
+  (Y is larger than the signature it accompanies: Power2Round shrinks the
+   public key to t1, but Y enters the identity before any rounding.)
+
+=== What this shows ===
+Read the P4 row of each variant. P4 is the claim 'the adapted signature is a
+fully ordinary ML-DSA signature', i.e. what an unchanged consensus verifier
+would have to accept.
+
+Structural findings that hold regardless of the counts above, and that the
+code makes checkable:
+  (a) PreSign CANNOT be ML-DSA's Sign. Sign commits to HighBits(w), which
+      contains no statement; any adaptor needs the statement inside the hash,
+      so the signing algorithm is modified by construction.
+  (b) PreVerify CANNOT be ML-DSA's Verify. It has to add Y before UseHint
+      (mldsa_las.c, mldsa_las_preverify), and the stock verifier has no Y.
+      A deployed verifier can therefore check adapted signatures but never
+      pre-signatures.
+  (c) Adapt CANNOT repair a hint. MakeHint needs c*t0 and w - c*s2, both
+      derived from the SIGNER's secret key; the adapting party holds only the
+      witness. Whatever hint PreSign wrote is what the adapted signature
+      carries.
+  (d) The statement is not compressible the way the public key is. t is sent
+      as t1 via Power2Round; Y enters the identity before rounding and is
+      sent in full.
+
+These are the modifications the simplified scheme avoids by disabling the
+hint, Power2Round and the high/low-bit split -- which is the design decision
+this experiment was built to justify or refute.

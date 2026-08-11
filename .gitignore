@@ -62,3 +62,5 @@ evm/onetx/
 evm/twoleg/
 evm/test/vectors/swap/
 ref/*.o
+bitcoin/las_consensus/*.o
+bitcoin/las_consensus/bench_las_consensus

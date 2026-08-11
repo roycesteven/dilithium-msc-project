@@ -1,0 +1,13 @@
+  C self-check: SHAKE256(pack(t)||pack(w')||M) ==  (w_prime.bin OK) c_tilde
+Wrote verifier vectors to ../evm/test/vectors/
+  pp_normal.bin: 30 polys, 30720 bytes
+  t.bin:         6 polys, 6144 bytes
+  msg.bin:       32 bytes
+  sig.bin:       6736 bytes
+  conv_a.bin:    1 poly, 1024 bytes
+  conv_b.bin:    1 poly, 1024 bytes
+  conv_out.bin:  1 poly, 1024 bytes
+  c.bin:         1 poly, 1024 bytes
+  z.bin:         11 polys, 11264 bytes
+  C base_verify(golden sig) = ACCEPT
+  Solidity verifier must reproduce the same result.
