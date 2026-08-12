@@ -9,8 +9,8 @@ correctness, computation cost, communication cost, and the application results.
 
 No performance claim means anything until the implementation is shown \emph{correct},
 and an adaptor signature is not correct merely because it signs and verifies --- it must
-satisfy a specific contract. \Cref{tab:contract} lists every clause; all pass, with zero
-compiler warnings. Clauses~1--4 are the adaptor contract itself: a pre-signature is
+satisfy a specific contract. \Cref{tab:contract} lists every clause; all
+pass. Clauses~1--4 are the adaptor contract itself: a pre-signature is
 verifiable yet unspendable (the tripwire), becomes an ordinary signature once the witness
 is added, and completing it reveals that witness --- the mechanism that makes an atomic
 swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
@@ -38,8 +38,8 @@ swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
     3 & Adapt yields a signature that basic Verify accepts & pass \\
     4 & Extract recovers the witness \emph{exactly} ($y'=y$) & pass \\
     5a & a tampered message fails Verify & pass \\
-    5b & the low bit of each of the \tamperFlips{} packed-signature bytes, flipped in turn, is rejected & pass \\
-    6 & malformed bytes rejected on decode ($pk\!\ge\!Q$, ternary code-3); out-of-range objects rejected on encode ($z$, non-ternary secret) & pass \\
+    5b & each of the \tamperFlips{} low-bit flips of a packed-signature byte is rejected & pass \\
+    6 & malformed bytes rejected on decode ($pk\!\ge\!Q$, ternary code-3), out-of-range objects on encode ($z$, non-ternary secret) & pass \\
     7 & the deterministic API is byte-identical on re-run & pass \\
     \bottomrule
   \end{tabular}
@@ -527,17 +527,14 @@ is a transaction \emph{weight} limit one settlement sits well inside
   \centering
   \includegraphics[width=\linewidth]{figures/fig_onchain}
   \caption[On-chain settlement gas for the four claim paths]{The claim paths of
-  \cref{tab:onchain} on a logarithmic axis, which is what makes the spread legible: the
-  classical claim, the LAS floor doing \emph{no} lattice verification, and the two full
-  verifiers. The dashed line is the EIP-7825 cap on the transaction gas limit
-  ($16\,777\,216 = 2^{24}$). The baseline verifier's bar crosses it; the restructured
+  \cref{tab:onchain} on a logarithmic axis, which is what makes the spread legible. The
+  dashed line is the EIP-7825 cap on the transaction gas limit ($16\,777\,216 = 2^{24}$):
+  the baseline verifier's bar crosses it, while the restructured
   \texttt{claimLASVerifiedOpt} --- same scheme, same predicate under the registration
-  invariant of \cref{tab:onchain}, different expression ---
-  falls below, which is what changes the conclusion from ``a deployable path needs a
-  precompile, a succinct proof or an optimistic scheme'' to ``at this parameter set and
-  message length it fits, narrowly''. All four bars come from one \texttt{--gas-report}
-  table and so are mutually comparable; the under-the-cap claim itself rests on the
-  separate real-client run described in \cref{tab:onchain}.}
+  invariant of \cref{tab:onchain}, different expression --- falls below. All four bars
+  come from one \texttt{--gas-report} table and so are mutually comparable; the
+  under-the-cap claim itself rests on the separate real-client run described in
+  \cref{tab:onchain}.}
   \label{fig:onchain}
 \end{figure}
 
@@ -551,6 +548,18 @@ Timings are the mean $\pm$ sample standard deviation over \stageTwoRuns{} comple
 at the \emph{packed} tier, so they are not comparable with \cref{sec:res-compute}. Both
 LAS configurations passed the rejection gate (\cfgTwoRejMeasured{} attempts per
 \textsc{PreSign} against the closed-form \cfgTwoRejExpected{}).
+
+
+\paragraph{The proof, not the signature, is the cost of a post-quantum swap.}
+The role-A proof consumes \cfgTwoProofPct{}\% of end-to-end time in configuration~2 and
+\cfgThreeProofPct{}\% in configuration~3. Strip it out and the entire post-quantum
+signature workload --- two key generations, a statement, two pre-signatures, a
+pre-verification, two adaptations, an extraction and two settlements --- costs
+\cfgTwoNonProofUs{}\,$\mu$s, about \stageTwoCryptoRatio{}$\times$ the classical swap's
+\cfgOneNonProofUs{}\,$\mu$s. A factor of five on a millisecond-scale workload is
+unremarkable; a proof of hundreds of milliseconds decides whether the protocol feels
+instantaneous. Even at the packed tier the signature workload is not the bottleneck ---
+the post-quantum penalty is not where intuition puts it.
 
 \begin{table}[htbp]
   \centering
@@ -582,6 +591,26 @@ LAS configurations passed the rejection gate (\cfgTwoRejMeasured{} attempts per
     \bottomrule
   \end{tabular}
 \end{table}
+
+\paragraph{The controlled comparison inverts the expected trade-off.} Replacing Groth16
+with LaZer --- same signature, same $\mathbf{A}$, same inputs --- makes the swap
+\emph{faster} by \cmpTimePctAbs{}\% while making it \emph{larger} by
+\cmpBytesPctAbs{}\%: roughly twice as quick to produce a proof, yet emitting one about
+\stageTwoProofSizeRatio{}$\times$ bigger. Groth16 is \emph{succinct} --- three group
+elements whatever the circuit --- but producing that proof means a multi-scalar
+multiplication over the whole constraint system, whereas LaZer's proof grows with the
+statement yet proves a lattice relation with lattice machinery, avoiding the encoding of
+a 23-bit modulus into a 254-bit pairing-friendly field. Verification runs the other way
+(\cfgTwoProofVerifyMean{}\,$\mu$s against \cfgThreeProofVerifyMean{}), succinctness
+paying off exactly where it is designed to.
+
+\paragraph{Configuration~2's trade is worse than it looks.} Pairing security is broken
+by Shor, so its proof is precisely the component a post-quantum adversary attacks: a
+post-quantum signature does not protect a swap whose fairness rests on a classical proof.
+Groth16 also needs a \emph{trusted, per-circuit} setup (\cfgTwoSetupTime{}) whose secret
+must be destroyed for soundness, whereas LaZer's parameters are transparent.
+Configuration~3 is thus not merely the post-quantum option: it is faster end-to-end,
+needs no trusted party and removes a quantum vulnerability, paying only in bytes.
 
 \begin{table}[htbp]
   \centering
@@ -628,37 +657,6 @@ LAS configurations passed the rejection gate (\cfgTwoRejMeasured{} attempts per
     \bottomrule
   \end{tabular}
 \end{table}
-
-\paragraph{The proof, not the signature, is the cost of a post-quantum swap.}
-The role-A proof consumes \cfgTwoProofPct{}\% of end-to-end time in configuration~2 and
-\cfgThreeProofPct{}\% in configuration~3. Strip it out and the entire post-quantum
-signature workload --- two key generations, a statement, two pre-signatures, a
-pre-verification, two adaptations, an extraction and two settlements --- costs
-\cfgTwoNonProofUs{}\,$\mu$s, about \stageTwoCryptoRatio{}$\times$ the classical swap's
-\cfgOneNonProofUs{}\,$\mu$s. A factor of five on a millisecond-scale workload is
-unremarkable; a proof of hundreds of milliseconds decides whether the protocol feels
-instantaneous. Even at the packed tier the signature workload is not the bottleneck ---
-the post-quantum penalty is not where intuition puts it.
-
-\paragraph{The controlled comparison inverts the expected trade-off.} Replacing Groth16
-with LaZer --- same signature, same $\mathbf{A}$, same inputs --- makes the swap
-\emph{faster} by \cmpTimePctAbs{}\% while making it \emph{larger} by
-\cmpBytesPctAbs{}\%: roughly twice as quick to produce a proof, yet emitting one about
-\stageTwoProofSizeRatio{}$\times$ bigger. Groth16 is \emph{succinct} --- three group
-elements whatever the circuit --- but producing that proof means a multi-scalar
-multiplication over the whole constraint system, whereas LaZer's proof grows with the
-statement yet proves a lattice relation with lattice machinery, avoiding the encoding of
-a 23-bit modulus into a 254-bit pairing-friendly field. Verification runs the other way
-(\cfgTwoProofVerifyMean{}\,$\mu$s against \cfgThreeProofVerifyMean{}), succinctness
-paying off exactly where it is designed to.
-
-\paragraph{Configuration~2's trade is worse than it looks.} Pairing security is broken
-by Shor, so its proof is precisely the component a post-quantum adversary attacks: a
-post-quantum signature does not protect a swap whose fairness rests on a classical proof.
-Groth16 also needs a \emph{trusted, per-circuit} setup (\cfgTwoSetupTime{}) whose secret
-must be destroyed for soundness, whereas LaZer's parameters are transparent.
-Configuration~3 is thus not merely the post-quantum option: it is faster end-to-end,
-needs no trusted party and removes a quantum vulnerability, paying only in bytes.
 
 \paragraph{Communication is again the real price, with a usability consequence.} A
 classical swap moves \cfgOneBytesTotal{}\,B; the fully post-quantum swap moves

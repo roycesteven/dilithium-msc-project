@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAS — 6–8 minute project video deck</title>
+<!--
+  GENERATED OUTPUT: report/slides/video_deck.html
+  This file is the TEMPLATE. Every double-brace placeholder is substituted by
+  scripts/gen_slides.py from report/latex/generated/*.tex, i.e. from the same
+  measured evidence run the report quotes. Never hand-type a number here.
+  Keys: -> / <- navigate . n notes . t timer . s safe-area . g grid . f fullscreen
+-->
+<style>
+  :root{
+    --paper:#f4f7fb; --card:#ffffff; --ink:#14213a; --muted:#5a6b86;
+    --line:#d8e0ec; --grid:#e7edf6; --wash:#eef3fa;
+    --base:#1f6feb; --base-soft:#e8f1ff;
+    --adaptor:#e8590c; --adaptor-soft:#fdece1;
+    --reused:#2f9e44; --reused-soft:#e6f6ea;
+    --warn:#b02a37; --warn-soft:#fdecee;
+    /* Chart MARKS are a separate token from the accent inks: the categorical
+       palette is validated per mode (OKLCH lightness band, chroma floor, CVD
+       separation, contrast vs the card surface), while the inks are governed by
+       WCAG text contrast.  One token cannot satisfy both in dark mode.
+       Validated: light #1f6feb / #e8590c on #ffffff -- all checks pass. */
+    --mark-b:#1f6feb; --mark-ad:#e8590c; --ink-ad:#c2410c;
+    --shadow:0 1px 2px rgba(20,33,58,.06), 0 18px 44px -24px rgba(20,33,58,.32);
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0a1120; --card:#121b2b; --ink:#eaf0fa; --muted:#93a3be;
+      --line:#26324a; --grid:#141d2d; --wash:#0f1828;
+      --base:#5b9bff; --base-soft:#152741;
+      --adaptor:#ff8a4c; --adaptor-soft:#33210f;
+      --reused:#5bd07a; --reused-soft:#12271a;
+      --warn:#ff7b8a; --warn-soft:#2c1418;
+      /* dark marks re-stepped for the dark surface, not flipped: validated
+         #3f86ee / #e2610f on #121b2b -- all checks pass */
+      --mark-b:#3f86ee; --mark-ad:#e2610f; --ink-ad:#ff8a4c;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 22px 48px -26px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0a1120; --card:#121b2b; --ink:#eaf0fa; --muted:#93a3be;
+    --line:#26324a; --grid:#141d2d; --wash:#0f1828;
+    --base:#5b9bff; --base-soft:#152741;
+    --adaptor:#ff8a4c; --adaptor-soft:#33210f;
+    --reused:#5bd07a; --reused-soft:#12271a;
+    --warn:#ff7b8a; --warn-soft:#2c1418;
+    --mark-b:#3f86ee; --mark-ad:#e2610f; --ink-ad:#ff8a4c;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 22px 48px -26px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#05080f}
+  body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+
+  /* ---- fixed 1280x720 stage, scaled to the window: what you see is what records ---- */
+  #frame{position:fixed;inset:0;display:grid;place-items:center;background:#05080f}
+  #stage{
+    width:1280px;height:720px;transform-origin:center center;position:relative;
+    background:var(--paper);overflow:hidden;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+
+  .slide{
+    position:absolute;inset:0;padding:44px 56px 60px;
+    display:flex;flex-direction:column;gap:18px;
+    opacity:0;visibility:hidden;transform:translateY(10px);
+    transition:opacity .32s ease, transform .32s ease, visibility 0s .32s;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .32s ease, transform .32s ease}
+
+  .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  h1.headline{font-size:40px;line-height:1.06;font-weight:800;letter-spacing:-.028em;margin:0;text-wrap:balance}
+  h1.big{font-size:50px}
+  .dek{color:var(--muted);font-size:19px;line-height:1.4;margin:0;max-width:80ch}
+  .kicker{font-size:22px;font-weight:650;line-height:1.32;margin:0}
+  strong.hi{color:var(--adaptor)}
+  strong.hb{color:var(--base)}
+
+  .cols{display:grid;gap:16px;flex:1;min-height:0;align-items:start}
+  .cols.stretch{align-items:stretch}
+  .c2{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:1fr 1fr 1fr}
+  .c25{grid-template-columns:1.25fr 1fr}
+  .c52{grid-template-columns:1fr 1.35fr}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-height:0;
+  }
+  .card.tint-base{background:var(--base-soft);border-color:color-mix(in srgb,var(--base) 32%,var(--line))}
+  .card.tint-ad{background:var(--adaptor-soft);border-color:color-mix(in srgb,var(--adaptor) 32%,var(--line))}
+  .card.tint-ok{background:var(--reused-soft);border-color:color-mix(in srgb,var(--reused) 32%,var(--line))}
+  .card.tint-warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 32%,var(--line))}
+  .card h3{margin:0;font-size:19px;font-weight:750;letter-spacing:-.01em}
+  .card p{margin:0;font-size:17px;line-height:1.42;color:var(--muted)}
+  .card p.on{color:var(--ink)}
+  .num{font-family:var(--mono);font-size:15px}
+
+  ul.tight{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:17px;line-height:1.35}
+  ul.tight li::marker{color:var(--muted)}
+
+  .stat{display:flex;flex-direction:column;gap:2px}
+  .stat .v{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1;font-family:var(--mono)}
+  .stat .v.ad{color:var(--adaptor)} .stat .v.b{color:var(--base)} .stat .v.w{color:var(--warn)} .stat .v.ok{color:var(--reused)}
+  .stat .l{font-size:14px;color:var(--muted);line-height:1.25}
+  .statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .statrow.four{grid-template-columns:repeat(4,1fr)}
+
+  .figbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;
+          box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden}
+  .figbox img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+
+  .caveat{font-size:14.5px;color:var(--muted);border-left:3px solid var(--warn);padding-left:10px;line-height:1.35}
+  .caveat b{color:var(--warn)}
+
+  .chipline{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);border-radius:999px;
+        padding:5px 11px;color:var(--muted);background:var(--card)}
+  .chip.b{color:var(--base);border-color:var(--base)}
+  .chip.ad{color:var(--ink-ad);border-color:var(--ink-ad)}
+  .chip.ok{color:var(--reused);border-color:var(--reused)}
+
+  /* ---- slide 3: the four beats, animated on entry ---- */
+  .beats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch;flex:1;min-height:0}
+  .beat{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 17px;
+        display:flex;flex-direction:column;gap:9px;justify-content:center;
+        box-shadow:var(--shadow);opacity:0;transform:translateY(12px)}
+  .slide.active .beat{animation:beatin .45s cubic-bezier(.2,.7,.2,1) forwards}
+  .slide.active .beat:nth-child(1){animation-delay:.15s}
+  .slide.active .beat:nth-child(2){animation-delay:.75s}
+  .slide.active .beat:nth-child(3){animation-delay:1.35s}
+  .slide.active .beat:nth-child(4){animation-delay:1.95s}
+  @keyframes beatin{to{opacity:1;transform:none}}
+  .beat .n{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.12em}
+  .beat .op{font-size:23px;font-weight:750;letter-spacing:-.015em}
+  .beat .eq{font-family:var(--mono);font-size:16px;color:var(--base)}
+  .beat .why{font-size:15.5px;color:var(--muted);line-height:1.36}
+  .beat.lock{border-color:var(--adaptor)}
+  .beat.leak{border-color:var(--reused)}
+  @media (prefers-reduced-motion:reduce){.slide.active .beat{animation:none;opacity:1;transform:none}}
+
+  /* ---- proportional bars ----------------------------------------------
+     Every number is a direct label OUTSIDE the mark, in text tokens: nothing
+     is read off a coloured fill, so mark contrast never gates legibility.
+     Bar widths are computed by scripts/gen_slides.py from the same macros as
+     the labels, on one shared scale, so geometry cannot drift from the value.
+     Fills sit square on the baseline and are 4px-rounded at the data end. */
+  .bars{display:flex;flex-direction:column;gap:11px}
+  .bar{display:grid;grid-template-columns:136px 1fr 236px;gap:14px;align-items:center}
+  .bar .lab{font-size:14.5px;color:var(--muted);text-align:right;line-height:1.2}
+  .bar .track{height:26px;background:var(--wash);border:1px solid var(--line);border-radius:5px;position:relative}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;min-width:3px;border-radius:0 4px 4px 0;width:0;
+             transition:width .7s cubic-bezier(.2,.7,.2,1)}
+  .slide.active .bar .fill{width:var(--w)}
+  .fill.b{background:var(--mark-b)} .fill.ad{background:var(--mark-ad)}
+  .bar .val{font-family:var(--mono);font-size:14px;color:var(--ink);line-height:1.3}
+  .bar .val em{font-style:normal;color:var(--muted)}
+
+  /* ---- part-to-whole strip: 2px surface gap between segments, legend below ---- */
+  .strip{display:flex;height:28px;gap:2px}
+  .strip div:first-child{border-radius:5px 0 0 5px}
+  .strip div:last-child{border-radius:0 5px 5px 0}
+  .legend{display:flex;gap:20px;font-size:13.5px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:block;flex:none}
+
+  /* ---- layered architecture diagram (slide 4) — not a chart ---- */
+  .stack{display:flex;flex-direction:column;gap:7px}
+  .stack div{border-radius:8px;padding:9px 13px;font-size:14.5px;line-height:1.28;
+             border:1px solid var(--line);border-left-width:5px;color:var(--ink)}
+  .stack .new{background:var(--adaptor-soft);border-left-color:var(--mark-ad)}
+  .stack .old{background:var(--wash);border-left-color:var(--muted)}
+
+  /* ---- capture placeholder for the two demo segments ---- */
+  .capture{flex:1;min-height:0;border:2px dashed var(--adaptor);border-radius:14px;background:var(--card);
+           display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px}
+  .capture .big{font-size:20px;font-weight:750;color:var(--adaptor)}
+  .capture .cmd{font-family:var(--mono);font-size:14px;color:var(--ink);background:var(--wash);
+                border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+  .capture .hint{font-size:14px;color:var(--muted);max-width:70ch;line-height:1.4}
+
+  /* ---- title slide ---- */
+  .title{justify-content:center;gap:22px;padding-left:70px}
+  .title .rule{width:96px;height:5px;background:var(--adaptor);border-radius:3px}
+  .title .meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:16px;color:var(--muted)}
+
+  /* ---- chrome ---- */
+  #bar{position:absolute;left:0;top:0;height:4px;background:var(--adaptor);width:0;transition:width .3s ease;z-index:5}
+  #foot{position:absolute;left:56px;right:56px;bottom:18px;display:flex;align-items:center;
+        gap:14px;font-family:var(--mono);font-size:12.5px;color:var(--muted);z-index:5}
+  #foot .ttl{color:var(--ink);font-weight:600}
+  #foot .sp{margin-left:auto}
+  #clock{font-variant-numeric:tabular-nums}
+  #clock.over{color:var(--warn);font-weight:700}
+  #safe{position:absolute;right:24px;bottom:34px;width:300px;height:169px;border:2px dashed var(--base);
+        border-radius:10px;display:none;align-items:flex-end;justify-content:center;padding-bottom:6px;
+        font-family:var(--mono);font-size:11px;color:var(--base);z-index:4}
+  #safe.on{display:flex}
+
+  /* ---- notes panel (rehearsal only — turn OFF before recording) ---- */
+  #notes{position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;z-index:20;
+         background:var(--card);color:var(--ink);border-top:2px solid var(--adaptor);
+         padding:16px 22px;display:none;font-size:15px;line-height:1.5}
+  #notes.on{display:block}
+  #notes .hd{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+             color:var(--muted);margin-bottom:6px;display:flex;gap:16px}
+  #notes .hd b{color:var(--adaptor)}
+  #help{position:fixed;right:12px;top:10px;z-index:20;font-family:var(--mono);font-size:11.5px;
+        color:#8ea0bd;background:rgba(10,17,32,.72);border:1px solid #26324a;border-radius:8px;padding:6px 10px}
+  #help.off{display:none}
+
+  /* ---- overview grid ---- */
+  #frame.grid #stage{display:none}
+  #grid{position:fixed;inset:0;z-index:15;background:var(--paper);padding:24px;overflow:auto;display:none;
+        grid-template-columns:repeat(4,1fr);gap:14px;align-content:start}
+  #grid.on{display:grid}
+  #grid button{all:unset;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:10px;
+               padding:12px 14px;display:flex;flex-direction:column;gap:5px}
+  #grid button:hover{border-color:var(--adaptor)}
+  #grid .gn{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  #grid .gt{font-size:14px;font-weight:650;line-height:1.25}
+  #grid .gd{font-family:var(--mono);font-size:11px;color:var(--adaptor)}
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="stage">
+    <div id="bar"></div>
+
+    <!-- ============================ 1 ============================ -->
+    <section class="slide title" data-title="Title" data-time="0:12" data-notes="Post-quantum secure exotic signature schemes in blockchains. I implemented LAS, a lattice-based adaptor signature, on top of the CRYSTALS-Dilithium reference implementation, and measured what it actually costs — as a standalone signature, and inside a working cross-chain atomic swap.">
+      <div class="eyebrow">MSc Cybersecurity · University of Manchester · COMP66060</div>
+      <h1 class="headline big">Implementing Post-Quantum Secure<br>Exotic Signature Schemes in Blockchains</h1>
+      <div class="rule"></div>
+      <p class="dek" style="font-size:21px;max-width:74ch">LAS — a lattice adaptor signature built on CRYSTALS-Dilithium primitives:
+      implemented twice, benchmarked against two baselines, and demonstrated end-to-end in a post-quantum atomic swap.</p>
+      <div class="meta"><span><b>Royce Steven</b></span><span>Supervisor: Dr Zhipeng Wang</span><span class="num">evidence run {{benchRunId}}</span></div>
+    </section>
+
+    <!-- ============================ 2 ============================ -->
+    <section class="slide" data-title="The gap" data-time="0:35" data-notes="Every public blockchain authorises transactions with elliptic-curve signatures, and Shor's algorithm breaks all of them. NIST has standardised replacements — but only BASIC signatures, which authenticate a message and nothing more. What blockchains actually run on are EXOTIC signatures: multi-signatures, threshold signatures, and adaptor signatures. In the post-quantum setting those are still largely paper-only. That gap — a published design with no tested, measured implementation — is what this project closes.">
+      <div class="eyebrow">The problem</div>
+      <h1 class="headline">Post-quantum blockchains have the <em>basic</em> signatures.<br>They do not have the <strong class="hi">exotic</strong> ones.</h1>
+      <div class="cols c3">
+        <div class="card tint-base">
+          <h3>Today</h3>
+          <p class="on">Every chain signs with ECDSA, Schnorr or BLS — all elliptic-curve.</p>
+          <p><b>Shor breaks all three.</b></p>
+        </div>
+        <div class="card">
+          <h3>Standardised</h3>
+          <p class="on">NIST has ML-DSA and friends — <b>basic</b> signatures.</p>
+          <p>A basic signature authenticates a message and nothing more.</p>
+        </div>
+        <div class="card tint-ad">
+          <h3>Missing</h3>
+          <p class="on">Multi-sig, threshold, <b>adaptor</b> — the schemes that give chains their features.</p>
+          <p>Post-quantum: mostly paper-only, no working code.</p>
+        </div>
+      </div>
+      <p class="kicker">This project turns one paper design — <strong class="hi">LAS</strong>, a lattice adaptor signature — into a tested, benchmarked, blockchain-facing artefact.</p>
+    </section>
+
+    <!-- ============================ 3 ============================ -->
+    <section class="slide" data-title="What an adaptor signature does" data-time="0:40" data-notes="Here is the whole mechanism in four steps. One: PreSign produces a pre-signature that verifies against a statement Y, but is NOT a valid signature — you cannot spend with it. Two: anyone who knows the secret witness for Y can Adapt it into an ordinary signature. Three: that signature gets published on chain, and it looks exactly like a normal payment — no script, nothing unusual. Four — and this is the trick — the counterparty subtracts the pre-signature it already holds from the published signature, and out falls the witness. Publishing to claim one leg is what unlocks the other. Either both legs settle, or neither does.">
+      <div class="eyebrow">The mechanism · four functions added to a plain signature</div>
+      <h1 class="headline">Publishing a signature <strong class="hi">leaks a secret</strong> — that is what makes a swap atomic</h1>
+      <div class="beats">
+        <div class="beat lock">
+          <div class="n">STEP 1</div><div class="op">PreSign</div>
+          <div class="eq">σ̂ = (c, ẑ)</div>
+          <div class="why">Verifies against a statement <b>Y</b> — but is <b>not</b> a spendable signature.</div>
+        </div>
+        <div class="beat">
+          <div class="n">STEP 2</div><div class="op">Adapt</div>
+          <div class="eq">z = ẑ + y</div>
+          <div class="why">Whoever knows the witness <b>y</b> completes it into an ordinary signature.</div>
+        </div>
+        <div class="beat">
+          <div class="n">STEP 3</div><div class="op">Publish</div>
+          <div class="eq">σ → chain</div>
+          <div class="why">On chain it is an <b>ordinary payment</b>. No script, no hash lock, nothing to see.</div>
+        </div>
+        <div class="beat leak">
+          <div class="n">STEP 4</div><div class="op">Extract</div>
+          <div class="eq">y = z − ẑ</div>
+          <div class="why">The counterparty subtracts and recovers <b>y</b> — which unlocks the other leg.</div>
+        </div>
+      </div>
+      <p class="kicker">Two chains, no trusted third party, no on-chain script: <strong class="hb">both legs settle or neither does</strong>.</p>
+    </section>
+
+    <!-- ============================ 4 ============================ -->
+    <section class="slide" data-title="What I built" data-time="0:35" data-notes="The strategy was to build additively. The entire lattice core — number-theoretic transform, polynomial arithmetic, SHAKE, sampling — is reused from the Dilithium reference with zero upstream functions modified, and a two-branch diff makes that auditable rather than something I assert. On top sit the four adaptor functions, a bit-packed wire encoding with a validating decoder, and the application. Then I did it a second time, independently, in Rust — and the two agree on a pinned known-answer digest, byte for byte, under a different compiler and a different benchmark harness. That pairing is the strongest practical correctness argument available without a formal proof.">
+      <div class="eyebrow">The artefact</div>
+      <h1 class="headline">Built <strong class="hi">additively</strong> on a standardised reference — then built again, independently</h1>
+      <div class="cols c25">
+        <div class="card">
+          <h3>Additive architecture</h3>
+          <div class="stack">
+            <div class="new"><b>new</b> · tests · benchmarks · atomic-swap application</div>
+            <div class="new"><b>new</b> · LAS layer: PreSign / PreVerify / Adapt / Extract · wire encoding</div>
+            <div class="old"><b>reused unchanged</b> · NTT · polynomial arithmetic · SHAKE · sampling</div>
+          </div>
+          <p><b>Zero upstream Dilithium functions modified</b> — established by a two-branch diff, not by assertion.</p>
+        </div>
+        <div class="card tint-ok">
+          <h3>Two implementations, one digest</h3>
+          <p class="on">C and Rust, written against the specification, agree byte-for-byte on the pinned known-answer digest</p>
+          <p class="num" style="color:var(--ink)">{{katDigestHead}}…{{katDigestTail}}</p>
+          <p>It covers key generation, signing, all four adaptor functions and the serialization — a divergence anywhere flips it.</p>
+          <div class="chipline">
+            <span class="chip ok">functional · 1000 iters × 3 modes</span>
+            <span class="chip ok">serialization · 256 instances</span>
+            <span class="chip ok">tamper · {{tamperFlips}} byte flips</span>
+            <span class="chip ok">known-answer</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 5 ============================ -->
+    <section class="slide" data-title="DEMO A — the swap runs" data-time="0:45" data-notes="Rather than describe it, here it is running. This is the swap protocol from the LAS paper, executed verbatim, including its zero-knowledge proof of knowledge. Watch the abort gate: the second party pre-signs only after both the proof and the first pre-signature verify. Watch the counterfactual the test asserts — a pre-signature FAILS ordinary verification, which is exactly the property that distinguishes an adaptor signature from a signature. And at the end, extraction returns the witness exactly, and both legs settle.">
+      <div class="eyebrow">Demonstration 1 of 2 · screen capture</div>
+      <h1 class="headline">The whole protocol, end to end — including the proof of knowledge</h1>
+      <div class="capture">
+        <div class="big">▶ REPLACE THIS PANEL WITH THE SCREEN CAPTURE</div>
+        <div class="cmd">cd ref &amp;&amp; make test/test_swap3 &amp;&amp; ./test/test_swap3</div>
+        <div class="hint">Narrated beats to keep on screen: the <b>abort gate</b> (u₂ pre-signs only after π and σ̂₁ verify) ·
+        the <b>tripwire</b> (a pre-signature <b>fails</b> ordinary Verify) · <b>Extract returns the witness exactly</b> ·
+        both legs settle. Capture at 1280×720 so it drops into this frame 1:1.</div>
+      </div>
+      <div class="chipline">
+        <span class="chip">two parties</span><span class="chip">two ledgers</span>
+        <span class="chip">no trusted third party</span><span class="chip">π exchanged off-chain</span>
+        <span class="chip ad">π = {{piProofBytes}} B, knowledge error &lt; 2⁻{{piKnowledgeError}}</span>
+      </div>
+    </section>
+
+    <!-- ============================ 6 ============================ -->
+    <section class="slide" data-title="Result 1 — the adaptor layer is cheap" data-time="0:40" data-notes="First result. The comparison is LAS against its own simplified base signature at identical algorithm, parameters and primitives — so the only thing that varies is the adaptor layer. Every adaptor operation is paired with the basic operation it mirrors. The answer: single digits. PreSign costs {{ovPreSign}} percent more than Sign, PreVerify {{ovPreVerify}} percent, Adapt {{ovAdapt}} percent, and Extract is the cheapest operation in the whole scheme. One methodological point I want to flag: the rejection-sampling rate is COUNTED directly, not inferred from a timing ratio — inferring it gave a materially wrong number early on, so every run now aborts unless the measured attempt count matches the closed-form prediction within five standard errors.">
+      <div class="eyebrow">Result 1 · computation · Simplified Dilithium-III · core boundary</div>
+      <h1 class="headline">Adaptor functionality costs <strong class="hi">single-digit percentages</strong></h1>
+      <div class="cols stretch c52">
+        <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+          <div class="statrow" style="grid-template-columns:1fr 1fr">
+            <div class="card"><div class="stat"><div class="v ad">+{{ovPreSign}}%</div><div class="l">PreSign over Sign</div></div></div>
+            <div class="card"><div class="stat"><div class="v ad">+{{ovPreVerify}}%</div><div class="l">PreVerify over Verify</div></div></div>
+            <div class="card"><div class="stat"><div class="v ad">+{{ovAdapt}}%</div><div class="l">Adapt over Verify</div></div></div>
+            <div class="card"><div class="stat"><div class="v ok">cheapest</div><div class="l">Extract — no basic analogue</div></div></div>
+          </div>
+          <div class="card tint-base">
+            <h3>Why the numbers are trustworthy</h3>
+            <p class="on">Rejection attempts are <b>counted</b>, never inferred from timing: {{rejAttBase}} per Sign against {{rejAttLas}} per PreSign.</p>
+            <p>Every run aborts unless that matches the closed-form model within five standard errors — and correctness is asserted on the very objects about to be timed.</p>
+          </div>
+        </div>
+        <div class="figbox"><img alt="Per-operation adaptor overhead: basic signature versus LAS" src="{{FIG_TIMING}}"></div>
+      </div>
+      <p class="caveat"><b>Scope:</b> mean ± SD over {{benchReps}} repetitions × {{benchItersSign}}/{{benchItersVerify}} iterations, C implementation, one machine. At the <em>packed</em> byte boundary the premium rises to +{{packedOvPreSign}}–{{packedOvAdapt}}% — that is serialization, not adaptor arithmetic.</p>
+    </section>
+
+    <!-- ============================ 7 ============================ -->
+    <section class="slide" data-title="Result 2 — the cost is bytes" data-time="0:38" data-notes="Second result, and it is the sharp one. The price of post-quantum here is not computation, it is communication. Against a classical ECDSA adaptor signature at comparable dimensions, the LAS signature is about {{clRatioSig}} times larger and the public key about {{clRatioPk}} times larger — while every operation still runs in well under a millisecond. And the signature is almost entirely one object: the response vector z is {{zPctTarget}} percent of it, because the challenge travels only as a short digest. On top of that, an adaptor swap transmits one extra public object a basic signature does not — the statement Y, which is public-key sized. So any optimisation of LAS is an optimisation of z and Y.">
+      <div class="eyebrow">Result 2 · communication · the price of post-quantum</div>
+      <h1 class="headline">The cost is not adaptor computation — it is <strong class="hi">bytes on the wire</strong></h1>
+      <div class="legend">
+        <span><i style="background:var(--mark-b)"></i>classical ECDSA adaptor</span>
+        <span><i style="background:var(--mark-ad)"></i>LAS</span>
+        <span>one shared byte scale · Simplified Dilithium-II</span>
+      </div>
+      <div class="bars">
+        <div class="bar" title="classical ECDSA adaptor signature: {{clSigBytes}} bytes">
+          <div class="lab">classical<br>signature</div>
+          <div class="track"><div class="fill b" style="--w:{{wClSig}}%"></div></div>
+          <div class="val">{{clSigBytes}} B</div></div>
+        <div class="bar" title="LAS signature at Simplified Dilithium-II: {{sigBytesTwo}} bytes">
+          <div class="lab">LAS<br>signature</div>
+          <div class="track"><div class="fill ad" style="--w:{{wLasSig}}%"></div></div>
+          <div class="val">{{sigBytesTwo}} B <em>≈ {{clRatioSig}}× classical</em></div></div>
+        <div class="bar" title="classical public key: {{clPkBytes}} bytes">
+          <div class="lab">classical<br>public key</div>
+          <div class="track"><div class="fill b" style="--w:{{wClPk}}%"></div></div>
+          <div class="val">{{clPkBytes}} B</div></div>
+        <div class="bar" title="LAS public key at Simplified Dilithium-II: {{pkBytesTwo}} bytes">
+          <div class="lab">LAS<br>public key</div>
+          <div class="track"><div class="fill ad" style="--w:{{wLasPk}}%"></div></div>
+          <div class="val">{{pkBytesTwo}} B <em>≈ {{clRatioPk}}× classical</em></div></div>
+      </div>
+      <div class="cols c2" style="flex:none">
+        <div class="card">
+          <h3>Inside a LAS signature ({{sigBytesTarget}} B at the target set)</h3>
+          <div class="strip" title="response z {{zPctTarget}}% · challenge digest {{zRestPct}}%">
+            <div style="background:var(--mark-ad);flex:{{zPctTarget}}"></div>
+            <div style="background:var(--mark-b);flex:{{zRestPct}}"></div></div>
+          <div class="legend">
+            <span><i style="background:var(--mark-ad)"></i>response z — {{zPctTarget}}%</span>
+            <span><i style="background:var(--mark-b)"></i>challenge digest c̃ — {{zRestPct}}%</span></div>
+          <p>The challenge travels only as its digest, so <b>optimising LAS means optimising z</b>.</p>
+        </div>
+        <div class="card tint-ad">
+          <h3>And an adaptor swap adds one public object</h3>
+          <p class="on">The statement <b>Y</b> — {{stmtBytesTarget}} B, exactly the size of a public key — plus a signature-sized pre-signature.</p>
+          <p>Those are the only objects an adaptor scheme sends that a basic signature does not.</p>
+        </div>
+      </div>
+      <p class="caveat"><b>Fairness:</b> the classical baseline is a functionality-matched ECDSA <em>adaptor</em> signature (not plain ECDSA), compared at Simplified Dilithium-II — an engineering match to ≈128-bit, <b>not</b> a formal security-equivalence claim.</p>
+    </section>
+
+    <!-- ============================ 8 ============================ -->
+    <section class="slide" data-title="Result 3 — the proof dominates" data-time="0:35" data-notes="Third result, and it is the one I did not expect. I took the protocol to a UTXO ledger — the venue the paper assumes — and measured three configurations: classical, LAS with Groth16, and LAS with a lattice prover. At the application level the signature is not the bottleneck at all. The zero-knowledge proof of knowledge consumes over 98 percent of a swap in both post-quantum configurations. And in the controlled comparison — same signature, same relation, only the prover changes — the POST-QUANTUM prover is {{cmpTimePctAbs}} percent faster end to end while being {{cmpBytesPctAbs}} percent larger. So the fully post-quantum stack is at once the faster one, the one with no trusted setup, and the only one Shor does not break. It pays for all three in bytes.">
+      <div class="eyebrow">Result 3 · the swap on a UTXO ledger · three configurations</div>
+      <h1 class="headline">At the application level the <strong class="hi">proof</strong>, not the signature, is the bottleneck</h1>
+      <div class="legend">
+        <span><i style="background:var(--mark-ad)"></i>proof of knowledge π</span>
+        <span><i style="background:var(--mark-b)"></i>everything else: key generation, pre-signing, adapting, extraction, settlement</span>
+      </div>
+      <div class="bars" style="flex:none">
+        <div class="bar" title="LAS + Groth16: π is {{cfgTwoProofPct}}% of end-to-end time">
+          <div class="lab">LAS + Groth16</div>
+          <div class="strip" style="height:30px">
+            <div style="background:var(--mark-ad);flex:{{cfgTwoProofPct}}"></div>
+            <div style="background:var(--mark-b);flex:{{cfgTwoRestPct}}"></div></div>
+          <div class="val">π = {{cfgTwoProofPct}}% <em>of end-to-end</em></div></div>
+        <div class="bar" title="LAS + LaZer: π is {{cfgThreeProofPct}}% of end-to-end time">
+          <div class="lab">LAS + LaZer</div>
+          <div class="strip" style="height:30px">
+            <div style="background:var(--mark-ad);flex:{{cfgThreeProofPct}}"></div>
+            <div style="background:var(--mark-b);flex:{{cfgThreeRestPct}}"></div></div>
+          <div class="val">π = {{cfgThreeProofPct}}% <em>of end-to-end</em></div></div>
+      </div>
+      <div class="cols c3">
+        <div class="card tint-ok">
+          <h3>The controlled comparison</h3>
+          <p class="on">Same signature, same relation, same pinned inputs — <b>only the prover changes</b>.</p>
+          <p>Swapping Groth16 for the lattice prover: <b>{{cmpTimePctAbs}}% faster</b>, <b>{{cmpBytesPctAbs}}% larger</b>.</p>
+        </div>
+        <div class="card">
+          <h3>Strip the proof out</h3>
+          <p class="on">The entire post-quantum signature workload of a swap — two key generations, two pre-signatures, two adaptations, an extraction, two settlements — is about <b>{{stageTwoCryptoRatio}}×</b> the classical one.</p>
+          <p>A factor of five on a millisecond workload is unremarkable.</p>
+        </div>
+        <div class="card tint-warn">
+          <h3>Communication, again</h3>
+          <p class="on">A fully post-quantum swap moves about <b>{{stageTwoBytesRatioThree}}×</b> the bytes and puts <b>{{stageTwoOnChainRatio}}×</b> more on the ledgers.</p>
+          <p>On a UTXO chain that is the multiple that costs money.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 9 ============================ -->
+    <section class="slide" data-title="DEMO B — a real Bitcoin client" data-time="0:48" data-notes="Second demonstration, and this is the part the report can only describe. A settled swap weighs {{btcThreeWeight}} weight units — about {{btcThreePctStd}} percent of Bitcoin's standardness limit, so it FITS. What does not exist is a consensus rule that verifies a lattice signature. So I put it to a real client in two stages. First, carriage: on a stock Bitcoin Core {{btcNodeTag}} node, lattice-sized objects are refused by default relay policy but are consensus-valid and get mined. Second, verification: I defined one of the reserved OP_SUCCESS opcodes as a lattice verification opcode, and a spend carrying NO elliptic-curve signature at all was accepted and mined. The control is what makes that meaningful — a STOCK node still treats that opcode as OP_SUCCESS and accepts everything, so {{btcLasControls}} mutations refused by the patched node and accepted by the stock one attribute every refusal to the new rule. And the honest caveat: a patched node is not Bitcoin.">
+      <div class="eyebrow">Demonstration 2 of 2 · a real Bitcoin Core {{btcNodeTag}} node, on regtest</div>
+      <h1 class="headline">It <strong class="hb">fits</strong> the size limits. It fails the <strong class="hi">verification rules</strong> — so I changed one.</h1>
+      <div class="cols stretch c2" style="flex:1;min-height:0">
+        <div class="capture" style="flex:1">
+          <div class="big">▶ SCREEN CAPTURE — the node's own output</div>
+          <div class="cmd">scripts/run_btc_las_node.sh</div>
+          <div class="hint">Show: the patched node <b>rejecting</b> a mutated spend while a <b>stock</b> node accepts it —
+          side by side. That differential is the whole argument.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+          <div class="card tint-base">
+            <h3>1 · Carriage, stock node</h3>
+            <p class="on">A lattice-carrying spend: <b>{{btcMeasCarriageVsize}} vB</b>, refused by default relay policy (<span class="num">{{btcMeasCarriagePolicy}}</span>) — yet consensus-valid, and <b>mined</b>.</p>
+            <p>Standardness and validity are different questions; only the second decides feasibility.</p>
+          </div>
+          <div class="card tint-ok">
+            <h3>2 · Verification, patched node</h3>
+            <p class="on">Opcode <span class="num">{{btcLasOpcode}}</span> defined as lattice verification: a spend with <b>no elliptic-curve signature at all</b> was accepted and mined ({{btcLasVsize}} vB).</p>
+            <p><b>{{btcLasControls}} mutations</b> refused by the patched node and accepted by a stock one — which attributes the refusals to the new rule.</p>
+          </div>
+          <p class="caveat"><b>Honest limits:</b> a patched node is <em>not</em> Bitcoin, so “cannot settle on Bitcoin as it stands” still holds; the security of the new rule is <b>not</b> analysed; and it is not wired into the swap.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 10 =========================== -->
+    <section class="slide" data-title="On-chain verification" data-time="0:32" data-notes="On the smart-contract side I had drawn the wrong conclusion, and I want to be straight about it. The first complete Solidity verifier cost {{gasLasVerifiedM}} million gas — far over the per-transaction cap — and I recorded the cause as structural, that SHAKE256 is not EVM-native, and inferred that local optimisation could not close the gap. That inference was asserted, not measured. Re-expressing the same predicate — the public key registered in the transform domain, parameters read straight from calldata, a sponge without the per-byte absorb — closed it: a real client mined a claim running full verification at {{gasOptReceipt}} gas, {{gasOptCapPct}} percent of the cap. It fits, narrowly, at one parameter set and one message length.">
+      <div class="eyebrow">The negative result that turned over · EVM, real client receipt</div>
+      <h1 class="headline">“Impossible on chain” was an <strong class="hi">inference</strong>, not a measurement</h1>
+      <div class="cols c2">
+        <div class="figbox"><img alt="On-chain settlement gas for the four claim paths, against the EIP-7825 cap" src="{{FIG_ONCHAIN}}"></div>
+        <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+          <div class="card tint-warn">
+            <h3>What I measured first</h3>
+            <p class="on">A complete, validated native verifier: <b>≈{{gasLasVerifiedM}} M gas</b> — over the EIP-7825 cap. The optimistic variant then moved the cost into a fraud proof that also exceeds it.</p>
+          </div>
+          <div class="card tint-ok">
+            <h3>What I got wrong</h3>
+            <p class="on">I recorded the cause as structural and inferred that local optimisation could not close the gap. <b>Re-expressing the same predicate closed it.</b></p>
+            <p class="on">A real client mined a claim running full verification at <b>{{gasOptReceipt}} gas</b> — {{gasOptCapPct}}% of the cap.</p>
+          </div>
+          <p class="caveat"><b>Scope is part of the claim:</b> Simplified Dilithium-III, a 32-byte signed message, that EVM revision. The remaining margin is a <em>message-length budget</em>, and no other parameter set was evaluated.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 11 =========================== -->
+    <section class="slide" data-title="Testing my own assumption" data-time="0:28" data-notes="One more result, because it corrects the project's own design story. I had simplified the Dilithium base — turning off the hint vector and the high-low bit decomposition — because the adaptor appeared to need an exact verification identity. Rather than keep asserting that, I built the same construction a third time on NIST ML-DSA exactly as FIPS 204 specifies it. The naive port fails outright: zero of {{mldsaIters}} pre-signatures verify. So some modification really is unavoidable. But move the WHOLE commitment path onto w plus Y and the unmodified FIPS 204 verifier accepts the adapted signature, {{mldsaRepairedP}} out of {{mldsaIters}}. So PreSign and PreVerify are necessarily new algorithms — Verify is not.">
+      <div class="eyebrow">Testing a design decision instead of asserting it · LAS on unmodified FIPS 204</div>
+      <h1 class="headline">The belief the whole implementation rested on was <strong class="hi">half wrong</strong></h1>
+      <div class="cols c3">
+        <div class="card tint-warn">
+          <h3>Naive port fails</h3>
+          <div class="stat"><div class="v w">{{mldsaNaiveP}}/{{mldsaIters}}</div><div class="l">pre-signatures verify when the statement is only added to the hash</div></div>
+          <p>So <b>some</b> modification is genuinely unavoidable.</p>
+        </div>
+        <div class="card tint-ok">
+          <h3>But the verifier need not change</h3>
+          <div class="stat"><div class="v ok">{{mldsaRepairedP}}/{{mldsaIters}}</div><div class="l">accepted by the <b>unmodified FIPS 204 verifier</b> once the whole commitment path moves onto w + Y</div></div>
+          <p><b>PreSign and PreVerify are new algorithms. Verify is not.</b></p>
+        </div>
+        <div class="card">
+          <h3>It relocates the bottleneck</h3>
+          <p class="on">Signature falls {{mldsaSigBytesSimp}} → <b>{{mldsaSigBytes}} B</b>, but the statement Y is <b>byte-identical</b> ({{mldsaStmtBytes}} B).</p>
+          <p>Compressing the signature makes Y the dominant object rather than removing it.</p>
+        </div>
+      </div>
+      <p class="caveat"><b>Functional demonstration only:</b> whether committing to HighBits(w + Y) preserves ML-DSA's unforgeability is <b>not</b> analysed — that is the prerequisite before this route could be recommended.</p>
+    </section>
+
+    <!-- ============================ 12 =========================== -->
+    <section class="slide" data-title="What failed" data-time="0:25" data-notes="Three optimisations I could have left as future-work suggestions were implemented and measured instead, and none of them paid off. Compressing the statement fails because truncation is invisible to the adaptor's own functions and fatal at both boundaries that matter. Batching amortises the wrong cost. And the optimistic on-chain verifier makes the honest path cheap while leaving a worst-case fraud proof that cannot be mined — and a fraud proof that cannot be mined is not one. An untested suggestion costs nothing to write and tells a reader nothing; each of these instead names the mechanism that defeats it.">
+      <div class="eyebrow">Negative results · measured, not speculated</div>
+      <h1 class="headline">Three optimisations, <strong class="hi">implemented and closed</strong> — each names the mechanism that beat it</h1>
+      <div class="cols c3">
+        <div class="card tint-warn">
+          <h3>Compress the statement Y</h3>
+          <p class="on">Truncation is <b>invisible</b> to the adaptor's own functions — they hash whatever statement they are handed — and <b>fatal</b> at ordinary Verify and at Extract, which accepts only on the exact relation.</p>
+          <p>Deriving Y from a seed compresses it totally and hands over the witness.</p>
+        </div>
+        <div class="card tint-warn">
+          <h3>Amortise the proof over a batch</h3>
+          <p class="on">Groth16's proof is <b>constant</b> in batch size — so bytes were never the bottleneck to amortise.</p>
+          <p>The lattice prover's per-swap proof shrinks, but proving and verifying get several times worse.</p>
+        </div>
+        <div class="card tint-warn">
+          <h3>Optimistic on-chain verification</h3>
+          <p class="on">The honest claim becomes cheap (≈{{gasNaysayClaimM}} M gas), but the worst-case fraud proof costs ≈{{gasNaysayDigestM}} M — over the cap.</p>
+          <p><b>A fraud proof that cannot be mined is not a fraud proof.</b></p>
+        </div>
+      </div>
+      <p class="kicker">An untested future-work bullet costs nothing to write and tells a reader nothing. These close two of the three directions outright.</p>
+    </section>
+
+    <!-- ============================ 13 =========================== -->
+    <section class="slide" data-title="Conclusion" data-time="0:22" data-notes="To close. A working, tested, end-to-end post-quantum exotic signature is achievable by reuse of standardised primitives — the adaptor layer itself is nearly free. The cost is bytes, and at the application level the proof, not the signature, is what to optimise next. What stays open: a hard relation whose statement is small by construction, a proof system that is succinct at THIS scale rather than asymptotically, and the security analysis of the ML-DSA variant. Thank you.">
+      <div class="eyebrow">Conclusion</div>
+      <h1 class="headline">A post-quantum adaptor signature is <strong class="hb">achievable by reuse</strong>.<br>The bill arrives in <strong class="hi">bytes</strong>.</h1>
+      <div class="cols c2">
+        <div class="card tint-ok">
+          <h3>What the evidence supports</h3>
+          <ul class="tight">
+            <li>All five objectives met; the lattice core reused unchanged, validated by a second independent implementation.</li>
+            <li>Adaptor functionality: at most <b>+{{ovMaxAll}}%</b> of computation at the core boundary.</li>
+            <li>The real cost is communication — <b>z</b> and the statement <b>Y</b>.</li>
+            <li>In a real swap the <b>proof</b> consumes over 98% of the work.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>What stays open</h3>
+          <ul class="tight">
+            <li>A hard relation whose <b>statement is small by design</b> — not a better encoding.</li>
+            <li>A proof system succinct at <b>this</b> scale, not only asymptotically.</li>
+            <li>The <b>security</b> of the ML-DSA variant, and of the consensus rule.</li>
+            <li>A live network: for the post-quantum legs the blocker is a consensus rule, not engineering.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="caveat" style="border-color:var(--muted)">No concrete security is formally analysed and nothing settled on a live network — both scoped out by design, and both bound what these numbers mean.</p>
+    </section>
+
+    <div id="safe">talking-head safe area</div>
+    <div id="foot">
+      <span class="ttl" id="ftitle"></span>
+      <span id="fnum"></span>
+      <span class="sp"></span>
+      <span id="fplan"></span>
+      <span id="clock">0:00</span>
+    </div>
+  </div>
+</div>
+
+<div id="grid"></div>
+<div id="notes"><div class="hd"><span id="nnum"></span><b id="ntime"></b><span>press N to hide — turn this OFF before recording</span></div><div id="ntext"></div></div>
+<div id="help">→ ← navigate · N notes · T timer · S safe area · G grid · F fullscreen</div>
+
+<script>
+(function(){
+  var stage=document.getElementById('stage'),frame=document.getElementById('frame');
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var i=0,started=false,t0=0,tick=null,budget=0;
+
+  slides.forEach(function(s){ budget+=toSec(s.dataset.time||'0:00'); });
+
+  function toSec(v){var p=v.split(':');return (+p[0])*60+(+p[1]);}
+  function fmt(s){var m=Math.floor(s/60);var r=s%60;return m+':'+(r<10?'0':'')+r;}
+
+  function fit(){
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    stage.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    if(location.hash!=='#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides.forEach(function(s,k){ s.classList.toggle('active',k===i); });
+    var s=slides[i];
+    document.getElementById('ftitle').textContent=s.dataset.title||'';
+    document.getElementById('fnum').textContent='· '+(i+1)+'/'+slides.length;
+    document.getElementById('fplan').textContent='planned '+(s.dataset.time||'')+' · deck '+fmt(budget);
+    document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+    document.getElementById('nnum').textContent='SLIDE '+(i+1)+' — '+(s.dataset.title||'');
+    document.getElementById('ntime').textContent='planned '+(s.dataset.time||'');
+    document.getElementById('ntext').textContent=s.dataset.notes||'';
+  }
+
+  function startClock(){
+    if(started) return; started=true; t0=Date.now();
+    tick=setInterval(function(){
+      var e=Math.floor((Date.now()-t0)/1000);
+      var c=document.getElementById('clock');
+      c.textContent=fmt(e);
+      c.classList.toggle('over', e>480);   /* 8:00 hard ceiling */
+    },500);
+  }
+
+  document.addEventListener('keydown',function(e){
+    var k=e.key;
+    if(k==='ArrowRight'||k===' '||k==='PageDown'){ startClock(); show(i+1); e.preventDefault(); }
+    else if(k==='ArrowLeft'||k==='PageUp'){ show(i-1); e.preventDefault(); }
+    else if(k==='Home'){ show(0); }
+    else if(k==='End'){ show(slides.length-1); }
+    else if(k==='n'||k==='N'){ document.getElementById('notes').classList.toggle('on'); }
+    else if(k==='s'||k==='S'){ document.getElementById('safe').classList.toggle('on'); }
+    else if(k==='t'||k==='T'){ startClock(); }
+    else if(k==='g'||k==='G'){ document.getElementById('grid').classList.toggle('on'); }
+    else if(k==='h'||k==='H'){ document.getElementById('help').classList.toggle('off'); }
+    else if(k==='f'||k==='F'){ if(document.fullscreenElement){document.exitFullscreen();} else {document.documentElement.requestFullscreen();} }
+  });
+  stage.addEventListener('click',function(){ startClock(); show(i+1); });
+
+  var g=document.getElementById('grid');
+  slides.forEach(function(s,k){
+    var b=document.createElement('button');
+    b.innerHTML='<span class="gn">'+(k+1)+'</span><span class="gt"></span><span class="gd">'+(s.dataset.time||'')+'</span>';
+    b.querySelector('.gt').textContent=s.dataset.title||'';
+    b.onclick=function(){ g.classList.remove('on'); show(k); };
+    g.appendChild(b);
+  });
+
+  /* deep link: video_deck.html#7 opens on slide 7 (handy for rehearsing one beat) */
+  var start=parseInt((location.hash||'').slice(1),10);
+  show(isFinite(start)&&start>0 ? start-1 : 0);
+  window.addEventListener('hashchange',function(){
+    var n=parseInt((location.hash||'').slice(1),10);
+    if(isFinite(n)&&n>0&&n-1!==i) show(n-1);
+  });
+})();
+</script>
+</body>
+</html>

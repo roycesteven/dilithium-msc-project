@@ -113,6 +113,9 @@ at …" — never as a finding. Further, standing:
 - **Negative claims need the same warrant** — "X does not fit", "does not scale", "breaks",
   "is infeasible" are claims. This project has already had to retract one ("exceeds the block
   gas limit") for exactly this reason; that retraction is the precedent, not the exception.
+  A second, 2026-08-12: **"zero compiler warnings"** stood in the report unevidenced —
+  `ref/Makefile` sets `-Wall -Wextra …` but **no `-Werror`**, and `run_benchmark_suite.sh`
+  captures only each binary's stdout, never `make`'s. A clean exit is not a clean build.
 - **Never claim more than the gate proves** — no gadget described as a complete proof, no
   non-zero-knowledge argument offered as π, no model reported as a client result.
 - **Self-contained references**: never a bare "Fig. 1" — say which paper's figure. No
@@ -148,6 +151,18 @@ the base signature.** Results/evaluation must lead with this
   the body**, never collected at a chapter end or in the appendix (Meeting 8, overrides the
   older figures-to-appendix habit); group the four LAS function figures side by side; avoid
   single-figure pages; no abbreviations of scheme/level names in tables or figures.
+- **⚠️ NO PAGE MAY CONTAIN ONLY FLOATS (Royce, 2026-08-12).** LaTeX gives queued floats a page
+  of their own as soon as they fill `\floatpagefraction`; at the old 0.75 that stranded five
+  of Ch. 3's floats on text-free pages. `report.tex` now sets it **0.95** under `topfraction`
+  0.92. Two knock-on rules: an over-long caption is what makes a float page-sized (Tab. 3.7's
+  was cut to fit — caveats kept, mechanism moved to `app:methoddetail`), and a float placed
+  beside its own discussion rather than at the section head does not queue. **Re-check the
+  whole PDF after any float edit** — placement is global, so a fix here creates one there.
+- **Criterion figure is NOT "reproduced unmodified"** — Criterion's 12-unit type renders at
+  ~4 pt at `\linewidth`. `scripts/gen_criterion_figure.py` enlarges the type and re-flows the
+  margins only (plot interior is the identity map); it runs off a captured
+  `evidence/criterion/*/presign_pdf.svg`, so the figure rebuilds without re-running the bench.
+  The caption must keep saying what was changed.
 
 ### ⚠️ WORD COUNT — regenerate with `make -C report/latex wordcount`, never trust a stale file
 
@@ -182,18 +197,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-11 12:51 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-12 14:01 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD b8ee428 · 2026-08-11 · labrador issue
-- Working tree: 9 modified tracked file(s), 221 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 07cbf17 · 2026-08-11 · deck wip, report draft 1
+- Working tree: 11 modified tracked file(s), 44 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `07cbf17 2026-08-11 deck wip, report draft 1`
+  - `98ed761 2026-08-11 btclasbenchmacro.tex btcnodemadcros.tex`
   - `b8ee428 2026-08-11 labrador issue`
   - `688ffbc 2026-08-07 report meeting 8 pdf`
   - `780c0be 2026-08-07 CLAUDE.md dan report untuk meeting 9`
-  - `358a69e 2026-08-06 btc evm two leg ref/ bitcoin/ report/latex/ scripts/`
-  - `be94485 2026-08-06 btc evm two leg`
 
 ### Target parameter set — anchors parsed from source
 
@@ -209,7 +224,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8997** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8995** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -231,7 +246,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-11.
+- `CLAUDE.md` hand-written sections last touched 2026-08-12.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -323,7 +338,9 @@ KAT-locked to C byte-for-byte.
   so keeping it in `all` breaks a clean build. (Source-level, established by reading; no build
   run.) **Dropped from `all` 2026-08-10**; the rule is kept so the breakage stays visible. The
   itemised contract that *does* run is `test_mldsa_las{2,3,5}`. **Do not repair
-  `test_contract.c`** — dead by design.
+  `test_contract.c`** — dead by design. ⚠️ `tab:contract`'s caption used to credit it; fixed
+  2026-08-12 to the tests the evidence run actually contains (`test_las` 1–4/5a, `test_serde`
+  5b/6, `test_kat` 7) — `evidence/latest/logs/` has no `contract.log`, which is the proof.
 - Serialization `ref/serialize.{c,h}` — **codec ONLY**, six typed pack/unpack pairs. Validation
   is asymmetric and deliberately so: *packing* rejects out-of-range input (e.g. a non-ternary
   secret key), while **`unpack_signature` is PERMISSIVE** (`c_tilde` raw, `z` via FIPS
@@ -333,7 +350,11 @@ KAT-locked to C byte-for-byte.
   codec internally. Wire form `c_tilde ‖ BitPack(z)`;
   **`z` dominates the signature** (share = macro, → rule 3).
 - Deterministic API + pinned KATs: `base_keygen_seed` / `base_sign_det` / `las_presign_det`, mask
-  seed `SHAKE256(tag‖sk‖[Y]‖M)`; reproducible across machines.
+  seed `SHAKE256(tag‖sk‖[Y]‖M)`; reproducible across machines. ⚠️ **The digest absorbs FIVE
+  objects over four fixed vectors — packed pk, sk, σ, σ̂, adapted σ — and nothing else** (C and
+  Rust identical). PreVerify and Ext are *asserted*, never hashed, so never write that it
+  "covers the four adaptor operations", nor that "any divergence would flip it": a hash
+  equality witnesses OUTPUT agreement only. Report wording fixed 2026-08-12.
 - Benchmarks: `bench_levels` (primary fair base-vs-LAS, ≥5 runs, mean±SD), `bench_las`,
   `bench_compare` (context only — optimised Dilithium is *not* algorithm-matched),
   `bench_classical` (ECDSA adaptor via vendored `secp256k1-zkp`), Rust Criterion. Two baselines,
@@ -359,8 +380,14 @@ Groth16, (3) LAS + LaZer, from one pinned master seed.
 - **Deliberately dead, do NOT repair:** `ref/amhl.{c,h}`, `ref/chain.{c,h}`, and
   `ref/test/{test_contract,test_pcn,bench_app}.c` — pre-seven-type (`las_pp`/`las_pk`/`las_sk`/
   `las_sig`), superseded by the Rust evaluation. `STAGE1_ONLY=1` skips them and still regenerates
-  everything the report consumes. ⚠️ **`test_swap.c` is NOT dead**: it is current seven-type code,
-  built by `test/test_swap3`, kept out of `all` only because it needs the vendored proof library.
+  the **Stage-1** artefacts — NOT "everything the report consumes": Stage-2, on-chain, Criterion
+  and Bitcoin figures come from their own runners. **`STAGE1_ONLY=1 scripts/run_benchmark_suite.sh`
+  is the command that made `evidence/latest`, and the only one `app:repro` may print** — the bare
+  runner builds the dead targets and aborts under `set -e` (fixed in the report 2026-08-12; the
+  appendix also now names `test_serde_l3`, the target set, not the paper-dims `test_serde3`).
+  ⚠️ **`test_swap.c` is NOT dead**: it is current seven-type code, built by `test/test_swap3`,
+  kept out of `all` only because it needs the vendored proof library (its skip is the library,
+  not the API — `run_benchmark_suite.sh`'s own comment lumping it with the dead files is wrong).
 
 **⚠️ REAL CLIENTS, THREE STAGES.** Write-up + all numbers,
 scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
@@ -593,8 +620,16 @@ any of it.
 ## What remains (re-derived 2026-08-07 from Meeting 9)
 
 1. **6–8 minute presentation slides — DELIVERED LIVE TO WANG NEXT WEEK** (Royce chose next
-   week over the week after). `report/slides/` holds only `stage1_summary.html` (2026-07-25);
-   the deck does not exist yet. Now the top item on Wang's own priority.
+   week over the week after). **Deck BUILT 2026-08-12** — `report/slides/video_deck.html`,
+   13 slides, planned 7:15, with speaker notes and an on-screen clock; plan + shot list +
+   on-camera claim discipline in `report/slides/VIDEO_PLAN.md`. It is **generated**:
+   `scripts/gen_slides.py` fills `video_deck.template.html` from
+   `report/latex/generated/*.tex` and embeds the report's own figures, so slides and report
+   quote one evidence run (`--check` fails when stale; **edit the template, never the
+   output**; re-run after every `sync_report.sh`). Bar geometry is derived from the same
+   macros as the labels, so a width cannot drift from its number. **Still owed:** the two
+   screen captures the demo slides letterbox (`test_swap3`; `run_btc_las_node.sh`) — the
+   rubric's "complementing the report" 40% rests on them — and the live run-through.
 2. **Frontmatter `\TODO`s** in `report/latex/report.tex` (student id, prior degrees,
    acknowledgements) — **Royce only**.
 3. **AMHL doc cleanup** in `docs/` under the (a)/(b) test above.
@@ -718,11 +753,10 @@ than I thought"*). Rulings, each mandatory:
 
 **Meeting 8 (2026-07-31).** *"You don't need to contain all the stuff — you just
 need to make sure that what you have done looks good, looks perfect, looks great."*
-- **Results accepted; stop measuring.** Groth16 = slower generation, smaller proof; LaZer =
-  fast generation, much larger proof; PQ proof sizes far above classical. *"It's what we
-  expected."* Configuration 1 legitimately carries no π (the classical protocol specifies only
-  DLEQ). **Scope frozen:** no second signature scheme, no zkVM/RISC-V, no functional
-  signatures, no live-network deployment — polish what exists.
+- **Results accepted; stop measuring** (*"it's what we expected"*) — the three-configuration
+  findings live in Status. Configuration 1 legitimately carries no π (the classical protocol
+  specifies only DLEQ). **Scope frozen:** no second signature scheme, no zkVM/RISC-V, no
+  functional signatures, no live-network deployment — polish what exists.
 - **Terminology rulings, report-wide, every occurrence:** (1) **"transaction" must not mean
   "the signed message"** — in a Bitcoin context it names a predefined format, so use a
   different term for the signed message; (2) **PreSign / PreVerify / Adapt / Ext are
