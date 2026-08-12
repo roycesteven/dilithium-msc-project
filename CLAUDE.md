@@ -159,10 +159,15 @@ the base signature.** Results/evaluation must lead with this
   beside its own discussion rather than at the section head does not queue. **Re-check the
   whole PDF after any float edit** — placement is global, so a fix here creates one there.
 - **Criterion figure is NOT "reproduced unmodified"** — Criterion's 12-unit type renders at
-  ~4 pt at `\linewidth`. `scripts/gen_criterion_figure.py` enlarges the type and re-flows the
-  margins only (plot interior is the identity map); it runs off a captured
+  ~4 pt at `\linewidth`, and its key column spends a fifth of the width on five strings.
+  `scripts/gen_criterion_figure.py` enlarges the type, **moves the legend from the right column
+  into one row below the plot** (Royce, 2026-08-12), re-flows the margins, crops to the result,
+  and folds gnuplot's `10^3` tspans into the glyph `10³`. **The plot interior is the identity
+  map** — gated by a coordinate-for-coordinate check (1358 interior coords unchanged); layout is
+  derived from the file, so it asserts rather than silently mis-draw. Runs off a captured
   `evidence/criterion/*/presign_pdf.svg`, so the figure rebuilds without re-running the bench.
-  The caption must keep saying what was changed.
+  ⚠️ The caption must keep listing every one of those changes — the type, the legend, the crop
+  and the superscript; "nothing else was touched" is an overclaim while the fold is in the file.
 
 ### ⚠️ WORD COUNT — regenerate with `make -C report/latex wordcount`, never trust a stale file
 
@@ -197,18 +202,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-12 14:01 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-12 16:55 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 07cbf17 · 2026-08-11 · deck wip, report draft 1
-- Working tree: 11 modified tracked file(s), 44 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 80751df · 2026-08-12 · report 12_08 15_27_pm
+- Working tree: 18 modified tracked file(s), 43 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `80751df 2026-08-12 report 12_08 15_27_pm`
   - `07cbf17 2026-08-11 deck wip, report draft 1`
   - `98ed761 2026-08-11 btclasbenchmacro.tex btcnodemadcros.tex`
   - `b8ee428 2026-08-11 labrador issue`
   - `688ffbc 2026-08-07 report meeting 8 pdf`
-  - `780c0be 2026-08-07 CLAUDE.md dan report untuk meeting 9`
 
 ### Target parameter set — anchors parsed from source
 
@@ -627,9 +632,15 @@ any of it.
    `report/latex/generated/*.tex` and embeds the report's own figures, so slides and report
    quote one evidence run (`--check` fails when stale; **edit the template, never the
    output**; re-run after every `sync_report.sh`). Bar geometry is derived from the same
-   macros as the labels, so a width cannot drift from its number. **Still owed:** the two
-   screen captures the demo slides letterbox (`test_swap3`; `run_btc_las_node.sh`) — the
-   rubric's "complementing the report" 40% rests on them — and the live run-through.
+   macros as the labels, so a width cannot drift from its number. Demo A is
+   `report/slides/swap_console.html` — an **interactive** step-through of the swap (board,
+   tripwire button, config switch, `?step=&cfg=`), same generator, banner-labelled a
+   *replay of the measured run, not live crypto*; **keep that banner**. A terminal dump was
+   rejected as a demo (Royce, 2026-08-12): it shows that a run happened, not what happened.
+   ⚠ **`run_btc_las_node.sh` needs four env vars** (`BTC_TAG`/`BTC_SRC`/`BTC_BIN_PATCHED`/
+   `BTC_BIN_STOCK`) or it exits at once; the working line is in `VIDEO_PLAN.md`, recovered
+   from `evidence/btc_las_node/latest/environment.txt` (build at `~/btc-stage2`; all four
+   pin gates re-verified 2026-08-12). **Still owed:** both captures and the live run-through.
 2. **Frontmatter `\TODO`s** in `report/latex/report.tex` (student id, prior degrees,
    acknowledgements) — **Royce only**.
 3. **AMHL doc cleanup** in `docs/` under the (a)/(b) test above.
@@ -855,6 +866,12 @@ with `#error`/`panic!` on any unrecognised set. FIPS 204 §7.3 Alg. 29 takes a s
 It is **not** keyed on `DILITHIUM_MODE` (the Makefile picks the mode only to satisfy params.h).
 `c_tilde` buffers must be sized `LAS_CTILDEBYTES`, never `LAS_SEEDBYTES` — at 48 that mismatch
 is a 16-byte overread. PRG-seed sites stay at `LAS_SEEDBYTES`.
+
+⚠️ **The LAS layer is SIX same-named modules in both languages — `setup · las_types · relation ·
+basesig · las · serialize`.** Enumerating it as five (dropping `las_types`) is an error already
+made once in `fig:repostructure`; Rust declares `pub mod las_types` beside the rest and C has
+`ref/las_types.h` (header-only — no `.c`). `relation_zk` is a seventh same-named pair but is the
+opt-in π module, deliberately outside the core layer.
 
 **The seven semantic types** (six object types in las_types.rs / las_types.h; `public_params`
 stays in setup.rs / setup.h; each owned by one layer):

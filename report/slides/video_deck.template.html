@@ -328,15 +328,17 @@
     </section>
 
     <!-- ============================ 5 ============================ -->
-    <section class="slide" data-title="DEMO A — the swap runs" data-time="0:45" data-notes="Rather than describe it, here it is running. This is the swap protocol from the LAS paper, executed verbatim, including its zero-knowledge proof of knowledge. Watch the abort gate: the second party pre-signs only after both the proof and the first pre-signature verify. Watch the counterfactual the test asserts — a pre-signature FAILS ordinary verification, which is exactly the property that distinguishes an adaptor signature from a signature. And at the end, extraction returns the witness exactly, and both legs settle.">
-      <div class="eyebrow">Demonstration 1 of 2 · screen capture</div>
-      <h1 class="headline">The whole protocol, end to end — including the proof of knowledge</h1>
+    <section class="slide" data-title="DEMO A — walking the swap" data-time="0:45" data-notes="Rather than describe the protocol, let me walk it. This is an interactive replay of the measured run — I can step it, and I can switch the configuration underneath it. Watch three things. The abort gate: u₂ commits nothing until both the proof and u₁'s pre-signature verify. The tripwire — if u₂ tries to spend the pre-signature it is holding, it is rejected, because a pre-signature is not a signature; that is the property that makes the whole thing work. And the leak: u₂ sends no message at step four. It reads the published signature off chain two, subtracts the pre-signature it already had, and the witness falls out. Publishing to claim one leg is what unlocks the other.">
+      <div class="eyebrow">Demonstration 1 of 2 · interactive walkthrough</div>
+      <h1 class="headline">Walking the protocol — with the <strong class="hi">measured</strong> bytes underneath it</h1>
       <div class="capture">
-        <div class="big">▶ REPLACE THIS PANEL WITH THE SCREEN CAPTURE</div>
-        <div class="cmd">cd ref &amp;&amp; make test/test_swap3 &amp;&amp; ./test/test_swap3</div>
-        <div class="hint">Narrated beats to keep on screen: the <b>abort gate</b> (u₂ pre-signs only after π and σ̂₁ verify) ·
-        the <b>tripwire</b> (a pre-signature <b>fails</b> ordinary Verify) · <b>Extract returns the witness exactly</b> ·
-        both legs settle. Capture at 1280×720 so it drops into this frame 1:1.</div>
+        <div class="big">▶ CAPTURE OF <span style="font-family:var(--mono);font-size:17px">swap_console.html</span></div>
+        <div class="cmd">report/slides/swap_console.html — step it live, or record it</div>
+        <div class="hint">Three beats to land: the <b>abort gate</b> (step 2 — neither pre-signature is spendable
+        by anyone) · the <b>tripwire</b> (red button: a pre-signature <b>fails</b> ordinary Verify) ·
+        <b>the leak</b> (step 4 — no message is sent; u₂ subtracts and the witness falls out).
+        Then flip the configuration switch to show the byte cost move. Already 1280×720 — it drops
+        into this frame 1:1.</div>
       </div>
       <div class="chipline">
         <span class="chip">two parties</span><span class="chip">two ledgers</span>
@@ -463,7 +465,7 @@
       <div class="cols stretch c2" style="flex:1;min-height:0">
         <div class="capture" style="flex:1">
           <div class="big">▶ SCREEN CAPTURE — the node's own output</div>
-          <div class="cmd">scripts/run_btc_las_node.sh</div>
+          <div class="cmd" style="font-size:12px">BTC_TAG · BTC_SRC · BTC_BIN_PATCHED · BTC_BIN_STOCK<br>then scripts/run_btc_las_node.sh — full line in VIDEO_PLAN</div>
           <div class="hint">Show: the patched node <b>rejecting</b> a mutated spend while a <b>stock</b> node accepts it —
           side by side. That differential is the whole argument.</div>
         </div>

@@ -1,11 +1,18 @@
 # 6–8 minute project video — recording plan
 
-The deck is `video_deck.html` (open it in a browser; `F` for fullscreen). It is
-**generated**, not hand-written: `scripts/gen_slides.py` fills every number in
-`video_deck.template.html` from `report/latex/generated/*.tex`, the same macros the
+Two artefacts, both opened in a browser:
+
+- **`video_deck.html`** — the 13-slide deck (`F` for fullscreen).
+- **`swap_console.html`** — an interactive walkthrough of the swap, used as Demo A.
+  Step it with `→`, switch configuration with `1` `2` `3`, `T` fires the tripwire.
+  `?step=4&cfg=3` opens on a given state, and the URL follows as you move, so a
+  particular moment can be bookmarked for a retake.
+
+Both are **generated**, not hand-written: `scripts/gen_slides.py` fills every number in
+the two `*.template.html` files from `report/latex/generated/*.tex`, the same macros the
 report reads. Edit the **template**, never the output, then:
 
-```
+```bash
 python3 scripts/gen_slides.py           # rebuild the deck
 python3 scripts/gen_slides.py --check   # non-zero if the committed deck is stale
 ```
@@ -31,7 +38,7 @@ below is the same plan in one view.
 | 2 | The gap | 0:35 | **beginning** — why this project exists |
 | 3 | What an adaptor signature does | 0:40 | the mechanism, in four animated beats |
 | 4 | What I built | 0:35 | additive architecture; two implementations, one digest |
-| 5 | **DEMO A — the swap runs** | 0:45 | *complement*: the protocol executing |
+| 5 | **DEMO A — walking the swap** | 0:45 | *complement*: the protocol, stepped and broken |
 | 6 | Result 1 — the adaptor layer is cheap | 0:40 | **middle** — computation |
 | 7 | Result 2 — the cost is bytes | 0:38 | communication |
 | 8 | Result 3 — the proof dominates | 0:35 | the application-level surprise |
@@ -52,27 +59,51 @@ Both demo slides are letterboxed frames sized for a **1280×720** capture, so a 
 made at that size drops in 1:1 with no rescaling. Record each *before* the voice-over,
 then trim to the beats below.
 
-### DEMO A — the swap protocol (slide 5, ~45 s)
+### DEMO A — walking the swap (slide 5, ~45 s)
 
-```
+Record **`swap_console.html`**, not a terminal. A test binary printing lines is evidence,
+not a demonstration: it shows the run happened, but not what happened, and the rubric
+rewards "interactive visualisations … that help the audience better understand complex
+concepts and workflows". The console is that — a replay of the measured run, driven by
+the same macros as the report, with the protocol as a board you can step.
+
+It carries a banner saying it is a replay, not live cryptography. **Leave that banner
+on**: it is what keeps the demo honest.
+
+Three beats, in this order:
+
+1. **Step to 2 — the abort gate.** `u₂` commits nothing until both π and `σ̂₁` verify. Say
+   the line on screen: at this instant *neither pre-signature is spendable by anyone*.
+2. **Press the red button — the tripwire.** `u₂` holds `σ̂₁` and tries to spend it:
+   REJECTED. This is the property that distinguishes an adaptor signature from a
+   signature, and it is asserted on every one of the 1000 functional-test iterations.
+3. **Step to 4 — the leak.** No message is sent. `u₂` reads `σ₂` off chain 2, subtracts
+   its own pre-signature, and the witness falls out. Then **flip the configuration
+   switch** (`1` → `3`) and let the byte bars move: same protocol, 941 B against ~80 kB.
+
+Optional corroboration if a beat runs short — the same protocol executing for real:
+
+```bash
 cd ref && make test/test_swap3 && ./test/test_swap3
 ```
 
-Keep on screen, in this order:
-
-1. the abort gate — `u₂` pre-signs only after both π and `σ̂₁` verify;
-2. the tripwire — a pre-signature **fails** ordinary `Verify`;
-3. `Extract` returning the witness **exactly**;
-4. both legs settling.
-
-Speed-ramp any long pause rather than cutting, so the run reads as one continuous
-execution.
-
 ### DEMO B — a real Bitcoin client (slide 9, ~48 s)
 
+⚠ The script takes **four required environment variables** and exits immediately without
+them. The paths below are the ones the last successful run recorded in
+`evidence/btc_las_node/latest/environment.txt`; all four pin gates were re-checked and
+still pass:
+
+```bash
+BTC_TAG=v31.1 \
+BTC_SRC=/home/melly/btc-stage2/src-31.1 \
+BTC_BIN_PATCHED=/home/melly/btc-stage2/src-31.1/build/bin/bitcoind \
+BTC_BIN_STOCK=/home/melly/btc-stage2/bitcoin-31.1/bin/bitcoind \
+scripts/run_btc_las_node.sh
 ```
-scripts/run_btc_las_node.sh          # carriage on stock Core, then the patched node
-```
+
+If it still fails, the message names which gate refused; a `FAIL` run keeps its evidence
+directory, so read `evidence/btc_las_node/<run>/verdict.txt`.
 
 The shot that matters is the **differential**: the same mutated spend put to both nodes,
 patched **rejecting** and stock **accepting**. Show them side by side — that contrast is
@@ -103,8 +134,8 @@ one-transaction claim and printing the receipt (backs slide 10).
 
 | Criterion | Weight | Where |
 |---|---|---|
-| Use of the medium | 40 % | the two captures; the animated mechanism on slide 3; charts generated from the evidence rather than screenshotted; talking-head overlay |
-| Complementing the report | 40 % | slides 5 and 9 show artefacts *running* — the swap end to end, and a patched consensus rule accepting a lattice-authorised spend — which text and figures cannot convey |
+| Use of the medium | 40 % | the interactive swap console; the real-client capture; the animated mechanism on slide 3; charts generated from the evidence rather than screenshotted; talking-head overlay |
+| Complementing the report | 40 % | slide 5 makes the protocol *manipulable* — stepping it, breaking it with the tripwire, switching the configuration under it — none of which a figure can do; slide 9 shows a patched consensus rule accepting a lattice-authorised spend that no report table conveys |
 | Presentation | 20 % | fixed 7:15 plan with per-slide budgets and an on-screen clock; a clear beginning (2), middle (6–8), end (13) |
 
 ---

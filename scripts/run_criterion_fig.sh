@@ -62,9 +62,11 @@ cp "$SRC/report/pdf.svg"     "$OUT/presign_pdf.svg"
 ln -sfn "$RUN_ID" "$REPO/evidence/criterion/latest"
 
 # SVG -> PDF, so the report ships Criterion's OWN plot (not a redrawing of it).
-# gen_criterion_figure.py enlarges only the type and re-flows the margins the
-# larger type needs -- at Criterion's native 12-unit type the labels render at
-# about 4.2 pt when included at \linewidth.  No plotted value is touched.
+# gen_criterion_figure.py enlarges only the type, moves the legend from Criterion's
+# right-hand column into a row below the plot, re-flows the margins the larger type
+# needs and crops to what is left -- at Criterion's native 12-unit type the labels
+# render at about 4 pt when included at \linewidth, and the right-hand key column
+# spends a fifth of the width on five short strings.  No plotted value is touched.
 python3 "$REPO/scripts/gen_criterion_figure.py" \
         "$OUT/presign_pdf.svg" \
         "$REPO/report/latex/figures/fig_criterion_presign.pdf"

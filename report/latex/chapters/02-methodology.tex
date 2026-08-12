@@ -223,11 +223,11 @@ construction (\cref{fig:repostructure}).
       >={Stealth[]}]
     \node[note] (chead) {C implementation (\texttt{ref/})\\ base: CRYSTALS-Dilithium reference};
     \node[new, below=2mm of chead] (capp) {tests $\cdot$ benchmarks $\cdot$ swap demo\\ \texttt{ref/test/*} (new)};
-    \node[new, below=2.5mm of capp] (clas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ relation $\cdot$ basesig}\\ \texttt{las $\cdot$ serialize}};
+    \node[new, below=2.5mm of capp] (clas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ las\_types $\cdot$ relation}\\ \texttt{basesig $\cdot$ las $\cdot$ serialize}};
     \node[old, below=2.5mm of clas] (cprim) {\textbf{reused primitives (unchanged)}\\ NTT $\cdot$ polynomial arithmetic\\ SHAKE/FIPS-202 $\cdot$ \texttt{randombytes}};
     \node[note, right=16mm of chead] (rhead) {Rust implementation (\texttt{rust/fips204-las/})\\ base: \texttt{fips204} crate (ML-DSA)};
     \node[new, below=2mm of rhead] (rapp) {KAT $\cdot$ Criterion $\cdot$ protocol drivers\\ \texttt{tests/ benches/ examples/} (new)};
-    \node[new, below=2.5mm of rapp] (rlas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ relation $\cdot$ basesig}\\ \texttt{las $\cdot$ serialize}};
+    \node[new, below=2.5mm of rapp] (rlas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ las\_types $\cdot$ relation}\\ \texttt{basesig $\cdot$ las $\cdot$ serialize}};
     \node[old, below=2.5mm of rlas] (rprim) {\textbf{reused primitives (unchanged)}\\ NTT $\cdot$ polynomial arithmetic\\ SHAKE $\cdot$ sampling};
     \draw[->] (capp) -- (clas);
     \draw[->] (clas) -- (cprim);
@@ -236,17 +236,17 @@ construction (\cref{fig:repostructure}).
     \draw[<->, dashed] (clas.east) -- (rlas.west);
     \node[note, anchor=north] (tie)
       at ($(cprim.south)!0.5!(rprim.south)+(0,-3.5mm)$)
-      {dashed link: same module names $\cdot$ identical wire bytes $\cdot$
-       shared known-answer digest \texttt{\katDigestHead\ldots\katDigestTail}};
+      {dashed link: same six modules $\cdot$ byte-identical packed KAT objects};
   \end{tikzpicture}
-  \caption[Repository structure: two implementations over reused primitives]{Repository
-  structure. Both implementations have the same shape: a new, self-contained LAS layer
-  (orange) --- the same five modules under the same names --- built on an
+  \caption[Implementation structure and C/Rust correspondence]{Implementation structure.
+  The two implementations follow the same layering: a new, self-contained LAS layer
+  (orange) --- the same six modules under the same names --- built on an
   \emph{unmodified} base of reused lattice primitives (blue), with the tests and
-  benchmarks on top. The two columns are tied together by construction: identical wire
-  bytes and the shared pinned known-answer digest
-  (\texttt{\katDigestHead\ldots\katDigestTail}). This is the high-level map for reading
-  the code; the per-file classification is \cref{tab:reuse}.}
+  benchmarks on top. The dashed link is checked rather than asserted: both encoders are
+  anchored to the same packed sizes at compile time, and the packed known-answer objects
+  are byte-identical, which is what the shared pinned digest
+  (\texttt{\katDigestHead\ldots\katDigestTail}) records. This is the high-level map for
+  reading the code; the per-file classification is \cref{tab:reuse}.}
   \label{fig:repostructure}
 \end{figure}
 

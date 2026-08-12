@@ -226,12 +226,16 @@ not of one codebase, compiler or harness.
   \centering
   \includegraphics[width=\linewidth]{figures/fig_criterion_presign}
   \caption[Criterion.rs sampling distribution for PreSign]{The statistical harness's
-  own report for PreSign at the target setting, reproduced from Criterion.rs (its SVG
-  output converted to PDF, with the type enlarged and the margins re-flowed to fit it;
-  no plotted value, curve or classification is altered): \critSamples{} timed samples
+  own report for PreSign at the target setting, reproduced from Criterion.rs:
+  \critSamples{} timed samples
   (dots), the kernel-density estimate of the sampling distribution (shaded), the mean
   (vertical blue line), and Criterion's automatic outlier classification (mild /
-  severe, orange / red). This is the evidence behind the Criterion column of
+  severe, orange / red). Four presentational changes were made to Criterion's SVG on the
+  way to PDF --- the type enlarged, the legend moved from the right-hand column into the
+  row beneath the plot, the margins re-flowed and cropped to the result, and gnuplot's
+  three-part exponent rendered as the single glyph $10^{3}$; inside the plot frame the
+  coordinate map is the identity, so no plotted value, curve, mean, axis scale or outlier
+  classification is altered. This is the evidence behind the Criterion column of
   \cref{tab:rust}: a well-formed, single-mode distribution whose spread comes from
   rejection sampling and scheduling noise, with only a handful of classified
   outliers.}

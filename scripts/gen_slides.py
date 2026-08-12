@@ -131,6 +131,18 @@ def derive(macros: dict[str, str]) -> dict[str, str]:
     ):
         out[key] = f"{100 * num(macro) / scale:.2f}"
 
+    # Swap console: bytes-per-swap comparison, one shared scale.  Where a total is a
+    # range (a Huffman-coded proof length varies with the sampled values) the LOW end
+    # sets the bar; the label beside it still prints the range verbatim.
+    totals = {k: num(k) for k in ("cfgOneBytesTotal", "cfgTwoBytesTotal", "cfgThreeBytesTotal")}
+    widest = max(totals.values())
+    for key, macro in (
+        ("wTotOne", "cfgOneBytesTotal"),
+        ("wTotTwo", "cfgTwoBytesTotal"),
+        ("wTotThree", "cfgThreeBytesTotal"),
+    ):
+        out[key] = f"{100 * totals[macro] / widest:.2f}"
+
     # Part-to-whole remainders, so the smaller segment is never eyeballed.
     for key, macro in (
         ("zRestPct", "zPctTarget"),
