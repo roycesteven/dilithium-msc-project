@@ -254,7 +254,9 @@ Sizes are fixed by the encoding, so they are exact and carry no dispersion.
   \centering
   \caption[Serialized size of every LAS object]{Serialized size of every LAS object at
   the \emph{Simplified Dilithium-III} (target) setting, in packed wire bytes (not
-  on-chain gas), with its paper notation. ``In the basic signature?'' marks which
+  on-chain gas), with its notation --- the paper's, except that what a signature carries
+  is the challenge \emph{digest} $\tilde c$, not the challenge polynomial $c$
+  (\cref{tab:notation}). ``In the basic signature?'' marks which
   objects LAS shares with the base scheme and which it adds.
   Three facts read off directly: the signature, pre-signature, and adapted signature are
   byte-identical (adaptation changes the \emph{value} of the response, not its size); the

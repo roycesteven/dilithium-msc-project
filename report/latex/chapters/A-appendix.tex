@@ -535,11 +535,11 @@ than a page.
   it takes across the parameter sets, \emph{listed in the row order of}
   \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
   notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and this
-  build runs at $d=256$, the ring degree of the reused Dilithium NTT. The one exception is
-  the challenge-digest width $\lvert\tilde c\rvert$, which \cite{esgin2020post} does not
-  fix --- it specifies $H$ only as a random oracle onto the challenge set $C$ --- so the
-  width is an implementation choice, taken from FIPS~204 wherever a set aligns with an
-  ML-DSA one (\cref{app:serialize}). The figure and table
+  build runs at $d=256$, the ring degree of the reused Dilithium NTT. The exceptions are
+  the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$: \cite{esgin2020post}
+  specifies $H$ only as a random oracle onto the challenge set $C$ and fixes no encoding,
+  so both the digest and its width are implementation choices, taken from FIPS~204
+  wherever a set aligns with an ML-DSA one (\cref{app:serialize}). The figure and table
   captions in \cref{ch:results} refer back to these names and values.}
   \label{tab:notation}
   \small
@@ -554,6 +554,14 @@ than a page.
     $\gamma$   & rejection / masking bound, $\gamma=\kappa\,d\,(n+\ell)$            & 122\,880,\ 79\,872,\ 137\,984,\ 230\,400 \\
     $d$        & ring degree ($X^{d}+1$)                                            & 256 (all sets) \\
     $q$        & modulus from the reused NTT, $q\approx 2^{23}$                     & 8\,380\,417 (all sets) \\
+    $c$        & challenge polynomial, the output of $H$: $\lVert c\rVert_1=\kappa$ and
+                 $\inftynorm{c}=1$. Re-derived on decode, never transmitted
+               & element of $\Rq$ (all sets) \\
+    $\tilde c$ & challenge \emph{digest}: the SHAKE256 output this implementation derives
+                 the challenge from, following FIPS~204's pattern
+                 $c=\textsf{SampleInBall}(\tilde c)$. This, not $c$, is what a signature
+                 carries
+               & width below (all sets) \\
     $\lvert\tilde c\rvert$
                & challenge-digest width in bytes: FIPS~204's $\lambda/4$ at the three
                  ML-DSA-aligned sets; a project choice at the LAS-2020/845 reference set,
@@ -624,9 +632,10 @@ byte sizes at every parameter set (the target setting is the body table
 \begin{table}[h]
   \centering
   \caption[LAS objects by component (packed bytes)]{LAS objects by component (packed bytes; \texttt{bench\_levels}). The
-  LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The
-  challenge $c$ is fixed; the response $z$ grows with $n+\ell$ and dominates the
-  signature at every setting. The target-setting column is the body table
+  LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The challenge
+  travels only as its digest $\tilde c$, whose width this implementation takes from
+  FIPS~204's $\lambda/4$ rule at each aligned set (\cref{tab:notation}); the response $z$
+  grows with $n+\ell$ and dominates the signature at every setting. The target-setting column is the body table
   \cref{tab:complete-l3}.}
   \label{tab:components}
   \small

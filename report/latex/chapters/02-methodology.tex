@@ -35,7 +35,17 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
       pan/.style={draw, rounded corners, text width=29mm, align=left,
                   inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
       io/.style={text width=31mm, align=center, font=\scriptsize\itshape,
-                 inner xsep=0pt, inner ysep=1mm, anchor=north}]
+                 inner xsep=0pt, inner ysep=1mm, anchor=north},
+      note/.style={text width=140mm, align=center, font=\scriptsize,
+                   inner ysep=0pt, anchor=south}]
+
+    %% Preamble: H keeps the paper's type (onto the challenge set); the digest
+    %% c-tilde is an artefact of how this implementation realises it, not H's output.
+    \node[note] at (55.5mm, 2.5mm) {The paper's random oracle
+        $H:\{0,1\}^{*}\!\to C$ returns the challenge polynomial $c$. This implementation
+        realises it in the two stages FIPS~204 uses --- SHAKE256 emits a short digest
+        $\tilde c$, then $c=\textsf{SampleInBall}(\tilde c)$ --- and stores or transmits
+        only $\tilde c$, so each consumer re-derives $c$ before using it.};
 
     %% Four independent panels, one per added function: in / computes / out.
     %% Column pitch 37mm at a 29mm text width keeps the picture inside the
@@ -52,7 +62,8 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
     %% ---------------- (b) PreVerify ----------------
     \node[ttl] (tb) at (37mm,0)    {(b) \textsc{PreVerify}};
     \node[io]  (ib) at (tb.south)  {in: $Y$, key $t$, $\hat{\sigma}$, $M$};
-    \node[pan] (pb) at (ib.south)  {$w' = A\hat{\vecz} - c\,t$\\[1pt]
+    \node[pan] (pb) at (ib.south)  {$c = \textsf{SampleInBall}(\tilde c)$\\[1pt]
+        $w' = A\hat{\vecz} - c\,t$\\[1pt]
         accept iff\\
         $c = H(\mathit{pk},\,w'+Y,\,M)$\\[1pt]
         and $\inftynorm{\hat{\vecz}} \le \gamma-\kappa-1$};
@@ -111,11 +122,11 @@ adapted signatures exceed the bound and be rejected.
                   inner sep=3pt, font=\small},
       ann/.style={font=\footnotesize\itshape, align=center},
       >={Stealth[]}]
-    \node[box] (ps)  {PreSign\\$\hat{\sigma}=(c,\hat{z})$};
+    \node[box] (ps)  {PreSign\\$\hat{\sigma}=(\tilde c,\hat{\vecz})$};
     \node[box, right=of ps] (pv) {PreVerify};
-    \node[box, right=of pv] (ad) {Adapt\\$z=\hat{z}+y$};
+    \node[box, right=of pv] (ad) {Adapt\\$\vecz=\hat{\vecz}+y$};
     \node[box, right=of ad] (vf) {Verify /\\Publish $\sigma$};
-    \node[box, right=of vf] (ex) {Extract\\$y=z-\hat{z}$};
+    \node[box, right=of vf] (ex) {Extract\\$y=\vecz-\hat{\vecz}$};
     \draw[->] (ps) -- (pv);
     \draw[->] (pv) -- (ad);
     \draw[->] (ad) -- (vf);
