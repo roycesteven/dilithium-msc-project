@@ -1,0 +1,5 @@
+[LAS] inputs=1 outputs=1 witness_items=[24]
+  total_size  model 11385    node 11385    OK
+  weight      model 11667    node 11667    OK
+  vsize       model 2917     node 2917     OK
+[LAS] size model agrees with the client

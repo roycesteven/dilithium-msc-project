@@ -6,9 +6,9 @@
 \contentsline {table}{\numberline {3.1}{\ignorespaces The adaptor-signature correctness contract}}{30}{table.3.1}%
 \contentsline {table}{\numberline {3.2}{\ignorespaces Adaptor overhead at the target setting, both timing tiers}}{31}{table.3.2}%
 \contentsline {table}{\numberline {3.3}{\ignorespaces Rejection-sampling statistics: model vs measurement}}{34}{table.3.3}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces Per-operation timing: C implementation vs Rust port}}{36}{table.3.4}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces Serialized size of every LAS object}}{38}{table.3.5}%
-\contentsline {table}{\numberline {3.6}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{39}{table.3.6}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Per-operation timing: C implementation vs Rust port}}{35}{table.3.4}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Serialized size of every LAS object}}{35}{table.3.5}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Classical vs.\ post-quantum adaptor signature}}{38}{table.3.6}%
 \contentsline {table}{\numberline {3.7}{\ignorespaces On-chain settlement gas: classical vs.\ post-quantum}}{42}{table.3.7}%
 \contentsline {table}{\numberline {3.8}{\ignorespaces Per-phase execution time of the swap}}{44}{table.3.8}%
 \contentsline {table}{\numberline {3.9}{\ignorespaces Communication cost of the swap}}{45}{table.3.9}%
@@ -22,5 +22,5 @@
 \contentsline {table}{\numberline {A.3}{\ignorespaces Security and scheme parameter notation}}{72}{table.A.3}%
 \contentsline {table}{\numberline {A.4}{\ignorespaces The three measurement boundaries}}{73}{table.A.4}%
 \contentsline {table}{\numberline {A.5}{\ignorespaces Per-operation timing across the parameter sets}}{74}{table.A.5}%
-\contentsline {table}{\numberline {A.6}{\ignorespaces LAS objects by component (packed bytes)}}{74}{table.A.6}%
+\contentsline {table}{\numberline {A.6}{\ignorespaces LAS objects by component (packed bytes)}}{75}{table.A.6}%
 \contentsline {table}{\numberline {A.7}{\ignorespaces Source files: reused, modified, and added}}{75}{table.A.7}%

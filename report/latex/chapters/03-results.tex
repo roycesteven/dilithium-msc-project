@@ -107,8 +107,8 @@ commitment shape with the extra $+Y$; Adapt ($+\ovAdapt\%$) runs a PreVerify the
 the witness vector; Extract merely subtracts $z-\hat z$ and checks $A\,y=Y$. None changes
 the asymptotic work. This is the headline of the standalone-signature evaluation:
 \emph{at the core tier} adaptor functionality costs single-digit percentages at every
-parameter set, and the two operations unique to an adaptor signature cost no more than a
-verification each (\cref{fig:overhead}).
+parameter set, and the two operations unique to an adaptor signature cost about a
+verification or less each (\cref{fig:overhead}).
 
 \begin{figure}[htbp]
   \centering
@@ -213,8 +213,8 @@ leaving every one of those bytes unchanged.
 Timing agreement is looser, the builds going through different compilers, but close:
 every operation agrees within about \rustCMaxDev\% (largest gap \rustCMaxDevOp). More
 importantly the central conclusion reproduces in both languages. At the core tier the Rust
-port measures $+\rustOvPreSign\%$, $+\rustOvPreVerify\%$ and $\rustOvAdapt\%$ --- all
-single-digit, like the C column beside them; the slightly \emph{negative} Adapt figure is
+port measures $+\rustOvPreSign\%$, $\rustOvPreVerify\%$ and $+\rustOvAdapt\%$ --- all
+single-digit, like the C column beside them; the slightly \emph{negative} PreVerify figure is
 the measurement floor rather than a real speed-up, the genuine overhead at this scale
 being smaller than the gap between the two verify paths. The packed tier reproduces too
 ($+\rustPackedOvPreSign\%$, $+\rustPackedOvPreVerify\%$, $+\rustPackedOvAdapt\%$), all
@@ -254,12 +254,12 @@ Sizes are fixed by the encoding, so they are exact and carry no dispersion.
   \centering
   \caption[Serialized size of every LAS object]{Serialized size of every LAS object at
   the \emph{Simplified Dilithium-III} (target) setting, in packed wire bytes (not
-  on-chain gas), with its notation --- the paper's, except that what a signature carries
-  is the challenge \emph{digest} $\tilde c$, not the challenge polynomial $c$
-  (\cref{tab:notation}). ``In the basic signature?'' marks which
+  on-chain gas), with its notation --- the paper's, except that a signature carries the
+  \emph{digest} $\tilde c$, not the polynomial $c$ (\cref{tab:notation}).
+  ``In the basic signature?'' marks which
   objects LAS shares with the base scheme and which it adds.
   Three facts read off directly: the signature, pre-signature, and adapted signature are
-  byte-identical (adaptation changes the \emph{value} of the response, not its size); the
+  the same serialized size (adaptation changes the \emph{value} of the response, not its length); the
   response $z$ dominates every signature; and the only extra \emph{public} object LAS
   adds over a basic signature is the statement $Y$, the size of a public key. The sizes
   hold for the C and the Rust implementation alike: the wire encoding is byte-identical
@@ -274,9 +274,9 @@ Sizes are fixed by the encoding, so they are exact and carry no dispersion.
 Two points follow. First, \textbf{the response $z$ is essentially the entire signature}
 --- \zPctTarget\% of it at every parameter set --- since the challenge travels only as its
 short digest, so any optimisation of LAS signatures is an optimisation of $z$. Second,
-\textbf{an adaptor swap additionally transmits a public-key-sized statement $Y$ and a
-signature-sized pre-signature}: the only objects an adaptor scheme sends that a basic
-signature does not.
+\textbf{the adaptor layer additionally transmits a public-key-sized statement $Y$ and a
+signature-sized pre-signature} --- the only objects a basic signature does not send; the
+swap also carries $\pi$.
 
 \noindent\textbf{The sharp conclusion: the cost of LAS is not adaptor computation but
 communication --- specifically $z$ and $Y$.} The adaptor operations add at most
@@ -399,8 +399,8 @@ makes the second party's final step \emph{guaranteed} rather than merely expecte
 Module-SIS uniqueness argument of \cite{esgin2020post} the extracted witness equals the
 proven ternary one, so the adapted signature is certain to clear the verification bound
 --- without $\pi$ a malicious counterparty could claim and leave an unadaptable
-pre-signature behind. The proof measures \piProofBytes\,B at a knowledge error below
-$2^{-\piKnowledgeError}$ and is exchanged off-chain only.
+pre-signature behind. The proof measures \cmpProofTo\,B on the wire at a knowledge error
+below $2^{-\piKnowledgeError}$ and is exchanged off-chain only.
 
 \begin{figure}[htbp]
   \centering
@@ -715,7 +715,7 @@ UTXO chains as the venue, with no counterpart on the EVM, where calldata carries
 comparable discount and native verification cost \gasLasVerifiedM{}\,M gas
 (\cref{tab:onchain}).
 
-\paragraph{It fits the size limits, but not the verification rules.}
+\paragraph{It fits the weight limits, not the element-size or verification rules.}
 A settlement weighs \btcThreeWeight{}\,WU against the \btcMaxStdWeight{}\,WU standardness
 limit --- \btcThreePctStd\,\% of it --- and the \btcMaxBlockWeight{}\,WU block limit
 admits an upper bound of \btcThreePerBlock{} settlements per block against

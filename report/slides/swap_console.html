@@ -15,7 +15,10 @@
   HONESTY: this is a REPLAY of a measured run, not live cryptography in the browser.
   The banner says so on screen and must not be removed.
 
-  Stage is 1280x720 so a capture drops into the deck's DEMO A frame 1:1.
+  Stage is 1280x720, matching the deck.  The video's Demo A is now stepped INSIDE
+  the deck (slide 5), so nothing here is captured or cut in: this stays as the
+  standalone interactive artefact -- configuration switch, tripwire, per-step
+  ledger -- for anyone who wants to drive the protocol themselves.
   Keys: -> / <- step . 1 2 3 config . A autoplay . R reset . T tripwire
 -->
 <style>
@@ -108,6 +111,17 @@
   .wire .msg.on{opacity:1;transform:none}
   .wire .msg i{font-style:normal;color:var(--muted);flex:none;width:26px}
   .wire .msg b{margin-left:auto;font-weight:600}
+  /* What travels is the unsigned transaction; what is SIGNED is its sighash. The
+     board states that once, permanently, so no equation has to overload "tx". */
+  .wire .wirenote{margin-top:auto;font-size:11.5px;line-height:1.32;color:var(--muted)}
+  .wire .wirenote b{color:var(--ink)}
+  /* Which proof this configuration carries, and why — configuration 1 has NO role-A
+     proof, and a viewer switching to it must be told why, not left to notice a
+     missing row.  It sits with the comparison because it is a property of the
+     configuration, not of a step. */
+  .cmp .pinote{margin-top:auto;font-size:11.5px;line-height:1.34;color:var(--muted);
+               border-top:1px dashed var(--line);padding-top:7px}
+  .cmp .pinote b{color:var(--ink)}
 
   /* ---------- ledger + comparison ---------- */
   .foot{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
@@ -185,7 +199,7 @@
     <div class="mid">
       <div class="chain" id="c2">
         <div class="t">chain 2 <span id="c2s">unspent</span></div>
-        <div class="body" id="c2b">u₂'s coin, locked to u₁'s key</div>
+        <div class="body" id="c2b">c₂ · u₂'s coin, spendable only by u₂'s key</div>
       </div>
       <div class="wire">
         <div class="t">messages on the wire</div>
@@ -195,10 +209,12 @@
         <div class="msg" id="m-tx1"><i>→</i>unsigned tx₁<b class="v-tx1"></b></div>
         <div class="msg" id="m-sh2"><i>←</i>pre-signature σ̂₂<b class="v-sh2"></b></div>
         <div class="msg" id="m-tx2"><i>←</i>unsigned tx₂<b class="v-tx2"></b></div>
+        <div class="wirenote">Transactions travel; what is <i>signed</i> is the sighash —
+        <b>m₁ = sighash(tx₁)</b>.</div>
       </div>
       <div class="chain" id="c1">
         <div class="t">chain 1 <span id="c1s">unspent</span></div>
-        <div class="body" id="c1b">u₁'s coin, locked to u₂'s key</div>
+        <div class="body" id="c1b">c₁ · u₁'s coin, spendable only by u₁'s key</div>
       </div>
     </div>
 
@@ -210,6 +226,7 @@
         <span class="obj" id="o-Y2">statement Y</span>
         <span class="obj" id="o-pi">proof π</span>
         <span class="obj" id="o-sh1">σ̂₁ from u₁</span>
+        <span class="obj" id="o-sh2b">σ̂₂ it made itself</span>
         <span class="obj secret" id="o-y2">witness y</span>
       </div>
       <div class="act-log" id="log2">—</div>
@@ -241,8 +258,7 @@
       <div class="cbar"><span class="lab">LAS + LaZer</span>
         <span class="track"><span class="fill" style="background:var(--mark-ad);width:100.00%"></span></span>
         <span class="val">80059–80108 B</span></div>
-      <div class="note" style="border-left-color:var(--line)">Off-chain messages are counted, not
-      only what reaches a ledger.</div>
+      <div class="pinote" id="pinote"></div>
     </div>
   </div>
 
@@ -274,90 +290,141 @@
        sh2:'162', tx2:'114',
        ch1:'178', ch2:'178',
        off:'585', on:'356', tot:'941',
-       time:'819.7'},
+       time:'819.7',
+       /* No role-A proof exists in this construction, so the board must not show one.
+          Reason condensed from las-swap's own Configuration 1 (backend.rs).  The
+          pre-signature's excess over a signature carries nonce commitments AND the
+          DLEQ together; upstream treats it as one opaque object and the harness
+          invents no split, so no byte figure may be attributed to the DLEQ alone. */
+       pinote:'π: <b>none required</b> — an ECDSA adaptor has no knowledge gap, so the LAS '
+             +'paper\'s proof of witness knowledge is unnecessary. Its own DLEQ proves a '
+             +'different claim and travels inside σ̂ (162 B against a '
+             +'64 B signature; proof and structure are not split out).',
+       tripsrc:'classical baseline — unadaptability here is the ECDSA adaptor construction\'s '
+             +'property; the 1000-iteration assertion belongs to the LAS test suite'},
     2:{name:'LAS + Groth16', pi:'Groth16 over BN254 (pairing-based zk-SNARK)',
        Y:'4416', pi_b:'128', sh1:'6736', tx1:'4497',
        sh2:'6736', tx2:'4497',
        ch1:'11233', ch2:'11233',
        off:'27010', on:'22466', tot:'49476',
-       time:'663808.3'},
+       time:'663808.3',
+       pinote:'π: <b>128 B</b> off-chain — Groth16 over BN254: succinct, but '
+             +'pairing-based and trusted-setup, so not post-quantum.',
+       tripsrc:'the statement-binding tripwire, asserted on every one of the 1000 '
+             +'functional-test iterations and on both pre-signatures in the swap demonstration'},
     3:{name:'LAS + LaZer (fully post-quantum)', pi:'LaZer (LNP22 linear relation with norms)',
        Y:'4416', pi_b:'30711–30760', sh1:'6736', tx1:'4497',
        sh2:'6736', tx2:'4497',
        ch1:'11233', ch2:'11233',
        off:'57593–57642', on:'22466', tot:'80059–80108',
-       time:'311097.1'}
+       time:'311097.1',
+       /* The range and its cause are the report's own (tab:stage2-comm caption), warranted
+          by the library: lazer/src/coder.c `coder_enc_grandom` Huffman-codes the Gaussian
+          vectors and lnp-tbox.c returns the length the encoder reached. Not an inference. */
+       pinote:'π: <b>30711–30760 B</b> off-chain — LaZer (LNP22), lattice-based and '
+             +'transparent. A range because the Gaussian responses are packed with a '
+             +'variable-length code, so the size follows the values that proof sampled.',
+       tripsrc:'the statement-binding tripwire, asserted on every one of the 1000 '
+             +'functional-test iterations and on both pre-signatures in the swap demonstration'}
   };
 
+  /* Equations use the paper's Fig. 1 forms (eprint 2020/845), which are also the
+     interfaces the code implements -- Ext takes the statement, so it is written with
+     it -- and m denotes the SIGNED message, sighash(tx), never the transaction that
+     travels.  `classical` overrides every line that would otherwise describe the LAS
+     construction while configuration 1 is on screen: that configuration carries no
+     role-A proof, and its Ext is a secp256k1 discrete-log recovery, not z - z-hat.
+     The narration must follow the configuration on screen, never the default. */
   var STEPS=[
     {n:'0 — setup', p:0,
      l1:'Draws a fresh statement/witness pair <b>(Y, y)</b> and proves it knows a short witness for Y. Nothing sent yet.',
-     l2:'Waiting.', e1:'(Y, y) ← Gen', e2:'',
+     l2:'Waiting.', e1:'(Y, y) ← Gen()', e2:'',
      hold1:['o-y','o-Y1'], hold2:[], msgs:[], rows:[],
-     cap:'u₁ moves first because it is the party that generates the secret.'},
+     cap:'u₁ moves first because it is the party that generates the secret.',
+     classical:{l1:'Draws a fresh statement/witness pair <b>(Y, y)</b> — an encryption key and its discrete logarithm. No proof of witness knowledge is required. Nothing sent yet.'}},
 
     {n:'1 — u₁ → u₂', p:1,
-     l1:'Pre-signs its own transaction against Y and sends everything in one off-chain message.',
+     l1:'Pre-signs the sighash of its own transaction against Y, and sends everything in one off-chain message.',
      l2:'Receives <b>{Y, π, σ̂₁, tx₁}</b>.',
-     e1:'σ̂₁ ← PreSign(sk₁, Y, m₁)', e2:'',
+     e1:'σ̂₁ ← PreSign((pk₁,sk₁), Y, m₁)', e2:'',
      hold1:['o-y','o-Y1'], hold2:['o-Y2','o-pi','o-sh1'],
      msgs:['m-Y','m-pi','m-sh1','m-tx1'], rows:['r-Y','r-pi','r-sh1'],
-     cap:'σ̂₁ verifies against Y — but it is NOT a spendable signature. Try the red button.'},
+     cap:'σ̂₁ verifies against Y — but it is NOT a spendable signature. Try the red button.',
+     classical:{l2:'Receives <b>{Y, σ̂₁, tx₁}</b>.'}},
 
     {n:'2 — the abort gate', p:2,
      l1:'Receives <b>σ̂₂</b> and pre-verifies it.',
      l2:'Checks π, then PreVerify(σ̂₁). Only once <b>both</b> pass does it pre-sign its own transaction.',
-     e1:'', e2:'σ̂₂ ← PreSign(sk₂, Y, m₂)',
-     hold1:['o-y','o-Y1','o-sh2'], hold2:['o-Y2','o-pi','o-sh1'],
+     e1:'', e2:'σ̂₂ ← PreSign((pk₂,sk₂), Y, m₂)',
+     hold1:['o-y','o-Y1','o-sh2'], hold2:['o-Y2','o-pi','o-sh1','o-sh2b'],
      msgs:['m-Y','m-pi','m-sh1','m-tx1','m-sh2','m-tx2'],
      rows:['r-Y','r-pi','r-sh1','r-sh2'],
-     cap:'At this instant neither pre-signature is spendable by anyone. Nobody has risked a coin.'},
+     cap:'At this instant neither pre-signature is spendable by anyone. Nobody has risked a coin.',
+     classical:{l2:'PreVerifies σ̂₁ — the only gate this construction has. Only once it passes does it pre-sign its own transaction.'}},
 
     {n:'3 — u₁ claims', p:1,
      l1:'Knows y, so it completes u₂\'s pre-signature and publishes. <b>It takes u₂\'s coin.</b>',
      l2:'Watching chain 2.',
-     e1:'σ₂ ← Adapt(σ̂₂, y)', e2:'',
-     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1'],
+     e1:'σ₂ ← Adapt((Y, y), pk₂, σ̂₂, m₂)', e2:'',
+     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-sh2b'],
      msgs:['m-Y','m-pi','m-sh1','m-tx1','m-sh2','m-tx2'],
      rows:['r-Y','r-pi','r-sh1','r-sh2','r-ch2'],
      chain2:'settled', cap:'On chain 2 this looks like an ordinary payment. No script, no hash lock.'},
 
     {n:'4 — the leak', p:2,
      l1:'Has its coin. Nothing more to do.',
-     l2:'Reads σ₂ off chain 2 and <b>subtracts its own pre-signature</b>. The witness falls out.',
-     e1:'', e2:'y ← Extract(σ₂, σ̂₂) = z₂ − ẑ₂',
-     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-y2'],
+     l2:'Reads σ₂ off chain 2 and <b>subtracts the pre-signature it made itself</b>. The witness falls out.',
+     e1:'', e2:'y ← Ext(Y, σ₂, σ̂₂) = z₂ − ẑ₂',
+     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-sh2b','o-y2'],
      msgs:['m-Y','m-pi','m-sh1','m-tx1','m-sh2','m-tx2'],
      rows:['r-Y','r-pi','r-sh1','r-sh2','r-ch2'],
      chain2:'settled',
-     cap:'No message was sent. Publishing to claim one leg is what unlocks the other — that is atomicity.'},
+     cap:'No message was sent. Publishing to claim one leg is what unlocks the other — that is atomicity.',
+     classical:{l2:'Reads σ₂ off chain 2 and <b>recovers the decryption key</b> from it and the pre-signature it made itself.',
+                e2:'y ← Ext(Y, σ₂, σ̂₂) · secp256k1 recover'}},
 
     {n:'5 — u₂ claims', p:2,
      l1:'Has its coin.',
      l2:'Adapts the pre-signature it has held since step 1 and publishes. <b>It takes u₁\'s coin.</b>',
-     e1:'', e2:'σ₁ ← Adapt(σ̂₁, y)',
-     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-y2'],
+     e1:'', e2:'σ₁ ← Adapt((Y, y), pk₁, σ̂₁, m₁)',
+     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-sh2b','o-y2'],
      msgs:['m-Y','m-pi','m-sh1','m-tx1','m-sh2','m-tx2'],
      rows:['r-Y','r-pi','r-sh1','r-sh2','r-ch2','r-ch1'],
      chain1:'settled', chain2:'settled',
-     cap:'Both legs settled. Had u₁ walked away after step 3, u₂ could still claim — the leak is public.'},
+     cap:'Both legs settled. Had u₁ stopped after step 3, u₂ could still claim: σ₂ is public on chain 2, and u₂ already holds Y and the σ̂₂ it made — Ext needs no further message from u₁.'},
 
     {n:'6 — settled', p:0,
      l1:'Holds u₂\'s coin.', l2:'Holds u₁\'s coin.',
      e1:'', e2:'',
-     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-y2'],
+     hold1:['o-y','o-Y1','o-sh2','o-s2'], hold2:['o-Y2','o-pi','o-sh1','o-sh2b','o-y2'],
      msgs:['m-Y','m-pi','m-sh1','m-tx1','m-sh2','m-tx2'],
      rows:['r-Y','r-pi','r-sh1','r-sh2','r-ch2','r-ch1','r-tot'],
      chain1:'settled', chain2:'settled', done:true,
      cap:'Either both transfers happen or neither does — with no trusted third party and no on-chain script.'}
   ];
 
+  /* The coins are funded to their OWN owner's key (protocol.rs: c1 = pay_to(pk1),
+     c2 = pay_to(pk2)).  Nothing is locked to the counterparty before settlement:
+     what moves a coin is the adapted signature, not the funding condition. */
+  var IDLE1="c₁ · u₁'s coin, spendable only by u₁'s key",
+      IDLE2="c₂ · u₂'s coin, spendable only by u₂'s key";
+
   var cfg=3, i=0, timer=null;
 
   function setText(sel,v){ [].forEach.call(document.querySelectorAll(sel),function(e){e.textContent=v;}); }
 
+  /* A step line has a `classical` variant whenever the default line would describe
+     the LAS construction.  Configuration 1 is the classical one, and it is the one
+     without a role-A proof, so a single flag drives both differences. */
+  function isClassical(){ return !CFG[cfg].pi_b; }
+  function line(s,key){
+    return (isClassical() && s.classical && s.classical[key] !== undefined)
+      ? s.classical[key] : s[key];
+  }
+
   function paintConfig(){
     var c=CFG[cfg];
+    document.getElementById('pinote').innerHTML=c.pinote;
     setText('.v-Y', c.Y+' B');
     setText('.v-pi', c.pi_b ? c.pi_b+' B' : 'none');
     setText('.v-sh1', c.sh1+' B');
@@ -380,10 +447,10 @@
 
   function paint(){
     var s=STEPS[i], c=CFG[cfg];
-    document.getElementById('log1').innerHTML=s.l1;
-    document.getElementById('log2').innerHTML=s.l2;
-    document.getElementById('eq1').textContent=s.e1||'';
-    document.getElementById('eq2').textContent=s.e2||'';
+    document.getElementById('log1').innerHTML=line(s,'l1');
+    document.getElementById('log2').innerHTML=line(s,'l2');
+    document.getElementById('eq1').textContent=line(s,'e1')||'';
+    document.getElementById('eq2').textContent=line(s,'e2')||'';
     document.getElementById('p1').classList.toggle('act',s.p===1);
     document.getElementById('p2').classList.toggle('act',s.p===2);
 
@@ -406,13 +473,13 @@
     document.getElementById('c2s').textContent = s.chain2==='settled' ? 'SETTLED — u₁ claimed' : 'unspent';
     document.getElementById('c1s').textContent = s.chain1==='settled' ? 'SETTLED — u₂ claimed' : 'unspent';
     document.getElementById('c2b').textContent = s.chain2==='settled'
-      ? 'tx₂ + σ₂  ·  '+c.ch2+' B published' : "u₂'s coin, locked to u₁'s key";
+      ? 'tx₂ + σ₂  ·  '+c.ch2+' B published — pays u₁' : IDLE2;
     document.getElementById('c1b').textContent = s.chain1==='settled'
-      ? 'tx₁ + σ₁  ·  '+c.ch1+' B published' : "u₁'s coin, locked to u₂'s key";
+      ? 'tx₁ + σ₁  ·  '+c.ch1+' B published — pays u₂' : IDLE1;
 
     document.getElementById('stepno').textContent=s.n+'   ·   config '+cfg+': '+c.name
       +'   ·   measured end-to-end '+c.time+' µs';
-    document.getElementById('caption').innerHTML=s.cap;
+    document.getElementById('caption').innerHTML=line(s,'cap');
     document.getElementById('next').disabled = i>=STEPS.length-1;
     document.getElementById('prev').disabled = i<=0;
     document.getElementById('trip').disabled = !(i>=1 && i<=2);
@@ -447,7 +514,7 @@
     flash('REJECTED',
       'A pre-signature <b>fails ordinary verification</b>. u₂ holds σ̂₁ but cannot spend with it — '
       +'only the witness y completes it.',
-      'the statement-binding tripwire, asserted on every one of the 1000 functional-test iterations');
+      CFG[cfg].tripsrc);
   };
   [].forEach.call(document.querySelectorAll('.cfgs button'),function(b){
     b.onclick=function(){ cfg=+b.dataset.cfg; paintConfig(); paint(); };

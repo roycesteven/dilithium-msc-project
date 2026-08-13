@@ -20,7 +20,7 @@ $c = H(\mathit{pk}, w, M)$, computes a response and rejects when
 $\inftynorm{\vecz} > \gamma-\kappa$. Relative to a statement $Y$, the adaptor extension
 \cite{esgin2020post} adds \textsc{PreSign}, which folds the statement into the hash,
 $c = H(\mathit{pk}, w + Y, M)$, and rejects at the \emph{tighter} bound
-$\gamma-\kappa-1$; \textsc{PreVerify}, which recomputes $w' = A\vecz - c\,t$ and checks
+$\gamma-\kappa-1$; \textsc{PreVerify}, which recomputes $w' = A\hat{\vecz} - c\,t$ and checks
 $c = H(\mathit{pk}, w'+Y, M)$; \textsc{Adapt}, which adds the witness,
 $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier accepts; and
 \textsc{Extract}, which recovers $y = \vecz - \hat{\vecz}$ (\cref{fig:lasfuncs}).
@@ -71,7 +71,7 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
 
     %% ---------------- (c) Adapt ----------------
     \node[ttl] (tc) at (74mm,0)    {(c) \textsc{Adapt}};
-    \node[io]  (ic) at (tc.south)  {in: $\hat{\sigma}$, witness $y$};
+    \node[io]  (ic) at (tc.south)  {in: $Y$, key $t$, $\hat{\sigma}$, $M$, witness $y$};
     \node[pan] (pc) at (ic.south)  {\emph{runs (b) first}\\[1pt]
         $\vecz \leftarrow \hat{\vecz} + y$\\[1pt]
         $\inftynorm{y} \le 1$, so\\
@@ -91,8 +91,9 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
   adds to the base signature, one panel each: what goes in, what the function computes,
   and what comes out. \textsc{KeyGen}, \textsc{Sign} and \textsc{Verify} are reused
   unchanged and are not shown. Two asymmetries are the whole construction. Only (a) and
-  (b) touch the statement $Y$, and only in one place --- the challenge hash --- which is
-  why the adaptor layer inherits the base scheme's arithmetic rather than replacing it;
+  (b) fold the statement $Y$ into the challenge hash --- which is why the adaptor layer
+  inherits the base scheme's arithmetic rather than replacing it, (d) using $Y$ only to
+  check the recovered witness;
   only (c) and (d) touch the witness $y$, and they are the two functions a basic
   signature has no counterpart for. The bound in (a) is the one quantity that must not be
   relaxed: pre-signing rejects one unit tighter than \cref{eq:signbound} precisely so that

@@ -1,0 +1,51 @@
+run_id: 20260812_163248
+
+Bitcoin Core v31.1 + bitcoin/patches/0001-op-checklassigverify-v31.1.patch
+  patch sha256      6fb8161d5b2b3820752a0d98f04be408...  (applied tree VERIFIED identical, no untracked files)
+  patched bitcoind  de3a4bd76eb10a7d4e22d05013849875...
+  stock bitcoind    986e63b3c8770f08d0059820ad3dd085...
+  consensus seed    e2a16befb5800a121a9b49918f0183ef6812069998e929717a5f34ea692e5998
+                    (= SHA-256 of its documented preimage, verified this run)
+
+--- shim selftest, before any node existed ---
+
+selftest OK: positive control accepted, 7 negative controls rejected,
+             message-length and cross-context controls behaved as required
+
+--- every case, put to BOTH nodes as a CONSENSUS question ---
+    (generateblock submit=false: block validation, not mempool policy)
+
+valid                patched: ACCEPTED                                                   stock: ACCEPTED
+output_amount        patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 5c63dadf0061fe62b63a77a5bc8c stock: ACCEPTED
+output_recipient     patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of ed5175d78c04d0fd73d62fe86f0c stock: ACCEPTED
+input_outpoint       patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of cc81e9e4140fc57dbb0e6a825da7 stock: ACCEPTED
+chunk_truncated      patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (Malformed LAS witness (chunk count or chunk length)), input 0 of 97775 stock: ACCEPTED
+chunk_reordered      patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+wrong_pubkey         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS public key does not match the committed hash), input 0 of 97775062 stock: ACCEPTED
+wrong_prevout_amt    patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+foreign_signature    patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+non_sighash_msg      patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+
+  Required and checked exactly: valid = ACCEPTED/ACCEPTED; every negative =
+  REJECTED/ACCEPTED. The stock node still treats 0xbb as OP_SUCCESS, so it accepts
+  unconditionally and cannot be reacting to the signature. The difference between
+  the two columns is the new consensus rule, and nothing else.
+
+--- the valid spend, settled ---
+  txid   97775062e22dc1e7ad70be74ab73c7b70d391fd7c66608abf6b5015271392134
+  block  637c2ec2cdc011f74dc818572850e534b007d49d564238a34615e43eb5453a52
+  vsize  2917
+  weight 11667
+  the stock node accepted the same block (soft-fork compatible)
+
+[LAS] inputs=1 outputs=1 witness_items=[24]
+  total_size  model 11385    node 11385    OK
+  weight      model 11667    node 11667    OK
+  vsize       model 2917     node 2917     OK
+[LAS] size model agrees with the client
+
+RESULT: a Bitcoin transaction whose only authorisation is a LAS signature was
+        accepted and MINED by a patched Bitcoin Core node, because that node
+        verified the signature under OP_CHECKLASSIGVERIFY. Nine negative controls
+        were refused by the patched node and accepted by a stock node of the same
+        release, which attributes the refusals to the new rule.

@@ -135,7 +135,7 @@ days, not weeks.
         relation whose statement is small by construction.
   \item \textbf{Reduce the proof.} Both routes proposed here were measured, and both fail
         at this scale. Batching amortises the wrong
-        cost --- the Groth16 proof is constant in the batch and never the bottleneck,
+        cost --- Groth16's proof \emph{size} is already constant, and size was never the bottleneck,
         while the LaZer proof shrinks per swap only by making proving and verification
         several times worse. The second --- a system succinct, post-quantum and
         zero-knowledge at once, as \cite{esgin2020post} requires of $\pi$ --- was

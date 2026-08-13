@@ -1,0 +1,16 @@
+las_consensus selftest (consensus seed; 6736 B sig / 4416 B pk)
+  positive: genuine (pk, msg, sig)               ACCEPT   OK
+  1. signature bit flipped                       reject   OK
+  2. public key bit flipped                      reject   OK
+  3. message bit flipped                         reject   OK
+  4. signature one byte short                    reject   OK
+  5. public key one byte short                   reject   OK
+  6. valid signature, wrong message              reject   OK
+  7. valid signature, wrong key                  reject   OK
+  bonus: message length 31 refused               reject   OK
+  bonus: message length 33 refused               reject   OK
+  control: other-message sig on its own message  ACCEPT   OK
+  control: other-key sig under its own key       ACCEPT   OK
+
+selftest OK: positive control accepted, 7 negative controls rejected,
+             message-length and cross-context controls behaved as required

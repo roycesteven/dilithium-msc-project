@@ -719,9 +719,11 @@ def emit_tab_components(out, meta, params, comm):
     b = header(["evidence/latest/tables/communication_components.csv"], meta)
     b += "\\begin{tabular}{@{}lrrr@{}}\n  \\toprule\n"
     b += "  Component\n    & " + heads + " \\\\\n  \\midrule\n"
-    b += "  $c$ (challenge)   & %s \\\\\n" % b3("c")
-    b += "  $z$ (response)    & %s \\\\\n" % b3("z")
-    b += "  Signature $(c,z)$ & %s \\\\\n" % b3("signature (c,z)")
+    # Labels carry the WIRE object: a signature stores the challenge digest
+    # c-tilde, not the challenge polynomial c. CSV keys are unchanged.
+    b += "  $\\tilde c$ (challenge digest) & %s \\\\\n" % b3("c")
+    b += "  $z$ (response)               & %s \\\\\n" % b3("z")
+    b += "  Signature $(\\tilde c,z)$      & %s \\\\\n" % b3("signature (c,z)")
     b += "  \\midrule\n"
     b += "  $z$ as \\%% of signature & %s \\\\\n" % zpct()
     b += "  \\midrule\n"
@@ -739,14 +741,15 @@ def emit_tab_complete_target(out, meta, comm):
     rows = [
         ("Public key", "$pk=t$", c["pk = t"], "yes (shared)"),
         ("Secret key", "$sk=r$", c["sk = r"], "yes (shared)"),
-        ("Challenge", "$c$", c["c"], "yes"),
+        ("Challenge digest", "$\\tilde c$", c["c"], "yes"),
         ("Response", "$z\\,/\\,\\hat z$", c["z"], "yes"),
-        ("Signature", "$(c,z)$", c["signature (c,z)"], "yes (basic signature)"),
+        ("Signature", "$(\\tilde c,z)$", c["signature (c,z)"],
+         "yes (basic signature)"),
         ("Statement", "$Y=t'$", c["Y = t'"], "LAS only (public)"),
         ("Witness", "$y=r'$", c["r'"], "LAS only (private)"),
-        ("Pre-signature", "$(c,\\hat z)$", c["pre-signature (c,z_hat)"],
+        ("Pre-signature", "$(\\tilde c,\\hat z)$", c["pre-signature (c,z_hat)"],
          "LAS only"),
-        ("Adapted signature", "$(c,z)$", c["final adapted sig (c,z)"],
+        ("Adapted signature", "$(\\tilde c,z)$", c["final adapted sig (c,z)"],
          "LAS (verifies as basic sig)"),
     ]
     b = header(["evidence/latest/tables/communication_components.csv"], meta)

@@ -202,18 +202,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-12 16:55 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-13 18:42 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 80751df · 2026-08-12 · report 12_08 15_27_pm
-- Working tree: 18 modified tracked file(s), 43 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 2c78118 · 2026-08-13 · report 13_08 16_37
+- Working tree: 19 modified tracked file(s), 43 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `2c78118 2026-08-13 report 13_08 16_37`
+  - `8003045 2026-08-12 report 12_08 16_57`
   - `80751df 2026-08-12 report 12_08 15_27_pm`
   - `07cbf17 2026-08-11 deck wip, report draft 1`
   - `98ed761 2026-08-11 btclasbenchmacro.tex btcnodemadcros.tex`
-  - `b8ee428 2026-08-11 labrador issue`
-  - `688ffbc 2026-08-07 report meeting 8 pdf`
 
 ### Target parameter set — anchors parsed from source
 
@@ -229,7 +229,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8995** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8999** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -251,7 +251,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-12.
+- `CLAUDE.md` hand-written sections last touched 2026-08-13.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -626,21 +626,30 @@ any of it.
 
 1. **6–8 minute presentation slides — DELIVERED LIVE TO WANG NEXT WEEK** (Royce chose next
    week over the week after). **Deck BUILT 2026-08-12** — `report/slides/video_deck.html`,
-   13 slides, planned 7:15, with speaker notes and an on-screen clock; plan + shot list +
+   13 slides, planned 7:12, with speaker notes and an on-screen clock; plan + beat sheet +
    on-camera claim discipline in `report/slides/VIDEO_PLAN.md`. It is **generated**:
    `scripts/gen_slides.py` fills `video_deck.template.html` from
    `report/latex/generated/*.tex` and embeds the report's own figures, so slides and report
    quote one evidence run (`--check` fails when stale; **edit the template, never the
    output**; re-run after every `sync_report.sh`). Bar geometry is derived from the same
-   macros as the labels, so a width cannot drift from its number. Demo A is
-   `report/slides/swap_console.html` — an **interactive** step-through of the swap (board,
-   tripwire button, config switch, `?step=&cfg=`), same generator, banner-labelled a
-   *replay of the measured run, not live crypto*; **keep that banner**. A terminal dump was
-   rejected as a demo (Royce, 2026-08-12): it shows that a run happened, not what happened.
-   ⚠ **`run_btc_las_node.sh` needs four env vars** (`BTC_TAG`/`BTC_SRC`/`BTC_BIN_PATCHED`/
-   `BTC_BIN_STOCK`) or it exits at once; the working line is in `VIDEO_PLAN.md`, recovered
-   from `evidence/btc_las_node/latest/environment.txt` (build at `~/btc-stage2`; all four
-   pin gates re-verified 2026-08-12). **Still owed:** both captures and the live run-through.
+   macros as the labels, so a width cannot drift from its number.
+   ⚠ **NO CAPTURES — NOT A TERMINAL, NOT A WINDOW SWITCH (Royce, 2026-08-13; a terminal dump
+   was already rejected 2026-08-12 — it shows that a run happened, not what happened).**
+   **Both demos step INSIDE the deck**: `data-sub="n"` makes a slide consume the forward key
+   n times, driven by four attribute rules (`data-w`/`data-only`/`data-until`/`data-settle`)
+   — a beat is markup, never per-slide script — and each slide **opens on beat 1**. Slide 5 =
+   the swap board (abort gate → tripwire → publish σ₂ → Ext y′ **then** Adapt σ̂₁ and publish;
+   never collapse those last two, Fig. 1 has both, and u₂ *does* publish — it needs nothing
+   further **from u₁**); slide 9 = the node differential, drawn. `swap_console.html` stays as
+   the standalone artefact **out of the recording**, banner kept, and its narration is
+   **configuration-aware**: config 1 has no role-A π and its Ext is a secp256k1 recovery, so
+   `classical:{}` overrides every LAS-specific line, and no byte figure may be attributed to
+   its DLEQ (the pre-signature's excess covers nonce commitments *and* DLEQ, unsplit).
+   ⚠ **Quote π at its MEASURED wire size** (`\cfgThreeMsgPi`), never `\piProofBytes` — the
+   parameter set's own stated figure, a different quantity; both on one screen read as a
+   contradiction. ⚠ `run_btc_las_node.sh` needs four env vars (`BTC_TAG`/`BTC_SRC`/
+   `BTC_BIN_PATCHED`/`BTC_BIN_STOCK`) or it exits at once; working line in `VIDEO_PLAN.md`
+   (build `~/btc-stage2`; pin gates re-verified 2026-08-12). **Still owed:** the run-through.
 2. **Frontmatter `\TODO`s** in `report/latex/report.tex` (student id, prior degrees,
    acknowledgements) — **Royce only**.
 3. **AMHL doc cleanup** in `docs/` under the (a)/(b) test above.
@@ -957,6 +966,16 @@ captions, figure labels — never one in isolation):
   table-column shorthand, never in equations.
 - challenge weight **`κ` is per parameter set** (60 / 39 / 49 / 60 for paper/D2/D3/D5) — never
   hard-code `κ=60` as a global.
+- **`c` vs `c̃` — two objects; never merge them, never let `H` change type** (four drafts failed
+  this on 2026-08-13). The paper's `H : {0,1}* → C` returns the challenge **polynomial** `c`;
+  `c̃` is the digest **this implementation** derives it from, following FIPS 204's *pattern*
+  `c = SampleInBall(c̃)`. Never write `c̃ = H(…)` — it silently retypes `H`. Attribution is
+  three-way and easy to get wrong in *either* direction: FIPS 204 **does** fix ML-DSA's width
+  at `λ/4`, the LAS paper fixes **no** encoding, and the *project's* choice is to adopt λ/4 at
+  aligned sets and 32 B at the unaligned paper set — so FIPS 204 never "instantiates the paper's
+  `H`", but neither is the width simply "a project choice". Wire objects are `(c̃, z)` / `(c̃, ẑ)`
+  while arithmetic uses `c`, **derived before first use** (`las_preverify` does exactly this).
+  Report-wide 2026-08-13: `fig:lasfuncs`, `fig:flow`, `tab:notation`, both component tables.
 
 Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 

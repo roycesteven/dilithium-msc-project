@@ -1,0 +1,24 @@
+run_id=20260812_163248
+git=80751df
+branch=report
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+--- Bitcoin Core ---
+btc_tag=v31.1
+btc_src=/home/melly/btc-stage2/src-31.1 (HEAD == v31.1 commit 9be056a8a72b624dae9623b2f7bded92c2a21c91, plus the committed patch)
+patch=bitcoin/patches/0001-op-checklassigverify-v31.1.patch
+patch_sha256=6fb8161d5b2b3820752a0d98f04be40849942dad8ed738c851e36ed92dd1189f
+applied_patch_sha256=6fb8161d5b2b3820752a0d98f04be40849942dad8ed738c851e36ed92dd1189f (VERIFIED EQUAL; no untracked files)
+bitcoind_patched=/home/melly/btc-stage2/src-31.1/build/bin/bitcoind
+bitcoind_patched_sha256=de3a4bd76eb10a7d4e22d0501384987598d99ebff7f61bfec47ff6b55528c4d0
+bitcoind_stock=/home/melly/btc-stage2/bitcoin-31.1/bin/bitcoind
+bitcoind_stock_sha256=986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+--- LAS consensus parameters ---
+consensus_seed=e2a16befb5800a121a9b49918f0183ef6812069998e929717a5f34ea692e5998
+consensus_seed_preimage=LAS-CONSENSUS-PARAMS-v1 (SHA-256 VERIFIED)
+opcode=OP_CHECKLASSIGVERIFY (0xbb, a BIP342 OP_SUCCESSx slot)
+sighash=BIP341 SIGHASH_DEFAULT only
+shim_selftest=PASSED (positive + 7 negative controls)
+instrument=generateblock submit=false — CONSENSUS validation, not mempool policy
+note=on the STOCK node 0xbb remains OP_SUCCESS, so it accepts these spends
+note=unconditionally; that is the soft-fork property and the differential control.

@@ -46,8 +46,8 @@
 \contentsline {section}{\numberline {3.2}Computation cost}{29}{section.3.2}%
 \contentsline {section}{\numberline {3.3}Cross-implementation check: C implementation versus Rust port}{31}{section.3.3}%
 \contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{33}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{35}{subsection.3.4.1}%
-\contentsline {section}{\numberline {3.5}Testing the simplification: the adaptor on unmodified ML-DSA}{37}{section.3.5}%
+\contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{36}{subsection.3.4.1}%
+\contentsline {section}{\numberline {3.5}Testing the simplification: the adaptor on unmodified ML-DSA}{39}{section.3.5}%
 \contentsline {section}{\numberline {3.6}Application demonstration}{40}{section.3.6}%
 \contentsline {section}{\numberline {3.7}The swap on a UTXO chain: three configurations compared}{42}{section.3.7}%
 \contentsline {paragraph}{The proof, not the signature, is the cost of a post-quantum swap.}{42}{section*.33}%
@@ -56,7 +56,7 @@
 \contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{44}{section*.36}%
 \contentsline {section}{\numberline {3.8}Transaction structure and what a UTXO chain would charge}{45}{section.3.8}%
 \contentsline {paragraph}{The witness discount absorbs more than half of the post-quantum penalty.}{45}{section*.37}%
-\contentsline {paragraph}{It fits the size limits, but not the verification rules.}{46}{section*.38}%
+\contentsline {paragraph}{It fits the weight limits, not the element-size or verification rules.}{46}{section*.38}%
 \contentsline {paragraph}{Both obstacles were put to a real client.}{47}{section*.39}%
 \contentsline {section}{\numberline {3.9}Threats to validity}{47}{section.3.9}%
 \contentsline {chapter}{\numberline {4}Evaluation}{49}{chapter.4}%
@@ -91,9 +91,9 @@
 \contentsline {section}{\numberline {A.9}Test types and parameter notation}{70}{section.A.9}%
 \contentsline {section}{\numberline {A.10}Full benchmark data tables}{70}{section.A.10}%
 \contentsline {section}{\numberline {A.11}Auditing the reuse claim}{71}{section.A.11}%
-\contentsline {section}{\numberline {A.12}Selected code listing: Adapt and Extract}{72}{section.A.12}%
-\contentsline {section}{\numberline {A.13}Settling on a real node}{75}{section.A.13}%
-\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{75}{section*.48}%
+\contentsline {section}{\numberline {A.12}Selected code listing: Adapt and Extract}{73}{section.A.12}%
+\contentsline {section}{\numberline {A.13}Settling on a real node}{76}{section.A.13}%
+\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{76}{section*.48}%
 \contentsline {paragraph}{Verification on a patched node.}{76}{section*.49}%
 \contentsline {paragraph}{What the rule charges a validating node.}{77}{section*.50}%
 \contentsline {chapter}{Bibliography}{79}{appendix*.51}%

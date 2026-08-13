@@ -179,13 +179,81 @@
   .stack .new{background:var(--adaptor-soft);border-left-color:var(--mark-ad)}
   .stack .old{background:var(--wash);border-left-color:var(--muted)}
 
-  /* ---- capture placeholder for the two demo segments ---- */
-  .capture{flex:1;min-height:0;border:2px dashed var(--adaptor);border-radius:14px;background:var(--card);
-           display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px}
-  .capture .big{font-size:20px;font-weight:750;color:var(--adaptor)}
-  .capture .cmd{font-family:var(--mono);font-size:14px;color:var(--ink);background:var(--wash);
-                border:1px solid var(--line);border-radius:8px;padding:8px 12px}
-  .capture .hint{font-size:14px;color:var(--muted);max-width:70ch;line-height:1.4}
+  /* ---- slide 5: the swap, stepped INSIDE the deck ------------------------
+     A slide carrying data-sub="n" consumes the forward key n times before the
+     deck advances, so the demonstration runs in the same fullscreen deck as
+     everything else -- no window switch, no screen capture, nothing to cut in.
+     Four declarative rules drive it, so no per-slide script exists:
+       [data-w=N]      -> .on  once the beat index reaches N
+       [data-only=N]   -> .on  only while the beat index IS N
+       [data-until=N]  -> .on  only while the beat index is below N
+       [data-settle=N] -> .settled once the beat index reaches N            */
+  .walk{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;flex:1;min-height:0}
+  .wparty{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;
+          box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-height:0}
+  .wparty h4{margin:0;font-size:18px;font-weight:750;display:flex;gap:9px;align-items:baseline}
+  .wparty h4 span{font-size:13px;font-weight:400;color:var(--muted)}
+  .wobjs{display:flex;flex-wrap:wrap;gap:6px}
+  .wobj{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:7px;
+        padding:4px 9px;color:var(--muted);background:var(--wash);opacity:.3;
+        transition:opacity .4s ease,color .4s ease,border-color .4s ease}
+  .wobj.on{opacity:1;color:var(--ink);border-color:var(--mark-b)}
+  .wobj.sec.on{border-color:var(--mark-ad);color:var(--ink-ad);font-weight:700}
+  .wsay{margin-top:auto;font-size:15px;line-height:1.36;color:var(--muted);
+        opacity:0;transform:translateY(5px);transition:opacity .4s,transform .4s}
+  .wsay.on{opacity:1;transform:none}
+  .wsay b{color:var(--ink)}
+  .wsay .eq{font-family:var(--mono);font-size:13.5px;color:var(--ink-ad);display:block;margin-top:4px}
+  .wmid{display:flex;flex-direction:column;gap:12px;justify-content:center;position:relative}
+  .wchain{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:11px 14px;
+          box-shadow:var(--shadow);transition:background .45s ease,border-color .45s ease}
+  .wchain .ct{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .wchain .ct em{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:11.5px;
+                 color:var(--muted);font-weight:400}
+  .wchain .cb{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:5px;line-height:1.3}
+  .wchain [data-w],.wchain [data-until]{display:none}
+  .wchain [data-w].on,.wchain [data-until].on{display:block}
+  .wchain.settled{background:var(--reused-soft);border-color:var(--reused)}
+  .wchain.settled .cb,.wchain.settled .ct em{color:var(--ink)}
+  .wstamp{position:absolute;left:50%;top:50%;z-index:3;
+          transform:translate(-50%,-50%) rotate(-6deg) scale(.92);
+          border:3px solid var(--warn);color:var(--warn);background:var(--warn-soft);
+          border-radius:12px;padding:9px 20px;font-size:25px;font-weight:800;letter-spacing:.05em;
+          opacity:0;visibility:hidden;transition:opacity .3s,transform .3s,visibility 0s .3s}
+  .wstamp.on{opacity:1;visibility:visible;transform:translate(-50%,-50%) rotate(-6deg) scale(1);
+             transition:opacity .3s,transform .3s}
+  .wrail{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:none}
+  .wrail div{border-top:3px solid var(--line);padding-top:8px;font-size:14px;line-height:1.32;
+             color:var(--muted);transition:border-color .35s,color .35s}
+  .wrail div b{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+               text-transform:uppercase;margin-bottom:4px}
+  .wrail div.done{border-top-color:var(--reused)}
+  .wrail div.now{border-top-color:var(--adaptor);color:var(--ink)}
+  .wrail div.now b{color:var(--adaptor)}
+
+  /* ---- slide 9: the node differential, DRAWN rather than screen-captured.
+     One spend, two clients, two verdict columns: the contrast is the argument,
+     and a terminal transcript shows only that a run happened, not what it showed. */
+  .diff{display:flex;flex-direction:column;gap:9px;flex:1;min-height:0}
+  .dspend{border:1px solid var(--line);border-radius:11px;background:var(--card);box-shadow:var(--shadow);
+          padding:10px 14px;font-size:14px;line-height:1.32;color:var(--muted);text-align:center}
+  .dspend b{color:var(--ink)}
+  .dfork{width:100%;height:24px;flex:none;color:var(--line);display:block}
+  .dnodes{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;min-height:0}
+  .dnode{border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow);
+         padding:11px 13px;display:flex;flex-direction:column;gap:8px}
+  .dnode.patched{border-color:color-mix(in srgb,var(--adaptor) 45%,var(--line))}
+  .dnode .dh{font-size:14.5px;font-weight:750;line-height:1.24}
+  .dnode .dh span{font-family:var(--mono);font-size:12.5px;color:var(--muted);font-weight:400;
+                  display:block;margin-top:3px}
+  .dv{font-size:13.5px;line-height:1.3;border-radius:8px;padding:7px 10px}
+  .dv .k{font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:.05em;display:block}
+  .dv.ok{background:var(--reused-soft)} .dv.ok .k{color:var(--reused)}
+  .dv.bad{background:var(--warn-soft)} .dv.bad .k{color:var(--warn)}
+  .dv[data-w]{opacity:0;transform:translateY(6px);transition:opacity .45s ease,transform .45s ease}
+  .dv[data-w].on{opacity:1;transform:none}
+  .dfoot{font-size:13.5px;line-height:1.34;color:var(--muted);text-align:center;flex:none}
+  .dfoot b{color:var(--ink)}
 
   /* ---- title slide ---- */
   .title{justify-content:center;gap:22px;padding-left:70px}
@@ -299,7 +367,7 @@
     </section>
 
     <!-- ============================ 4 ============================ -->
-    <section class="slide" data-title="What I built" data-time="0:35" data-notes="The strategy was to build additively. The entire lattice core — number-theoretic transform, polynomial arithmetic, SHAKE, sampling — is reused from the Dilithium reference with zero upstream functions modified, and a two-branch diff makes that auditable rather than something I assert. On top sit the four adaptor functions, a bit-packed wire encoding with a validating decoder, and the application. Then I did it a second time, independently, in Rust — and the two agree on a pinned known-answer digest, byte for byte, under a different compiler and a different benchmark harness. That pairing is the strongest practical correctness argument available without a formal proof.">
+    <section class="slide" data-title="What I built" data-time="0:35" data-notes="The strategy was to build additively. The entire lattice core — number-theoretic transform, polynomial arithmetic, SHAKE, sampling — is reused from the Dilithium reference with zero upstream functions modified, and a two-branch diff makes that auditable rather than something I assert. On top sit the four adaptor functions, a bit-packed wire encoding with a validating decoder, and the application. Then I did it a second time, independently, in Rust — and the two agree on a pinned known-answer digest, byte for byte, under a different compiler and a different benchmark harness. I want to be precise about what that digest binds: the packed key pair, signature, pre-signature and adapted signature of four fixed vectors — outputs, not internals. PreVerify and Extract are asserted on every vector rather than hashed. So it is evidence that two independent implementations produce identical bytes, and I claim no more than that.">
       <div class="eyebrow">The artefact</div>
       <h1 class="headline">Built <strong class="hi">additively</strong> on a standardised reference — then built again, independently</h1>
       <div class="cols c25">
@@ -316,39 +384,73 @@
           <h3>Two implementations, one digest</h3>
           <p class="on">C and Rust, written against the specification, agree byte-for-byte on the pinned known-answer digest</p>
           <p class="num" style="color:var(--ink)">{{katDigestHead}}…{{katDigestTail}}</p>
-          <p>It covers key generation, signing, all four adaptor functions and the serialization — a divergence anywhere flips it.</p>
+          <p>It folds the packed key pair, signature, pre-signature and adapted signature of four fixed
+          vectors into one digest — <b>outputs, not internals</b>. PreVerify and Extract are asserted
+          per vector, not hashed.</p>
           <div class="chipline">
-            <span class="chip ok">functional · 1000 iters × 3 modes</span>
+            <span class="chip ok">functional · 1000 iterations × 3 parameter sets</span>
             <span class="chip ok">serialization · 256 instances</span>
-            <span class="chip ok">tamper · {{tamperFlips}} byte flips</span>
-            <span class="chip ok">known-answer</span>
+            <span class="chip ok">tamper · low-bit flip of every one of {{tamperFlips}} signature bytes</span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ============================ 5 ============================ -->
-    <section class="slide" data-title="DEMO A — walking the swap" data-time="0:45" data-notes="Rather than describe the protocol, let me walk it. This is an interactive replay of the measured run — I can step it, and I can switch the configuration underneath it. Watch three things. The abort gate: u₂ commits nothing until both the proof and u₁'s pre-signature verify. The tripwire — if u₂ tries to spend the pre-signature it is holding, it is rejected, because a pre-signature is not a signature; that is the property that makes the whole thing work. And the leak: u₂ sends no message at step four. It reads the published signature off chain two, subtracts the pre-signature it already had, and the witness falls out. Publishing to claim one leg is what unlocks the other.">
-      <div class="eyebrow">Demonstration 1 of 2 · interactive walkthrough</div>
-      <h1 class="headline">Walking the protocol — with the <strong class="hi">measured</strong> bytes underneath it</h1>
-      <div class="capture">
-        <div class="big">▶ CAPTURE OF <span style="font-family:var(--mono);font-size:17px">swap_console.html</span></div>
-        <div class="cmd">report/slides/swap_console.html — step it live, or record it</div>
-        <div class="hint">Three beats to land: the <b>abort gate</b> (step 2 — neither pre-signature is spendable
-        by anyone) · the <b>tripwire</b> (red button: a pre-signature <b>fails</b> ordinary Verify) ·
-        <b>the leak</b> (step 4 — no message is sent; u₂ subtracts and the witness falls out).
-        Then flip the configuration switch to show the byte cost move. Already 1280×720 — it drops
-        into this frame 1:1.</div>
+    <section class="slide" data-title="DEMO A — walking the swap" data-time="0:45" data-sub="3" data-notes="Rather than describe the protocol, let me walk it. The exchange has already happened here: u₁ sent the statement, the proof and its pre-signature, u₂ checked both and sent its own back. Watch four things. One, the abort gate — u₂ committed nothing until both the proof and u₁'s pre-signature verified, and at this instant neither pre-signature is spendable by anyone; nobody has risked a coin. Two, the tripwire: u₂ holds u₁'s pre-signature and tries to spend it — ordinary verification refuses it, because a pre-signature is not a signature. That is the property the whole construction rests on. Three, u₁ knows the witness, so it completes u₂'s pre-signature and publishes; on chain that is an ordinary payment, with no script and no hash lock. And four, the leak — and note that u₂ needs nothing further from u₁ here. It reads the published signature off chain two, combines it with the statement and the pre-signature it made itself, and the witness falls out; it then uses that extracted value to complete u₁'s pre-signature and publishes, taking the other coin. Publishing to claim one leg is what unlocks the other: either both settle or neither does.">
+      <div class="eyebrow">Demonstration 1 of 2 · the protocol, stepped on screen · object sizes from run {{stageTwoRunId}}</div>
+      <h1 class="headline">Step it, <strong class="hi">break it</strong>, and watch the secret fall out</h1>
+      <div class="walk">
+        <div class="wparty">
+          <h4>u₁ <span>holds the witness</span></h4>
+          <div class="wobjs">
+            <span class="wobj on">sk₁</span>
+            <span class="wobj sec on">witness y</span>
+            <span class="wobj on">Y · {{cfgThreeMsgY}} B</span>
+            <span class="wobj on">σ̂₂ from u₂ · {{cfgThreeMsgPreSigB}} B</span>
+            <span class="wobj" data-w="2">σ₂ adapted</span>
+          </div>
+          <div class="wsay" data-w="2">Knows y, so it completes u₂'s pre-signature and publishes. <b>It takes u₂'s coin.</b>
+            <span class="eq">σ₂ ← Adapt((Y, y), pk₂, σ̂₂, m₂)</span></div>
+        </div>
+        <div class="wmid">
+          <div class="wchain" data-settle="2">
+            <div class="ct">chain 2 <em><span data-until="2" class="on">unspent</span><span data-w="2">SETTLED — u₁ claimed</span></em></div>
+            <div class="cb"><span data-until="2" class="on">c₂ · u₂'s coin, spendable only by u₂'s key</span><span data-w="2">tx₂ + σ₂ · {{cfgThreeMsgChainB}} B published — pays u₁</span></div>
+          </div>
+          <div class="wchain" data-settle="3">
+            <div class="ct">chain 1 <em><span data-until="3" class="on">unspent</span><span data-w="3">SETTLED — u₂ claimed</span></em></div>
+            <div class="cb"><span data-until="3" class="on">c₁ · u₁'s coin, spendable only by u₁'s key</span><span data-w="3">tx₁ + σ₁ · {{cfgThreeMsgChainA}} B published — pays u₂</span></div>
+          </div>
+          <div class="wstamp" data-only="1">REJECTED</div>
+        </div>
+        <div class="wparty">
+          <h4>u₂ <span>learns the witness</span></h4>
+          <div class="wobjs">
+            <span class="wobj on">sk₂</span>
+            <span class="wobj on">Y</span>
+            <span class="wobj on">π · {{cfgThreeMsgPi}} B</span>
+            <span class="wobj on">σ̂₁ from u₁ · {{cfgThreeMsgPreSigA}} B</span>
+            <span class="wobj on">σ̂₂ it made itself</span>
+            <span class="wobj sec" data-w="3">y′ extracted</span>
+          </div>
+          <div class="wsay" data-only="1">Tries to spend the pre-signature it is holding — <b>ordinary Verify refuses it</b>.
+            <span class="eq">Verify(σ̂₁, m₁, pk₁) → ⊥</span></div>
+          <div class="wsay" data-w="3">Needs <b>nothing further from u₁</b>: it reads σ₂ off chain 2, combines it with the σ̂₂ it made itself, then adapts σ̂₁ with what came out and publishes.
+            <span class="eq">y′ ← Ext(Y, σ₂, σ̂₂) = z₂ − ẑ₂</span>
+            <span class="eq">σ₁ ← Adapt((Y, y′), pk₁, σ̂₁, m₁) → chain 1</span></div>
+        </div>
       </div>
-      <div class="chipline">
-        <span class="chip">two parties</span><span class="chip">two ledgers</span>
-        <span class="chip">no trusted third party</span><span class="chip">π exchanged off-chain</span>
-        <span class="chip ad">π = {{piProofBytes}} B, knowledge error &lt; 2⁻{{piKnowledgeError}}</span>
+      <div class="wrail">
+        <div><b>1 · abort gate</b>u₂ pre-signed only after π <em>and</em> PreVerify(σ̂₁) passed. Neither pre-signature is spendable by anyone.</div>
+        <div><b>2 · the tripwire</b>A pre-signature is not a signature — that is what stops u₂ claiming early.</div>
+        <div><b>3 · publish</b>On chain it is an ordinary payment: no script, no hash lock, nothing to see.</div>
+        <div><b>4 · leak, then claim</b>Ext returns y′; u₂ adapts σ̂₁ with <em>that</em> value and publishes. Both settle, or neither does.</div>
       </div>
     </section>
 
     <!-- ============================ 6 ============================ -->
-    <section class="slide" data-title="Result 1 — the adaptor layer is cheap" data-time="0:40" data-notes="First result. The comparison is LAS against its own simplified base signature at identical algorithm, parameters and primitives — so the only thing that varies is the adaptor layer. Every adaptor operation is paired with the basic operation it mirrors. The answer: single digits. PreSign costs {{ovPreSign}} percent more than Sign, PreVerify {{ovPreVerify}} percent, Adapt {{ovAdapt}} percent, and Extract is the cheapest operation in the whole scheme. One methodological point I want to flag: the rejection-sampling rate is COUNTED directly, not inferred from a timing ratio — inferring it gave a materially wrong number early on, so every run now aborts unless the measured attempt count matches the closed-form prediction within five standard errors.">
+    <section class="slide" data-title="Result 1 — the adaptor layer is cheap" data-time="0:40" data-notes="First result. The comparison is LAS against its own simplified base signature at identical algorithm, parameters and primitives — so the only thing that varies is the adaptor layer. Every adaptor operation is paired with the basic operation it mirrors. The answer: single digits. PreSign costs {{ovPreSign}} percent more than Sign, PreVerify {{ovPreVerify}} percent, Adapt {{ovAdapt}} percent, and Extract — which has no basic analogue at all — is the cheapest operation at this boundary. One methodological point I want to flag: the rejection-sampling rate is COUNTED directly, not inferred from a timing ratio — inferring it gave a materially wrong number early on, so every run now aborts unless the measured attempt count matches the closed-form prediction within five standard errors.">
       <div class="eyebrow">Result 1 · computation · Simplified Dilithium-III · core boundary</div>
       <h1 class="headline">Adaptor functionality costs <strong class="hi">single-digit percentages</strong></h1>
       <div class="cols stretch c52">
@@ -361,8 +463,8 @@
           </div>
           <div class="card tint-base">
             <h3>Why the numbers are trustworthy</h3>
-            <p class="on">Rejection attempts are <b>counted</b>, never inferred from timing: {{rejAttBase}} per Sign against {{rejAttLas}} per PreSign.</p>
-            <p>Every run aborts unless that matches the closed-form model within five standard errors — and correctness is asserted on the very objects about to be timed.</p>
+            <p class="on">Rejection attempts are <b>counted</b>, never inferred from timing — the distribution sample recorded {{rejAttBase}} per Sign against {{rejAttLas}} per PreSign.</p>
+            <p>The benchmark aborts unless the attempts counted across <b>every timed Sign and PreSign call</b> match the closed-form prediction within five standard errors — and correctness is asserted on the very objects about to be timed.</p>
           </div>
         </div>
         <div class="figbox"><img alt="Per-operation adaptor overhead: basic signature versus LAS" src="{{FIG_TIMING}}"></div>
@@ -459,17 +561,11 @@
     </section>
 
     <!-- ============================ 9 ============================ -->
-    <section class="slide" data-title="DEMO B — a real Bitcoin client" data-time="0:48" data-notes="Second demonstration, and this is the part the report can only describe. A settled swap weighs {{btcThreeWeight}} weight units — about {{btcThreePctStd}} percent of Bitcoin's standardness limit, so it FITS. What does not exist is a consensus rule that verifies a lattice signature. So I put it to a real client in two stages. First, carriage: on a stock Bitcoin Core {{btcNodeTag}} node, lattice-sized objects are refused by default relay policy but are consensus-valid and get mined. Second, verification: I defined one of the reserved OP_SUCCESS opcodes as a lattice verification opcode, and a spend carrying NO elliptic-curve signature at all was accepted and mined. The control is what makes that meaningful — a STOCK node still treats that opcode as OP_SUCCESS and accepts everything, so {{btcLasControls}} mutations refused by the patched node and accepted by the stock one attribute every refusal to the new rule. And the honest caveat: a patched node is not Bitcoin.">
+    <section class="slide" data-title="DEMO B — a real Bitcoin client" data-time="0:45" data-sub="1" data-notes="Second demonstration, and this is the part the report can only describe. One LAS settlement transaction weighs {{btcThreeWeight}} weight units — about {{btcThreePctStd}} percent of the {{btcMaxStdWeight}} weight-unit standardness ceiling — so it fits that size limit with room to spare. Fitting a size ceiling is not the same as being relayed, and neither is the same as being verified, so I put it to a real client in two stages. First, carriage: on a stock Bitcoin Core {{btcNodeTag}} node the spend is refused by default relay policy — its witness chunks are nonstandard — yet it is consensus-valid and gets mined. Second, verification: I defined one of the reserved OP_SUCCESS opcodes as a lattice verification opcode, and a spend carrying NO elliptic-curve signature at all was accepted and mined. Now the control, which is what makes that meaningful. A stock node of the same release still treats that opcode as OP_SUCCESS, so it accepts every one of these variants regardless of the signature — it cannot be reacting to the signature at all: {{btcLasControls}} negative controls — a changed amount, a changed recipient, a foreign signature — are refused by the patched node and accepted by the stock one. The difference between those two columns is the new rule and nothing else. And the honest caveat: a patched node is not Bitcoin, and I have not analysed the security of the rule I added.">
       <div class="eyebrow">Demonstration 2 of 2 · a real Bitcoin Core {{btcNodeTag}} node, on regtest</div>
       <h1 class="headline">It <strong class="hb">fits</strong> the size limits. It fails the <strong class="hi">verification rules</strong> — so I changed one.</h1>
-      <div class="cols stretch c2" style="flex:1;min-height:0">
-        <div class="capture" style="flex:1">
-          <div class="big">▶ SCREEN CAPTURE — the node's own output</div>
-          <div class="cmd" style="font-size:12px">BTC_TAG · BTC_SRC · BTC_BIN_PATCHED · BTC_BIN_STOCK<br>then scripts/run_btc_las_node.sh — full line in VIDEO_PLAN</div>
-          <div class="hint">Show: the patched node <b>rejecting</b> a mutated spend while a <b>stock</b> node accepts it —
-          side by side. That differential is the whole argument.</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+      <div class="cols stretch c52" style="flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:11px;min-height:0">
           <div class="card tint-base">
             <h3>1 · Carriage, stock node</h3>
             <p class="on">A lattice-carrying spend: <b>{{btcMeasCarriageVsize}} vB</b>, refused by default relay policy (<span class="num">{{btcMeasCarriagePolicy}}</span>) — yet consensus-valid, and <b>mined</b>.</p>
@@ -477,10 +573,32 @@
           </div>
           <div class="card tint-ok">
             <h3>2 · Verification, patched node</h3>
-            <p class="on">Opcode <span class="num">{{btcLasOpcode}}</span> defined as lattice verification: a spend with <b>no elliptic-curve signature at all</b> was accepted and mined ({{btcLasVsize}} vB).</p>
-            <p><b>{{btcLasControls}} mutations</b> refused by the patched node and accepted by a stock one — which attributes the refusals to the new rule.</p>
+            <p class="on">One of the reserved <span class="num">OP_SUCCESS</span> opcodes, <span class="num">{{btcLasOpcode}}</span>, defined as lattice verification — so a spend can be authorised by a LAS signature alone.</p>
+            <p>Every verdict is a <b>consensus</b> question (block validation), not mempool policy.</p>
           </div>
           <p class="caveat"><b>Honest limits:</b> a patched node is <em>not</em> Bitcoin, so “cannot settle on Bitcoin as it stands” still holds; the security of the new rule is <b>not</b> analysed; and it is not wired into the swap.</p>
+        </div>
+        <div class="diff">
+          <div class="dspend">the <b>same spend</b>, byte for byte — <b>{{btcLasVsize}} vB</b>, {{btcLasItems}} witness items,
+          <b>no elliptic-curve signature at all</b> — put to two clients of the same release</div>
+          <svg class="dfork" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 1 V9 H25 V19" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+            <path d="M50 1 V9 H75 V19" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <div class="dnodes">
+            <div class="dnode patched">
+              <div class="dh">patched Core {{btcNodeTag}}<span>{{btcLasOpcode}} verifies the LAS signature</span></div>
+              <div class="dv ok"><span class="k">ACCEPTED · MINED</span>the valid spend</div>
+              <div class="dv bad" data-w="1"><span class="k">REJECTED ×{{btcLasControls}}</span>every negative control</div>
+            </div>
+            <div class="dnode">
+              <div class="dh">stock Core {{btcNodeTag}}<span>{{btcLasOpcode}} is still OP_SUCCESS</span></div>
+              <div class="dv ok"><span class="k">ACCEPTED</span>the valid spend — same block</div>
+              <div class="dv ok" data-w="1"><span class="k">ACCEPTED ×{{btcLasControls}}</span>every negative control</div>
+            </div>
+          </div>
+          <div class="dfoot">Both clients accept the honest spend. Only the patched one can tell a bad LAS signature from a good one —
+          so <b>the difference between the columns is the new rule, and nothing else</b>.</div>
         </div>
       </div>
     </section>
@@ -585,6 +703,7 @@
     <div id="foot">
       <span class="ttl" id="ftitle"></span>
       <span id="fnum"></span>
+      <span id="fbeat"></span>
       <span class="sp"></span>
       <span id="fplan"></span>
       <span id="clock">0:00</span>
@@ -600,7 +719,7 @@
 (function(){
   var stage=document.getElementById('stage'),frame=document.getElementById('frame');
   var slides=[].slice.call(document.querySelectorAll('.slide'));
-  var i=0,started=false,t0=0,tick=null,budget=0;
+  var i=0,sub=0,started=false,t0=0,tick=null,budget=0;
 
   slides.forEach(function(s){ budget+=toSec(s.dataset.time||'0:00'); });
 
@@ -613,10 +732,34 @@
   }
   window.addEventListener('resize',fit); fit();
 
+  /* Beats WITHIN a slide: a slide with data-sub="n" consumes the forward key n
+     times before the deck advances, so a demonstration runs inside the deck. The
+     four attribute rules below are the whole engine -- no slide has its own code,
+     so a new beat is markup, never script. */
+  function subMax(){ return +(slides[i].dataset.sub||0); }
+  function applySub(){
+    var s=slides[i];
+    [].forEach.call(s.querySelectorAll('[data-w]'),function(e){
+      e.classList.toggle('on', sub>=+e.dataset.w); });
+    [].forEach.call(s.querySelectorAll('[data-only]'),function(e){
+      e.classList.toggle('on', sub===+e.dataset.only); });
+    [].forEach.call(s.querySelectorAll('[data-until]'),function(e){
+      e.classList.toggle('on', sub<+e.dataset.until); });
+    [].forEach.call(s.querySelectorAll('[data-settle]'),function(e){
+      e.classList.toggle('settled', sub>=+e.dataset.settle); });
+    [].forEach.call(s.querySelectorAll('.wrail div'),function(e,k){
+      e.classList.toggle('now', k===sub);
+      e.classList.toggle('done', k<sub); });
+    var m=subMax();
+    document.getElementById('fbeat').textContent = m ? '· beat '+(sub+1)+'/'+(m+1) : '';
+  }
+
   function show(n){
     i=Math.max(0,Math.min(slides.length-1,n));
+    sub=0;
     if(location.hash!=='#'+(i+1)) history.replaceState(null,'','#'+(i+1));
     slides.forEach(function(s,k){ s.classList.toggle('active',k===i); });
+    applySub();
     var s=slides[i];
     document.getElementById('ftitle').textContent=s.dataset.title||'';
     document.getElementById('fnum').textContent='· '+(i+1)+'/'+slides.length;
@@ -637,10 +780,13 @@
     },500);
   }
 
+  function advance(){ if(sub<subMax()){ sub++; applySub(); } else { show(i+1); } }
+  function retreat(){ if(sub>0){ sub--; applySub(); } else { show(i-1); } }
+
   document.addEventListener('keydown',function(e){
     var k=e.key;
-    if(k==='ArrowRight'||k===' '||k==='PageDown'){ startClock(); show(i+1); e.preventDefault(); }
-    else if(k==='ArrowLeft'||k==='PageUp'){ show(i-1); e.preventDefault(); }
+    if(k==='ArrowRight'||k===' '||k==='PageDown'){ startClock(); advance(); e.preventDefault(); }
+    else if(k==='ArrowLeft'||k==='PageUp'){ retreat(); e.preventDefault(); }
     else if(k==='Home'){ show(0); }
     else if(k==='End'){ show(slides.length-1); }
     else if(k==='n'||k==='N'){ document.getElementById('notes').classList.toggle('on'); }
@@ -650,7 +796,7 @@
     else if(k==='h'||k==='H'){ document.getElementById('help').classList.toggle('off'); }
     else if(k==='f'||k==='F'){ if(document.fullscreenElement){document.exitFullscreen();} else {document.documentElement.requestFullscreen();} }
   });
-  stage.addEventListener('click',function(){ startClock(); show(i+1); });
+  stage.addEventListener('click',function(){ startClock(); advance(); });
 
   var g=document.getElementById('grid');
   slides.forEach(function(s,k){

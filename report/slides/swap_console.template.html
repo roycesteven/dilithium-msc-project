@@ -13,7 +13,10 @@
   HONESTY: this is a REPLAY of a measured run, not live cryptography in the browser.
   The banner says so on screen and must not be removed.
 
-  Stage is 1280x720 so a capture drops into the deck's DEMO A frame 1:1.
+  Stage is 1280x720, matching the deck.  The video's Demo A is now stepped INSIDE
+  the deck (slide 5), so nothing here is captured or cut in: this stays as the
+  standalone interactive artefact -- configuration switch, tripwire, per-step
+  ledger -- for anyone who wants to drive the protocol themselves.
   Keys: -> / <- step . 1 2 3 config . A autoplay . R reset . T tripwire
 -->
 <style>
@@ -109,12 +112,14 @@
   /* What travels is the unsigned transaction; what is SIGNED is its sighash. The
      board states that once, permanently, so no equation has to overload "tx". */
   .wire .wirenote{margin-top:auto;font-size:11.5px;line-height:1.32;color:var(--muted)}
-  /* Why this configuration carries the proof it does — configuration 1 has NO
-     role-A proof, and a viewer switching to it must be told why, not left to
-     notice a missing row. */
-  .wire .pinote{font-size:11.5px;line-height:1.32;color:var(--muted);
-                border-top:1px dashed var(--line);padding-top:6px;margin-top:6px}
-  .wire .wirenote b,.wire .pinote b{color:var(--ink)}
+  .wire .wirenote b{color:var(--ink)}
+  /* Which proof this configuration carries, and why — configuration 1 has NO role-A
+     proof, and a viewer switching to it must be told why, not left to notice a
+     missing row.  It sits with the comparison because it is a property of the
+     configuration, not of a step. */
+  .cmp .pinote{margin-top:auto;font-size:11.5px;line-height:1.34;color:var(--muted);
+               border-top:1px dashed var(--line);padding-top:7px}
+  .cmp .pinote b{color:var(--ink)}
 
   /* ---------- ledger + comparison ---------- */
   .foot{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
@@ -285,12 +290,14 @@
        off:'{{cfgOneBytesOffChain}}', on:'{{cfgOneBytesOnChain}}', tot:'{{cfgOneBytesTotal}}',
        time:'{{cfgOneTotalMean}}',
        /* No role-A proof exists in this construction, so the board must not show one.
-          Reason verbatim from las-swap's own Configuration 1 (backend.rs). */
-       pinote:'π: <b>none required</b>. An ECDSA adaptor has no knowledge gap — extraction '
-             +'recovers the discrete logarithm exactly — so the LAS paper\'s Fig. 1 proof of '
-             +'witness knowledge is unnecessary. The construction\'s own DLEQ proves a '
-             +'different claim (that σ̂ is well formed) and rides <i>inside</i> the '
-             +'pre-signature: {{cfgOneBytesPreSigOverhead}} B of its {{cfgOneMsgPreSigA}} B.',
+          Reason condensed from las-swap's own Configuration 1 (backend.rs).  The
+          pre-signature's excess over a signature carries nonce commitments AND the
+          DLEQ together; upstream treats it as one opaque object and the harness
+          invents no split, so no byte figure may be attributed to the DLEQ alone. */
+       pinote:'π: <b>none required</b> — an ECDSA adaptor has no knowledge gap, so the LAS '
+             +'paper\'s proof of witness knowledge is unnecessary. Its own DLEQ proves a '
+             +'different claim and travels inside σ̂ ({{cfgOneMsgPreSigA}} B against a '
+             +'{{cfgOneBytesSig}} B signature; proof and structure are not split out).',
        tripsrc:'classical baseline — unadaptability here is the ECDSA adaptor construction\'s '
              +'property; the 1000-iteration assertion belongs to the LAS test suite'},
     2:{name:'LAS + Groth16', pi:'{{cfgTwoPiName}}',
@@ -299,9 +306,8 @@
        ch1:'{{cfgTwoMsgChainA}}', ch2:'{{cfgTwoMsgChainB}}',
        off:'{{cfgTwoBytesOffChain}}', on:'{{cfgTwoBytesOnChain}}', tot:'{{cfgTwoBytesTotal}}',
        time:'{{cfgTwoTotalMean}}',
-       pinote:'π: <b>{{cfgTwoMsgPi}} B</b> off-chain — Groth16 over BN254. Succinct, but '
-             +'pairing-based (a quantum adversary breaks it) and it needs a trusted, '
-             +'per-circuit setup whose secret must be destroyed.',
+       pinote:'π: <b>{{cfgTwoMsgPi}} B</b> off-chain — Groth16 over BN254: succinct, but '
+             +'pairing-based and trusted-setup, so not post-quantum.',
        tripsrc:'the statement-binding tripwire, asserted on every one of the 1000 '
              +'functional-test iterations and on both pre-signatures in the swap demonstration'},
     3:{name:'LAS + LaZer (fully post-quantum)', pi:'{{cfgThreePiName}}',
@@ -310,8 +316,11 @@
        ch1:'{{cfgThreeMsgChainA}}', ch2:'{{cfgThreeMsgChainB}}',
        off:'{{cfgThreeBytesOffChain}}', on:'{{cfgThreeBytesOnChain}}', tot:'{{cfgThreeBytesTotal}}',
        time:'{{cfgThreeTotalMean}}',
+       /* The range and its cause are the report's own (tab:stage2-comm caption), warranted
+          by the library: lazer/src/coder.c `coder_enc_grandom` Huffman-codes the Gaussian
+          vectors and lnp-tbox.c returns the length the encoder reached. Not an inference. */
        pinote:'π: <b>{{cfgThreeMsgPi}} B</b> off-chain — LaZer (LNP22), lattice-based and '
-             +'transparent. A range, not a number: the Gaussian responses are packed with a '
+             +'transparent. A range because the Gaussian responses are packed with a '
              +'variable-length code, so the size follows the values that proof sampled.',
        tripsrc:'the statement-binding tripwire, asserted on every one of the 1000 '
              +'functional-test iterations and on both pre-signatures in the swap demonstration'}
