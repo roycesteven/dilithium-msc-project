@@ -154,8 +154,16 @@ static void recover_normal(poly *out, const poly *ahat, const poly *one_hat) {
   poly_caddq(out);
 }
 
+/* Compile-time default output directory. Overridden per parameter set by the Makefile so a
+ * non-D3 build cannot silently write over the D3 vectors that pinned measurements depend on
+ * when it is invoked with no argument. D3 keeps the historical default, so its behaviour is
+ * byte-for-byte unchanged. */
+#ifndef DEFAULT_VECTOR_DIR
+#define DEFAULT_VECTOR_DIR "../evm/test/vectors"
+#endif
+
 int main(int argc, char **argv) {
-  const char *dir = (argc > 1) ? argv[1] : "../evm/test/vectors";
+  const char *dir = (argc > 1) ? argv[1] : DEFAULT_VECTOR_DIR;
 
   uint8_t ppseed[LAS_SEEDBYTES], kseed[LAS_SEEDBYTES], rseed[LAS_SEEDBYTES], msg[32];
   public_params pp;

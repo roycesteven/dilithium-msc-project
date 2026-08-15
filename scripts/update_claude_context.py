@@ -295,11 +295,19 @@ def section_meetings() -> list[str]:
     gap = [n for n in nums if n not in covered]
     if gap:
         noun = "meetings" if len(gap) > 1 else "meeting"
+        # The Meeting-6 aside only applies while 6 is actually the gap; naming it
+        # unconditionally would misattribute a future unmerged meeting.
+        aside = (
+            " (meeting 6's per-item delivery status stays in "
+            "`docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`)"
+            if 6 in gap
+            else ""
+        )
         lines.append(
             f"- ⚠ **NOT in that file**: {noun} "
             + ", ".join(str(n) for n in gap)
-            + " — read the transcript/summary directly before planning work it touches "
-            "(meeting 6 is held in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` by design)"
+            + " — read the transcript/summary directly before planning work it touches"
+            + aside
         )
     return lines
 

@@ -167,8 +167,14 @@ recorded in `CLAUDE.md`; none is stylistic.
 - **A patched node is not Bitcoin.** Say the rule was added experimentally; "cannot settle
   on Bitcoin as it stands" remains true. Its security is **not** analysed.
 - **The one-transaction result is scoped:** Simplified Dilithium-III, a 32-byte signed
-  message, that EVM revision. The remaining margin is a message-length budget, and it is
-  **derived**, not measured. D2/D5 were **not evaluated** — never "it fails there".
+  message, that EVM revision. Reading the remaining margin as a message-length budget is a
+  **derivation**, not a measurement — the margin itself is one instance's measured headroom.
+  ⚠ Updated 2026-08-15 — **D2 and D5 have since been evaluated**, so "not evaluated" is now
+  wrong: **D2 measured, fits at ~65% of the cap**; **D5 derived to exceed one transaction** (a
+  measured *lower bound*, so never quote a D5 gas total, and never say it "needs more
+  optimisation"). ⚠ Every measured row is **one signature instance** — `SampleInBall` and
+  `_decodeZ` are data-dependent — so say "the measured instance fits", and do not claim
+  instance variation is negligible at any set; it is unquantified.
 - **The classical baseline is functionality-matched, not security-matched**, and it is an
   ECDSA *adaptor*, never plain ECDSA.
 - **The ML-DSA result is a functional demonstration.** Whether committing to

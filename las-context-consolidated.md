@@ -1,11 +1,16 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 7 + 8 + 9)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10)
 
-> Meeting-6 directives are held separately in
-> `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`, not in this file.
+> **Meeting 6 is now IN this file, at §15A** (2026-08-15) — it sits between §15 (M5) and §16
+> (M7) so the reading order stays chronological, and it is lettered rather than numbered so
+> that §16/§17/§18/§19 keep the numbers CLAUDE.md and the docs already cite. Its
+> deliverable **status matrix** (✅/🟡/⬜ per item) stays in
+> `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`, which is where it was first tracked;
+> §15A carries the *directives*, that file carries *how far each one got*.
 > **Meeting 7 (§16) retargets Stage 2 from the EVM to Bitcoin/UTXO. Meeting 8 (§17) froze
-> the feature set. Meeting 9 (§18) is the LATEST WORD: everything reported was accepted —
-> what remains is report work plus ONE benchmark (the patched Bitcoin client) and the
-> presentation. Read §16 and §18 before planning any further work.**
+> the feature set. Meeting 9 (§18) accepted everything reported. Meeting 10 (§19) is the
+> LATEST WORD: the mock presentation was reviewed — content accepted, presentation to be
+> reworked — and the implementation is FROZEN, with the remaining time going to verifying
+> existing results, the writing and the video. Read §16 and §19 before planning any work.**
 >
 > **THE canonical objectives/context file** (merges Meetings 1, 2, 3, 4, 5, 7, 8 and 9). As
 > of 2026-06-13 the older `LAS_OBJECTIVES_FOR_TOP_MARK.md`, `las-objectives-meeting2.md`
@@ -540,11 +545,119 @@ arises; transcribed as "ZKPS16", so treat the name as probable, not certain.)
 12. **Summary of the challenges met during the modification** (14:55, recovered) — report material.
 13. **Criterion distribution/statistics visuals** reused in the report and the screencast/video (27:39–27:45, recovered).
 
+## 15A. Meeting-6 directives [M6, between 2026-07-06 and 2026-07-19 — two-tier timing; the walkthrough sign-off; start studying the atomic swap]
+
+Source: `meeting6_cleaned_transcript.md`. **Speaker polarity: Speaker 1 = Royce, Speaker 2 =
+Wang** — the reverse of Meetings 1–3. **⚠ The date is not in the transcript**; it falls between
+Meeting 5 (2026-07-06) and 2026-07-19. Lettered `15A` rather than numbered so §16–§19 keep the
+numbers that CLAUDE.md and the docs already cite. **Deliverable status (✅/🟡/⬜ per item) lives
+in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` §1** — this section carries the
+directives, that file carries how far each one got.
+
+### 15A.1 THE ruling — two-tier timing, never folded together
+
+Royce reported that serialization dominates some LAS operations: for `Adapt`, the core
+algorithm is a small fraction of the time once pack/unpack is included (the meeting's own
+figures: ≈160 µs core → ≈500 µs with pack/unpack; quote the generated macros, not these).
+
+Wang's reasoning and ruling:
+- **Packing does not change communication cost, only computation** — *"the computation time
+  changes, but it won't reduce the communication cost."*
+- It can be done **once, offline, or in advance** — unpack a public key once and reuse it
+  across many verifications. So it is a **one-time / amortisable** cost, and *"I don't think
+  it should be included in the headline verification time."*
+- **⚠ Report BOTH timings as separate, clearly-labelled cases** — with and without
+  pack/unpack — plus a discussion that deployments can amortise it (keep keys unpacked in
+  memory). *"It's an interesting fact — it's also important to let people know why, so that in
+  the future when they do this, they know what to expect."*
+- Optimising the encoding (toward full-Dilithium compressed forms) is **explicitly out of
+  scope**: *"that's not the focus point here… you just honestly report the numbers."*
+
+**This is the origin of the two-tier reporting rule.** ⚠ The second tier was later **renamed
+from "full-protocol" to "packed tier"** (2026-07-20) so it cannot be read as an end-to-end
+protocol cost — use *core tier* / *packed tier* everywhere.
+
+### 15A.2 The walkthrough — Wang quizzed the whole scheme and signed off
+
+Wang had Royce derive the entire modified scheme on the spot: setup, key generation
+(`t = A·r`), signing (`z = y + c·r`, `c = H(pk, w, M)`, `w = A·y`), verification
+(`w′ = A·z − c·t`, re-hash and compare), then the adaptor path — challenge over `w + Y`, the
+**ternary witness bound 1** so the adapted `z` stays inside the bound, PreVerify reconstructing
+`w′ + Y`, Adapt (`z = ẑ + y`), and Ext by subtraction (`y = z − ẑ`). Verdict: *"in general,
+maybe there are some details, but I think overall **the process looks correct**."*
+
+**This is the Stage-1 correctness sign-off.** What remained after it was *reporting*, not
+implementation. Wang's closing check: *"you can now write out the operations by yourself; you
+know how it works. Now you should understand how to integrate it into specific applications."*
+
+### 15A.3 The one measurement he asked for — PreSign attempts vs Sign attempts
+
+**⚠ Measure and report the PreSign rejection-attempt count beside Sign's, at the same public
+parameters.** Wang's reasoning: *"people might ask: you have a tighter [bound], so maybe you
+try more times, right?"* Royce could not answer it on the spot. It is also the explanation for
+why PreSign takes longer. **DONE** — it is now the hard-asserted rejection gate in every C and
+Rust benchmark driver (Sign 2.71875 vs PreSign 2.77483 expected at the target set, 5σ), and it
+must never be weakened, renamed, or inferred from timing ratios.
+
+### 15A.4 Serialization: store the 32-byte challenge seed, not the polynomial
+
+The challenge is no longer packed as a polynomial; only the hash output `c̃` is stored (32 B at
+the then-current setting, per FIPS 204), and the challenge polynomial is re-derived with
+`SampleInBall`. Wang: *"same seed, same output — that's fine"*, and **⚠ add the trade-off to
+the report**: storing the expanded polynomial costs storage, sending only the seed costs
+recomputation. ⚠ The width is now **per parameter set** (`LAS_CTILDEBYTES` = 32/48/64, keyed on
+`(n, ℓ, κ)`), not a global 32 — see the naming section of `CLAUDE.md`.
+
+### 15A.5 Comparisons — C vs Rust is fair; the ECDSA baseline packs internally
+
+- **⚠ C vs Rust IS a fair comparison and should be reported** — *"if the parameters are the
+  same, then why not?"* The meeting's observed spread was ≤ ≈1.07× (key generation largest).
+- **⚠ Classical ECDSA baseline: a 3–4 column layout** — LAS without packing, LAS with packing,
+  and ECDSA at its own API **annotated as internally packed**. The library is reused
+  unmodified: *"you don't want to modify the ECDSA library, do you? So you just report that…
+  that's not the crypto part; it's the implementation of the encoding and decoding."*
+
+### 15A.6 Figures and the video
+
+- **⚠ Export figures as high-quality PNG/PDF** — not full-screen screenshots, not a
+  text-bearing screenshot PDF — and **⚠ fix the font size of labels and legends**: *"when you
+  put a diagram like this in your report, it can be very unclear; people can't read the
+  figures."* (Meeting 10 later confirmed the font-size fix landed: *"I like this figure."*)
+- **Video (6–8 min): highlight only the essentials**, put the detail on the slides. *"When
+  they're listening, you should be speaking to the most important points."*
+
+### 15A.7 Next stage — study the atomic swap BEFORE coding it
+
+**⚠ Understand it before implementing it:** *"you should understand it before you code it."*
+Read how atomic swaps work and **why** — the history from hash-locked contracts (HTLCs), their
+limitations, and why adaptor signatures replaced them — plus how *classical* adaptor signatures
+are deployed in blockchains. Wang's reason is a report reason: *"finally you will write this in
+your report, and as a reader people should understand the motivation."* This is the origin of
+the background/motivation framing that Meeting 10 §19.1 asks to be pushed to the front of the
+deck as well.
+
+### 15A.8 Standing offer, and one out-of-scope note
+
+The LAS paper's first author is **Wang's collaborator**, and Wang offered to relay specific
+questions about the paper. The author's own newer directions — LAS's **imperfect correctness**,
+and isogeny-based constructions — are **out of scope**: *"we are not that far; let's do this one
+first."* ⚠ This is background about someone else's work, not a project deliverable; do not turn
+it into a work item.
+
+### 15A.9 Meeting-6 deliverable list
+
+The twelve items are enumerated in `meeting6_cleaned_transcript.md` §D, with per-item status in
+`docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` §1: two-tier timing everywhere; the
+pack/unpack discussion; tables **and** figures updated with both tiers; PreSign-vs-Sign attempt
+counts; the C-vs-Rust table; the 3–4-column classical layout; the seed-vs-expanded challenge
+trade-off; high-quality figures with readable fonts; PR kept updated; the atomic-swap study;
+the 6–8 minute video; and the standing offer to relay questions to the LAS author.
+
 ## 16. Meeting-7 directives [M7, 2026-07-24 — retarget Stage 2 from the EVM to Bitcoin/UTXO]
 
 Source: `meeting7_cleaned_transcript.md` (merged from the Teams/Stream transcript and the
-phone recording). Meeting-6 directives are recorded separately in
-`docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`.
+phone recording). Meeting-6 directives are at **§15A** above; their per-item delivery status
+stays in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`.
 
 ### 16.1 THE DECISION — Stage 2 moves off the EVM
 
@@ -925,7 +1038,114 @@ GAS_LIMIT_INVESTIGATION.md` §7). "Not evaluated" is the only supportable wordin
 
 **Next meeting:** next week, with the mock presentation.
 
-## 19. Reference links
+## 19. Meeting-10 directives [M10 — the mock presentation: content accepted, presentation reworked, code frozen]
+
+Source: `meeting10_cleaned_transcript.md`, consolidated from **two** ASR sources: a Samsung
+phone recording (diarised, covers the whole meeting 00:37–47:32) and a Teams export (better
+word accuracy, **no diarisation at all** — every line is stamped with the organiser's name).
+Attribution and timing come from Samsung, wording from Teams; the offset is
+`Samsung ≈ Teams + 1:53`. **Speaker polarity matches Meeting 8** — Speaker 1 = Wang,
+Speaker 2 = Royce. **⚠ The date is not established** (2026-08-14 or -15); never cite a firm one.
+
+Royce delivered the 6–8 minute deck end-to-end, then Wang worked through it slide by slide;
+**from ≈28:57 the screen is on the REPORT, not the deck** — §19.4 below is report feedback and
+must not be re-filed as slide feedback. M10 **adds no scope and asks for no measurement**.
+Where it refines earlier meetings, M10 is the latest word.
+
+### 19.1 The verdict — content yes, presentation no
+
+*"Content-wise, it's okay… but for the presentation-wise, you can improve it a bit: the
+structure of the slides, and also the visualisation of the results, and also the conclusion
+of the presentation."*
+
+- **⚠ Lead with the application, not the technique.** Add a slide on *why adaptor signatures
+  matter* — atomic swap, payment channel, and why making them post-quantum secure is the
+  point — **before** any technical detail. *"You start the technical details too far, too
+  early."*
+- **⚠ Assume a non-specialist examiner.** *"Assume that the audience have some computer
+  science background in general, but not very specific for security, for crypto, for
+  blockchain."*
+- **⚠ Show the method as a picture.** *"If you can give me a picture to summarise the process
+  of your method, I can easily get it."* Wang was explicit that he follows the current version
+  only because he already knows the details.
+- **⚠ Close the loop.** End by answering the questions the opening posed: can LAS give a
+  post-quantum secure atomic swap, and *"what are the costs we have to suffer from?"* — then
+  what remains open.
+- **⚠ 13 slides → about 10**, ~30 s each against 6–8 minutes, visuals in place of text. A
+  table-of-contents slide and a "where are we" marker were suggested, not required.
+- **⚠ Make the conclusion blockchain-specific** — this project is about signatures *for
+  blockchains*; say so rather than concluding in general terms.
+- **⚠ Slide 5: relabel the parties Alice/Bob** instead of the paper's `u₁`/`u₂`. Royce raised
+  it, Wang agreed (*"that's more general, more friendly"*). **Slide only — the report's
+  mathematics keeps `u₁`/`u₂`.**
+- **Keep the patched-Bitcoin demonstration.** Wang reaffirmed the two-step design — LAS
+  standalone first, then integration into an existing chain — and said the integration problems
+  and what was done about them are exactly what to report.
+
+### 19.2 Framing ruling — practical LAS, not "an implementation of the paper"
+
+Royce asked directly whether to frame the project as implementing eprint 2020/845, given that
+LAS over ML-DSA has a different rejection-sampling rate from the simplified scheme. Wang:
+*"it's more for the practical LAS… you don't need to limit yourself in the scope of the paper,
+because you have already attempted the optimisation, so you should summarise it, you should
+report it."* **This overrides any "reproduce the paper" framing.** Whether the ML-DSA rejection
+result earns a slide is Royce's call (*"do you think it is an interesting finding?"*);
+benchmarking a full ML-DSA build is **future work**, not this project.
+
+### 19.3 The one content correction — soften the motivation claim
+
+The claim that post-quantum exotic signatures lack implementations must be softened: *"they
+**do** have the proposed ones… maybe they haven't implemented **all** exotic ones."* Exotic
+signatures are a family — adaptor, multi-, ring and other advanced schemes — and
+**multi-signatures in particular are actively being implemented**. Applies to the deck and to
+the same claim wherever it appears in the report.
+
+### 19.4 Report fixes (the screen is on the report from ≈28:57)
+
+- **⚠ Name the paper explicitly** — never a bare "the paper"; add the citation.
+- **⚠ Put `SampleInBall` in the challenge figure.** Wang read it, saw `c`, and asked *"how did
+  we get the `c`?"* The two symbols side by side with no function between them read as a typo
+  rather than a derivation. → §7 of `docs/paper/LAS_2020_845_NOTATION.md` and the `c`/`c̃` rule.
+- **⚠ Balance captions against paragraphs.** Captions are not counted in the word budget, but
+  *"the caption is too long, the paragraph is too short"* — move material into the body.
+- **⚠ Fig. 3.5 (`fig:swapflow`, "The atomic swap, message by message") is ACCEPTED, caption
+  included.** What Wang wants is an **addition, not a replacement**: a simpler, more colourful
+  diagram placed **before** it, where the application is introduced — two participants, one on
+  each chain, one holding Bitcoin and one holding Ether, doing the exchange. The technical
+  figure *"is more technical, right — which is good."*
+- **Keep LaTeX tables**, not Excel screenshots: an image cannot be edited in place, and column
+  widths are adjustable in LaTeX. Keep tables inside the page.
+- Use **draw.io** or PowerPoint **exported to PDF** for decorative diagrams (vector quality).
+- **Notation table stays in the appendix** — appendix words are not counted. Already the case.
+- **Also accepted as they stand:** the modified Criterion figure, Fig. 3.4 (*"I like this
+  figure"* — the font-size fix answered his Meeting-9 comment), and the Bitcoin transaction
+  structure figure.
+- The **GitHub repository link is not required** in the report; it may be added.
+- Chapter title vs running header: **no firm ruling** — modify the template if you want, or
+  follow it to be safe.
+
+### 19.5 Feature freeze, reaffirmed in the strongest terms
+
+**⚠ "You don't need to do new things — I think you have enough content; now you should make
+sure all of them are correct, they are precise."** The implementation is **frozen** with
+Wang's agreement (with the caveat that he has not checked the code and it is Royce's call).
+The remaining time goes to **verifying every result**, the presentation, the writing and the
+video. Timeline stated: *"more than two weeks."*
+
+**⚠ Methodology is the weak point.** Royce's own diagnosis, which Wang endorsed: the method is
+not coming across, and *"it's not only just the results, but how you get the results."*
+
+### 19.6 One line from this meeting that must not become a claim
+
+At ≈10:37–10:55 Royce says on record that on-chain verification is *"on the boundary of the gas
+limit"* at Dilithium-3 but that **"for Dilithium 5 it needs more optimisation to fit in one
+transaction."** Both ASR sources agree he said it, and it is **not evidenced**: `LASVerifyOpt`'s
+parameters are compile-time **D3-only**, so D2 and D5 were never built or measured on-chain
+(`docs/03-results/GAS_LIMIT_INVESTIGATION.md` §7). **"Not evaluated" is the only supportable
+wording** — delete the line from the deck. This is the **third** appearance of this exact trap,
+after §18.8 and the retracted "exceeds the block gas limit" claim.
+
+## 20. Reference links
 
 - LAS spec: https://eprint.iacr.org/2020/845
 - Survey: https://eprint.iacr.org/2022/1151

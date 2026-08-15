@@ -76,10 +76,17 @@ session that repeats one of these has failed even when its output looks right.
    overclaim; pay word debts out of new prose, not existing argument. → WORD COUNT
 5. **Verify before recording — including review feedback Royce relays.** Line references, dates
    and "both"/"twice" quantifiers go stale silently. Critiques passed on from another model are
-   *claims*, not rulings: one on 2026-08-10 was materially wrong (the `g` bound called
-   witness-dependent when it is a constant — the defect is completeness, not dependence), and
-   complying with it would have written a false statement into the repo. Check each against the
-   code, say which way it went, then act. → OUTPUT
+   *claims*, not rulings — **and they go BOTH ways, so verify, never presume either**: one on
+   2026-08-10 was materially wrong (the `g` bound called witness-dependent when it is a
+   constant — the defect is completeness, not dependence) and complying would have written a
+   false statement into the repo; one on 2026-08-15 was **right on all three points** and
+   caught a would-be overclaim mid-draft (below). Check each against the code, say which way it
+   went, then act. → OUTPUT
+   ⚠️ **A "worst case" is only a bound if EVERY free variable is pushed the adverse way**
+   (2026-08-15, cost a retracted draft). A D5-vs-gas-cap derivation was written as *proved*
+   under "execution can only grow"— but calldata **byte content** was a second free variable,
+   and pushing it the other way (all added bytes zero) flips D5 from 74,331 over the cap to
+   231,333 under it. Naming one assumption does not make the others disappear. → EVIDENCE-OR-SILENCE
 6. **Merge into the section that owns the subject** — never a second block on one topic.
    → HOW TO WRITE IN THIS FILE
 7. **Never claim more than a gate proves** — no gadget described as a complete proof, no
@@ -202,18 +209,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-13 18:42 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-15 19:06 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 2c78118 · 2026-08-13 · report 13_08 16_37
-- Working tree: 19 modified tracked file(s), 43 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD bc33734 · 2026-08-13 · report video 13_08 18_49
+- Working tree: 9 modified tracked file(s), 45 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `bc33734 2026-08-13 report video 13_08 18_49`
   - `2c78118 2026-08-13 report 13_08 16_37`
   - `8003045 2026-08-12 report 12_08 16_57`
   - `80751df 2026-08-12 report 12_08 15_27_pm`
   - `07cbf17 2026-08-11 deck wip, report draft 1`
-  - `98ed761 2026-08-11 btclasbenchmacro.tex btcnodemadcros.tex`
 
 ### Target parameter set — anchors parsed from source
 
@@ -244,14 +251,13 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Supervisor meetings on record
 
-- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9 (`meetingN_cleaned_transcript.md`)
-- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 7, 8, 9
-- ⚠ **NOT in that file**: meeting 6 — read the transcript/summary directly before planning work it touches (meeting 6 is held in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` by design)
+- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 (`meetingN_cleaned_transcript.md`)
+- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-13.
+- `CLAUDE.md` hand-written sections last touched 2026-08-15.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -466,8 +472,50 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
 - **⚠️ SCOPE IS PART OF THE CLAIM (→ EVIDENCE-OR-SILENCE).** Measured **at D3, 32-byte signed
   message**, on the EVM revision in the evidence. Headroom is effectively a *message-length
   budget* (preimage `pack(t)‖pack(w')‖M`; the sponge dominates) and is a **derivation, not a
-  measurement**. **D2/D5 NOT evaluated** — parameters are compile-time D3-only; say "not
-  evaluated", never that it fails there.
+  measurement**.
+- **⚠️ THREE-WAY STATE across parameter sets (2026-08-15) — do not restate any row.**
+  **D3 = MEASURED fits, ONE instance · D2 = MEASURED fits, ONE instance (~65% of cap) ·
+  D5 = DERIVED does NOT fit, on a measured lower bound.**
+  - ⚠️ **"One instance" is part of BOTH measured rows, symmetrically.** `SampleInBall`
+    (rejection loop) and `_decodeZ` (branches on coefficient value) are **data-dependent**, so
+    each figure is one signature's cost, not a bound over inputs. Say "the measured golden
+    instance fits", never "D3 fits" / "D2 fits" flatly. **Instance-to-instance variation is
+    UNQUANTIFIED at every set** — never assert it is negligible, never assert it is material,
+    and never assume one set's variation resembles another's. Settling it needs several
+    instances measured. Context, not a verdict: D3's headroom is ~364 k gas against ~732 k
+    spent in those two stages there; D2's headroom is ~5.8 M.
+  - **D2** — `evm/src/LASVerifierOptD2.sol` (a **copy** of `LASVerifierOpt` with the set
+    re-instantiated; never parameterise the D3 file, a mode flag would move its pinned
+    baselines) + `evm/test/LASGasBreakdownD2.t.sol`, vectors via `test/export_verify_vector2`
+    → `evm/test/vectors/d2/`. Evidence `evidence/onchain_d2/latest`.
+  - **D5** — gate `evm/test/LASShakeGrowth.t.sol` (fixed arena, **no `--gas-report`**) →
+    `scripts/derive_onchain_d5_bound.py --growth-log …`, UNRESOLVED unless measured
+    `deltaAbsorb ≥ slack + SampleInBall + decodeZ`. Evidence `evidence/onchain_d5bound/latest`.
+    **⚠️ Supported wording is narrow:** "derived from measured quantities, one transaction is
+    exceeded at D5". **NOT** — "measured at D5", any **D5 gas total** (a lower bound exists,
+    never a value), or "needs more optimisation" (that optimisation could close the gap is its
+    own unevidenced claim).
+  ⚠️ **"No other parameter set was evaluated" is now FALSE** — true until 2026-08-15, and it
+  survives in the deck and older drafts. Fix every occurrence.
+- **⚠️ Five derivations of D5 failed review before one held — do not re-derive, cite the gate.**
+  (a) "Execution can only grow" proves nothing alone: push calldata the D5-favourable way (every
+  added byte zero) with execution frozen and D5 lands *under* the cap. **A worst case binds only
+  when EVERY free variable is pushed the adverse way at once.** (b) `shake_gas / blocks` is
+  **not** a per-block lower bound — the stage total carries `init` and the pad tail, so dividing
+  *over*states. (c) **Two** stages are data-dependent, not one — `SampleInBall` **and**
+  `_decodeZ` (`if gt(f,137935)`) — so both are subtracted whole; every other stage is
+  loop-counter-only (checked in `ZKNOX_NTT_dilithium.sol`/`_mulInto`) and is counted at zero
+  growth. (d) An `absorbPad` difference is contaminated unless both calls run against a
+  **fixed-size arena**: `absorbPad` allocates its 168 B pad scratch *inside* the timed frame.
+  (e) The two lengths take **different tail paths** (rem 80 → two word-copies + the `if tb`
+  branch; rem 96 → three, no branch), so the tail is neither droppable nor provably ≥ 0 — the
+  fixed arena *measures* it instead. ⚠️ `LASGasBreakdown`'s named SHAKE stage is
+  `init() + absorbPad()` and stops there — `_digestMatches` is **not** in it.
+- **⚠️ Porting to D2/D5 is NOT a constant-block edit** (checked 2026-08-15; a note here saying
+  "constants plus two literals" was wrong). The **assembly unpacker hard-codes D3 at seven
+  sites** — `lt(i,11)`, `add(48,mul(19,…))`, `shr(mul(19,u),…)` with mask `0x7FFFF`,
+  `gt(f,275870)`, `137935`, `8518352`, `calldatacopy(…,48)` — and its group-of-8 byte-alignment
+  argument is keyed to `Z_BITS`. `LASGasBreakdown.t.sol` is D3-shaped too.
 - **⚠️ NEVER MEASURE A CAP GATE UNDER `--gas-report`** (cost a false FAIL once): the inspector is
   metered inside the measured frame and inflates `gasleft()` deltas **and** `vm.lastCallGas()` by
   more than the whole headroom. `run_onchain_gas.sh` runs gates **without** the flag, the table
@@ -622,10 +670,14 @@ branch as well as commit is recorded, whether `latest` is a symlink or a copy-fa
 whether macros/figures regenerate all **vary by runner** — read the one you mean before asserting
 any of it.
 
-## What remains (re-derived 2026-08-07 from Meeting 9)
+## What remains (re-derived from Meeting 10)
 
-1. **6–8 minute presentation slides — DELIVERED LIVE TO WANG NEXT WEEK** (Royce chose next
-   week over the week after). **Deck BUILT 2026-08-12** — `report/slides/video_deck.html`,
+1. **6–8 minute presentation — MOCK DELIVERED AND REVIEWED at Meeting 10.** Verdict:
+   *"content-wise, it's okay… presentation-wise, you can improve it a bit."* **The rework is
+   the deck's next job, not a rebuild** — see the Meeting-10 block for the full ruling: cut
+   **13 slides → ~10**, lead with the application motivation, add a high-level **picture of the
+   method**, close by answering the questions the opening posed, and **delete the unevidenced
+   "D5 needs more optimisation" line**. **Deck BUILT 2026-08-12** — `report/slides/video_deck.html`,
    13 slides, planned 7:12, with speaker notes and an on-screen clock; plan + beat sheet +
    on-camera claim discipline in `report/slides/VIDEO_PLAN.md`. It is **generated**:
    `scripts/gen_slides.py` fills `video_deck.template.html` from
@@ -649,7 +701,7 @@ any of it.
    parameter set's own stated figure, a different quantity; both on one screen read as a
    contradiction. ⚠ `run_btc_las_node.sh` needs four env vars (`BTC_TAG`/`BTC_SRC`/
    `BTC_BIN_PATCHED`/`BTC_BIN_STOCK`) or it exits at once; working line in `VIDEO_PLAN.md`
-   (build `~/btc-stage2`; pin gates re-verified 2026-08-12). **Still owed:** the run-through.
+   (build `~/btc-stage2`; pin gates re-verified 2026-08-12).
 2. **Frontmatter `\TODO`s** in `report/latex/report.tex` (student id, prior degrees,
    acknowledgements) — **Royce only**.
 3. **AMHL doc cleanup** in `docs/` under the (a)/(b) test above.
@@ -732,44 +784,64 @@ about order, ask Royce rather than silently reordering.
 
 ## Supervisor rulings in force
 
-Spec: `las-context-consolidated.md` (§16 = M7, §17 = M8, §18 = M9). Transcripts:
-`meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`); Meeting-6 directives live in
-`docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`. **Read §16 before planning application
-work.**
+Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10).
+Transcripts: `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`). **Read §16 before
+planning application work.** ⚠ **M6 was merged into the spec 2026-08-15** (Royce) — it is
+*lettered* 15A, not numbered, so §16–§19 keep the numbers cited across CLAUDE.md and `docs/`;
+its per-item delivery **status matrix** stays in
+`docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` §1. Supersedes the old "meeting 6 is not in
+that file" warning — the spec now covers every meeting.
 
-**Meeting 9 (2026-08-07) — LATEST WORD; report work + one benchmark, no new experiments.**
-Transcript `meeting9_cleaned_transcript.md` (single ASR source, no summary/recording — its §A
-lists what could not be resolved). **Everything Royce reported was accepted**, including the
-Meeting-8 transaction breakdown (*"now it's much clearer"*) and the figures (*"much better
-than I thought"*). Rulings, each mandatory:
+**Meeting 10 (date NOT confirmed — 2026-08-14 or -15; never cite a firm one) — LATEST WORD.
+The mock presentation was delivered and reviewed: CONTENT ACCEPTED, PRESENTATION NOT, and the
+feature freeze reaffirmed in the strongest terms yet.** Transcript
+`meeting10_cleaned_transcript.md`, consolidated from two ASR sources — Samsung (diarised, whole
+meeting) and Teams (better words but **no diarisation at all**: every line, Wang's included, is
+stamped "Royce Steven"). Rulings, each mandatory:
+- ⚠ **"You don't need to do new things … now you should make sure all of them are correct, they
+  are precise."** Implementation FROZEN with Wang's agreement; remaining time goes to
+  **verifying existing results**, the writing and the video. "More than two weeks" stated.
+- ⚠ **Deck: 13 slides → ~10, and restructure** — application motivation (atomic swap, payment
+  channel, why post-quantum) *before* any technical detail; then a high-level **picture of the
+  method**; results; takeaways; then back to the opening questions. Assume an examiner who is
+  **not** a blockchain/crypto specialist. ~30 s/slide against 6–8 min. Visuals over text.
+- ⚠ **Frame the project as PRACTICAL LAS, not "an implementation of the paper"** — do not limit
+  scope to eprint 2020/845; the ML-DSA attempt is a result to report, and benchmarking a full
+  ML-DSA build is future work. **Overrides any "reproduce the paper" framing.**
+- ⚠ **Soften the exotic-signature motivation claim** — not "no implementations" but "not *all*
+  exotic ones implemented"; multi-signatures are actively being implemented. Deck AND report.
+- ⚠ **Royce said on record that "D5 needs more optimisation to fit in one transaction."** It is
+  unevidenced (D3-only parameters); delete it from the deck, "not evaluated" is the only
+  supported wording. Third instance of this exact trap → EVIDENCE-OR-SILENCE.
+- ⚠ **Methodology is the weak point** — Royce's own diagnosis, Wang endorsed: *"it's not only
+  just the results, but how you get the results."*
+- Report: **name the paper explicitly**, never "the paper"; put `SampleInBall` in the challenge
+  figure (→ the `c`/`c̃` rule); shorten an over-long caption *into* the body when the paragraph
+  beside it is short; keep **LaTeX** tables (never Excel images — an image cannot be edited in
+  place), draw.io/PowerPoint → PDF for decorative diagrams; notation table stays in the
+  appendix. Add a simpler, colourful swap diagram **before** Fig. 3.5 (`fig:swapflow`), where
+  the application is introduced. ⚠ **Fig. 3.5 itself is ACCEPTED, caption included** — the
+  friendly diagram is an addition, not a replacement. **Also accepted as they stand:** the
+  modified Criterion figure, the Bitcoin structure figure. GitHub link **not** required.
+  Chapter-header length: no firm ruling. ⚠ **Alice/Bob is a DECK-SLIDE-5 ruling, not a report
+  one** (Royce, 2026-08-15) — the report keeps the paper's `u₁`/`u₂`. From ≈28:57 the meeting
+  is reviewing the **report**, not the deck; do not re-file those comments as slide feedback.
 
-- **⚠ Benchmark the patched Bitcoin client.** *"When you modify something … people will always
-  ask, okay, if we achieved this a better security — so what have I lost?"* The only
-  measurement asked for. **DONE 2026-08-08** — see the patched-client benchmark block above.
-  Framing is unchanged: carriage-only vs patched node, security of the modification still
-  not analysed.
-- **⚠ Add §1.4 "Contributions" to Chapter 1**, after the objectives, **before** the
-  dissertation-structure subsection; keep existing content. 3–4 sentences on the most
-  important findings **and whether the objectives were achieved — all or some**. It is in
-  Wang's own report guideline; he called it a strong suggestion, not a rubric requirement.
-- **⚠ Conclusions must be consistent with the numbers reported** — the succinct-proof text
-  reads as if LaBRADOR wins while the numbers say LaZer/LNP22 wins on size *and* time. State
-  the numbers' verdict plus the reason (succinctness is asymptotic; this statement is tiny).
-  *"Otherwise people will easily challenge you."* For the direction **not** refined: discussion
-  only, **without reporting the actual numbers**, so no conflicting results appear.
-- **⚠ Explain why the proof size is a range**, not a fixed number — in the text, not left to
-  the reader. **⚠ Shrink the oversized table to ≤ half a page.** **⚠ Cite the Bitcoin
-  improvement solutions (SegWit/Taproot)** wherever the report says the original structure
-  cannot carry a LAS signature and the improved one can. **⚠ Bitcoin experiment:** main
-  results and a conclusion in the body, detail referred out to the appendix (Royce's call).
-- **⚠ Negative results are results** — write up the failed statement-Y compression *with its
-  reason* in the critical reflection. Confirms, does not reopen, the closed verdict.
-- **Bounded, NOT a directive:** another hash function against the SHAKE-dominated gas — Wang
-  bounded it himself (security/guarantee risks; *"we have one [working] version; even if it's
-  not very efficient, it's still acceptable"*). **Nothing here reopens a frozen scope item.**
-- ⚠ **A garbled transcript line at ≈38:44** (cleaned file §17) sounds like on-chain verification
-  failing at another Dilithium level. It is not evidence — D2/D5 were never evaluated. Never
-  mine it into a claim. → EVIDENCE-OR-SILENCE, which already owns this exact trap.
+**Meeting 9 (2026-08-07) — superseded as latest word by Meeting 10; every ruling DISCHARGED.**
+Transcript `meeting9_cleaned_transcript.md` (single ASR source; its §A lists what could not be
+resolved). **Everything Royce reported was accepted**, including the Meeting-8 transaction
+breakdown (*"now it's much clearer"*) and the figures (*"much better than I thought"*). Its
+rulings, all done — see "Done — do not re-queue" and the patched-client benchmark block:
+benchmark the patched Bitcoin client (*"if we achieved a better security — so what have I
+lost?"*, the only measurement asked for); §1.4 Contributions; conclusions consistent with the
+numbers, with the un-refined direction kept as discussion **without** its numbers; explain the
+proof-size range; shrink the oversized table; cite SegWit/Taproot; Bitcoin experiment results
+in the body with detail in the appendix; the failed statement-Y compression written up as a
+negative result in the critical reflection. **Bounded, NOT a directive:** another hash function
+against the SHAKE-dominated gas — Wang bounded it himself (*"we have one [working] version;
+even if it's not very efficient, it's still acceptable"*).
+- ⚠ **A garbled line at ≈38:44** (cleaned file §17) sounds like on-chain verification failing at
+  another Dilithium level. Not evidence — D2/D5 were never evaluated. → EVIDENCE-OR-SILENCE.
 
 **Meeting 8 (2026-07-31).** *"You don't need to contain all the stuff — you just
 need to make sure that what you have done looks good, looks perfect, looks great."*
@@ -976,6 +1048,9 @@ captions, figure labels — never one in isolation):
   `H`", but neither is the width simply "a project choice". Wire objects are `(c̃, z)` / `(c̃, ẑ)`
   while arithmetic uses `c`, **derived before first use** (`las_preverify` does exactly this).
   Report-wide 2026-08-13: `fig:lasfuncs`, `fig:flow`, `tab:notation`, both component tables.
+  ⚠ **A figure must show `SampleInBall` itself, not leave the link to the prose** (Wang,
+  Meeting 10): he read the figure, saw `c`, and asked *"how did we get the `c`?"* — the two
+  symbols side by side with no function between them read as a typo, not a derivation.
 
 Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 
@@ -1030,8 +1105,8 @@ Be direct, evidence-based, scoped.
 ## Reference
 
 - **Objectives (spec):** `las-context-consolidated.md` · **progress tracker:** `docs/STATUS.md`.
-- **Meetings:** `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`); Meeting-6 directives
-  in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`.
+- **Meetings:** `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`); all ten are merged
+  into the spec — Meeting-6 **delivery status** in `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md`.
 - **Papers:** LAS = eprint 2020/845 (Esgin, Ersoy, Erkin) · poqeth = eprint 2025/091 ·
   `NIST.FIPS.204.pdf` (+ `docs/paper/NIST_FIPS_204.md`).
 - **Design/math/results:** `docs/LAS.md` · theory↔code: `docs/02-methodology/THEORY_IMPL_BRIDGE.md`.

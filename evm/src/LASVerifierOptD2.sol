@@ -91,46 +91,46 @@ import {LASShake} from "./LASShake.sol";
 /// implemented.
 ///
 /// D3 parameters: n=6, ell=5, d=256, q=8380417, κ=49, γ=κ·d·(n+ℓ)=137984.
-library LASVerifyOpt {
+library LASVerifyOptD2 {
     uint256 internal constant N = 256; // ring degree d
     uint256 internal constant Q = 8380417;
-    uint256 internal constant KAPPA = 49;
-    uint256 internal constant N_LAS = 6; // n
-    uint256 internal constant ELL = 5;
-    uint256 internal constant N_PLUS_ELL = 11;
-    uint256 internal constant Z_BITS = 19;
-    uint256 internal constant Z_OFFSET = 137935; // γ − κ
-    uint256 internal constant BOUND = 137935; // accept iff ‖z‖∞ ≤ γ − κ
-    uint256 internal constant CTILDE_BYTES = 48;
-    uint256 internal constant SIG_BYTES = 6736; // CTILDE_BYTES + N_PLUS_ELL·N·Z_BITS/8
+    uint256 internal constant KAPPA = 39;
+    uint256 internal constant N_LAS = 4; // n
+    uint256 internal constant ELL = 4;
+    uint256 internal constant N_PLUS_ELL = 8;
+    uint256 internal constant Z_BITS = 18;
+    uint256 internal constant Z_OFFSET = 79833; // γ − κ
+    uint256 internal constant BOUND = 79833; // accept iff ‖z‖∞ ≤ γ − κ
+    uint256 internal constant CTILDE_BYTES = 32;
+    uint256 internal constant SIG_BYTES = 4640; // CTILDE_BYTES + N_PLUS_ELL·N·Z_BITS/8
 
     /// Packed transport sizes. 4 bytes BIG-endian per coefficient, 8 per 32-byte word,
     /// so a `calldataload` yields 8 coefficients and each extraction is one shift+mask.
     /// (Literal values, not derived expressions, because inline assembly reads them.)
     uint256 internal constant POLY_PACKED_BYTES = 1024; // N · 4
-    uint256 internal constant AHAT_BYTES = 30720; // N_LAS · ELL · 1024
-    uint256 internal constant THAT_BYTES = 6144; // N_LAS · 1024
+    uint256 internal constant AHAT_BYTES = 16384; // N_LAS · ELL · 1024
+    uint256 internal constant THAT_BYTES = 4096; // N_LAS · 1024
 
     /// `tPacked` is NOT the same encoding: it is the LITTLE-endian 4-byte-per-coefficient
     /// form that `ref/basesig.c b_polyw_pack` emits, because it is hashed verbatim as the
     /// first third of the challenge preimage. The two encodings differ on purpose — one
     /// is a transport format chosen for cheap EVM extraction, the other is a preimage
     /// that must be byte-identical to what the C signer hashed.
-    uint256 internal constant TPACK_BYTES = 6144; // N_LAS · 1024
-    uint256 internal constant PREIMAGE_FIXED = 12288; // pack(t) ‖ pack(w')
+    uint256 internal constant TPACK_BYTES = 4096; // N_LAS · 1024
+    uint256 internal constant PREIMAGE_FIXED = 8192; // pack(t) ‖ pack(w')
 
-    /// The norm gate, hoisted onto the raw 19-bit field. A coefficient is decoded as
+    /// The norm gate, hoisted onto the raw 18-bit field. A coefficient is decoded as
     /// `z = Z_OFFSET − field`, so `field ∈ [0, 2·BOUND]` ⇔ `z ∈ [−BOUND, +BOUND]`
     /// ⇔ `‖z‖∞ ≤ BOUND` on the centred representative — the field comparison IS the
-    /// norm check, and needs no canonicalisation first. (Boundary: field = 275870 gives
-    /// z = −137935, centred |z| = BOUND, accepted; field = 275871 gives z = −137936, rejected.)
-    uint256 internal constant Z_FIELD_MAX = 275870; // 2 · BOUND
+    /// norm check, and needs no canonicalisation first. (Boundary: field = 159666 gives
+    /// z = −79833, centred |z| = BOUND, accepted; field = 159667 gives z = −79834, rejected.)
+    uint256 internal constant Z_FIELD_MAX = 159666; // 2 · BOUND
 
     /// @param aHatPacked  n·ell polynomials, row-major (i·ELL+j), NTT domain, 4B BE per coeff.
     /// @param tHatPacked  n polynomials, NTT domain, 4B BE per coeff (public key, registered).
     /// @param tPacked     n polynomials, normal domain, 4B LE per coeff — the hash preimage.
     /// @param message     the signed message M.
-    /// @param sig         the packed adapted signature: c_tilde(48) ‖ BitPack19(z).
+    /// @param sig         the packed adapted signature: c_tilde(32) ‖ BitPack18(z).
     function verify(
         bytes calldata aHatPacked,
         bytes calldata tHatPacked,
@@ -229,7 +229,7 @@ library LASVerifyOpt {
         }
     }
 
-    /// BitPack19 decode + norm gate, fused, word-wise.
+    /// BitPack18 decode + norm gate, fused, word-wise.
     ///
     /// The 19-bit fields are LSB-first from byte 48. 8 fields span exactly 19 bytes and
     /// 8 divides 256, so every group of 8 coefficients starts on a byte boundary with
@@ -246,10 +246,10 @@ library LASVerifyOpt {
         assembly {
             let zbase := add(z, 32)
             let sofs := sig.offset
-            for { let i := 0 } lt(i, 11) { i := add(i, 1) } {
+            for { let i := 0 } lt(i, 8) { i := add(i, 1) } {
                 let dst := add(mload(add(zbase, mul(i, 32))), 32)
                 for { let m := 0 } lt(m, 32) { m := add(m, 1) } {
-                    let w := calldataload(add(sofs, add(48, mul(19, add(mul(i, 32), m)))))
+                    let w := calldataload(add(sofs, add(32, mul(18, add(mul(i, 32), m)))))
                     // 32-byte reversal: big-endian calldata word -> little-endian value
                     w :=
                         or(
@@ -274,11 +274,11 @@ library LASVerifyOpt {
                     w := or(shr(128, w), shl(128, w))
 
                     for { let u := 0 } lt(u, 8) { u := add(u, 1) } {
-                        let f := and(shr(mul(19, u), w), 0x7FFFF)
-                        bad := or(bad, gt(f, 275870))
+                        let f := and(shr(mul(18, u), w), 0x3FFFF)
+                        bad := or(bad, gt(f, 159666))
                         // canonical residue of (Z_OFFSET − f) in [0, Q)
-                        let zc := sub(137935, f)
-                        if gt(f, 137935) { zc := sub(8518352, f) } // Q + Z_OFFSET
+                        let zc := sub(79833, f)
+                        if gt(f, 79833) { zc := sub(8460250, f) } // Q + Z_OFFSET
                         mstore(dst, zc)
                         dst := add(dst, 32)
                     }
@@ -297,7 +297,7 @@ library LASVerifyOpt {
         uint256 ctp;
         assembly {
             ctp := add(ct, 32)
-            calldatacopy(ctp, sig.offset, 48)
+            calldatacopy(ctp, sig.offset, 32)
         }
 
         uint256 p = LASShake.init();
@@ -390,7 +390,7 @@ library LASVerifyOpt {
     function _digestMatches(uint256 p, bytes calldata sig) private pure returns (bool same) {
         assembly {
             let acc := 0
-            for { let k := 0 } lt(k, 6) { k := add(k, 1) } {
+            for { let k := 0 } lt(k, 4) { k := add(k, 1) } {
                 let v := shr(192, calldataload(add(sig.offset, mul(k, 8))))
                 v := or(shr(8, and(v, 0xFF00FF00FF00FF00)), shl(8, and(v, 0x00FF00FF00FF00FF)))
                 v := or(shr(16, and(v, 0xFFFF0000FFFF0000)), shl(16, and(v, 0x0000FFFF0000FFFF)))

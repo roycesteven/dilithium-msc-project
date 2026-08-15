@@ -419,6 +419,16 @@ test/export_verify_vector: test/export_verify_vector.c serialize.c serialize.h b
 	$(CC) $(CFLAGS) -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 \
 	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
 
+# D2-aligned twin, for measuring the on-chain verifier at Simplified Dilithium-II. The
+# exporter source is parameter-agnostic (everything is sized off LAS_N/ELL/SIGNATURE_BYTES),
+# so this is a build-flag change only. DEFAULT_VECTOR_DIR is overridden so that running the
+# binary with NO argument cannot write over the D3 vectors that pinned measurements depend on.
+test/export_verify_vector2: test/export_verify_vector.c serialize.c serialize.h basesig.c basesig.h relation.c relation.h las.c las.h setup.c setup.h las_types.h poly.h \
+  randombytes.c $(KECCAK_SOURCES) $(KECCAK_HEADERS)
+	$(CC) $(CFLAGS) -DDILITHIUM_MODE=2 -DLAS_N=4 -DELL=4 -DKAPPA=39 \
+	  -DDEFAULT_VECTOR_DIR='"../evm/test/vectors/d2"' \
+	  -o $@ $< serialize.c basesig.c relation.c las.c setup.c randombytes.c $(KECCAK_SOURCES)
+
 # Exports a PURE DIGEST-FAULT vector (tampered c_tilde, trace consistent with the tampered
 # challenge) for the optimistic Naysayer verifier test. Reuses pp_normal.bin/t.bin/msg.bin
 # from export_verify_vector (run that first).
