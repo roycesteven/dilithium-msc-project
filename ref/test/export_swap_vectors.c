@@ -37,10 +37,23 @@
  * simultaneously the polynomial source the registration script NTTs and the
  * `tPacked` bytes hashed into the challenge preimage.
  *
- * Usage:  export_swap_vectors setup   <dir>
+ * PUBLIC PARAMETERS, AND WHY THE SEED IS SELECTABLE.  A' is expanded from the pp
+ * seed alone (setup.c), and every operation here consumes it: KeyGen's t = A'r_1,
+ * Gen's Y = A'r'_1, PreSign's w = A'y_1, PreVerify's w' = A'z_1, Ext's A*s test.
+ * The EVM contract takes A' as calldata, so any seed does provided both sides
+ * agree.  A CONSENSUS rule cannot: bitcoin/las_consensus/ compiles ONE seed in, so
+ * a key generated under a different seed yields a different A', signer and verifier
+ * are then working on different LAS instances, and a signature the signer accepts
+ * is, with overwhelming probability, rejected by the node.  `--pp-seed <64 hex>`
+ * makes that agreement something the runner arranges, rather than something
+ * discovered from a rejected transaction.  It is written to pp_seed.bin, so
+ * `presign`/`adapt`/`extract_and_adapt` inherit it with no flag.
+ *
+ * Usage:  export_swap_vectors setup   <dir> [--no-pi] [--pp-seed <64 hex>]
  *         export_swap_vectors presign <dir>     (reads legA_msg.bin, legB_msg.bin)
  *         export_swap_vectors adapt   <dir>
  */
+#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -105,6 +118,33 @@ static int read_blob(const char *dir, const char *name, uint8_t *b, size_t n) {
   return 0;
 }
 
+/* Exact-width hex seed.  Anything other than 2*LAS_SEEDBYTES characters, or a
+ * non-hex digit, is refused rather than truncated or zero-filled: a silently
+ * shortened seed would expand a DIFFERENT A' and the run would fail later, at the
+ * node, where the cause is far harder to see. */
+static int parse_seed_hex(const char *hex, uint8_t out[LAS_SEEDBYTES]) {
+  size_t i;
+  if(strlen(hex) != 2 * LAS_SEEDBYTES) {
+    fprintf(stderr, "--pp-seed must be exactly %d hex characters (%d bytes), got %zu\n",
+            2 * LAS_SEEDBYTES, LAS_SEEDBYTES, strlen(hex));
+    return -1;
+  }
+  for(i = 0; i < LAS_SEEDBYTES; ++i) {
+    unsigned v;
+    char pair[3];
+    pair[0] = hex[2 * i];
+    pair[1] = hex[2 * i + 1];
+    pair[2] = '\0';
+    if(!isxdigit((unsigned char)pair[0]) || !isxdigit((unsigned char)pair[1]) ||
+       sscanf(pair, "%2x", &v) != 1) {
+      fprintf(stderr, "--pp-seed: '%s' is not a hex byte at offset %zu\n", pair, i);
+      return -1;
+    }
+    out[i] = (uint8_t)v;
+  }
+  return 0;
+}
+
 /* One polynomial as LAS_D int32 little-endian. */
 static void write_poly(FILE *f, const poly *p) {
   unsigned int i;
@@ -154,7 +194,7 @@ static int write_t(const char *dir, const char *name, const public_key *pk) {
 
 /* ------------------------------------------------------------------ phases */
 
-static int phase_setup(const char *dir, int allow_no_pi) {
+static int phase_setup(const char *dir, int allow_no_pi, const char *ppseed_hex) {
   uint8_t ppseed[LAS_SEEDBYTES], k1[LAS_SEEDBYTES], k2[LAS_SEEDBYTES], rs[LAS_SEEDBYTES];
   public_params pp;
   public_key pk1, pk2;
@@ -165,6 +205,15 @@ static int phase_setup(const char *dir, int allow_no_pi) {
   uint8_t Y_b[STATEMENT_BYTES], w_b[WITNESS_BYTES];
 
   fill_seeds(ppseed, k1, k2, rs);
+  /* Overrides ONLY the pp seed.  The key and Gen seeds stay fixed, so a Bitcoin run
+   * and an EVM run differ in exactly one input and remain equally reproducible. */
+  if(ppseed_hex) {
+    unsigned int s;
+    if(parse_seed_hex(ppseed_hex, ppseed)) return 1;
+    printf("pp seed: supplied (");
+    for(s = 0; s < 8; ++s) printf("%02x", ppseed[s]);
+    printf("...), NOT this tool's default -- keys and Y are generated under it\n");
+  }
   setup_public_params(&pp, ppseed);
 
   if(base_keygen_seed(&pk1, &sk1, &pp, k1)) { fprintf(stderr, "u1 keygen failed\n"); return 1; }
@@ -360,18 +409,39 @@ static int phase_adapt(const char *dir) {
 int main(int argc, char **argv) {
   int allow_no_pi = 0;
   int i;
-  const char *cmd, *dir;
+  const char *cmd, *dir, *ppseed_hex = NULL;
 
   if(argc < 3) {
-    fprintf(stderr, "usage: %s {setup|presign|adapt} <dir> [--no-pi]\n", argv[0]);
+    fprintf(stderr, "usage: %s {setup|presign|adapt} <dir> [--no-pi] [--pp-seed <64 hex>]\n",
+            argv[0]);
     return 2;
   }
   cmd = argv[1];
   dir = argv[2];
-  for(i = 3; i < argc; ++i)
-    if(!strcmp(argv[i], "--no-pi")) allow_no_pi = 1;
+  for(i = 3; i < argc; ++i) {
+    if(!strcmp(argv[i], "--no-pi")) { allow_no_pi = 1; continue; }
+    if(!strcmp(argv[i], "--pp-seed")) {
+      /* Refused rather than defaulted: a --pp-seed with no value would otherwise
+       * fall through to this tool's own seed, which is the one case the flag
+       * exists to prevent. */
+      if(++i >= argc) { fprintf(stderr, "--pp-seed needs a 64-character hex value\n"); return 2; }
+      ppseed_hex = argv[i];
+      continue;
+    }
+    fprintf(stderr, "unknown argument: %s\n", argv[i]);
+    return 2;
+  }
 
-  if(!strcmp(cmd, "setup"))   return phase_setup(dir, allow_no_pi);
+  /* Only `setup` chooses the seed; the later phases read pp_seed.bin.  Accepting the
+   * flag there and ignoring it would let a run that PASSED a seed still be built on
+   * whatever pp_seed.bin happened to hold. */
+  if(ppseed_hex && strcmp(cmd, "setup")) {
+    fprintf(stderr, "--pp-seed applies to `setup` only; %s reads pp_seed.bin, which setup wrote\n",
+            cmd);
+    return 2;
+  }
+
+  if(!strcmp(cmd, "setup"))   return phase_setup(dir, allow_no_pi, ppseed_hex);
   if(!strcmp(cmd, "presign")) return phase_presign(dir);
   if(!strcmp(cmd, "adapt"))   return phase_adapt(dir);
 

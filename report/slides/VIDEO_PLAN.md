@@ -24,44 +24,52 @@ Re-run it after any `scripts/sync_report.sh`, or the slides will quote an older 
 run than the report does.
 
 **Deck keys:** `→ ←` navigate · `N` speaker notes · `T` start the timer · `S` show the
-talking-head safe area · `G` slide grid · `F` fullscreen · `video_deck.html#5` opens on
-slide 5 for rehearsing one beat.
+talking-head safe area · `G` slide grid · `F` fullscreen · `H` the key map · `video_deck.html#5`
+opens on slide 5 for rehearsing one beat.
 
-⚠ **Slides 5 and 9 have beats inside them.** Each **opens already on its first beat**; `→`
+⚠ **The key-map overlay now defaults to OFF** — it is drawn over the page, so it used to sit in
+shot for the whole take. Press `H` while rehearsing, and it stays hidden when you record.
+
+**A section stepper (Why · Method · Results · Takeaway) sits top-right**, lighting the part the
+current slide belongs to; the title slide shows none. That is Wang's "where are we?" marker — the
+thin progress bar says how *far*, not *where*.
+
+⚠ **Slides 5 and 8 have beats inside them.** Each **opens already on its first beat**; `→`
 then advances to the next beat and only moves to the following slide once the beats are
 exhausted (`←` walks back the same way). So slide 5 takes **three** presses to walk its four
-beats, and slide 9 **one** press to walk its two. The footer prints `beat k/n` so you always
+beats, and slide 8 **one** press to walk its two. The footer prints `beat k/n` so you always
 know where you are. Nothing else in the deck behaves differently.
 
 ---
 
 ## 1. Structure and timing
 
-Planned total **7:12**, inside the 6–8 minute band — 48 s under the ceiling and 72 s over
-the floor, so overrunning is the risk to rehearse against, not underrunning. The deck
-prints each slide's planned time and the running clock in its own footer; the table below is
-the same plan in one view.
+**Ten slides** (Meeting 10: 13 was too many, "more or less 10"), planned total **6:35** —
+inside the 6–8 minute band, but only 35 s over the **floor** and 85 s under the ceiling, so
+after the rework the risk to rehearse against is **under**-running, the opposite of the old
+7:12 plan. The deck prints each slide's planned time and the running clock in its own footer;
+the table below is the same plan in one view, with the part each slide belongs to — which is
+what the top-right stepper lights.
 
-| # | Slide | Plan | Job in the story |
-|---|---|---|---|
-| 1 | Title | 0:12 | who, what, one sentence |
-| 2 | The gap | 0:35 | **beginning** — why this project exists |
-| 3 | What an adaptor signature does | 0:40 | the mechanism, in four animated beats |
-| 4 | What I built | 0:35 | additive architecture; two implementations, one digest |
-| 5 | **DEMO A — walking the swap** | 0:45 | *complement*: the protocol, stepped and broken (4 beats) |
-| 6 | Result 1 — the adaptor layer is cheap | 0:40 | **middle** — computation |
-| 7 | Result 2 — the cost is bytes | 0:38 | communication |
-| 8 | Result 3 — the proof dominates | 0:35 | the application-level surprise |
-| 9 | **DEMO B — a real Bitcoin client** | 0:45 | *complement*: the node differential (2 beats) |
-| 10 | On-chain verification | 0:32 | the negative result that turned over |
-| 11 | Testing my own assumption | 0:28 | the ML-DSA experiment |
-| 12 | What failed | 0:25 | three closed directions |
-| 13 | Conclusion | 0:22 | **end** — what holds, what stays open |
+| # | Slide | Part | Plan | Job in the story |
+|---|---|---|---|---|
+| 1 | Title | — | 0:12 | who, what, one sentence |
+| 2 | Why this matters | Why | 0:42 | **beginning** — the application first: two chains, one shared secret, and the three questions the talk answers |
+| 3 | What an adaptor signature does | Method | 0:40 | the four functions drawn as one flow, built in four timed stages |
+| 4 | The method | Method | 0:40 | additive architecture, the one substitution, and how `c` is derived from `c̃` |
+| 5 | **DEMO A — walking the swap** | Results | 0:45 | *complement*: the protocol, stepped and broken (4 beats, 3 presses) |
+| 6 | Cost in time | Results | 0:48 | **middle** — per-operation overhead, and the proof dominating a whole swap |
+| 7 | Cost in bytes | Results | 0:38 | communication is the price of post-quantum |
+| 8 | **DEMO B — a real Bitcoin client** | Results | 0:45 | *complement*: the node differential (2 beats, 1 press) |
+| 9 | What I got wrong | Results | 0:45 | two beliefs measurement overturned, three suggestions closed by running them |
+| 10 | Answering the questions | Takeaway | 0:40 | **end** — the same three questions slide 2 posed, then what stays open |
 
-**If you run long**, cut in this order: slide 11 → slide 2's third card → slide 8's middle
-card. Do **not** cut a demonstration beat — the two demonstrations are where *Use of the
-Medium* and *Complementing the Report* are earned, and those are 80 % of the video mark
-between them.
+**If you run long**, cut in this order: slide 9's third card (the three closed suggestions) →
+slide 6's rejection-gate caveat → slide 4's known-answer-digest row. Do **not** cut a
+demonstration beat — the two demonstrations are where *Use of the Medium* and *Complementing
+the Report* are earned, and those are 80 % of the video mark between them. **If you run short**,
+slide 5's fourth beat and slide 9's ML-DSA table are the two places with more to say than is
+printed on them.
 
 ---
 
@@ -81,7 +89,7 @@ of each. The exchange has already happened when the slide opens, **on beat 1**.
 
 Beat 4 is the one to slow down on — it is the whole reason a swap is atomic.
 
-### DEMO B — a real Bitcoin client (slide 9, ~45 s, 2 beats, 1 press)
+### DEMO B — a real Bitcoin client (slide 8, ~45 s, 2 beats, 1 press)
 
 The same spend, byte for byte, put to two clients of the same release.
 
@@ -121,10 +129,29 @@ directory, so read `evidence/btc_las_node/<run>/verdict.txt`.
 - **Turn the speaker notes OFF (`N`) before recording.** They are a rehearsal aid and are
   drawn over the page.
 - **Press `T` when you start speaking.** The clock turns red past 8:00.
-- Rehearse slides 5 and 9 with `#5` / `#9` until the beat presses land with the sentence —
+- Rehearse slides 5 and 8 with `#5` / `#8` until the beat presses land with the sentence —
   they are the only places where a keypress has to be timed to speech.
 - Theme follows the system setting; both light and dark are laid out deliberately. Pick one
   and keep it for the whole recording.
+
+**Checking the layout without opening a browser.** Windows Chrome is reachable from WSL, and the
+deck deep-links every slide, so any slide can be screenshotted headless — which is how the voids
+and one clipped table were found on 2026-08-17. Stage a copy under a Windows path (the CSP-free
+`file://` origin and the embedded figures make it self-contained), then:
+
+```bash
+WT=/mnt/c/Users/Royce/AppData/Local/Temp/deckshot; mkdir -p "$WT"
+# force a theme by stamping the root element; omit the sed to follow the host setting
+sed 's|<html lang="en">|<html lang="en" data-theme="light">|' report/slides/video_deck.html > "$WT/deck.html"
+"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu \
+  --window-size=1280,720 --virtual-time-budget=6000 \
+  --screenshot="C:\\Users\\Royce\\AppData\\Local\\Temp\\deckshot\\s4.png" \
+  "file:///C:/Users/Royce/AppData/Local/Temp/deckshot/deck.html#4"
+```
+
+`--virtual-time-budget` must exceed the scene animations (the four stages finish at ~2.4 s) or the
+shot catches them mid-build. `#N` opens slide N **on its first beat**, so a beat-2 state cannot be
+captured this way — press for those by hand.
 
 ---
 
@@ -132,9 +159,9 @@ directory, so read `evidence/btc_las_node/<run>/verdict.txt`.
 
 | Criterion | Weight | Where |
 |---|---|---|
-| Use of the medium | 40 % | the protocol stepped and broken on screen (5); the node differential drawn as a two-column verdict (9); the mechanism animated (3); every chart generated from the evidence rather than screenshotted; talking-head overlay; no terminal transcripts anywhere |
-| Complementing the report | 40 % | slide 5 makes the protocol *watchable* — the abort gate, a pre-signature refused, the witness falling out of a published signature — where the report can only assert that each step was asserted; slide 9 puts the patched and stock verdicts side by side as one contrast, which the appendix can only state in prose |
-| Presentation | 20 % | fixed 7:12 plan with per-slide budgets and an on-screen clock; a clear beginning (2), middle (6–8), end (13) |
+| Use of the medium | 40 % | the protocol stepped and broken on screen (5); the node differential drawn as a two-column verdict (8); the swap scenario, the four functions and the architecture each drawn and built in stages (2, 3, 4); every chart generated from the evidence rather than screenshotted; talking-head overlay; no terminal transcripts anywhere |
+| Complementing the report | 40 % | slide 5 makes the protocol *watchable* — the abort gate, a pre-signature refused, the witness falling out of a published signature — where the report can only assert that each step was asserted; slide 8 puts the patched and stock verdicts side by side as one contrast, which the appendix can only state in prose |
+| Presentation | 20 % | fixed 6:35 plan with per-slide budgets and an on-screen clock; a section stepper for orientation; a clear beginning (2), middle (5–9), end (10) |
 
 ---
 
@@ -158,7 +185,7 @@ recorded in `CLAUDE.md`; none is stylistic.
   PreSign call match the closed-form prediction within five standard errors. Verify-class
   calls have no attempt counter, and the figures on the slide are the distribution sample's,
   not the gated aggregate's.
-- **One LAS settlement transaction** weighs the weight units on slide 9 — that is one
+- **One LAS settlement transaction** weighs the weight units on slide 8 — that is one
   transaction against the standardness *weight* ceiling, not the whole two-leg swap, and
   fitting that ceiling is not the same as being standard: the carriage run was refused by
   default relay policy.

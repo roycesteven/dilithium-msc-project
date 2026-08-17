@@ -41,8 +41,8 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
 
     %% Preamble: H keeps the paper's type (onto the challenge set); the digest
     %% c-tilde is an artefact of how this implementation realises it, not H's output.
-    \node[note] at (55.5mm, 2.5mm) {The paper's random oracle
-        $H:\{0,1\}^{*}\!\to C$ returns the challenge polynomial $c$. This implementation
+    \node[note] at (55.5mm, 2.5mm) {The random oracle of Esgin et al.\ \cite{esgin2020post},
+        $H:\{0,1\}^{*}\!\to C$, returns the challenge polynomial $c$. This implementation
         realises it in the two stages FIPS~204 uses --- SHAKE256 emits a short digest
         $\tilde c$, then $c=\textsf{SampleInBall}(\tilde c)$ --- and stores or transmits
         only $\tilde c$, so each consumer re-derives $c$ before using it.};
@@ -53,8 +53,13 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
     %% ---------------- (a) PreSign ----------------
     \node[ttl] (ta) at (0mm,0)     {(a) \textsc{PreSign}};
     \node[io]  (ia) at (ta.south)  {in: secret $r$, statement $Y$, message $M$};
+    %% Both stages shown, so the digest is defined before it appears in `out:` --- the
+    %% derivation must be IN the panel, not left to the note (supervisor, Meeting 10).
+    %% Chained equality, not a second assignment: H returns the polynomial c, and this
+    %% implementation reaches it via the digest. Never write \tilde c = H(...).
     \node[pan] (pa) at (ia.south)  {commitment $w$\\[1pt]
         $c = H(\mathit{pk},\,w+Y,\,M)$\\[1pt]
+        $\phantom{c} = \textsf{SampleInBall}(\tilde c)$\\[1pt]
         restart while\\
         $\inftynorm{\hat{\vecz}} > \gamma-\kappa-1$};
     \node[io]  (oa) at (pa.south)  {out: $\hat{\sigma} = (\tilde c,\hat{\vecz})$};
@@ -95,11 +100,8 @@ $\vecz \leftarrow \hat{\vecz} + y$, producing a signature the base verifier acce
   inherits the base scheme's arithmetic rather than replacing it, (d) using $Y$ only to
   check the recovered witness;
   only (c) and (d) touch the witness $y$, and they are the two functions a basic
-  signature has no counterpart for. The bound in (a) is the one quantity that must not be
-  relaxed: pre-signing rejects one unit tighter than \cref{eq:signbound} precisely so that
-  the addition in (c) cannot carry the adapted response past the bound the base verifier
-  enforces. How the four compose, and why publishing $\sigma$ is what makes a swap
-  atomic, is \cref{fig:flow}.}
+  signature has no counterpart for. How the four compose, and why publishing $\sigma$ is
+  what makes a swap atomic, is \cref{fig:flow}.}
   \label{fig:lasfuncs}
 \end{figure}
 

@@ -93,7 +93,15 @@ def taproot_for(ns, pk_bytes):
     return info, script
 
 
-def build_unsigned(ns, txid, vout, value_sat, fee_sat, spk):
+def build_unsigned(ns, txid, vout, value_sat, fee_sat, dest_spk):
+    """`dest_spk` is where the coin GOES, which is not in general where it came from.
+
+    The single-leg experiment pays back to the same LAS address, because there the
+    question is only whether the node verifies the signature. A swap leg pays its
+    BENEFICIARY, and that difference is load-bearing: a leg that paid itself would
+    settle without transferring anything, so two settled legs would evidence two
+    accepted signatures rather than an exchange of coins.
+    """
     tx = ns["CTransaction"]()
     for name in ("version", "nVersion"):
         if hasattr(tx, name):
@@ -105,7 +113,7 @@ def build_unsigned(ns, txid, vout, value_sat, fee_sat, spk):
     out_value = value_sat - fee_sat
     if out_value <= 0:
         die("fee is not less than the input value")
-    tx.vout = [ns["CTxOut"](out_value, spk)]
+    tx.vout = [ns["CTxOut"](out_value, dest_spk)]
     tx.wit.vtxinwit = [ns["CTxInWitness"]()]
     return tx
 
@@ -135,22 +143,33 @@ def cmd_sighash(args, ns):
                 "leaf_script_hex": bytes(script).hex(),
                 "internal_key": NUMS_INTERNAL_KEY_HEX}
 
-    tx = build_unsigned(ns, args.txid, args.vout, args.value_sat, args.fee_sat, spk)
+    # Absent `--dest-spk` the coin returns to the same LAS address, which is what the
+    # single-leg experiment does and must keep doing byte-for-byte.
+    dest_spk = bytes.fromhex(args.dest_spk) if args.dest_spk else bytes(spk)
+    tx = build_unsigned(ns, args.txid, args.vout, args.value_sat, args.fee_sat, dest_spk)
     # The sighash uses the REAL prevout value, except where `wrong_prevout_amt`
     # deliberately lies — that control exists to show the node computes the sighash from
     # the chain's view of the input, not from the spender's claim about it.
     claimed = args.value_sat + (1000 if args.mutate == "wrong_prevout_amt" else 0)
+    # The SPENT output keeps the LAS scriptPubKey whatever the destination is: BIP341
+    # commits to the coin being spent, which is the LAS-locked one, not to where it goes.
     spent = [ns["CTxOut"](claimed, spk)]
     sh = sighash_for(ns, tx, spent, script, leaf_ver)
     open(args.out_sighash, "wb").write(sh)
 
+    # `dest_spk_hex` is recorded so `assemble` rebuilds the SAME transaction. Were it
+    # only a command-line flag, an assemble run that forgot it would silently build a
+    # self-paying transaction whose sighash no longer matched the signature.
     state = {"txid": args.txid, "vout": args.vout,
              "value_sat": args.value_sat, "fee_sat": args.fee_sat,
              "sighash_hex": sh.hex(), "claimed_value_sat": claimed,
              "pk_path": os.path.abspath(args.pk), "mutate": args.mutate,
+             "dest_spk_hex": dest_spk.hex(),
              "alt_txid": args.alt_txid, "alt_vout": args.alt_vout}
     open(args.state, "w").write(json.dumps(state, indent=2, sort_keys=True))
-    return {"sighash": sh.hex(), "claimed_value_sat": claimed, "mutate": args.mutate}
+    return {"sighash": sh.hex(), "claimed_value_sat": claimed, "mutate": args.mutate,
+            "dest_spk_hex": dest_spk.hex(),
+            "pays_self": dest_spk == bytes(spk)}
 
 
 def cmd_assemble(args, ns):
@@ -181,14 +200,20 @@ def cmd_assemble(args, ns):
                 "rejection would be missing-inputs rather than a signature failure")
         txid, vout = state["alt_txid"], int(state["alt_vout"])
 
-    tx = build_unsigned(ns, txid, vout, state["value_sat"], state["fee_sat"], spk)
+    # From the STATE, never from a flag: see cmd_sighash. An older state file without the
+    # field is a self-paying spend, which is what it meant when it was written.
+    dest_spk = bytes.fromhex(state["dest_spk_hex"]) if state.get("dest_spk_hex") else bytes(spk)
+    tx = build_unsigned(ns, txid, vout, state["value_sat"], state["fee_sat"], dest_spk)
 
     # These change the transaction AFTER the signature was produced, so the signature stays
     # genuine and only what it commits to has moved.
     if mutate == "output_amount":
         tx.vout[0].nValue -= 50000
     elif mutate == "output_recipient":
-        b = bytearray(bytes(spk))
+        # Mutates the DESTINATION the signature committed to, which is the beneficiary's
+        # script on a swap leg. Flipping the LAS script here instead would leave the
+        # output the signature actually covers untouched.
+        b = bytearray(dest_spk)
         b[-1] ^= 0x01
         tx.vout[0].scriptPubKey = ns["CScript"](bytes(b))
 
@@ -203,12 +228,18 @@ def cmd_assemble(args, ns):
     tx.wit.vtxinwit[0].scriptWitness.stack = stack
 
     raw = tx.serialize_with_witness()
-    model = model_sizes([0], [len(bytes(spk))], [[len(x) for x in stack]])
+    # The OUTPUT's script length, which is the destination's — a P2WPKH beneficiary is
+    # 22 bytes against a P2TR's 34, and using the input's length would make the model
+    # disagree with Core for a reason that has nothing to do with LAS.
+    model = model_sizes([0], [len(tx.vout[0].scriptPubKey)], [[len(x) for x in stack]])
     if mutate == "none" and len(raw) != model["total_size"]:
         die("size model says %d bytes, Core serialised %d" % (model["total_size"], len(raw)))
 
     return {
         "raw_hex": raw.hex(), "model": model, "mutate": mutate,
+        "dest_spk_hex": dest_spk.hex(),
+        "pays_self": dest_spk == bytes(spk),
+        "out_value_sat": tx.vout[0].nValue,
         "witness_items": len(stack),
         "witness_item_lengths": [len(x) for x in stack],
         "sig_chunks": len(chunk(sig)), "pk_chunks": len(chunk(pk_presented)),
@@ -233,6 +264,10 @@ def main():
     ap.add_argument("--fee-sat", type=int)
     ap.add_argument("--alt-txid", default=None)
     ap.add_argument("--alt-vout", type=int, default=None)
+    # Where the coin goes. Omitted = back to the same LAS address, the single-leg
+    # experiment's behaviour, which stays byte-for-byte what it was.
+    ap.add_argument("--dest-spk", default=None,
+                    help="destination scriptPubKey, hex (default: pay back to the LAS address)")
     ap.add_argument("--address-only", action="store_true")
     ap.add_argument("--out-sighash")
     ap.add_argument("--state")
@@ -249,10 +284,24 @@ def main():
             args.mutate = "none"
         if not args.address_only and not (args.out_sighash and args.state):
             die("--out-sighash and --state are required unless --address-only")
+        # Checked HERE rather than at use: a malformed destination would otherwise be
+        # signed over and only fail at assembly, after the signature exists.
+        if args.dest_spk is not None:
+            try:
+                raw_dest = bytes.fromhex(args.dest_spk)
+            except ValueError:
+                die("--dest-spk is not valid hex")
+            if not raw_dest:
+                die("--dest-spk is empty; omit it to pay back to the LAS address")
         result = cmd_sighash(args, ns)
     else:
         if not (args.state and args.sig):
             die("--state and --sig are required for assemble")
+        # `assemble` takes the destination from the state file, so accepting it here
+        # would suggest it could be changed after signing, which it cannot.
+        if args.dest_spk is not None:
+            die("--dest-spk applies to the sighash phase; assemble reads the destination "
+                "from --state, because the signature commits to it")
         result = cmd_assemble(args, ns)
 
     result["core_helpers_used"] = sorted(used)

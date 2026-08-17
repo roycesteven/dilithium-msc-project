@@ -9,8 +9,9 @@
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{33}{figure.3.2}%
 \contentsline {figure}{\numberline {3.3}{\ignorespaces Cumulative probability of acceptance at the target setting}}{36}{figure.3.3}%
 \contentsline {figure}{\numberline {3.4}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{37}{figure.3.4}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces The atomic swap, message by message}}{41}{figure.3.5}%
-\contentsline {figure}{\numberline {3.6}{\ignorespaces On-chain settlement gas for the four claim paths}}{43}{figure.3.6}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces An atomic swap, in outline}}{40}{figure.3.5}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces The atomic swap, message by message}}{41}{figure.3.6}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces On-chain settlement gas for the four claim paths}}{43}{figure.3.7}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

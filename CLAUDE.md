@@ -82,6 +82,14 @@ session that repeats one of these has failed even when its output looks right.
    false statement into the repo; one on 2026-08-15 was **right on all three points** and
    caught a would-be overclaim mid-draft (below). Check each against the code, say which way it
    went, then act. → OUTPUT
+   **2026-08-17 (largest batch yet, and the pattern is now clear):** of seven relayed points, six
+   held — the strongest ones caught wording that **collided with our own artefacts** ("no escrow"
+   when `AdaptorSwap.sol` escrows; "adaptor signatures are elliptic-curve" when LAS is a lattice
+   one; a spoken "a bitcoin for an ether" against a picture showing 1 BTC / 10 ETH) — while one was
+   **flatly forbidden here**: it proposed `c̃ = H(…)`, the exact form the c/c̃ rule bans. Two useful
+   habits fell out: a relayed critique may be reviewing a **stale diff** (one rejected an edit for
+   not doing what that very edit did) or **belong to another thread entirely**, so check that the
+   feedback is about the change in front of you before acting on it. → OUTPUT
    ⚠️ **A "worst case" is only a bound if EVERY free variable is pushed the adverse way**
    (2026-08-15, cost a retracted draft). A D5-vs-gas-cap derivation was written as *proved*
    under "execution can only grow"— but calldata **byte content** was a second free variable,
@@ -209,18 +217,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-15 19:06 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-17 19:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD bc33734 · 2026-08-13 · report video 13_08 18_49
-- Working tree: 9 modified tracked file(s), 45 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD d95d3f5 · 2026-08-15 · meeting 10 evm d2 d5 unfinished
+- Working tree: 23 modified tracked file(s), 44 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `d95d3f5 2026-08-15 meeting 10 evm d2 d5 unfinished`
   - `bc33734 2026-08-13 report video 13_08 18_49`
   - `2c78118 2026-08-13 report 13_08 16_37`
   - `8003045 2026-08-12 report 12_08 16_57`
   - `80751df 2026-08-12 report 12_08 15_27_pm`
-  - `07cbf17 2026-08-11 deck wip, report draft 1`
 
 ### Target parameter set — anchors parsed from source
 
@@ -240,13 +248,10 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Where the last session stopped
 
-- Last checkpoint in `PROGRESS.md`: Checkpoint — 2026-08-05 — CLAUDE.md: standing "DO NOT REPEAT" rules for all sessions
+- Last checkpoint in `PROGRESS.md`: Checkpoint — 2026-08-17 17:55
 - Next action recorded there:
-  - Trim 8,955 -> 8,000 (955 words). Duplication/filler exhausted; remaining source is the
-  - ~40 sentences over 40 words plus further high-level-ing of sec 2.6 (848 w) and 2.7.
-  - Fill the frontmatter \TODO (student id, prior degrees, acknowledgements) -- Royce only.
-  - ## Checkpoint — 2026-08-03 — remaining-work sweep: AMHL cleanup, Adapt gap, ML-DSA hint experiment, EVM/IPFS write-ups
-  - Branch: report. No commits made. Royce mid-session: "skip the report for the moment,
+  - Run the deck aloud against a clock (N for notes, T to start) and adjust per-slide data-time
+  - from what it actually takes; then regenerate the word count.
 - `CONTEXT.md` (long-form handoff): CONTEXT — session handoff (updated 2026-07-29; ninth-session update first)
 
 ### Supervisor meetings on record
@@ -257,7 +262,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-15.
+- `CLAUDE.md` hand-written sections last touched 2026-08-17.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -269,8 +274,11 @@ CRYSTALS-Dilithium reference primitives, then demonstrate it in a post-quantum b
 
 **Why:** blockchains sign with ECDSA/Schnorr, which Shor breaks. NIST standardised *basic* PQ
 signatures (Dilithium, Falcon, SPHINCS+), but *exotic* ones (multisig, ring, group, **adaptor**)
-are in the PQ setting mostly paper-only — little working code, none on a blockchain. Adaptor
-signatures enable atomic swaps / payment channels; closing that implementation gap is the thesis.
+**remain unevenly implemented** in the PQ setting — the cited form (`buser2023survey`), and the only
+one licensed: "mostly paper-only / none on a blockchain" was uncited **and is now deleted repo-wide**
+(Royce, 2026-08-17 — the third repetition of stating a claim without a warrant). Multi-signatures
+*are* being implemented (M10). Adaptor signatures enable atomic swaps / payment channels; closing
+that implementation gap is the thesis.
 
 **Key design fact:** an exotic scheme = a basic scheme + extra functions. LAS = a Dilithium-style
 Fiat–Shamir-with-aborts signature + PreSign / PreVerify / Adapt / Ext. We **reuse Dilithium's
@@ -614,8 +622,9 @@ binary); runner `run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`, 
 - **Caveat that travels with it:** functional demonstration only — the security of committing to
   `HighBits(w+Y)` is NOT analysed.
 - **`Y` is byte-identical in both** constructions (`K` full-width polynomials either way) while
-  ML-DSA halves signature and public key — so **any future size work must target `Y`, not the
-  signature.**
+  ML-DSA halves signature and public key — so **`Y` becomes the dominant remaining size target**
+  (corrected 2026-08-17: "must target Y, *not the signature*" overshot the data — the payload
+  still falls to `\mldsaPayloadRatio`, so the signature is smaller, not irrelevant).
 
 **Statement compression and proof amortisation — both RUN, both CLOSED.** Quote the write-ups
 for numbers, never this file.
@@ -677,8 +686,18 @@ any of it.
    the deck's next job, not a rebuild** — see the Meeting-10 block for the full ruling: cut
    **13 slides → ~10**, lead with the application motivation, add a high-level **picture of the
    method**, close by answering the questions the opening posed, and **delete the unevidenced
-   "D5 needs more optimisation" line**. **Deck BUILT 2026-08-12** — `report/slides/video_deck.html`,
-   13 slides, planned 7:12, with speaker notes and an on-screen clock; plan + beat sheet +
+   "D5 needs more optimisation" line**. **REWORK DONE 2026-08-17** — `video_deck.html` is now
+   **10 slides, planned 6:35**, application-first, closing on the opening questions; slides 2/3/4
+   are **drawn scenes** (inline SVG on the deck tokens, built in four timed `.st1–.st4` stages, no
+   keypress) because the 13→10 pass had only reordered *text*; a **Why · Method · Results ·
+   Takeaway stepper** answers "where are we"; the key-map overlay now defaults **off** (it was in
+   shot); the ML-DSA attempt got the slide **table** Wang suggested. Demos are now slides **5 and
+   8** — fix that pair of numbers wherever it is cited. ⚠ **Under-running is now the timing risk**
+   (6:35 is 35 s over the floor), the opposite of the old 7:12 plan.
+   ⚠ **RENDER, NEVER REASON, ABOUT LAYOUT (2026-08-17)** — the previous session shipped voids and a
+   clipped table that were invisible from the markup. Windows Chrome is reachable from WSL and
+   screenshots any slide by deep link; the working command is in `VIDEO_PLAN.md` §3. A layout claim
+   without a screenshot is unverified. Plan + beat sheet +
    on-camera claim discipline in `report/slides/VIDEO_PLAN.md`. It is **generated**:
    `scripts/gen_slides.py` fills `video_deck.template.html` from
    `report/latex/generated/*.tex` and embeds the report's own figures, so slides and report
@@ -823,9 +842,14 @@ stamped "Royce Steven"). Rulings, each mandatory:
   the application is introduced. ⚠ **Fig. 3.5 itself is ACCEPTED, caption included** — the
   friendly diagram is an addition, not a replacement. **Also accepted as they stand:** the
   modified Criterion figure, the Bitcoin structure figure. GitHub link **not** required.
-  Chapter-header length: no firm ruling. ⚠ **Alice/Bob is a DECK-SLIDE-5 ruling, not a report
-  one** (Royce, 2026-08-15) — the report keeps the paper's `u₁`/`u₂`. From ≈28:57 the meeting
-  is reviewing the **report**, not the deck; do not re-file those comments as slide feedback.
+  Chapter-header length: no firm ruling. From ≈28:57 the meeting is reviewing the **report**,
+  not the deck; do not re-file those comments as slide feedback.
+  ⚠ **Party naming, settled 2026-08-16 — do not "fix" either way.** Deck slide 5 uses **Alice /
+  Bob** outright. The report keeps `u₁`/`u₂` for mathematics, and the new intro figure
+  `fig:swapidea` names them **once** as "Alice $(u_1)$" / "Bob $(u_2)$" so the friendly picture
+  also teaches the notation the chapter then uses. Alice/Bob is standard crypto convention
+  (RSA 1978 onward), so it is not an informality problem at MSc level; the risk was
+  *inconsistency*, which the joint labelling removes.
 
 **Meeting 9 (2026-08-07) — superseded as latest word by Meeting 10; every ruling DISCHARGED.**
 Transcript `meeting9_cleaned_transcript.md` (single ASR source; its §A lists what could not be

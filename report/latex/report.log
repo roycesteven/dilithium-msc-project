@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  13 AUG 2026 18:11
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  17 AUG 2026 11:28
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -948,15 +948,15 @@ LaTeX Font Warning: Font shape `T1/lmr/bx/sc' undefined
 (Font)              using `T1/lmr/bx/n' instead on input line 54.
 
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 126.
+(Font)              <10.95> on input line 128.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 136.
+(Font)              <10> on input line 138.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 136.
+(Font)              <7> on input line 138.
 [18
 
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}] [19]
-Overfull \hbox (3.94708pt too wide) in paragraph at lines 177--183
+Overfull \hbox (3.94708pt too wide) in paragraph at lines 179--185
  []\T1/lmr/bx/n/12 (-20) Hash, chal-lenge, and sam-plers.[] \T1/lmr/m/n/12 (-20
 ) The ran-dom or-a-cle $\OML/lmm/m/it/12 H$ \T1/lmr/m/n/12 (-20) is built from 
 SHAKE256,
@@ -970,7 +970,7 @@ Package microtype Info: Character `029' is missing
  [26] [27]) (./chapters/03-results.tex [28]
 Chapter 3.
 (./generated/tab_overhead_target.tex)
-<figures/fig_timing.pdf, id=683, 583.66304pt x 350.53972pt>
+<figures/fig_timing.pdf, id=684, 583.66304pt x 350.53972pt>
 File: figures/fig_timing.pdf Graphic file (type pdf)
 <use figures/fig_timing.pdf>
 Package pdftex.def Info: figures/fig_timing.pdf  used on input line 84.
@@ -978,13 +978,13 @@ Package pdftex.def Info: figures/fig_timing.pdf  used on input line 84.
  [29
 
 ]
-<figures/fig_overhead.pdf, id=697, 543.34494pt x 348.09785pt>
+<figures/fig_overhead.pdf, id=698, 543.34494pt x 348.09785pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
 Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 115.
 (pdftex.def)             Requested size: 379.55899pt x 243.17816pt.
  (./generated/tab_rejstats.tex)
-<figures/fig_rejection_cdf.pdf, id=717, 561.25934pt x 340.02834pt>
+<figures/fig_rejection_cdf.pdf, id=718, 561.25934pt x 340.02834pt>
 File: figures/fig_rejection_cdf.pdf Graphic file (type pdf)
 <use figures/fig_rejection_cdf.pdf>
 Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 157.
@@ -995,7 +995,7 @@ Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 157.
 
 pdfTeX warning: pdflatex (file ./figures/fig_criterion_presign.pdf): PDF inclus
 ion: found PDF version <1.7>, but at most version <1.5> allowed
-<figures/fig_criterion_presign.pdf, id=815, 940.54886pt x 668.21893pt>
+<figures/fig_criterion_presign.pdf, id=816, 940.54886pt x 668.21893pt>
 File: figures/fig_criterion_presign.pdf Graphic file (type pdf)
 <use figures/fig_criterion_presign.pdf>
 Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line 
@@ -1003,14 +1003,14 @@ Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line
 (pdftex.def)             Requested size: 412.56496pt x 293.10977pt.
 [33 <./figures/fig_overhead.pdf>] (./generated/tab_complete_target.tex)
 [34] [35] (./generated/tab_classical.tex) [36 <./figures/fig_rejection_cdf.pdf>
-] [37 <./figures/fig_criterion_presign.pdf>] [38] [39] [40]
-<figures/fig_onchain.pdf, id=1029, 719.82855pt x 264.96516pt>
+] [37 <./figures/fig_criterion_presign.pdf>] [38] [39] [40] [41]
+<figures/fig_onchain.pdf, id=1040, 719.82855pt x 264.96516pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
-Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 534.
+Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 579.
 (pdftex.def)             Requested size: 412.56496pt x 151.86456pt.
- [41] [42] [43 <./figures/fig_onchain.pdf>] [44] (./generated/tab_btctx.tex) [4
-5] [46] [47])
+ [42] [43 <./figures/fig_onchain.pdf>] [44] [45] (./generated/tab_btctx.tex) [4
+6] [47])
 (./chapters/04-evaluation.tex [48]
 Chapter 4.
 [49
@@ -1118,10 +1118,10 @@ Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 92A50CDB1B927BEDCDF81C76D534318D;11737.
  ) 
 Here is how much of TeX's memory you used:
- 29137 strings out of 476182
- 527811 string characters out of 5795595
+ 29182 strings out of 476182
+ 528563 string characters out of 5795595
  2185975 words of memory out of 5000000
- 49739 multiletter control sequences out of 15000+600000
+ 49783 multiletter control sequences out of 15000+600000
  763672 words of font info for 385 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,14n,87p,1003b,2170s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1146,10 +1146,10 @@ ts/type1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb>
 /share/texmf/fonts/type1/public/lm/lmtt8.pfb></usr/share/texmf/fonts/type1/publ
 ic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/sy
 mbols/msbm10.pfb>
-Output written on report.pdf (81 pages, 975599 bytes).
+Output written on report.pdf (81 pages, 977582 bytes).
 PDF statistics:
- 1803 PDF objects out of 2073 (max. 8388607)
- 1340 compressed objects within 14 object streams
- 344 named destinations out of 1000 (max. 500000)
+ 1808 PDF objects out of 2073 (max. 8388607)
+ 1344 compressed objects within 14 object streams
+ 345 named destinations out of 1000 (max. 500000)
  112622 words of extra memory for PDF output out of 128383 (max. 10000000)
 

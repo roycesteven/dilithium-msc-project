@@ -49,16 +49,16 @@
 \contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{36}{subsection.3.4.1}%
 \contentsline {section}{\numberline {3.5}Testing the simplification: the adaptor on unmodified ML-DSA}{39}{section.3.5}%
 \contentsline {section}{\numberline {3.6}Application demonstration}{40}{section.3.6}%
-\contentsline {section}{\numberline {3.7}The swap on a UTXO chain: three configurations compared}{42}{section.3.7}%
-\contentsline {paragraph}{The proof, not the signature, is the cost of a post-quantum swap.}{42}{section*.33}%
-\contentsline {paragraph}{The controlled comparison inverts the expected trade-off.}{43}{section*.34}%
+\contentsline {section}{\numberline {3.7}The swap on a UTXO chain: three configurations compared}{43}{section.3.7}%
+\contentsline {paragraph}{The proof, not the signature, is the cost of a post-quantum swap.}{43}{section*.33}%
+\contentsline {paragraph}{The controlled comparison inverts the expected trade-off.}{44}{section*.34}%
 \contentsline {paragraph}{Configuration~2's trade is worse than it looks.}{44}{section*.35}%
-\contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{44}{section*.36}%
-\contentsline {section}{\numberline {3.8}Transaction structure and what a UTXO chain would charge}{45}{section.3.8}%
-\contentsline {paragraph}{The witness discount absorbs more than half of the post-quantum penalty.}{45}{section*.37}%
-\contentsline {paragraph}{It fits the weight limits, not the element-size or verification rules.}{46}{section*.38}%
+\contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{45}{section*.36}%
+\contentsline {section}{\numberline {3.8}Transaction structure and what a UTXO chain would charge}{46}{section.3.8}%
+\contentsline {paragraph}{The witness discount absorbs more than half of the post-quantum penalty.}{46}{section*.37}%
+\contentsline {paragraph}{It fits the weight limits, not the element-size or verification rules.}{47}{section*.38}%
 \contentsline {paragraph}{Both obstacles were put to a real client.}{47}{section*.39}%
-\contentsline {section}{\numberline {3.9}Threats to validity}{47}{section.3.9}%
+\contentsline {section}{\numberline {3.9}Threats to validity}{48}{section.3.9}%
 \contentsline {chapter}{\numberline {4}Evaluation}{49}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Evaluation strategy and its justification}{49}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Achievement of the objectives}{50}{section.4.2}%

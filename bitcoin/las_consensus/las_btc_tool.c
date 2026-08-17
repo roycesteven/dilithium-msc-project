@@ -22,7 +22,16 @@
  *   seed                     print the consensus parameter seed compiled in
  *   keygen <dir> <seedhex>   write pk.bin, sk.bin under the consensus parameters
  *   sign   <dir> <msgfile>   sign a 32-byte message (a BIP341 sighash) -> sig.bin
+ *   verify <pk> <sig> <msg>  run the node's own predicate over three files
  *   selftest                 the positive control and 7 negative controls
+ *
+ * WHY `verify` EXISTS.  The two-leg swap runner produces its settlement signatures
+ * with Adapt, in ref/, under a pp seed it passes in -- not with `sign` above.  Those
+ * bytes still have to satisfy THIS predicate, and the failure it guards against is
+ * silent: a signature made under different public parameters is perfectly valid to
+ * its own signer.  Asking the same function the node calls, before broadcasting,
+ * turns that into an immediate and attributable failure instead of a rejected
+ * transaction whose cause has to be guessed at.  It reads files and holds no key.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -268,11 +277,39 @@ static int cmd_selftest(void)
   return 0;
 }
 
+/* Files are named by PATH rather than by name under a directory: the signatures this
+ * checks are produced elsewhere (Adapt, in ref/) and recovered from a mined
+ * transaction, so they do not live beside pk.bin. */
+static int cmd_verify(const char *pkfile, const char *sigfile, const char *msgfile)
+{
+  static uint8_t pkb[PUBLIC_KEY_BYTES], sigb[SIGNATURE_BYTES];
+  uint8_t msg[LAS_CONSENSUS_MSG_BYTES];
+
+  if(read_exact(NULL, pkfile, pkb, sizeof pkb)) return 1;
+  if(read_exact(NULL, sigfile, sigb, sizeof sigb)) return 1;
+  if(read_exact(NULL, msgfile, msg, sizeof msg)) return 1;
+
+  /* The node's predicate, not a local re-derivation of it: same function, same
+   * compiled-in parameters, so agreement here is agreement there. */
+  if(!LASConsensusVerify(sigb, sizeof sigb, pkb, sizeof pkb, msg, sizeof msg)) {
+    fprintf(stderr,
+      "REJECTED by LASConsensusVerify.\n"
+      "  The signature is of the right length but does not satisfy the predicate the\n"
+      "  patched node runs. One likely cause is a mismatch of PUBLIC PARAMETERS: this\n"
+      "  binary verifies under the seed compiled into las_consensus_params.h, so a key\n"
+      "  or signature produced under any other pp seed is not expected to verify here.\n");
+    return 1;
+  }
+  printf("verify: ACCEPTED by LASConsensusVerify — the same predicate, with the same\n"
+         "        compiled-in parameters, that OP_CHECKLASSIGVERIFY runs on the node\n");
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   if(argc < 2) {
-    fprintf(stderr, "usage: %s {seed|keygen <dir> <seedhex>|sign <dir> <msgfile>|selftest}\n",
-            argv[0]);
+    fprintf(stderr, "usage: %s {seed|keygen <dir> <seedhex>|sign <dir> <msgfile>|"
+                    "verify <pkfile> <sigfile> <msgfile>|selftest}\n", argv[0]);
     return 2;
   }
   if(!strcmp(argv[1], "seed"))     return cmd_seed();
@@ -284,6 +321,12 @@ int main(int argc, char **argv)
   if(!strcmp(argv[1], "sign")) {
     if(argc < 4) return fail("sign needs <dir> <msgfile>");
     return cmd_sign(argv[2], argv[3]);
+  }
+  /* Exactly three paths, not "at least three": a fourth argument here would mean the
+   * caller believes it is passing something this subcommand does not read. */
+  if(!strcmp(argv[1], "verify")) {
+    if(argc != 5) return fail("verify needs exactly <pkfile> <sigfile> <msgfile>");
+    return cmd_verify(argv[2], argv[3], argv[4]);
   }
   fprintf(stderr, "unknown subcommand: %s\n", argv[1]);
   return 2;

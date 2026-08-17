@@ -254,7 +254,7 @@ Sizes are fixed by the encoding, so they are exact and carry no dispersion.
   \centering
   \caption[Serialized size of every LAS object]{Serialized size of every LAS object at
   the \emph{Simplified Dilithium-III} (target) setting, in packed wire bytes (not
-  on-chain gas), with its notation --- the paper's, except that a signature carries the
+  on-chain gas), with its notation --- that of Esgin et al.\ \cite{esgin2020post}, except that a signature carries the
   \emph{digest} $\tilde c$, not the polynomial $c$ (\cref{tab:notation}).
   ``In the basic signature?'' marks which
   objects LAS shares with the base scheme and which it adds.
@@ -389,9 +389,10 @@ exactly the kind of claim \cref{sec:eval-limitations} declares out of scope.
 \section{Application demonstration}
 \label{sec:res-app}
 
+
 The implementation drives an end-to-end post-quantum atomic swap following the swap
 protocol \cite{esgin2020post} \emph{verbatim}, including its proof of knowledge $\pi$
-(\cref{fig:swapflow,app:swapdemo}). Two results matter. First, the protocol runs and
+(\cref{fig:swapidea,fig:swapflow}). Two results matter. First, the protocol runs and
 every step is
 asserted, including the counterfactuals that a pre-adaptation signature fails basic
 verification and that $\pi$ is rejected against any other statement. Second, $\pi$ is what
@@ -401,6 +402,50 @@ proven ternary one, so the adapted signature is certain to clear the verificatio
 --- without $\pi$ a malicious counterparty could claim and leave an unadaptable
 pre-signature behind. The proof measures \cmpProofTo\,B on the wire at a knowledge error
 below $2^{-\piKnowledgeError}$ and is exchanged off-chain only.
+
+% A deliberately non-technical picture of the application, placed before the protocol
+% diagram so a reader meets the goal before the mechanism (supervisor request, Meeting 10).
+% Parties are named Alice/Bob AND tied to Esgin et al.'s u_1/u_2 here, so this figure also
+% introduces the notation the rest of the chapter uses. The chains attach to the COINS,
+% not to the parties: each party acts on both chains. Each arrow runs coin -> receiving
+% party, and the two cross, which is what makes it an exchange rather than two payments.
+% Absolute coordinates only -- no calc library, no pifont.
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\small,
+      party/.style={draw, rounded corners=3pt, align=center, minimum width=28mm,
+                    minimum height=12mm, line width=0.6pt},
+      lbl/.style={font=\footnotesize\itshape, align=center},
+      >={Stealth[]}]
+
+    % Parties fixed on the left and right; the two transfers are STACKED, not crossed, and
+    % every coordinate is absolute. Labels sit clear above the upper arrow and clear below
+    % the lower one, so the two can never collide however the box widths render.
+    \node[party, fill=orange!12, draw=orange!60!black] (a) at (0mm,0mm)  {Alice $(u_1)$};
+    \node[party, fill=blue!10,  draw=blue!60!black]    (b) at (82mm,0mm) {Bob $(u_2)$};
+
+    \draw[->, line width=0.9pt, orange!70!black] (17mm,4mm)  -- (65mm,4mm);
+    \node[lbl, orange!60!black] at (41mm,8.5mm)  {a coin on chain~A $\longrightarrow$};
+
+    \draw[->, line width=0.9pt, blue!70!black]   (65mm,-4mm) -- (17mm,-4mm);
+    \node[lbl, blue!60!black]  at (41mm,-8.5mm) {$\longleftarrow$ a coin on chain~B};
+
+    \node[draw, rounded corners=2pt, fill=green!8, draw=green!45!black,
+          align=center, font=\footnotesize, minimum width=72mm] at (41mm,-19mm)
+      {\textbf{Either both transfers happen, or neither does.}\\
+       No centralised exchange and no trusted intermediary.};
+  \end{tikzpicture}
+  \caption[An atomic swap, in outline]{What the application is for, before any
+  cryptography. Two parties want to trade coins that live on two different chains. The
+  danger is that one side takes payment and walks away; an atomic swap removes it, so
+  either both transfers settle or neither does, with no centralised exchange and nobody
+  who has to be trusted to hold both sides. Each party acts on \emph{both} chains --- the
+  chains belong to the coins, not to the people. The names fix Esgin et al.'s $u_1$ and
+  $u_2$ notation used from here on. \Cref{fig:swapflow} shows how the adaptor signature
+  achieves this.}
+  \label{fig:swapidea}
+\end{figure}
 
 \begin{figure}[htbp]
   \centering

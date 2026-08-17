@@ -22,8 +22,8 @@ on top of a basic scheme: multi-signatures, aggregate signatures, threshold
 signatures, and \emph{adaptor signatures}. These exotic schemes are what give
 blockchains scalable consensus, compact multi-party authorisation, and advanced
 payment protocols. A recent survey documents that, while basic PQ signatures are
-maturing, their exotic counterparts largely lack efficient, practical implementations
-in a blockchain setting \cite{buser2023survey}. Closing that gap --- turning paper designs
+maturing, their exotic counterparts remain unevenly served by practical implementations
+in blockchain settings \cite{buser2023survey}. Closing that gap --- turning paper designs
 into tested, measured, blockchain-facing artefacts --- is the problem this project
 addresses.
 
@@ -33,7 +33,7 @@ publishing a valid signature to the simultaneous revelation of a secret witness
 ``scriptless'' atomic swaps and payment-channel networks: it lets two parties exchange
 assets, even across different chains, so that either both transfers happen or neither
 does, without trusted intermediaries or heavy on-chain scripts. Classically these
-constructions are mature and deployed; post-quantum they are mostly paper-only, making the
+constructions are mature and deployed; post-quantum, the implementation gap above makes the
 adaptor signature a representative, high-value exotic scheme.
 
 Cross-chain exchange first relied on custodial intermediaries; hash-time-locked contracts
