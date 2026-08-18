@@ -144,12 +144,11 @@ days, not weeks.
         outright: succinctness
         is asymptotic, and one instance of this relation is too small to reach it. What
         is open is a construction whose proof is small at \emph{this} scale.
-  \item \textbf{Reduce the cost of one-transaction verification, and carry it across
-        parameter sets.} Fitting under the cap was proposed here as future work and then
-        answered, without any of the routes originally predicted (\cref{sec:res-app}). Two
-        narrower questions remain. The margin is a message-length budget, tying the result
-        to the parameter set and message length measured, and the verifier's dimensions are
-        fixed at build time, so no other set was evaluated. And fitting is not the same as
+  \item \textbf{Reduce the cost of one-transaction verification.} Fitting under the cap
+        was proposed here as future work and then answered, without any of the routes
+        originally predicted (\cref{sec:res-app}), though for one signature instance and
+        message length at both sets measured, and exceeded at the largest by
+        derivation. Fitting is also not the same as
         being worth doing: settlement stays far above a classical claim, and the hash is
         the dominant measured term, so that is where a substantial further reduction would
         have to come from --- though what native support for it would cost, and whether the

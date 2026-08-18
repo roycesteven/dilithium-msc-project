@@ -8,7 +8,7 @@
 \contentsline {section}{\numberline {1.2}Subject area and related work}{14}{section.1.2}%
 \contentsline {paragraph}{Exotic signatures for post-quantum blockchains.}{14}{section*.9}%
 \contentsline {paragraph}{Lattice signatures and Dilithium.}{14}{section*.10}%
-\contentsline {paragraph}{Adaptor signatures.}{15}{section*.11}%
+\contentsline {paragraph}{Adaptor signatures.}{14}{section*.11}%
 \contentsline {paragraph}{Post-quantum adaptor signatures.}{15}{section*.12}%
 \contentsline {paragraph}{Classical baseline.}{15}{section*.13}%
 \contentsline {section}{\numberline {1.3}Project category, aim, and objectives}{15}{section.1.3}%
@@ -82,18 +82,19 @@
 \contentsline {paragraph}{Matching the boundaries of the classical comparison.}{63}{section*.44}%
 \contentsline {paragraph}{What the restructured on-chain verifier changes, and how it was checked.}{63}{section*.45}%
 \contentsline {paragraph}{The registration invariant, and what is \emph {not} enforced.}{64}{section*.46}%
-\contentsline {paragraph}{One deliberate exception to reproducibility.}{64}{section*.47}%
-\contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{65}{section.A.4}%
-\contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{65}{section.A.5}%
-\contentsline {section}{\numberline {A.6}The atomic-swap demonstration and its proof of knowledge}{66}{section.A.6}%
-\contentsline {section}{\numberline {A.7}The optimistic (Naysayer) on-chain verifier}{67}{section.A.7}%
-\contentsline {section}{\numberline {A.8}The six implementation challenges}{68}{section.A.8}%
-\contentsline {section}{\numberline {A.9}Test types and parameter notation}{70}{section.A.9}%
-\contentsline {section}{\numberline {A.10}Full benchmark data tables}{70}{section.A.10}%
-\contentsline {section}{\numberline {A.11}Auditing the reuse claim}{71}{section.A.11}%
-\contentsline {section}{\numberline {A.12}Selected code listing: Adapt and Extract}{73}{section.A.12}%
-\contentsline {section}{\numberline {A.13}Settling on a real node}{76}{section.A.13}%
-\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{76}{section*.48}%
-\contentsline {paragraph}{Verification on a patched node.}{76}{section*.49}%
-\contentsline {paragraph}{What the rule charges a validating node.}{77}{section*.50}%
-\contentsline {chapter}{Bibliography}{79}{appendix*.51}%
+\contentsline {paragraph}{Carrying the one-transaction result to the neighbouring parameter sets.}{64}{section*.47}%
+\contentsline {paragraph}{One deliberate exception to reproducibility.}{66}{section*.48}%
+\contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{66}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{66}{section.A.5}%
+\contentsline {section}{\numberline {A.6}The atomic-swap demonstration and its proof of knowledge}{68}{section.A.6}%
+\contentsline {section}{\numberline {A.7}The optimistic (Naysayer) on-chain verifier}{69}{section.A.7}%
+\contentsline {section}{\numberline {A.8}The six implementation challenges}{70}{section.A.8}%
+\contentsline {section}{\numberline {A.9}Test types and parameter notation}{72}{section.A.9}%
+\contentsline {section}{\numberline {A.10}Full benchmark data tables}{72}{section.A.10}%
+\contentsline {section}{\numberline {A.11}Auditing the reuse claim}{73}{section.A.11}%
+\contentsline {section}{\numberline {A.12}Selected code listing: Adapt and Extract}{74}{section.A.12}%
+\contentsline {section}{\numberline {A.13}Settling on a real node}{77}{section.A.13}%
+\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{77}{section*.49}%
+\contentsline {paragraph}{Verification on a patched node.}{78}{section*.50}%
+\contentsline {paragraph}{What the rule charges a validating node.}{78}{section*.51}%
+\contentsline {chapter}{Bibliography}{80}{appendix*.52}%

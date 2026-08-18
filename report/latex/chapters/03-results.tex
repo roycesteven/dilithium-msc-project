@@ -528,8 +528,11 @@ escrow at \gasOptReceipt{} gas: \gasOptCapPct\% of the EIP-7825 cap, which bound
 transaction gas limit and so covers calldata as well as execution. Its equivalence is
 conditional on a registration invariant, and both are set out in \cref{tab:onchain}.
 On-chain verification therefore fits in one transaction at \emph{Simplified
-Dilithium-III} for the 32-byte signed message measured, with a thin margin that is a
-message-length budget rather than slack. The change of venue stands: the UTXO constraint
+Dilithium-III} for the 32-byte signed message and signature instance measured, with a
+thin margin. Verification alone at \emph{Simplified Dilithium-II}, charged as one
+transaction, is \gasDTwoCapPct\% of the cap; at \emph{Simplified Dilithium-V} one
+transaction is exceeded, derived rather than measured (\cref{app:methoddetail}). The
+change of venue stands: the UTXO constraint
 is a transaction \emph{weight} limit one settlement sits well inside
 (\cref{sec:res-txstruct}).
 
@@ -548,11 +551,12 @@ is a transaction \emph{weight} limit one settlement sits well inside
   computation rather than changing it --- but \textbf{only under a registration invariant
   that neither row checks}, and where it fails a \emph{different} predicate is decided;
   the equivalence testing, the invariant and the cost of breaking it are set out in
-  \cref{app:methoddetail}. The client run reported in the text used anvil at a pinned
+  \cref{app:methoddetail}. The client run used anvil at a pinned
   \texttt{osaka} revision with EIP-7825 enforced, over \gasOptCalldata{}\,B of calldata.
   \textbf{Scope}: \emph{Simplified Dilithium-III}, a 32-byte signed message, that
-  revision; no other parameter set was evaluated, the verifier's dimensions being fixed
-  at build time. The \gasOptHeadroom{}\,gas of headroom is \emph{measured}; that it
+  revision, and one signature instance --- two stages of the verifier branch on
+  coefficient values, so variation across instances is unquantified. The
+  \gasOptHeadroom{}\,gas of headroom is \emph{measured}; that it
   corresponds to a few hundred further bytes of signed message is \emph{derived} from it
   and the measured per-permutation hash cost.}
   \label{tab:onchain}

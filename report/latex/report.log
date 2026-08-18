@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  17 AUG 2026 11:28
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  18 AUG 2026 13:25
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1004,10 +1004,10 @@ Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line
 [33 <./figures/fig_overhead.pdf>] (./generated/tab_complete_target.tex)
 [34] [35] (./generated/tab_classical.tex) [36 <./figures/fig_rejection_cdf.pdf>
 ] [37 <./figures/fig_criterion_presign.pdf>] [38] [39] [40] [41]
-<figures/fig_onchain.pdf, id=1040, 719.82855pt x 264.96516pt>
+<figures/fig_onchain.pdf, id=1041, 719.82855pt x 264.96516pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
-Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 579.
+Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 583.
 (pdftex.def)             Requested size: 412.56496pt x 151.86456pt.
  [42] [43 <./figures/fig_onchain.pdf>] [44] [45] (./generated/tab_btctx.tex) [4
 6] [47])
@@ -1052,12 +1052,18 @@ Overfull \hbox (0.97295pt too wide) in paragraph at lines 168--183
 em. The public linear map is
  []
 
-[62] [63] [64] [65]
-Overfull \hbox (8.02162pt too wide) in paragraph at lines 331--331
+[62] [63] [64]
+Overfull \hbox (18.38214pt too wide) in paragraph at lines 274--291
+\T1/lmtt/m/n/12 scripts/derive_onchain_d5_bound.py\T1/lmr/m/n/12 (-20) , run \T
+1/lmtt/m/n/12 evidence/onchain_d5bound/\T1/lmr/m/n/12 (-20) ). What
+ []
+
+[65] [66]
+Overfull \hbox (8.02162pt too wide) in paragraph at lines 371--371
 []\T1/lmr/bx/n/17.28 (-20) The atomic-swap demon-stra-tion and its proof
  []
 
-[66] [67] [68] [69] [70] (./generated/tab_timing.tex)
+[67] [68] [69] [70] [71] (./generated/tab_timing.tex)
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
@@ -1065,21 +1071,22 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
+[72] [73]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[71] [72] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [73] [74]
-[75]
-Overfull \hbox (76.65977pt too wide) in paragraph at lines 738--747
+) [74] [75]
+[76]
+Overfull \hbox (76.65977pt too wide) in paragraph at lines 778--787
  [] 
  []
 
-[76] [77]) (./report.bbl [78]
+[77] [78]) (./report.bbl [79]
 Underfull \hbox (badness 10000) in paragraph at lines 19--27
 []\T1/lmr/m/n/12 (+20) Bitcoin Core de-vel-op-ers.  Trans-ac-tion re-lay and mi
 n-ing pol-
@@ -1097,15 +1104,15 @@ Underfull \hbox (badness 10000) in paragraph at lines 19--27
 licy / policy . h$[]\T1/lmr/m/n/12 (+20) ;
  []
 
-[79
+[80
 
-] [80]
+] [81]
 Underfull \hbox (badness 4366) in paragraph at lines 130--134
 []\T1/lmr/m/n/12 (+20) Andrew Poel-stra.  Script-less scripts.  Pre-sen-ta-tion
 , Mi-lan Bit-
  []
 
-) [81] (./report.aux)
+) [82] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1115,16 +1122,16 @@ L3 programming layer <2024-01-22>
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 92A50CDB1B927BEDCDF81C76D534318D;11737.
+(rerunfilecheck)             Checksum: 6464EC4539347864867C63A458AC21D5;11737.
  ) 
 Here is how much of TeX's memory you used:
- 29182 strings out of 476182
- 528563 string characters out of 5795595
+ 29185 strings out of 476182
+ 528597 string characters out of 5795595
  2185975 words of memory out of 5000000
- 49783 multiletter control sequences out of 15000+600000
- 763672 words of font info for 385 fonts, out of 8000000 for 9000
+ 49786 multiletter control sequences out of 15000+600000
+ 763543 words of font info for 384 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,14n,87p,1003b,2170s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,14n,87p,1003b,2174s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx8.pfb></us
 r/share/texmf/fonts/type1/public/lm/lmbxi10.pfb></usr/share/texmf/fonts/type1/p
@@ -1146,10 +1153,10 @@ ts/type1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb>
 /share/texmf/fonts/type1/public/lm/lmtt8.pfb></usr/share/texmf/fonts/type1/publ
 ic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/sy
 mbols/msbm10.pfb>
-Output written on report.pdf (81 pages, 977582 bytes).
+Output written on report.pdf (82 pages, 980818 bytes).
 PDF statistics:
- 1808 PDF objects out of 2073 (max. 8388607)
- 1344 compressed objects within 14 object streams
- 345 named destinations out of 1000 (max. 500000)
+ 1815 PDF objects out of 2073 (max. 8388607)
+ 1350 compressed objects within 14 object streams
+ 347 named destinations out of 1000 (max. 500000)
  112622 words of extra memory for PDF output out of 128383 (max. 10000000)
 

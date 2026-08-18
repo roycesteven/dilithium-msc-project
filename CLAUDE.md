@@ -217,18 +217,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-17 19:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-18 13:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD d95d3f5 · 2026-08-15 · meeting 10 evm d2 d5 unfinished
-- Working tree: 23 modified tracked file(s), 44 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 4cad978 · 2026-08-17 · evm d2 d5 btc two leg swap deck fix
+- Working tree: 18 modified tracked file(s), 40 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `4cad978 2026-08-17 evm d2 d5 btc two leg swap deck fix`
   - `d95d3f5 2026-08-15 meeting 10 evm d2 d5 unfinished`
   - `bc33734 2026-08-13 report video 13_08 18_49`
   - `2c78118 2026-08-13 report 13_08 16_37`
   - `8003045 2026-08-12 report 12_08 16_57`
-  - `80751df 2026-08-12 report 12_08 15_27_pm`
 
 ### Target parameter set — anchors parsed from source
 
@@ -244,7 +244,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8999** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8997** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -262,7 +262,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-17.
+- `CLAUDE.md` hand-written sections last touched 2026-08-18.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -483,7 +483,16 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
   measurement**.
 - **⚠️ THREE-WAY STATE across parameter sets (2026-08-15) — do not restate any row.**
   **D3 = MEASURED fits, ONE instance · D2 = MEASURED fits, ONE instance (~65% of cap) ·
-  D5 = DERIVED does NOT fit, on a measured lower bound.**
+  D5 = DERIVED, one transaction is exceeded — a lower bound COMPUTED FROM measured
+  quantities; the bound is arithmetic, never itself "a measured lower bound" (2026-08-18).**
+  - ⚠️ **THE TWO MEASURED ROWS ARE DIFFERENT BOUNDARIES — never put them side by side
+    without saying so** (2026-08-18; three drafts failed this in one session). **D3 is a real
+    client's receipt for a WHOLE CLAIM** (`cast send` to the escrow: verification + context
+    binding + state transition + event + payout). **D2 is a harness charge for VERIFICATION
+    ONLY** — `LASGasBreakdownD2.t.sol` targets `D2VerifyHarness.run`, not
+    `claimLASVerifiedOpt`. D2's ~65% is **not** D3's 97.8% one set down. That test also reads
+    `gasleft()` *before* `require(ok)`, so the ACCEPT assertion gates the **reported result**,
+    not the measurement — never "asserted to accept before any gas was read".
   - ⚠️ **"One instance" is part of BOTH measured rows, symmetrically.** `SampleInBall`
     (rejection loop) and `_decodeZ` (branches on coefficient value) are **data-dependent**, so
     each figure is one signature's cost, not a bound over inputs. Say "the measured golden
@@ -503,8 +512,11 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
     exceeded at D5". **NOT** — "measured at D5", any **D5 gas total** (a lower bound exists,
     never a value), or "needs more optimisation" (that optimisation could close the gap is its
     own unevidenced claim).
-  ⚠️ **"No other parameter set was evaluated" is now FALSE** — true until 2026-08-15, and it
-  survives in the deck and older drafts. Fix every occurrence.
+  ⚠️ **"No other parameter set was evaluated" is FALSE** (true only until 2026-08-15).
+  **Purged 2026-08-18** from `tab:onchain`, `05-conclusion.tex`, the deck and
+  `GAS_LIMIT_INVESTIGATION.md` §7; report macros `\gasDTwoTotal/CapPct/Headroom` now come
+  from `evidence/onchain_d2/` via `gen_report_data.py`. If it reappears, it came from an
+  older draft.
 - **⚠️ Five derivations of D5 failed review before one held — do not re-derive, cite the gate.**
   (a) "Execution can only grow" proves nothing alone: push calldata the D5-favourable way (every
   added byte zero) with execution frozen and D5 lands *under* the cap. **A worst case binds only

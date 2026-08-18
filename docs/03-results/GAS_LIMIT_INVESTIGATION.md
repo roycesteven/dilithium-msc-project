@@ -367,15 +367,41 @@ permutation across 91 permutations.
    has been made. What *is* measured is the 32-byte case, which is the realistic one: in the
    Bitcoin/UTXO setting the signed value is a 32-byte sighash.
 
-   **D2 and D5 are NOT evaluated.** `LASVerifyOpt`'s parameters (`N_LAS`, `ELL`,
-   `CTILDE_BYTES`, `Z_BITS`, …) are compile-time constants fixed to D3, so the library
-   cannot be run at another set without being re-parameterised first. Nothing here supports
-   a claim that it fails, or succeeds, at D2 or D5 — that is an open question, not a result.
+   **The other two parameter sets were evaluated on 2026-08-15, and the three states are
+   NOT the same kind of claim.** `LASVerifierOpt`'s parameters (`N_LAS`, `ELL`,
+   `CTILDE_BYTES`, `Z_BITS`, …) are compile-time constants fixed to D3, so neither set
+   could simply be re-run; D2 got its own copy of the verifier, and D5 got a derivation.
+
+   | set | verdict | what kind of evidence | what was actually run |
+   |---|---|---|---|
+   | **D3** | fits, 16,413,275 / 16,777,216 | **measured** — a real client's receipt | the **claim** (`claimLASVerifiedOpt`): verification **+** escrow release |
+   | **D2** | fits, 10,956,784 (65% of cap, headroom 5,820,432) | **measured** — a Foundry harness computing the EIP-7623 charge | **verification only** (`D2VerifyHarness.run`): no context re-derivation, state transition, event or payout |
+   | **D5** | one transaction is **exceeded** | **derived** — a lower bound *computed from* measured quantities; the bound is arithmetic, not a measurement | no D5 verifier exists; one D5-sized quantity *was* run — the challenge-preimage absorption at the D5 length (16,416 B) |
+
+   ⚠️ **D2's figure is not comparable with D3's without that last column.** D3 is what a
+   client was charged for a whole claim; D2 is what a harness computes for a transaction
+   carrying verification alone. `evidence/onchain_d2/latest/gas_d2.log`,
+   `evm/test/LASGasBreakdownD2.t.sol`; the verifier is asserted to ACCEPT before the figure
+   is reported (the assertion follows the `gasleft()` read, so it gates the *result*, not
+   the measurement).
+
+   ⚠️ **Both measured rows are ONE signature instance** — `SampleInBall` and `_decodeZ`
+   branch on values, so neither figure bounds anything over inputs. Instance-to-instance
+   variation is unquantified at every set: not negligible, not material, *unquantified*.
+   Context, not a verdict: D3's headroom is ~364k gas against ~732k spent in those two
+   stages there; D2's headroom is ~5.8M.
+
+   **D5 wording is narrow.** Supported: *"derived from measured quantities, one transaction
+   is exceeded at Dilithium-V"*. **Not** supported: "measured at D5", any D5 gas total (a
+   lower bound was established, never a value), or that it "needs more optimisation" — that
+   optimisation could close the gap is its own unevidenced claim.
    *(An earlier draft of this document asserted it "breaks at D5". That was written from
-   plausibility, never measured or calculated, and is retracted.)*
+   plausibility, never measured or calculated, and was retracted; the current statement is
+   a different one, resting on `evidence/onchain_d5bound/latest`,
+   `evm/test/LASShakeGrowth.t.sol` and `scripts/derive_onchain_d5_bound.py`.)*
 
    Do not state "on-chain LAS verification fits in one transaction" without the parameter
-   set, the message length and the EVM revision attached.
+   set, the message length, the EVM revision and the boundary attached.
 2. **`--gas-report` inflates in-test gas measurement.** Foundry's inspector is metered
    inside the measured call frame, adding ≈688k gas to `gasleft()` deltas *and* to
    `vm.lastCallGas()` — **more than the entire headroom**. A cap assertion measured under

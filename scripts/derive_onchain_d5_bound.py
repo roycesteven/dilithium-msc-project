@@ -13,8 +13,10 @@ THE ARGUMENT, IN FULL
 
   * calldata is pushed the way that FAVOURS D5 fitting: every byte D5 adds over D3 is assumed
     ZERO (the cheapest a byte can be under EIP-7623). No real packed lattice payload achieves
-    this — a quarter of the 4-byte big-endian bytes are structurally zero and the rest are
-    near-uniform — so the true charge is higher and the real margin worse.
+    this — one byte in every packed 4-byte coefficient word is structurally zero (each
+    coefficient is < q < 2^23) and the rest are near-uniform — so the true charge is higher
+    and the real margin worse. The zero count does not depend on byte order, which differs
+    across the payload: aHatPacked/tHatPacked are big-endian, tPacked little-endian.
     ⚠ This is the step that defeated two earlier attempts: it is not enough to push execution
     the adverse way while leaving calldata content free. A worst case binds only when EVERY
     free variable is pushed the adverse way at once.
@@ -215,7 +217,8 @@ def main() -> int:
     print()
     print("=" * 74)
     if delta_absorb >= threshold:
-        print("VERDICT: D5 DOES NOT FIT — derived, on a measured lower bound.")
+        print("VERDICT: D5 EXCEEDS ONE TRANSACTION — DERIVED: a lower bound computed from")
+        print("         measured quantities. The bound is arithmetic, not a measurement.")
         print("=" * 74)
         print(f"  Measured absorbPad growth {delta_absorb} clears the {threshold} needed, "
               f"by {delta_absorb - threshold} gas ({delta_absorb / threshold:.1f}x).")

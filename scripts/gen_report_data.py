@@ -440,7 +440,7 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
                 rust_packed_over, onchain, packed_l2, mldsa=None, onetx=None,
-                pi_params=None):
+                pi_params=None, onchain_d2=None):
     t = timing[TARGET]
     o = over[TARGET]
     c = comm[TARGET]
@@ -598,6 +598,15 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                   "{:,}".format(cap - onetx["gasUsed"]).replace(",", "\\,")))
         m.append(("gasOptCalldata",
                   "{:,}".format(onetx["calldata"]).replace(",", "\\,")))
+
+    # The same accounting one parameter set down (harness, one instance).
+    if onchain_d2:
+        cap = 16_777_216
+        m.append(("gasDTwoTotal",
+                  "{:,}".format(onchain_d2["total"]).replace(",", "\\,")))
+        m.append(("gasDTwoCapPct", "%.0f" % (100.0 * onchain_d2["total"] / cap)))
+        m.append(("gasDTwoHeadroom",
+                  "{:,}".format(onchain_d2["headroom"]).replace(",", "\\,")))
     # Rust port (protocol driver mirrors the C driver; Criterion is the
     # statistical harness)
     m.append(("rustOvPreSign", pct(rust_over["PreSign vs Sign"])))
@@ -855,6 +864,44 @@ def parse_onchain_onetx(d):
             "calldata": (len(t["input"]) - 2) // 2}
 
 
+def parse_onchain_d2(d):
+    """The Simplified Dilithium-II one-transaction total (measured, one instance).
+
+    evidence/onchain_d2/latest/gas_d2.log is the console output of
+    LASGasBreakdownD2.t.sol, which builds the same calldata a claim would carry,
+    charges it under EIP-7623 (21000 + max(4*tokens + execution, 10*tokens)) and
+    asserts the verifier ACCEPTs before reporting anything.  It is a HARNESS
+    figure, not a client receipt like parse_onchain_onetx() -- the two are
+    reported as what they are and never conflated.
+
+    ONE fixed signature instance: SampleInBall and the response decoder branch on
+    values, so this bounds nothing over inputs.  Absent directory -> None.
+    """
+    log = d / "gas_d2.log"
+    if not log.exists():
+        return None
+    txt = log.read_text(errors="replace")
+    if "[PASS] test_d2_golden_instance_fits_in_one_transaction()" not in txt:
+        die("evidence/onchain_d2/latest: the fit assertion did not pass -- "
+            "refusing to emit a macro for it")
+    got = {}
+    for key, pat in (("total", r"exec / EIP-7623 TOTAL\s+\d+\s+(\d+)"),
+                     ("headroom", r"headroom under the cap\s+(\d+)"),
+                     ("floor", r"EIP-7623 floor binds \(1=yes\)\s+(\d+)")):
+        mt = re.search(pat, txt)
+        if not mt:
+            die("evidence/onchain_d2/latest/gas_d2.log: could not read %s" % key)
+        got[key] = int(mt.group(1))
+    cap = 16_777_216
+    if got["total"] >= cap:
+        die("evidence/onchain_d2/latest: the reported total (%d) is not under "
+            "the EIP-7825 cap (%d)" % (got["total"], cap))
+    if got["total"] + got["headroom"] != cap:
+        die("evidence/onchain_d2/latest: total + headroom (%d) does not equal "
+            "the cap (%d)" % (got["total"] + got["headroom"], cap))
+    return got
+
+
 def emit_tab_classical(out, meta, timing, comm, classical, packed_l2):
     """Classical vs LAS at Simplified Dilithium-II.  The classical library
     exposes exactly ONE measurement boundary (its native API: the 162-B
@@ -1046,6 +1093,8 @@ def main(argv=None):
                                 / "evidence" / "onchain" / "latest" / "gas_report.log")
     onetx = parse_onchain_onetx(Path(__file__).resolve().parent.parent
                                 / "evidence" / "onchain_onetx" / "latest")
+    onchain_d2 = parse_onchain_d2(Path(__file__).resolve().parent.parent
+                                  / "evidence" / "onchain_d2" / "latest")
     pi_params = parse_pi_params(Path(__file__).resolve().parent.parent
                                 / "ref" / "relation_zk_params.h")
     mldsa = parse_mldsa(Path(__file__).resolve().parent.parent
@@ -1078,7 +1127,8 @@ def main(argv=None):
     emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
                 rust_params, rust_sizes, rust_timing, rust_over, rust_rej,
                 rust_proto, rust_kat, crit, crit_samples, tamper, packed_over,
-                rust_packed_over, onchain, packed_l2, mldsa, onetx, pi_params)
+                rust_packed_over, onchain, packed_l2, mldsa, onetx, pi_params,
+                onchain_d2)
     emit_tab_timing(out, meta, params, timing)
     emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over)
     emit_tab_components(out, meta, params, comm)

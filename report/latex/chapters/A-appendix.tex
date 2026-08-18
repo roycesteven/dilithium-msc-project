@@ -255,6 +255,46 @@ need the untransformed matrix, or the seed it expands from, supplied at registra
 well. Neither is implemented, neither is costed here, and the measured figures are for the
 verification path as it stands.
 
+\paragraph{Carrying the one-transaction result to the neighbouring parameter sets.}
+The restructured verifier fixes its dimensions at build time, so a second copy was
+instantiated at \emph{Simplified Dilithium-II}: duplicated rather than parameterised, so
+that nothing could move the Dilithium-III figures already measured, and given its own
+golden vectors exported from the C implementation. What is charged there is
+\emph{verification only} --- the calldata goes to a harness entry point that runs the
+verifier and returns its verdict, so none of the escrow work in the claim path is
+included: no context re-derivation, no state transition, no event, no payout. Charged as
+one transaction under EIP-7623 it comes to \gasDTwoTotal{} gas, \gasDTwoCapPct\% of the
+cap, \gasDTwoHeadroom{} short of it, with the standard branch rather than the calldata
+floor binding (\texttt{evidence/onchain\_d2/}). It is therefore a harness computation over
+a narrower boundary than the Dilithium-III client receipt of \cref{sec:res-app}, and the
+two are not interchangeable. The accepted verdict is asserted before the figure is
+reported --- a rejecting run would have measured the early exit rather than verification
+--- though the assertion follows the measurement rather than preceding it.
+
+\emph{Simplified Dilithium-V} was not built, and the asymmetry between the two directions
+is why a derivation could still settle it. Deriving that a set \emph{fits}, rather than
+measuring an instance of it, needs an upper bound over the whole computation, and two
+stages resist one: the challenge sampler's rejection loop and the response decoder both
+branch on coefficient values. Deriving that a set is \emph{exceeded} needs only a lower
+bound, which tolerates dropping exactly those stages. The derivation therefore pushes the
+calldata the way that favours fitting, subtracts both data-dependent stages whole, counts
+every remaining stage at zero growth --- each being a loop over the dimensions with no
+value-dependent branch --- and adds one measured quantity: the difference between the two
+challenge-preimage absorptions, taken against a fixed-size memory arena so that the
+scratch allocated inside the timed call cancels rather than inflating the difference. That
+this measured difference clears the gap the other terms leave is what the result rests on
+(gate \texttt{evm/test/LASShakeGrowth.t.sol}, arithmetic
+\texttt{scripts/derive\_onchain\_d5\_bound.py}, run
+\texttt{evidence/onchain\_d5bound/}). What follows is that one transaction is exceeded at
+that set; no gas total for it follows, a lower bound not being a value, and neither does
+any claim about what further optimisation would achieve there.
+
+The Dilithium-II and Dilithium-III figures are each one signature instance, for the same
+reason those two stages resist an upper bound, and variation across instances is
+unquantified at every set: nothing here supports calling it negligible, and nothing here
+supports calling it material. The Dilithium-V statement is not an instance at all, but a
+bound assembled from Dilithium-III measurements and one measured absorption difference.
+
 \paragraph{One deliberate exception to reproducibility.}
 Every other input derives from the pinned seed, but Groth16's trusted setup and each
 of its proofs draw fresh operating-system entropy. Both are security requirements
