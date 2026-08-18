@@ -217,18 +217,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-18 13:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-18 19:52 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 4cad978 · 2026-08-17 · evm d2 d5 btc two leg swap deck fix
-- Working tree: 18 modified tracked file(s), 40 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 3800bda · 2026-08-18 · d2 d3 d5 evm polish report deck not checked
+- Working tree: 15 modified tracked file(s), 41 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `3800bda 2026-08-18 d2 d3 d5 evm polish report deck not checked`
   - `4cad978 2026-08-17 evm d2 d5 btc two leg swap deck fix`
   - `d95d3f5 2026-08-15 meeting 10 evm d2 d5 unfinished`
   - `bc33734 2026-08-13 report video 13_08 18_49`
   - `2c78118 2026-08-13 report 13_08 16_37`
-  - `8003045 2026-08-12 report 12_08 16_57`
 
 ### Target parameter set — anchors parsed from source
 
@@ -244,7 +244,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8997** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8998** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -408,10 +408,10 @@ Groth16, (3) LAS + LaZer, from one pinned master seed.
   kept out of `all` only because it needs the vendored proof library (its skip is the library,
   not the API — `run_benchmark_suite.sh`'s own comment lumping it with the dead files is wrong).
 
-**⚠️ REAL CLIENTS, THREE STAGES.** Write-up + all numbers,
+**⚠️ REAL CLIENTS, FOUR STAGES.** Write-up + all numbers,
 scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
-`run_onchain_two_leg.sh` / `run_btc_regtest_carriage.sh` / `run_btc_las_node.sh` →
-`evidence/{onchain_twoleg,btc_regtest,btc_las_node}/latest`.
+`run_onchain_two_leg.sh` / `run_btc_regtest_carriage.sh` / `run_btc_las_node.sh` /
+`run_btc_two_leg.sh` → `evidence/{onchain_twoleg,btc_regtest,btc_las_node,btc_twoleg}/latest`.
 - **Two-leg EVM swap**, two anvils on two chain ids, whole of Fig. 1 incl. π verify + both
   PreVerify gates. **⚠️ What comes off the chain is the adapted signature σ₂, NOT the witness**
   (runner steps 9→10): σ₂ is recovered from leg B's
@@ -436,11 +436,30 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   still sees 0xbb as OP_SUCCESS and accepts everything, so patched-REJECTS/stock-ACCEPTS is what
   attributes a refusal to the new rule. Verdicts come from `generateblock submit=false`
   (**consensus**, not `testmempoolaccept`'s policy); only `TestBlockValidity failed:` counts.
+- **TWO-LEG SWAP ON THE PATCHED NODE (2026-08-18)** — `run_btc_two_leg.sh`, the Bitcoin twin
+  of the EVM two-leg run: Gen+π → PreSign/PreVerify both legs → Adapt B → mine B → recover
+  σ_B → Ext → Adapt A → mine A, over **two regtest chains** (never connected, diverge at
+  block 1). **Three rules with teeth.** (1) The swap MUST be generated under the node's pp
+  seed — `export_swap_vectors setup --pp-seed "$(las_btc_tool seed)"`, inherited via
+  `pp_seed.bin`; `A'` comes from the seed alone, so a mismatch puts signer and verifier on
+  different LAS instances. (2) σ_B is recovered by `bitcoin/tools/btc_recover_sig.py`, which
+  locates the sig/key split from the **tapleaf's `sha256(pk)` commitment**, never a known
+  length. (3) **Two provenance facts, never merged:** byte-equality with the Adapt output
+  shows the chain carried that signature; the *witness*'s ledger provenance comes from `Ext`
+  running as a separate program fed only the recovered bytes. Ext succeeding is **weaker**
+  than byte-equality — any `(c, ẑ+y')` with `A·y'=Y` passes it. Macros `btcSwap*` (never mix
+  with `btcLas*`/`btcMeas*`); PI=0 is recorded INCOMPLETE and does not move `latest`.
+  Honest path only — the tapleaf has **no refund branch**, so timeouts are not implemented.
 - **Framings that must not drift:** a patched node is **not** Bitcoin — "cannot settle on
   Bitcoin as it stands" stays true; implementing one of `BITCOIN_TX_STRUCTURE.md` §5.4's
-  three routes is **not** a position on which should be adopted; no security analysis, no
-  opcode costing, not wired into the swap. Bitcoin binds the transaction, **not the chain**
-  (BIP341 sighash has no chain id) — the EVM leg does; state the asymmetry.
+  three routes is **not** a position on which should be adopted; **the rule's security is
+  still unanalysed** — that caveat never lapses. Bitcoin binds the transaction, **not the
+  chain** (BIP341 sighash has no chain id) — the EVM leg does (`AdaptorSwapBound.legMessage`
+  hashes `block.chainid`); state the asymmetry.
+  ⚠️ **SUPERSEDED 2026-08-18, do not reinstate:** this bullet also said "no opcode costing,
+  not wired into the swap". Both were true once and are now **FALSE** — the cost is measured
+  (patched-client benchmark below) and `run_btc_two_leg.sh` settles a whole Fig. 1 swap on
+  the patched node. Purged from `app:btcnode` and the deck the same day.
 - **It corrected a report number:** `gen_bitcoin_tx_data.py` projected config 1 from the
   64-byte *compact* ECDSA signature, not a DER witness item, understating the classical
   baseline and inflating every PQ ratio. Fixed; macros regenerated.

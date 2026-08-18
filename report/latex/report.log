@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  18 AUG 2026 13:25
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  18 AUG 2026 19:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1086,7 +1086,7 @@ Overfull \hbox (76.65977pt too wide) in paragraph at lines 778--787
  [] 
  []
 
-[77] [78]) (./report.bbl [79]
+[77] [78] [79]) (./report.bbl [80]
 Underfull \hbox (badness 10000) in paragraph at lines 19--27
 []\T1/lmr/m/n/12 (+20) Bitcoin Core de-vel-op-ers.  Trans-ac-tion re-lay and mi
 n-ing pol-
@@ -1104,15 +1104,15 @@ Underfull \hbox (badness 10000) in paragraph at lines 19--27
 licy / policy . h$[]\T1/lmr/m/n/12 (+20) ;
  []
 
-[80
+[81
 
-] [81]
+] [82]
 Underfull \hbox (badness 4366) in paragraph at lines 130--134
 []\T1/lmr/m/n/12 (+20) Andrew Poel-stra.  Script-less scripts.  Pre-sen-ta-tion
 , Mi-lan Bit-
  []
 
-) [82] (./report.aux)
+) [83] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1122,14 +1122,14 @@ L3 programming layer <2024-01-22>
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 6464EC4539347864867C63A458AC21D5;11737.
+(rerunfilecheck)             Checksum: 461E7E44784E0A58F5BB951E1E6222B3;11737.
  ) 
 Here is how much of TeX's memory you used:
- 29185 strings out of 476182
- 528597 string characters out of 5795595
+ 29196 strings out of 476182
+ 528742 string characters out of 5795595
  2185975 words of memory out of 5000000
- 49786 multiletter control sequences out of 15000+600000
- 763543 words of font info for 384 fonts, out of 8000000 for 9000
+ 49791 multiletter control sequences out of 15000+600000
+ 763741 words of font info for 386 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,14n,87p,1003b,2174s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1153,10 +1153,10 @@ ts/type1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb>
 /share/texmf/fonts/type1/public/lm/lmtt8.pfb></usr/share/texmf/fonts/type1/publ
 ic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/sy
 mbols/msbm10.pfb>
-Output written on report.pdf (82 pages, 980818 bytes).
+Output written on report.pdf (83 pages, 983829 bytes).
 PDF statistics:
- 1815 PDF objects out of 2073 (max. 8388607)
- 1350 compressed objects within 14 object streams
- 347 named destinations out of 1000 (max. 500000)
+ 1824 PDF objects out of 2073 (max. 8388607)
+ 1358 compressed objects within 14 object streams
+ 349 named destinations out of 1000 (max. 500000)
  112622 words of extra memory for PDF output out of 128383 (max. 10000000)
 

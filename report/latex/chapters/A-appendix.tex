@@ -822,11 +822,42 @@ a key the output never committed to. Every one was refused by the patched node a
 by the stock node, which attributes the refusals to the new rule rather than to some other
 defect.
 
+\paragraph{A whole swap, not a single spend.}
+Verifying one signature is not settling a swap. The property the protocol exists for is that
+the party who does \emph{not} hold the witness --- here $u_2$, since $u_1$ generates $(Y,y)$
+and holds $y$ throughout --- obtains it only from what the counterparty published. That was
+put to the patched client too, across two regtest chains sharing no coins and diverging from
+their first block. Each leg's signed message is its own transaction digest \cite{bip341}, so
+it commits to that leg's input, value and recipient; the two digests differ, which is what
+stops one signature settling both. \textsc{PreSign} and \textsc{PreVerify} run on both legs,
+$u_1$ adapts leg~B and settles it, and the adapted signature is then read back out of the
+\emph{mined} witness --- its boundary located by the key hash the funding output committed to
+rather than by an assumed signature length. Leg~A is adapted with the recovered witness and
+settles on the other chain. Each leg is \btcSwapLegVsize\,vB, \btcSwapLegWeight\,WU and
+\btcSwapItems{} witness items.
+
+Two separate facts carry the provenance, and they should not be merged. The recovered
+signature is \btcSwapRecoveredBytes\,bytes and byte-identical to what \textsc{Adapt}
+produced, which establishes that the chain carried exactly that signature and that the
+recovery read it faithfully. What attributes leg~A's \emph{witness} to the ledger is
+different: \textsc{Extract} runs as a separate program, given only the recovered bytes as an
+argument and unable to reach the copy the adapting party held. \btcSwapControls{} negative
+controls were refused by the patched node and accepted by the stock one, among them the
+cross-leg case --- leg~B's settlement signature presented on leg~A. Evidence:
+\texttt{evidence/btc\_twoleg/}.
+
+One asymmetry with the Ethereum settlement of \cref{tab:onchain} is worth stating, since it
+is a property of the venue rather than of the scheme. Bitcoin binds the transaction, not the
+chain: the digest of \cite{bip341} carries no chain identifier, whereas the Ethereum escrow's
+message is derived from \texttt{block.chainid} among other state. Offering leg~B's settled
+transaction to the other chain is therefore refused because that coin does not exist there
+--- which evidences two separate ledgers, and not a signature bound to a chain.
+
 Three limits travel with this. A patched node is not Bitcoin, so the claim that
 configurations~2 and~3 cannot settle on Bitcoin as deployed is unaffected. Implementing one
 of the routes sketched in \cref{sec:res-stage2} demonstrates feasibility and takes no
 position on which route should be adopted. And the exercise is functional: no security
-argument is offered for the new rule, and it is not wired into the swap protocol.
+argument is offered for the new rule.
 
 \paragraph{What the rule charges a validating node.}
 Changing a consensus rule buys something and charges something, and the charge falls on every

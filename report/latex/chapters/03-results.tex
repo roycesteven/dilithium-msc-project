@@ -788,9 +788,9 @@ payment: they are properties of lattice signature sizes, not of adaptor signatur
 lattice objects --- refused by default relay policy, yet consensus-valid and mined --- but
 verifies nothing: an ordinary Schnorr signature authorises it. Adding one consensus
 rule, an \texttt{OP\_SUCCESS} opcode \cite{bip342} over the byte interface of
-\cref{sec:serialize}, gives a node mining a spend with no elliptic-curve signature, all
-\btcLasControls{} mutations tried being refused by it and accepted by an unmodified node ---
-the control attributing the refusals to the new rule. The blocker is a consensus rule, not
+\cref{sec:serialize}, gives a node settling a two-leg swap with no elliptic-curve
+signature, \btcSwapControls{} mutations tried being refused by it and accepted by an
+unmodified node --- the control attributing the refusals to the new rule. The blocker is a consensus rule, not
 engineering. Its cost was measured: one verification runs
 \btcLasVerifyUs\,$\mu$s against the curve baseline it is compared with, a BIP340 Schnorr
 check's \btcSchnorrVerifyUs\,$\mu$s --- \btcLasRatioSchnorr$\times$ --- and a signature that
