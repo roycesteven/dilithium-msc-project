@@ -217,18 +217,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-19 12:45 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-19 14:04 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD ea09bdf · 2026-08-18 · report deck btc full two leg update
-- Working tree: 13 modified tracked file(s), 50 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 0f6c914 · 2026-08-19 ·  mcr deck
+- Working tree: 12 modified tracked file(s), 43 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `0f6c914 2026-08-19  mcr deck`
   - `ea09bdf 2026-08-18 report deck btc full two leg update`
   - `3800bda 2026-08-18 d2 d3 d5 evm polish report deck not checked`
   - `4cad978 2026-08-17 evm d2 d5 btc two leg swap deck fix`
   - `d95d3f5 2026-08-15 meeting 10 evm d2 d5 unfinished`
-  - `bc33734 2026-08-13 report video 13_08 18_49`
 
 ### Target parameter set — anchors parsed from source
 
@@ -579,22 +579,24 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
 **On-chain verification (EVM) — the baseline, retained as evidence.** `evm/src/LASVerifier.sol`,
 a complete native verifier over vendored ZKNox ETHDILITHIUM primitives, validated against C and
 bound by a fund-time `keccak256(A′,t,M)` commitment; its cost is far above EIP-7825's cap.
-Naysayer (optimistic) variant = **negative result**: honest path fits, the `naysayDigest` fraud
-proof does not, and an unmineable fraud proof is not one. ⚠️ Wang explicitly suggested
-adapting Naysayer (M7 08:59); M8 §12 keeps it as *discussion of a more advanced solution*.
-Project rule: retain the measured negative result; do not silently delete it. Gas comes from a
-captured `forge --gas-report` log — charts via `plot_onchain_gas.py`, macros via
-`gen_report_data.py`, whose parser is **contract-aware** (a bare `claim` silently bound the
-test mock `Rejector.claim`). ⚠️ Until 2026-08-19 `app:naysayer` hand-typed Royce's spoken
-M7 figures, matching no run — the fix for a wrong number is the macro, never deleting the
-result. ⚠️ Binding fraud-proof path is **`naysayDigest`, NOT `naysayWprime`** — true for the
-tested vectors only, since execution gas is data-dependent. Both source comments previously
-guessed `naysayWprime` was the binding path; the test header additionally used the old
-EIP-2028-style 16/4 calldata accounting instead of EIP-7623.
-**⚠️ Meeting 7 is NOT retracted by the one-transaction result above** — the Bitcoin/UTXO pivot
-also rests on fees-not-gas-limits, heavy work staying off-chain, and adaptor swaps being used on
-UTXO chains in practice; on-chain LAS stays orders of magnitude above a classical `ecrecover`
-claim. Do not re-open Stage 2's venue. Detail: `docs/03-results/GAS_LIMIT_INVESTIGATION.md`,
+⚠️ **NAYSAYER IS OUT OF THE DISSERTATION (Royce, 2026-08-19) — "tidak ada value nya".** Removed
+from Ch.3/4/5, `app:naysayer` deleted, all `gasNaysay*` macros dropped. **SUPERSEDES** the
+2026-08-19 rule "retain the measured negative result" written earlier the same day — do not quote
+it back. Contract, tests and `evidence/onchain/` **stay**; a Naysayer figure reaching the report
+does not. Context, so the decision is not re-litigated: Wang suggested adapting it (M7 08:59) and
+M8 §12 filed it as *discussion of a more advanced solution*; Royce overrode. Also settled while
+removing it — keep for the source, which still holds it: binding fraud-proof path is
+**`naysayDigest`, NOT `naysayWprime`** (true for the tested vectors only, execution gas being
+data-dependent); both source comments guessed the reverse and the test header used EIP-2028's
+16/4 calldata model instead of EIP-7623. Gas macros come from `gen_report_data.py`, whose parser
+is **contract-aware** — a bare `claim` silently bound the test mock `Rejector.claim`.
+**⚠️ THE EVM IS A COMPARATIVE STUDY, NOT A FAILED FIRST VENUE (Royce, 2026-08-19).**
+eprint 2020/845 §4 *assumes* UTXO ("we assume an Unspent Transaction Output (UTXO)-based
+blockchain like Bitcoin"), so UTXO is the paper's own setting and the EVM is what a gas-metered
+venue costs by comparison. "Change of venue" / "first venue failed" / "why the venue was changed"
+are **purged report-wide**; do not reintroduce them. Meeting 7 still stands on fees-not-gas-limits,
+heavy work off-chain, and adaptor swaps being used on UTXO chains in practice; on-chain LAS stays
+orders of magnitude above a classical `ecrecover` claim. Do not re-open Stage 2's venue. Detail: `docs/03-results/GAS_LIMIT_INVESTIGATION.md`,
 `docs/02-methodology/EVM_TX_STRUCTURE.md`. **IPFS off-chain storage** = **fallback, NOT adopted**
 (`docs/04-evaluation/IPFS_OFFCHAIN_STORAGE.md`): the swap needs none of it (π is a direct
 party-to-party message), and for the optimistic verifier a data-availability failure becomes a
@@ -666,8 +668,8 @@ binary); runner `run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`, 
   (corrected 2026-08-17: "must target Y, *not the signature*" overshot the data — the payload
   still falls to `\mldsaPayloadRatio`, so the signature is smaller, not irrelevant).
 
-**Statement compression and proof amortisation — both RUN, both CLOSED.** Quote the write-ups
-for numbers, never this file.
+**Statement compression (CLOSED) and proof amortisation (RUN; verdict NARROWED 2026-08-19).**
+Quote the write-ups for numbers, never this file.
 - **Statement compression** — `ref/test/test_statement_compress.c` (+`{2,3,5}`, in `all`),
   `run_statement_compress.sh` → `evidence/statement_compress/latest`, write-up
   `docs/03-results/STATEMENT_COMPRESSION_EXPERIMENT.md`. Hard gate: the full-statement control
@@ -679,8 +681,11 @@ for numbers, never this file.
   TESTED"**, never "at every depth". **Do not reopen `Y` compression
   inside this construction; the open question is a different hard relation whose statement is
   smaller by design.**
-- **Proof amortisation — BOTH provers measured; question CLOSED, batching fails on both for
-  opposite reasons.** Groth16: `bench_amortise.rs` + `BatchedRelationCircuit` (one relation
+- **Proof amortisation — BOTH provers measured. ⚠️ "batching fails on both" is SUPERSEDED
+  (2026-08-19) and must not be restated:** Groth16's `1/k` lands on a cost that was already
+  negligible, but for LaZer only the **compute** penalty is measured — the proof-size result is
+  withdrawn (below), so the trade-off cannot be weighed and no overall failure verdict is
+  warranted for it. Groth16 harness: `bench_amortise.rs` + `BatchedRelationCircuit` (one relation
   shared by single and batched circuits + a per-batch tamper check, so a batch cannot prove
   something weaker) → `evidence/amortise/latest` (⚠️ three runs that day — **`latest` is the one
   to quote**). LaZer: `ref/relation_zk_batch.{c,h}` (block-diagonal = the conjunction of k copies
@@ -689,9 +694,16 @@ for numbers, never this file.
   (SageMath at `~/micromamba/envs/lazer-sage/bin/sage`); **k=1 dispatches to the COMMITTED
   `las_pi_params`**. Write-up `PROOF_AMORTISATION_EXPERIMENT.md`. **Framings:** Groth16's proof
   is constant in k so per-swap bytes fall `1/k` **but bytes were never the bottleneck** — a
-  statement about *Groth16*, not about batching; LaZer's proof/swap drops but per-swap
-  prove+verify gets several times worse (superlinear). ⚠️ **NOT wired into the swap**; batched
-  param sets **not independently reviewed**, no security claim about batching.
+  statement about *Groth16*, not about batching; for LaZer, at the **k ≤ 8 actually tested**,
+  per-swap prove+verify gets several times worse — never call that *superlinear*, no scaling law
+  was established. ⚠️ **The LaZer proof-SIZE direction is NOT a usable finding**:
+  `bench_lazer_amortise.c` declares `prooflen` once (l.116), overwrites it every repetition
+  (l.123) and records the **last** one (l.163) while timings get mean±SD — and LaZer Huffman-codes
+  the Gaussian responses, so length follows the sampled values. One sample per k, not a statistic.
+  ⚠️ **NOT wired into the swap**; batched param sets **not independently reviewed**, no security
+  claim about batching. ⚠️ **OUT OF THE DISSERTATION (Royce, 2026-08-19) — "tidak ada value nya".**
+  Code, params and `evidence/amortise/` **stay**; batching reaches neither report nor deck. Ch. 5
+  now names **two** optimisations, not three.
 - **Not attempted, by ruling not by shortfall:** *analysing the ML-DSA variant's security* is
   out of scope (a reduction, not code). It stays in Ch. 5. ⚠️ Never restore the superseded
   "needs a SHAKE256 precompile / Merkle dispute / succinct proof" prediction — unevidenced, and
@@ -815,10 +827,15 @@ all**, because Wang ruled the un-refined direction stays *discussion without act
 ⚠️ Never "helpfully" add those figures back — **the appendix is part of the report**, so an
 "appendix-only, fully caveated" LaBRADOR table is the same violation, and the appendix being
 word-count-free is not a reason (a reviewing model proposed exactly this on 2026-08-11). Never
-write "loses on every axis" either (only three axes were measured). ⚠️ §reflection-achieved must NOT say all three optimisations closed their
-direction: compression and amortisation did, the succinct-PQ one is closed **on cost, at this
+write "loses on every axis" either (only three axes were measured). ⚠️ §reflection-achieved names
+**TWO** optimisations since 2026-08-19 (amortisation removed) and must NOT say both closed their
+direction: statement **truncation** did — say *truncation*, not "compression", since the seed
+candidate succeeds and leaks the witness — while the succinct-PQ one is closed **on cost, at this
 statement size, through our encoding** — the same section's own bullet says what is still open,
-and the two must agree. LaBRADOR size is labelled the library's estimate;
+and the two must agree. ⚠️ eprint 2020/845 asks of π **knowledge of a short witness to Y** (§4.1)
+and notes π is costly in communication but adds no *on-chain storage* cost; it does **not** require
+succinctness (that was this project's own goal), and "NIZK" is its wording in the **PCN** section,
+not §4.1 — never attribute succinctness or the §4.1 ZK label to the paper. LaBRADOR size is labelled the library's estimate;
 proof-size range explained in `tab:stage2-comm`'s caption (LaZer Huffman-codes the Gaussian
 responses, so length follows the sampled values); `tab:classical`/`tab:onchain` captions cut
 with the mechanism moved to `app:methoddetail` (each fell from a **full page to ~68%**, not

@@ -261,8 +261,14 @@ pre-SegWit chain the same signature in `scriptSig` would cost 4 WU/byte.
 inputs fit in one standard transaction. This is the answer to "should we have a limit
 for this?" — Bitcoin does have one, it is a policy weight limit rather than a gas
 limit, and a single post-quantum swap settlement is nowhere near it. Contrast the EVM,
-where native verification measured 56.6 M gas against a 30 M block limit — infeasible
-by roughly 1.9x on its own.
+where the *baseline* native verifier measured 56.6 M gas — **≈3.4× EIP-7825's
+per-transaction cap of 16,777,216** — so it cannot run as one transaction. Note the
+form of that ratio: the measured cost *is* ≈3.4 times the cap; it does not *exceed* it
+by 3.4×. The binding EVM constraint is that per-transaction cap, **not** the block gas
+limit; comparing against the block limit is the framing this project already retracted
+(`docs/03-results/LAS-08-performance-measured.md`). The later *optimised* verifier does
+fit one transaction at D3 — see `docs/03-results/GAS_LIMIT_INVESTIGATION.md` §7 for the
+three-way D2/D3/D5 state.
 
 ### 5.4 The obstacles that remain
 

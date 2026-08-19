@@ -64,14 +64,13 @@ converted an apparent size deficit into a precisely attributed one. And counting
 rejection attempts rather than inferring them from a timing ratio corrected a materially
 wrong earlier figure, a lesson now institutionalised as a gate every run must pass.
 
-A third result belongs here because it reads as failure and is not. Three optimisations
+A third result belongs here because it reads as failure and is not. Two optimisations
 this dissertation could have left as speculation --- compressing the statement inside the
-construction, amortising the proof across a batch, and trying the relation under a
-succinct post-quantum system --- were implemented and measured instead, and none paid
-off (\cref{sec:future}). An untested future-work suggestion costs
-nothing to write and tells a reader nothing; each of these instead names the mechanism
-that defeats it and closes two of the three directions, which is worth more than the
-optimisation would have been.
+construction, and trying the relation under a succinct post-quantum system --- were
+implemented and measured instead, and neither paid off (\cref{sec:future}). An untested
+future-work suggestion costs nothing to write and tells a reader nothing; each instead
+names the mechanism that defeats it, closing the first direction outright and the second
+at the scale measured here, which is worth more than the optimisation would have been.
 
 \subsection{What fell short}
 \label{sec:reflection-shortfalls}
@@ -107,11 +106,12 @@ stated engineering setting, not a parameter set anyone should deploy.
 
 The clearest change is \textbf{target selection for the application}. Substantial effort
 went into taking the verifier on-chain in Solidity before the gas cost was known to be
-prohibitive. The framing was wrong as well as the venue: the project asked ``can a
-post-quantum signature be verified on chain?'' when what mattered was ``what dominates a
-post-quantum swap?'' --- and the answer never touches a chain at all. Beginning on the
-UTXO side would have reached that sooner, with the EVM measurement retained for what it
-does establish: why the venue was changed.
+prohibitive. The framing was wrong: the project asked ``can a
+post-quantum signature be verified on chain?'' when what mattered was where a
+post-quantum swap actually spends --- which the measurements answer per configuration and
+per metric (\cref{sec:res-stage2}), not with a single figure. Starting from the UTXO
+setting \cite{esgin2020post} assumes would have reached that sooner, with the EVM
+measurement retained for what it does establish: what a gas-metered venue charges.
 
 Second, \textbf{measurement discipline would come first}: both early artefacts --- the
 biased acceptance estimate and the asymmetric timed loops --- followed from building the
@@ -133,14 +133,14 @@ days, not weeks.
         on the exact relation. Deriving $Y$ from its seed compresses it completely and
         hands over the witness. What is open is not a better encoding but a different hard
         relation whose statement is small by construction.
-  \item \textbf{Reduce the proof.} Both routes proposed here were measured, and both fail
-        at this scale. Batching amortises the wrong
-        cost --- Groth16's proof \emph{size} is already constant, and size was never the bottleneck,
-        while the LaZer proof shrinks per swap only by making proving and verification
-        several times worse. The second --- a system succinct, post-quantum and
-        zero-knowledge at once, as \cite{esgin2020post} requires of $\pi$ --- was
-        measured under LaBRADOR, which in this encoding loses to the deployed prover on
-        size, by that library's own estimate rather than a packed proof, and on time
+  \item \textbf{Reduce the proof.} The route proposed here was measured and fails at this
+        scale. What \cite{esgin2020post} asks of $\pi$ in the swap is knowledge of a short
+        witness to $Y$, and it observes that $\pi$, though costly in communication, is
+        exchanged only between the parties and so adds no on-chain storage cost; hiding
+        the witness is required by the swap itself, and making the proof \emph{succinct}
+        as well was this dissertation's own goal. Measured under LaBRADOR, that encoding
+        loses to the deployed prover on size --- by the library's own estimate rather than
+        a packed proof --- and on time
         outright: succinctness
         is asymptotic, and one instance of this relation is too small to reach it. What
         is open is a construction whose proof is small at \emph{this} scale.

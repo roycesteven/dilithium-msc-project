@@ -790,7 +790,7 @@
     <!-- ============================ 11 =========================== -->
 
     <!-- ============================ 12 =========================== -->
-    <section class="slide" data-part="results" data-title="What I got wrong" data-time="0:45" data-notes="Third question: will a real chain take it? Here I want to be straight about the things I got wrong, because each was corrected by measurement rather than argument. I believed local optimisation could not bring on-chain verification under the per-transaction gas limit — that was asserted, not measured, and re-expressing the same predicate closed it: a real client mined a whole claim — full verification plus the escrow release — at {{gasOptCapPct}} percent of the cap at Dilithium-3, and one set down, verification on its own is charged at {{gasDTwoCapPct}} percent. I believed the base signature had to be simplified for the adaptor to work — building it a third time on the full FIPS 204 ML-DSA path showed PreSign and PreVerify are genuinely new algorithms, but Verify is not: the stock verifier accepts the adapted signature. And three optimisations I could have left as future-work suggestions were implemented and closed instead — compressing the statement is invisible to the adaptor and fatal at Extract, batching amortises the wrong cost, and an optimistic verifier leaves a fraud proof that cannot be mined. An untested suggestion costs nothing to write and tells a reader nothing.">
+    <section class="slide" data-part="results" data-title="What I got wrong" data-time="0:45" data-notes="Third question: will a real chain take it? Here I want to be straight about the things I got wrong, because each was corrected by measurement rather than argument. I believed local optimisation could not bring on-chain verification under the per-transaction gas limit — that was asserted, not measured, and re-expressing the same predicate closed it: a real client mined a whole claim — full verification plus the escrow release — at {{gasOptCapPct}} percent of the cap at Dilithium-3, and one set down, verification on its own is charged at {{gasDTwoCapPct}} percent. I believed the base signature had to be simplified for the adaptor to work — building it a third time on the full FIPS 204 ML-DSA path showed PreSign and PreVerify are genuinely new algorithms, but Verify is not: the stock verifier accepts the adapted signature. And two optimisations I could have left as future-work suggestions were implemented and measured instead — truncating the statement is invisible to the adaptor and fatal at Extract at every depth tested, which closes that direction; and a succinct post-quantum proof loses to the prover already deployed at this relation size, because succinctness is asymptotic and one instance of this relation is far too small. An untested suggestion costs nothing to write and tells a reader nothing.">
       <div class="eyebrow">Corrected by measurement, not by argument</div>
       <!-- The headline used to promise THREE overturned beliefs and show two.
            Only two were beliefs measurement overturned; the third item is three
@@ -806,11 +806,10 @@
           <div class="figbox" style="flex:1"><img alt="On-chain settlement gas for the four claim paths, against the EIP-7825 cap" src="{{FIG_ONCHAIN}}"></div>
           <div class="card" style="flex:none;gap:7px">
             <h3>&ldquo;That can be future work&rdquo;</h3>
-            <p class="on">Three optimisations I could have listed as suggestions, run and closed instead:</p>
+            <p class="on">Two optimisations I could have listed as suggestions, run and closed instead:</p>
             <div class="chipline">
-              <span class="chip ad">statement compression — fails at Extract, every depth tested</span>
-              <span class="chip ad">batching — amortises the wrong cost</span>
-              <span class="chip ad">optimistic verifier — its fraud proof cannot be mined</span>
+              <span class="chip ad">statement truncation — fails at Extract, every depth tested</span>
+              <span class="chip ad">succinct proof — loses to the deployed prover at this relation size</span>
             </div>
           </div>
         </div>

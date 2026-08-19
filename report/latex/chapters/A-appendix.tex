@@ -406,49 +406,6 @@ lock by a timeout height --- additionally carries two asserted scenarios: the
 cross-chain happy path, and a timeout/refund in which a premature refund is rejected and
 both parties recover their funds.
 
-\section{The optimistic (Naysayer) on-chain verifier}
-\label{app:naysayer}
-
-Because the first native Solidity verifier exceeds the per-transaction gas cap
-(\cref{sec:res-app}), an \emph{optimistic} alternative was also implemented and
-measured: \texttt{LASNaysayer}, a poqeth-inspired Naysayer verifier
-\cite{kysil2025poqeth} for the lattice setting --- poqeth itself implements only
-hash-based and multivariate schemes and rules Dilithium out on public-key size.
-Instead of re-executing verification, the contract accepts a settlement optimistically
-and lets any party dispute a single failing step within a challenge window.
-Verification is decomposed into three locally checkable invariants --- the response
-norm, each recomputed commitment coefficient (with the challenge derived on chain), and
-the final hash --- so a dispute recomputes only one coefficient by schoolbook
-convolution and never runs the number-theoretic-transform batch. An adversarial suite
-of nine tests passes, covering soundness (no dispute voids a valid settlement),
-completeness for each fault type (including a C-exported pure hash-fault vector against
-which only the hash dispute succeeds), the challenge-window and replay guards, input
-validation, and pull-payment isolation against a hostile recipient.
-
-The result is deliberately reported as mixed. Honest settlement is cheap: an optimistic
-claim costs approximately \gasNaysayClaimM{} million gas and finalisation
-\gasNaysayFinalize{}, because full LAS verification is not executed on the happy path
---- the claim binds the submitted signature and commitment trace, checks their shape,
-and opens the challenge window. The binding cost is instead the worst-case fraud proof.
-The norm dispute costs \gasNaysayNorm{} gas; the commitment dispute approximately
-\gasNaysayWprimeM{} million, in a baseline that hands the contract the whole public
-matrix $\mathbf{A}'$ rather than opening the single disputed row of it; and the hash
-dispute approximately \gasNaysayDigestM{} million. Every figure here is the maximum
-column of the same \texttt{--gas-report} table as \cref{tab:onchain}, so these disputes
-and the claim paths there are mutually comparable. All are also \emph{execution} gas,
-so the per-transaction totals --- adding the fixed intrinsic charge and the calldata
---- are strictly larger: $\mathbf{A}'$ alone is \gasNaysayMatrixKB{}\,kB of
-coefficients, \emph{derived} from the parameter set and before ABI encoding, and the
-same proof additionally carries the signature, the commitment trace and the public key.
-The hash dispute alone is therefore roughly \gasNaysayDigestCapFactor{}$\times$ the
-EIP-7825 cap of $16\,777\,216$ on execution gas before any calldata, because it must
-run a complete SHAKE256 in Solidity, which is not an EVM-native hash --- unlike the
-Keccak-based schemes of \cite{kysil2025poqeth}. The optimistic mode thus moves cost off
-the honest path but does \emph{not}, in this baseline, bring the worst-case dispute
-within a single transaction. Whether restructuring the dispute path would close that
-gap, as restructuring the direct verifier later closed its own (\cref{sec:res-app}),
-was not evaluated.
-
 \section{The six implementation challenges}
 \label{app:challenges}
 

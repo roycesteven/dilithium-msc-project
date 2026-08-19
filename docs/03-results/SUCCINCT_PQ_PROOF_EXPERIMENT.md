@@ -41,10 +41,12 @@ verifier-constrained setting.
 The amortisation experiment (`PROOF_AMORTISATION_EXPERIMENT.md`) closed the "make the
 existing proof cheaper" direction for **both** deployed provers:
 
-- **Groth16** batches to a perfect `1/k`, but on a 128 B proof that was never the
-  bottleneck;
-- **LaZer** batches to a real 43% saving on the object that *is* the bottleneck, but pays
-  3.33× per-swap compute for it.
+- **Groth16**'s proof is constant at 128 B whatever `k`, so **proof bytes per swap** fall as
+  `1/k` — on an object that was never the bottleneck;
+- **LaZer** pays 3.33× per-swap compute at `k = 8`: across the tested `k ≤ 8`, per-swap
+  prove+verify became several times worse. ⚠️ Its apparent proof-size *saving* is **withdrawn**:
+  that benchmark records only the last repetition's proof length per `k`, so there is no usable
+  size result until it is re-run (`PROOF_AMORTISATION_EXPERIMENT.md` §4). Do not cite it here.
 
 What that leaves is not a cheaper instance of either system but a different *kind*: one that
 is **post-quantum** (Groth16 is not) **and** succinct (LaZer is not — its proof is
@@ -279,10 +281,13 @@ runner's header for the one-time setup.
 ## 7. A second follow-up, also not taken
 
 **Batching should favour a STARK, and that is directly testable against a measured
-baseline.** A STARK's proof grows polylogarithmically in trace length, so `k` instances
-should cost far less than `k` proofs — whereas LaZer's batched proof grew sublinearly but
-its *compute* grew superlinearly (3.33× per swap at `k=8`). A batched role-A STARK is the
-one configuration where the succinct route might beat both.
+baseline.** A STARK's proof *size* grows polylogarithmically in trace length, so `k`
+instances should produce far fewer bytes than `k` separate proofs — a **size** expectation
+only, since proving time grows with trace length and nothing here predicts a compute saving.
+LaZer's per-swap compute meanwhile became several times worse across the tested `k ≤ 8`
+(3.33× at `k=8`), with no usable measurement of how its batched proof size behaves (§1). A
+batched role-A STARK is one configuration where the succinct route might do better; whether
+others exist has not been examined.
 
 It is not implemented here. The AIR is fixed at one instance: `EV_LEN = 4096` with 12 live
 passes of 16, so `k = 2` needs 22 witness passes and would require `EV_LEN = 8192` and

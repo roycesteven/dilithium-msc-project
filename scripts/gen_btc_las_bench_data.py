@@ -26,6 +26,24 @@ HEADER = (
     "%   (a) the security of the consensus modification is NOT analysed;\n"
     "%   (b) the security levels are NOT matched -- the node runs Simplified Dilithium-III\n"
     "%       while secp256k1 matches Dilithium-II, so the ratios OVERSTATE the rule's cost.\n"
+    "%\n"
+    "% \\btcLasSerialRateK IS **DERIVED, NOT MEASURED** -- the reciprocal of the MEASURED\n"
+    "% accept-path mean above, in THOUSANDS of verifications per second.  It IS legitimately\n"
+    "% a serial verification rate (a verification throughput).  What it is NOT:\n"
+    "%   (i)   NOT a network or transaction throughput.  tx/s depends on propagation, policy\n"
+    "%         and the fee market.  Never multiply this by the block-weight ceiling from\n"
+    "%         gen_bitcoin_tx_data.py -- that manufactures a tx/s prediction out of two\n"
+    "%         quantities each of which is explicitly not one.\n"
+    "%   (ii)  NOT whole-node capacity, in EITHER direction.  Two unmeasured effects pull\n"
+    "%         opposite ways: Core validates scripts in PARALLEL across a script-check pool\n"
+    "%         (pushes aggregate verification up), while a node also parses, touches the\n"
+    "%         UTXO set, runs the other consensus checks and schedules work (pushes per-input\n"
+    "%         capacity down).  The net is UNQUANTIFIED here -- assert neither direction.\n"
+    "%   (iii) NOT error-barred.  The reciprocal of a mean is not the mean of a rate, so the\n"
+    "%         measured SD does not transform linearly.  Quote no +/- on it.\n"
+    "%   (iv)  ACCEPT path only, one predicate in isolation.\n"
+    "% Emitted to 2 dp in thousands, not as a 4-digit integer: the underlying mean carries an\n"
+    "% SD of roughly a couple of percent and does not support 4 significant figures.\n"
 )
 
 
@@ -81,6 +99,12 @@ def main() -> None:
     # abort the pipeline for no real reason.
     ratio_reject = float(s["las_reject_us"]) / float(s["las_accept_us"])
 
+    # DERIVED, never measured -- reciprocal of the measured accept-path mean, in THOUSANDS
+    # of verifications per second. Dividing 1000 (not 1e6) by a microsecond figure yields
+    # thousands-per-second directly. Read the HEADER before using it in prose: it is a
+    # serial verification rate, not a network throughput and not whole-node capacity.
+    serial_rate_k = 1000.0 / float(s["las_accept_us"])
+
     lines = [HEADER]
     add = lines.append
     add(f"\\newcommand{{\\btcLasBenchReps}}{{{s['reps']}}}")
@@ -95,12 +119,15 @@ def main() -> None:
     add(f"\\newcommand{{\\btcLasRatioSchnorr}}{{{fmt(s['ratio_schnorr'], 1)}}}")
     add(f"\\newcommand{{\\btcLasRatioEcdsa}}{{{fmt(s['ratio_ecdsa'], 1)}}}")
     add(f"\\newcommand{{\\btcLasRejectRatio}}{{{ratio_reject:.2f}}}")
+    add(f"\\newcommand{{\\btcLasSerialRateK}}{{{serial_rate_k:.2f}}}")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text("\n".join(lines) + "\n")
     print(f"wrote {args.out.relative_to(repo)} from {summary.relative_to(repo)}")
     print(f"  LAS verify {s['las_accept_us']} us  vs Schnorr {s['schnorr_accept_us']} us "
           f"({s['ratio_schnorr']}x), reject/accept {ratio_reject:.2f}")
+    print(f"  derived serial rate {serial_rate_k:.2f}k verifications/s "
+          f"(accept path; NOT a network throughput -- see the header caveats)")
 
 
 if __name__ == "__main__":

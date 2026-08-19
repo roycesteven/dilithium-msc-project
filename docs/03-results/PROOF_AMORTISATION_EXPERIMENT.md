@@ -3,20 +3,20 @@
 **Status: run 2026-08-04 for BOTH provers**, k = 1, 2, 4, 8 with 5 repetitions each.
 Evidence: `evidence/amortise/latest/` (Groth16) and `evidence/lazer_amortise/latest/` (LaZer).
 
-**Headline — batching fails for both provers, for opposite reasons.** That is the result,
-and it closes the question rather than deferring it.
+**Headline — Groth16 does not improve its bottleneck; for LaZer, compute worsens across the
+tested `k ≤ 8`, while the proof-size effect is unresolved.**
 
-| | proof/swap at k=8 | compute/swap at k=8 | why it fails |
+| | proof/swap at k=8 | compute/swap at k=8 | reading |
 |---|---|---|---|
 | **Groth16** (config 2) | 128 → 16 B, a perfect `1/k` | flat (+32% proving) | the `1/k` is perfect but lands on a cost that **was already negligible** — 128 B beside a 4416 B statement and 6736 B signature |
-| **LaZer** (config 3) | 30723 → 17645 B, **0.57×** | **3.33× worse** | the saving lands on a cost that **does** matter, but is paid for in the one that matters **more** |
+| **LaZer** (config 3) | ⚠️ **no usable measurement** — see §4 | **3.33× worse** | the penalty falls on the cost that matters **most** for this configuration; the benefit it was meant to buy is unmeasured |
 
 Configuration 2 spends ~646 ms in `Prove(π)` — 97% of the whole swap and 47× the next phase
 — so shrinking its 128 B proof changes nothing. Configuration 3's proof genuinely is its
-dominant communication object, and batching does cut it by 43%; but its role-A proof is
-already **98.6% of end-to-end time**, and batching buys those bytes by making per-swap
-proving and verification **3.3× worse**. Trading 43% of the bytes for 3.3× the time makes
-the dominant cost worse to improve a subordinate one.
+dominant communication object, but whether batching shrinks it is **not established here**
+(§4); what *is* measured is that its role-A proof is already **98.6% of end-to-end time**,
+and that batching makes per-swap proving and verification **3.3× worse**. The measured 3.3×
+compute penalty therefore cannot presently be weighed against a reliable proof-size benefit.
 
 ---
 
@@ -146,15 +146,21 @@ committed; regenerate with `scripts/gen_lazer_batch_params.sh`, which needs Sage
 | 4 | 233.0 | 173.2 | 19047.8 | 0.62× |
 | 8 | 445.1 | 334.6 | 17644.6 | 0.57× |
 
-**The proof does shrink, and it is the first real saving in this whole direction.** LaZer's
-proof is *not* constant in `k` — it grows — but **sublinearly**, so per-swap size falls to
-**0.57× at k=8, a 43% saving** on configuration 3's dominant communication object. The
-measured sizes track the codegen's own predictions (31.3 / 47.7 / 78.1 / 144.7 KiB) closely.
+⚠️ **THE PROOF-SIZE COLUMN IS NOT A FINDING — DO NOT QUOTE IT (2026-08-19).**
+`ref/test/bench_lazer_amortise.c` declares `prooflen` once per batch size (l.116), overwrites
+it on every repetition (l.123) and records only the **last** one (l.163), while the timings
+are properly aggregated as mean ± SD over the 5 repetitions (ll.164–165). LaZer Huffman-codes
+its Gaussian responses, so proof length follows the sampled values and varies run to run — the
+per-`k` byte counts above are therefore **one sample each, not statistics**. The
+`0.57×` / `43% saving` reading rests entirely on them and **is withdrawn pending a re-run** that
+aggregates length the way it aggregates time. Nothing below, in the report, or in
+`SUCCINCT_PQ_PROOF_EXPERIMENT.md` may cite it as a result.
 
-**But compute goes the other way, and further.** Per-swap prove+verify is **3.33× worse** at
-k=8 (prove 159 → 445 ms, verify 75 → 335 ms). LaZer's work grows **superlinearly** in the
-batch, so each extra instance costs more than the last — the opposite of Groth16, whose
-per-swap compute stayed roughly flat.
+**Compute goes the other way, and that part is measured properly.** Per-swap prove+verify is
+**3.33× worse** at k=8 (prove 159 → 445 ms, verify 75 → 335 ms): across the tested `k ≤ 8`,
+per-swap prove+verify became several times worse, the opposite of Groth16, whose per-swap
+compute stayed roughly flat. No scaling law is claimed — four points establish a direction over
+the range tested, not an asymptotic form.
 
 **For configuration 3 that settles it.** Its role-A proof is already 98.6% of end-to-end
 time, so the binding constraint is compute, not communication — and batching buys
@@ -203,9 +209,13 @@ rather than one warmed by earlier runs.
 - **Groth16 is not post-quantum.** It is configuration 2's prover, kept as the controlled
   comparison against LaZer (2 → 3 isolates the proof system). Its amortisation result is
   evidence about *batching*, not about the post-quantum configuration.
-- **Only k ∈ {1,2,4,8} has a generated parameter set.** The superlinear compute trend is
-  read off four points; a larger `k` might plateau, but it would have to plateau very hard
-  to reverse the verdict, since compute is already 3.3× worse at k=8.
+- **Only k ∈ {1,2,4,8} has a generated parameter set.** The compute trend is read off four
+  points, so it describes the tested range and is not a scaling law; a larger `k` might
+  plateau, but it would have to plateau very hard to reverse the verdict, since compute is
+  already 3.3× worse at k=8.
+- **Proof length is recorded once per `k`, not aggregated** — see the warning in §4. Until
+  that is fixed and re-run, this experiment has a measured *compute* result and no usable
+  *size* result.
 
 ## 8. Reproducing
 

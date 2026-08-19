@@ -575,33 +575,11 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
         m.append(("gasRatioFloor", "%.1f" % (onchain["claimLAS"] / onchain["claimClassical"])))
         m.append(("gasRatioVerified", "%.0f" % (onchain["claimLASVerified"] / onchain["claimClassical"])))
         m.append(("gasCapOver", "%.1f" % (onchain["claimLASVerified"] / cap)))
-        # Naysayer (optimistic) variant.  EVERY figure the appendix quotes is
-        # emitted here so no Naysayer number can be hand-typed again: the earlier
-        # draft carried the values SPOKEN in a supervisor meeting, and they match
-        # no run in evidence/onchain/.  Same MAX column as the rows above, so the
-        # honest path and the dispute paths stay mutually comparable with them.
-        if "optimisticClaim" in onchain:
-            m.append(("gasNaysayClaimM", "%.1f" % (onchain["optimisticClaim"] / 1e6)))
-        if "finalize" in onchain:
-            m.append(("gasNaysayFinalize", g("finalize")))
-        if "naysayNorm" in onchain:
-            m.append(("gasNaysayNorm", g("naysayNorm")))
-        if "naysayWprime" in onchain:
-            m.append(("gasNaysayWprimeM", "%.1f" % (onchain["naysayWprime"] / 1e6)))
-        if "naysayDigest" in onchain:
-            m.append(("gasNaysayDigestM", "%.1f" % (onchain["naysayDigest"] / 1e6)))
-            m.append(("gasNaysayDigestCapFactor",
-                      "%.1f" % (onchain["naysayDigest"] / cap)))
-        # Size of the RAW A' MATRIX PAYLOAD the commitment dispute carries -- a
-        # DERIVATION from the parameter set, not a measurement, and NOT the size
-        # of that dispute's calldata: WprimeProof also carries sig, wprime, t and
-        # the message, so the encoded calldata is substantially larger.  A'
-        # travels as WprimeProof.aprime, which LASNaysayer.sol declares as
-        # N_LAS*ELL polynomials of N coefficients, one uint256 word each.
-        _pt = params[TARGET]
-        m.append(("gasNaysayMatrixKB",
-                  "%d" % round(int(_pt["n"]) * int(_pt["ell"])
-                               * int(_pt["N"]) * 32 / 1000)))
+        # The Naysayer (optimistic) variant was REMOVED from the dissertation
+        # (Royce, 2026-08-19): contract, tests and evidence stay in the repo, but
+        # no Naysayer figure reaches the report, so no macro is emitted for one.
+        # Do not re-add gasNaysay* macros without re-adding the prose that cites
+        # them -- an unused macro is how a deleted result creeps back in.
         if "claimLASVerifiedOpt" in onchain:
             # same --gas-report table as the rows above, so directly comparable with them
             m.append(("gasLasOpt", g("claimLASVerifiedOpt")))

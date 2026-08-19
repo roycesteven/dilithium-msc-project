@@ -515,11 +515,9 @@ As a supporting check on deployability, native on-chain LAS verification was
 \emph{implemented} and measured on a real Solidity stack: one claim transaction running
 full verification and releasing one leg's escrow costs $\approx$\gasLasVerifiedM{} million
 gas (\cref{tab:onchain}; \cref{fig:onchain}), $\approx$\gasRatioVerified{}$\times$ the
-classical claim and over the EIP-7825 cap. An \emph{optimistic} (Naysayer) alternative
-makes the honest path cheap ($\approx$\gasNaysayClaimM{} million) but leaves a worst-case
-fraud proof at $\approx$\gasNaysayDigestM{} million, also over the cap, and a fraud proof
-that cannot be mined is not one (\cref{app:naysayer}).
-These measurements motivated taking the application to a UTXO chain.
+classical claim and over the EIP-7825 cap. The application itself is built on the UTXO
+ledger \cite{esgin2020post} assumes (\cref{sec:stage2method}); this measures what a
+gas-metered venue charges for the same verification.
 
 That figure measures one \emph{implementation}, not the scheme. A restructured verifier
 --- same parameters, bounds and challenge preimage, differing in how the computation is
@@ -532,7 +530,7 @@ Dilithium-III} for the 32-byte signed message and signature instance measured, w
 thin margin. Verification alone at \emph{Simplified Dilithium-II}, charged as one
 transaction, is \gasDTwoCapPct\% of the cap; at \emph{Simplified Dilithium-V} one
 transaction is exceeded, derived rather than measured (\cref{app:methoddetail}). The
-change of venue stands: the UTXO constraint
+contrast with the application's own venue remains: the UTXO constraint
 is a transaction \emph{weight} limit one settlement sits well inside
 (\cref{sec:res-txstruct}).
 

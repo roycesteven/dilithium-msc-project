@@ -88,13 +88,12 @@ time. The measurements are then defended from two independent directions --- a
 closed-form gate on the rejection rate, and re-measurement under a different compiler and
 an independent statistical harness.
 
-Objective~5 was met, but only after the first venue failed. On a local EVM a
+Objective~5 was met on the UTXO ledger \cite{esgin2020post} assumes, with a gas-metered
+venue measured against it. On a local EVM a
 \emph{complete}, validated native LAS verifier was measured at
 $\approx$\gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the EIP-7825
-per-transaction cap, and an optimistic variant then made honest settlement cheap while
-leaving a worst-case fraud proof that also exceeds it. That negative result is quantified
-rather than assumed, and it motivated rebuilding the protocol over a UTXO ledger of the
-kind \cite{esgin2020post} assumes. That ceiling later proved to bound the
+per-transaction cap. That negative result is quantified
+rather than assumed, and it is what the comparison contributes. That ceiling later proved to bound the
 \emph{implementation} rather than the scheme: a claim transaction running a restructured
 verifier was mined inside the cap, at the target parameter set and message length
 (\cref{sec:res-app}). The venue decision therefore rests on cost, not impossibility.

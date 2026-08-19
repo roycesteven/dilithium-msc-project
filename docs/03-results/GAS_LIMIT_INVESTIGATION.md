@@ -521,8 +521,16 @@ questions. §7 answers *"can it be done on the EVM as it exists?"* with a measur
 ## Mini-glossary
 
 - **Gas** — Ethereum's unit for "how much work a computation is." You pay for it.
-- **Block gas limit** — the maximum total gas one block can contain (~30 million).
-  Anything bigger can't run on-chain at all.
+- **Block gas limit** — the maximum total gas one block can contain (§1: 60 million
+  since the late-2025 validator raise; for years it was ~30 million). ⚠️ **Not the
+  binding constraint in this project, and never the basis for a feasibility claim** —
+  that comparison is the framing retracted in `LAS-08-performance-measured.md`. Use the
+  per-transaction cap below.
+- **EIP-7825 per-transaction gas cap** — 16,777,216 (2²⁴), the ceiling **one
+  transaction** cannot exceed regardless of how much room the block has. This is the
+  binding constraint for every on-chain figure here. State ratios against it in the form
+  "*x* × the cap" (the baseline verifier is ≈3.4× the cap), never "exceeds it by *x*×",
+  which reads as the *excess* being *x* times the cap.
 - **EVM** — the Ethereum Virtual Machine, the shared computer that runs the code.
 - **`mulmod` / `addmod`** — built-in EVM instructions for modular multiply/add,
   8 gas each, *regardless of the numbers involved*.
