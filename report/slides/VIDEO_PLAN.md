@@ -6,6 +6,15 @@ and in particular **no terminal**: a transcript of a test binary shows that a ru
 not what happened, and it reads as evidence rather than as a demonstration. Both
 demonstrations are drawn and stepped inside the deck itself.
 
+The deck carries the **University of Manchester** house style: Arial, purple `#7800a2`
+headlines, the dotted `#660066` rule on the title slide, and the Manchester mark top-left on
+every slide. The mark is reproduced from the university's own 16:9 master,
+`Master_169 presentation(2).pptx` (see `assets/README.md`), and is embedded into the deck so
+it stays one self-contained file. The deck's blue / orange / green / red accents are **not**
+brand colours — they are semantic marks shared with the report's figures — so brand purple is
+used for chrome only. A PowerPoint conversion exists as `video_deck_uom.pptx` (built by
+`scripts/gen_slides_pptx.py`) **for submission only**; the HTML deck is what gets recorded.
+
 `swap_console.html` remains in the repository as a standalone interactive artefact — the
 same protocol with a configuration switch, a tripwire button and a per-step communication
 ledger. It is **not** part of the recording; keep it for anyone who wants to drive the

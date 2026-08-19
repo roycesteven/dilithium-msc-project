@@ -27,7 +27,16 @@
     --mark-b:#1f6feb; --mark-ad:#e8590c; --ink-ad:#c2410c;
     --shadow:0 1px 2px rgba(20,33,58,.06), 0 18px 44px -24px rgba(20,33,58,.32);
     --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
-    --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    /* University of Manchester house typeface, read off the template's own
+       theme (Office Classic 2: Arial for both major and minor latin). */
+    --sans:Arial,"Helvetica Neue",Helvetica,"Segoe UI",system-ui,sans-serif;
+    /* UoM chrome, read off report/slides/Master_169 presentation(2).pptx --
+       --uom = slideMaster1 titleStyle #7800A2, --uom-rule = the dotted
+       connector on the Title Slide layout.  These colour the TEMPLATE's
+       furniture only: the deck's base/adaptor/reused/warn accents are semantic
+       (they mean the same thing in the report figures printed beside them) and
+       must not be recoloured to match a brand. */
+    --uom:#7800a2; --uom-rule:#660066;
   }
   @media (prefers-color-scheme:dark){
     :root:not([data-theme="light"]){
@@ -41,6 +50,8 @@
          #3f86ee / #e2610f on #121b2b -- all checks pass */
       --mark-b:#3f86ee; --mark-ad:#e2610f; --ink-ad:#ff8a4c;
       --shadow:0 1px 2px rgba(0,0,0,.5), 0 22px 48px -26px rgba(0,0,0,.8);
+      /* #7800a2 fails contrast on the dark surface: same hue, re-stepped */
+      --uom:#c58ade; --uom-rule:#a45cc0;
     }
   }
   :root[data-theme="dark"]{
@@ -52,6 +63,7 @@
     --warn:#ff7b8a; --warn-soft:#2c1418;
     --mark-b:#3f86ee; --mark-ad:#e2610f; --ink-ad:#ff8a4c;
     --shadow:0 1px 2px rgba(0,0,0,.5), 0 22px 48px -26px rgba(0,0,0,.8);
+    --uom:#c58ade; --uom-rule:#a45cc0;
   }
 
   *{box-sizing:border-box}
@@ -69,15 +81,37 @@
   }
 
   .slide{
-    position:absolute;inset:0;padding:44px 56px 60px;
-    display:flex;flex-direction:column;gap:18px;
+    position:absolute;inset:0;padding:30px 56px 58px;
+    display:flex;flex-direction:column;gap:16px;
     opacity:0;visibility:hidden;transform:translateY(10px);
     transition:opacity .32s ease, transform .32s ease, visibility 0s .32s;
   }
   .slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .32s ease, transform .32s ease}
 
+  /* ---- University of Manchester mark ------------------------------------
+     The template carries it as a MASTER shape, so it repeats on every slide
+     at a fixed top-left position; the deck does the same with one absolutely
+     positioned image rather than one copy per slide.  It is drawn at the
+     template's own aspect ratio, scaled down so the band it occupies costs the
+     dense slides as little height as possible, and the eyebrow row is pushed
+     clear of it instead of being pushed below it -- which would cost another
+     full row.  Not on the title slide's flow: that slide is centred. */
+  #uomlogo{position:absolute;left:56px;top:24px;width:146px;height:62px;z-index:6}
+  .slide:not(.title) > .eyebrow:first-child{margin-left:164px;min-height:56px;
+                                            display:flex;align-items:center}
+  /* One knob for a column whose content is a few lines past its box.  Slide 8's
+     left column outgrew it when the two-leg swap result was added on
+     2026-08-18 -- the committed deck was already overflowing card 2 before this
+     skin, which is what rendering it caught.  Scale the column, never cut the
+     claim. */
+  .tight .card{padding:14px 17px;gap:7px}
+  .tight .card h3{font-size:17.5px}
+  .tight .card p{font-size:15.5px;line-height:1.36}
+  .tight .caveat{font-size:13.5px}
+
   .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-  h1.headline{font-size:40px;line-height:1.06;font-weight:800;letter-spacing:-.028em;margin:0;text-wrap:balance}
+  h1.headline{font-size:40px;line-height:1.06;font-weight:800;letter-spacing:-.028em;margin:0;
+              text-wrap:balance;color:var(--uom)}
   h1.big{font-size:50px}
   .dek{color:var(--muted);font-size:19px;line-height:1.4;margin:0;max-width:80ch}
   .kicker{font-size:22px;font-weight:650;line-height:1.32;margin:0}
@@ -286,11 +320,14 @@
 
   /* ---- title slide ---- */
   .title{justify-content:center;gap:22px;padding-left:70px}
-  .title .rule{width:96px;height:5px;background:var(--adaptor);border-radius:3px}
+  /* the template's Title Slide separator: a dotted purple rule under the
+     title, not the deck's old short orange bar */
+  .title .rule{width:100%;max-width:1040px;height:0;border-top:3px dotted var(--uom-rule);
+               border-radius:0;background:none}
   .title .meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:16px;color:var(--muted)}
 
   /* ---- chrome ---- */
-  #bar{position:absolute;left:0;top:0;height:4px;background:var(--adaptor);width:0;transition:width .3s ease;z-index:5}
+  #bar{position:absolute;left:0;top:0;height:4px;background:var(--uom);width:0;transition:width .3s ease;z-index:5}
   /* "where are we" stepper: four parts of the talk, the current one lit.  A
      progress bar says how far, not where -- and an audience that cannot place
      the slide in the argument has to hold the structure in their head. */
@@ -339,6 +376,7 @@
 <div id="frame">
   <div id="stage">
     <div id="bar"></div>
+    <img id="uomlogo" src="{{UOM_LOGO}}" alt="The University of Manchester">
     <div id="parts">
       <span data-part="why">Why</span><span data-part="method">Method</span><span data-part="results">Results</span><span data-part="takeaway">Takeaway</span>
     </div>
@@ -709,7 +747,7 @@
       <div class="eyebrow">Demonstration 2 of 2 · a real Bitcoin Core {{btcNodeTag}} node, on regtest</div>
       <h1 class="headline">It <strong class="hb">fits</strong> the size limits. It fails the <strong class="hi">verification rules</strong> — so I changed one.</h1>
       <div class="cols stretch c52" style="flex:1;min-height:0">
-        <div style="display:flex;flex-direction:column;gap:11px;min-height:0">
+        <div class="tight" style="display:flex;flex-direction:column;gap:11px;min-height:0">
           <div class="card tint-base">
             <h3>1 · Carriage, stock node</h3>
             <p class="on">A lattice-carrying spend: <b>{{btcMeasCarriageVsize}} vB</b>, refused by default relay policy (<span class="num">{{btcMeasCarriagePolicy}}</span>) — yet consensus-valid, and <b>mined</b>.</p>

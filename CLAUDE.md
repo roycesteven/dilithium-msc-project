@@ -217,18 +217,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-18 19:52 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-19 12:45 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 3800bda · 2026-08-18 · d2 d3 d5 evm polish report deck not checked
-- Working tree: 15 modified tracked file(s), 41 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD ea09bdf · 2026-08-18 · report deck btc full two leg update
+- Working tree: 13 modified tracked file(s), 50 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `ea09bdf 2026-08-18 report deck btc full two leg update`
   - `3800bda 2026-08-18 d2 d3 d5 evm polish report deck not checked`
   - `4cad978 2026-08-17 evm d2 d5 btc two leg swap deck fix`
   - `d95d3f5 2026-08-15 meeting 10 evm d2 d5 unfinished`
   - `bc33734 2026-08-13 report video 13_08 18_49`
-  - `2c78118 2026-08-13 report 13_08 16_37`
 
 ### Target parameter set — anchors parsed from source
 
@@ -262,7 +262,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-18.
+- `CLAUDE.md` hand-written sections last touched 2026-08-19.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -580,8 +580,17 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
 a complete native verifier over vendored ZKNox ETHDILITHIUM primitives, validated against C and
 bound by a fund-time `keccak256(A′,t,M)` commitment; its cost is far above EIP-7825's cap.
 Naysayer (optimistic) variant = **negative result**: honest path fits, the `naysayDigest` fraud
-proof does not, and an unmineable fraud proof is not one. Gas figures come only from a captured
-`forge --gas-report` log parsed by `scripts/plot_onchain_gas.py`; nothing hardcoded.
+proof does not, and an unmineable fraud proof is not one. ⚠️ Wang explicitly suggested
+adapting Naysayer (M7 08:59); M8 §12 keeps it as *discussion of a more advanced solution*.
+Project rule: retain the measured negative result; do not silently delete it. Gas comes from a
+captured `forge --gas-report` log — charts via `plot_onchain_gas.py`, macros via
+`gen_report_data.py`, whose parser is **contract-aware** (a bare `claim` silently bound the
+test mock `Rejector.claim`). ⚠️ Until 2026-08-19 `app:naysayer` hand-typed Royce's spoken
+M7 figures, matching no run — the fix for a wrong number is the macro, never deleting the
+result. ⚠️ Binding fraud-proof path is **`naysayDigest`, NOT `naysayWprime`** — true for the
+tested vectors only, since execution gas is data-dependent. Both source comments previously
+guessed `naysayWprime` was the binding path; the test header additionally used the old
+EIP-2028-style 16/4 calldata accounting instead of EIP-7623.
 **⚠️ Meeting 7 is NOT retracted by the one-transaction result above** — the Bitcoin/UTXO pivot
 also rests on fees-not-gas-limits, heavy work staying off-chain, and adaptor swaps being used on
 UTXO chains in practice; on-chain LAS stays orders of magnitude above a classical `ecrecover`
@@ -735,6 +744,21 @@ any of it.
    quote one evidence run (`--check` fails when stale; **edit the template, never the
    output**; re-run after every `sync_report.sh`). Bar geometry is derived from the same
    macros as the labels, so a width cannot drift from its number.
+   ⚠ **UoM FORMAT LIVES IN THE HTML DECK — a .pptx conversion was built and REJECTED (Royce,
+   2026-08-19).** `video_deck_uom.pptx` + `scripts/gen_slides_pptx.py` are kept **only as a
+   fallback** if a submission ever demands PowerPoint — never the file to record, never the file
+   to edit, and it goes stale the moment the template changes. The template's chrome was skinned
+   onto the deck instead: **Arial**, headline `--uom` #7800A2, dotted rule `--uom-rule` #660066,
+   and the Manchester mark top-left on every slide (`#uomlogo` ⇐ `{{UOM_LOGO}}` ⇐
+   `report/slides/assets/uom_logo.png`, embedded base64 by `gen_slides.py`'s `ASSETS`). The mark
+   is **reproduced** from `Master_169 presentation(2).pptx`, never redrawn — provenance and the
+   rebuild recipe are in that directory's `README.md`.
+   ⚠ **Brand colour touches CHROME ONLY.** The base / adaptor / reused / warn accents are
+   *semantic* — they mean the same thing in the report figures printed beside them — so they are
+   never recoloured to match a brand. Both light and dark carry their own `--uom` step.
+   ⚠ Rendering the skin caught a **pre-existing** defect: slide 8's card 2 has overflowed its box
+   since the two-leg text landed 2026-08-18 (confirmed against `git show HEAD:`, so it is not the
+   skin's). Fixed by the reusable `.tight` column knob — **scale a column, never cut a claim.**
    ⚠ **NO CAPTURES — NOT A TERMINAL, NOT A WINDOW SWITCH (Royce, 2026-08-13; a terminal dump
    was already rejected 2026-08-12 — it shows that a run happened, not what happened).**
    **Both demos step INSIDE the deck**: `data-sub="n"` makes a slide consume the forward key

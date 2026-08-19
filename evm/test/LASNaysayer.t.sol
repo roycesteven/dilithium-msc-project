@@ -14,12 +14,16 @@ import {LASVerify} from "../src/LASVerifier.sol";
 /// GAS: the GasUsed deltas and forge --gas-report measure EXECUTION gas only — they do NOT
 /// include the 21,000 intrinsic or the calldata byte cost of the outer transaction, and
 /// --isolate does not add those either. For the EIP-7825 (16,777,216) per-tx comparison,
-/// take TOTAL = execution + 21,000 + calldata cost (16 gas/non-zero byte, 4/zero), or read
-/// gasUsed from a real transaction receipt (anvil + `cast send`). The binding path is the
-/// LARGEST valid fraud-proof tx — likely full-A' naysayWprime: A' is passed as uint256[][]
-/// (30 polys x 256 coeffs x 32-byte words) ~= 246 KB + ABI overhead of calldata (the packed
-/// 4-byte form is only ~30 KB), so its calldata cost dominates and motivates the row-Merkle
-/// variant.
+/// take TOTAL = 21,000 + max(4*tokens + execution, 10*tokens) with tokens = zero_bytes +
+/// 4*non_zero_bytes — EIP-7623, NOT the old 16-per-non-zero/4-per-zero EIP-2028 model,
+/// which understates calldata-heavy txs — or read gasUsed from a real transaction receipt
+/// (anvil + `cast send`). The binding path is the LARGEST valid fraud-proof tx. A' is
+/// passed as uint256[][] (30 polys x 256 coeffs x 32-byte words) ~= 246 KB + ABI overhead
+/// of calldata against ~30 KB in the packed 4-byte form, which is what motivates the
+/// row-Merkle variant; but for the tested 32-byte message and committed vectors the
+/// binding path is naysayDigest, NOT naysayWprime — wprime's total stays below digest's
+/// execution gas alone even charging every wprime calldata byte as non-zero. Execution
+/// gas is data-dependent, so re-derive that ordering if the vectors change.
 contract LASNaysayerTest {
     Vm constant vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     uint256 constant N = 256;

@@ -425,23 +425,29 @@ completeness for each fault type (including a C-exported pure hash-fault vector 
 which only the hash dispute succeeds), the challenge-window and replay guards, input
 validation, and pull-payment isolation against a hostile recipient.
 
-The result is deliberately reported as mixed. Honest settlement is cheap --- an
-optimistic claim costs approximately $1.1$ million gas and finalisation approximately
-$27\,000$, since the batch never executes on the happy path --- but the binding cost is
-the worst-case fraud proof. The norm dispute costs approximately $34\,000$ gas; the
-commitment dispute, in a baseline that passes the whole public matrix in calldata,
-approximately $13.9$ million gas of execution together with an approximately
-$246$-kilobyte calldata payload; and the hash dispute approximately \gasNaysayDigestM{} million gas.
-These are execution-gas figures, so the full per-transaction totals --- adding the
-fixed intrinsic cost and the calldata --- are strictly larger. The hash dispute alone
-therefore exceeds the EIP-7825 cap of $16\,777\,216$ by roughly $1.75\times$ on
-execution gas before any calldata, because it must run a complete SHAKE256 in Solidity,
-which is not an EVM-native hash --- unlike the Keccak-based schemes of
-\cite{kysil2025poqeth}. The optimistic mode thus moves cost off the honest path but
-does \emph{not}, in this baseline, bring the worst-case dispute within a single
-transaction; doing so would require opening only the single disputed matrix row through
-a Merkle commitment rather than sending the whole matrix, and a hash dispute that
-avoids a full SHAKE256 pass.
+The result is deliberately reported as mixed. Honest settlement is cheap: an optimistic
+claim costs approximately \gasNaysayClaimM{} million gas and finalisation
+\gasNaysayFinalize{}, because full LAS verification is not executed on the happy path
+--- the claim binds the submitted signature and commitment trace, checks their shape,
+and opens the challenge window. The binding cost is instead the worst-case fraud proof.
+The norm dispute costs \gasNaysayNorm{} gas; the commitment dispute approximately
+\gasNaysayWprimeM{} million, in a baseline that hands the contract the whole public
+matrix $\mathbf{A}'$ rather than opening the single disputed row of it; and the hash
+dispute approximately \gasNaysayDigestM{} million. Every figure here is the maximum
+column of the same \texttt{--gas-report} table as \cref{tab:onchain}, so these disputes
+and the claim paths there are mutually comparable. All are also \emph{execution} gas,
+so the per-transaction totals --- adding the fixed intrinsic charge and the calldata
+--- are strictly larger: $\mathbf{A}'$ alone is \gasNaysayMatrixKB{}\,kB of
+coefficients, \emph{derived} from the parameter set and before ABI encoding, and the
+same proof additionally carries the signature, the commitment trace and the public key.
+The hash dispute alone is therefore roughly \gasNaysayDigestCapFactor{}$\times$ the
+EIP-7825 cap of $16\,777\,216$ on execution gas before any calldata, because it must
+run a complete SHAKE256 in Solidity, which is not an EVM-native hash --- unlike the
+Keccak-based schemes of \cite{kysil2025poqeth}. The optimistic mode thus moves cost off
+the honest path but does \emph{not}, in this baseline, bring the worst-case dispute
+within a single transaction. Whether restructuring the dispute path would close that
+gap, as restructuring the direct verifier later closed its own (\cref{sec:res-app}),
+was not evaluated.
 
 \section{The six implementation challenges}
 \label{app:challenges}

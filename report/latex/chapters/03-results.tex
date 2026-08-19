@@ -519,7 +519,7 @@ classical claim and over the EIP-7825 cap. An \emph{optimistic} (Naysayer) alter
 makes the honest path cheap ($\approx$\gasNaysayClaimM{} million) but leaves a worst-case
 fraud proof at $\approx$\gasNaysayDigestM{} million, also over the cap, and a fraud proof
 that cannot be mined is not one (\cref{app:naysayer}).
-These measurements are why the application was taken to a UTXO chain.
+These measurements motivated taking the application to a UTXO chain.
 
 That figure measures one \emph{implementation}, not the scheme. A restructured verifier
 --- same parameters, bounds and challenge preimage, differing in how the computation is

@@ -47,6 +47,14 @@ FIGURES = {
 }
 FIG_DPI = 150
 
+# placeholder -> committed image under report/slides/assets/, embedded the same
+# way as the figures so the deck stays one self-contained file.  uom_logo.png is
+# the University of Manchester mark, rasterised from the master's own EMF in
+# report/slides/Master_169 presentation(2).pptx (provenance: assets/README.md).
+ASSETS = {
+    "UOM_LOGO": SLIDES / "assets" / "uom_logo.png",
+}
+
 PLACEHOLDER = re.compile(r"\{\{([A-Za-z_][A-Za-z0-9_]*)\}\}")
 NEWCOMMAND = re.compile(r"\\newcommand\{\\([A-Za-z]+)\}\{")
 
@@ -180,6 +188,11 @@ def build_values() -> dict[str, str]:
     values.update(derive(values))
     for key, stem in FIGURES.items():
         values[key] = figure_data_uri(stem)
+    for key, path in ASSETS.items():
+        if not path.is_file():
+            sys.exit(f"missing asset {path} -- see report/slides/assets/README.md")
+        values[key] = ("data:image/png;base64,"
+                       + base64.b64encode(path.read_bytes()).decode())
     return values
 
 

@@ -114,15 +114,34 @@ All figures from `evidence/onchain/latest/gas_report.log`; the report cites them
 macros (`\gasClassical`, `\gasLasFloor`, `\gasLasVerified`, `\gasNaysayClaimM`,
 `\gasNaysayDigestM`), never as literals.
 
-| path | gas (median) | vs the 16,777,216 cap |
+⚠️ **Both columns are EXECUTION gas, not transaction totals.** `forge --gas-report`
+excludes the 21,000 intrinsic charge and the calldata cost, so the right-hand column
+compares execution alone against a *per-transaction* cap. Execution is a lower bound on
+the total — `21,000 + max(4·tokens + execution, 10·tokens)`, `tokens = zero_bytes +
+4·non_zero_bytes` (EIP-7623) — so a row **above** the cap on execution definitively does
+not fit, while a row **below** it is undecided until calldata and the intrinsic charge
+are added. The one row measured as a whole transaction is `claimLASVerifiedOpt`, via a
+real client receipt (`evidence/onchain_onetx/`).
+
+| path | execution gas (median) | execution vs the 16,777,216 cap |
 |---|---|---|
 | `claimClassical` | 75,751 | 0.5 % |
 | `claimLAS` (calldata floor, **no verification**) | 290,640 | 1.7 % |
-| `claimLASVerified` (**full native verification**) | 56,647,378 | **3.4× over** |
+| `claimLASVerified` (**full native verification**) | 56,647,378 | **3.4× the cap** |
 | Naysayer `optimisticClaim` | 1,169,171 | 7 % |
 | Naysayer `naysayNorm` (cheap fraud proof) | 291,310 | 1.7 % |
 | Naysayer `naysayWprime` | 13,148,124 | 78 % |
-| Naysayer `naysayDigest` (**worst-case fraud proof**) | 28,182,443 | **1.7× over** |
+| Naysayer `naysayDigest` (**largest measured fraud-proof path**) | 28,182,443 | **1.7× the cap** |
+
+⚠️ `naysayWprime`'s 78 % is one of the undecided rows: it carries the whole public
+matrix `A'` as `uint256[][]`, ~246 kB of coefficients before ABI encoding, and none of
+that is in the figure. Re-encoding the committed vectors gives 353,988 calldata bytes
+and a total of ~15.1 M gas (~0.90× the cap) for the tested instance — *derived* from the
+measured execution gas plus an ABI reconstruction, not a receipt, and one instance only.
+`naysayDigest` is the largest fraud-proof path **for the tested 32-byte message and
+vectors**; that ordering survives charging every one of `naysayWprime`'s calldata bytes
+as non-zero, but execution gas is itself data-dependent, so it is not a claim over all
+inputs.
 
 **The decomposition that matters.** Transporting the signature costs 290,640 gas — 3.8×
 a classical claim, entirely affordable. Verifying it costs 195× more again. The gap is
@@ -134,16 +153,16 @@ in opposite directions here, and why local optimisation could not close it.
 happy path under the cap (1.2 M gas), which is the result it was built to demonstrate.
 But an optimistic scheme is only sound if the fraud proof is *executable*, and the
 digest dispute — the one that catches a faulty hash, i.e. exactly the SHAKE256 term
-above — is itself 1.7× over the cap. A fraud proof that cannot be mined is not a fraud
+above — is itself 1.7× the cap on execution gas alone. A fraud proof that cannot be mined is not a fraud
 proof. This is a **negative result, and it is stated as one**: the optimistic route
 relocates the problem rather than solving it.
 
 **Conclusion, in Meeting-8's terms.** The EVM is the more advanced venue in the sense
 that it needs *no consensus change* — the contract is deployable today, and the honest
 path of the optimistic variant already fits. It is the less advanced venue in the sense
-that the only path which actually *verifies* the post-quantum signature is 3.4× over the
-per-transaction cap, and the worst-case dispute of the optimistic alternative is 1.7×
-over it. Bitcoin inverts both: it needs a consensus change, but once granted, the
+that execution alone for the only path which actually *verifies* the post-quantum
+signature is 3.4× the per-transaction cap, while execution alone for the largest
+measured dispute of the optimistic alternative is 1.7× it. Bitcoin inverts both: it needs a consensus change, but once granted, the
 signature is merely *bytes in a witness*, metered by size and not by execution, and the
 protocol becomes unremarkable. That contrast — not a gas number — is what the EVM work
 contributes to the report.

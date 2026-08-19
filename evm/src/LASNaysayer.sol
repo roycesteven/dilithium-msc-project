@@ -145,7 +145,11 @@ library LASNaysayLib {
 /// bind M — full message-domain separation is UNRESOLVED (see domainDigest); (7) pull-
 /// payment, no external call in state transitions; (8) naysayWprime carries full A' as an
 /// explicit BASELINE (final design opens row i via a Merkle proof — UNRESOLVED). The gas
-/// compared to EIP-7825 must be the LARGEST valid fraud-proof tx (likely naysayWprime).
+/// compared to EIP-7825 must be the LARGEST valid fraud-proof tx. For the tested 32-byte
+/// message and committed vectors that is naysayDigest, NOT naysayWprime: wprime's total
+/// stays below digest's execution gas alone even when every one of its calldata bytes is
+/// charged as non-zero. Execution gas is data-dependent, so this is not a claim over all
+/// inputs — re-derive it if the vectors or the parameter set change.
 contract LASNaysayerSwap {
     enum State { EMPTY, OPEN, PENDING, CLAIMED, REFUNDED }
 

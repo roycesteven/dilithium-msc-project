@@ -575,10 +575,33 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
         m.append(("gasRatioFloor", "%.1f" % (onchain["claimLAS"] / onchain["claimClassical"])))
         m.append(("gasRatioVerified", "%.0f" % (onchain["claimLASVerified"] / onchain["claimClassical"])))
         m.append(("gasCapOver", "%.1f" % (onchain["claimLASVerified"] / cap)))
-        if "claim" in onchain:
-            m.append(("gasNaysayClaimM", "%.1f" % (onchain["claim"] / 1e6)))
+        # Naysayer (optimistic) variant.  EVERY figure the appendix quotes is
+        # emitted here so no Naysayer number can be hand-typed again: the earlier
+        # draft carried the values SPOKEN in a supervisor meeting, and they match
+        # no run in evidence/onchain/.  Same MAX column as the rows above, so the
+        # honest path and the dispute paths stay mutually comparable with them.
+        if "optimisticClaim" in onchain:
+            m.append(("gasNaysayClaimM", "%.1f" % (onchain["optimisticClaim"] / 1e6)))
+        if "finalize" in onchain:
+            m.append(("gasNaysayFinalize", g("finalize")))
+        if "naysayNorm" in onchain:
+            m.append(("gasNaysayNorm", g("naysayNorm")))
+        if "naysayWprime" in onchain:
+            m.append(("gasNaysayWprimeM", "%.1f" % (onchain["naysayWprime"] / 1e6)))
         if "naysayDigest" in onchain:
             m.append(("gasNaysayDigestM", "%.1f" % (onchain["naysayDigest"] / 1e6)))
+            m.append(("gasNaysayDigestCapFactor",
+                      "%.1f" % (onchain["naysayDigest"] / cap)))
+        # Size of the RAW A' MATRIX PAYLOAD the commitment dispute carries -- a
+        # DERIVATION from the parameter set, not a measurement, and NOT the size
+        # of that dispute's calldata: WprimeProof also carries sig, wprime, t and
+        # the message, so the encoded calldata is substantially larger.  A'
+        # travels as WprimeProof.aprime, which LASNaysayer.sol declares as
+        # N_LAS*ELL polynomials of N coefficients, one uint256 word each.
+        _pt = params[TARGET]
+        m.append(("gasNaysayMatrixKB",
+                  "%d" % round(int(_pt["n"]) * int(_pt["ell"])
+                               * int(_pt["N"]) * 32 / 1000)))
         if "claimLASVerifiedOpt" in onchain:
             # same --gas-report table as the rows above, so directly comparable with them
             m.append(("gasLasOpt", g("claimLASVerifiedOpt")))
@@ -776,17 +799,40 @@ def parse_onchain_gas(path):
     Returns the MAX column per function: the worst case a settlement can cost,
     which is what the EIP-7825 per-transaction cap must be judged against.
     Absent log -> None, so the Stage-1 pipeline still runs without evidence/onchain.
+
+    Parsing is CONTRACT-AWARE, and must stay that way.  forge prints one table per
+    contract, so matching on the function name alone can bind a macro to a test
+    double: an earlier revision asked for "claim" and silently picked up
+    test/LASNaysayer.t.sol:Rejector.claim -- a hostile-recipient mock that reaches
+    optimisticClaim through an extra external call -- instead of the contract's own
+    optimisticClaim.  Every wanted row is therefore pinned to the deployed contract
+    that must own it, and any table from a test file is skipped outright.
     """
     if not path.exists():
         return None
-    want = ["claimClassical", "claimLAS", "claimLASVerified", "claimLASVerifiedOpt",
-            "claim", "naysayDigest", "naysayNorm", "naysayWprime"]
-    got = {}
+    want = {
+        "claimClassical":      "src/AdaptorSwap.sol:AdaptorSwap",
+        "claimLAS":            "src/AdaptorSwap.sol:AdaptorSwap",
+        "claimLASVerified":    "src/AdaptorSwap.sol:AdaptorSwap",
+        "claimLASVerifiedOpt": "src/AdaptorSwap.sol:AdaptorSwap",
+        "optimisticClaim":     "src/LASNaysayer.sol:LASNaysayerSwap",
+        "finalize":            "src/LASNaysayer.sol:LASNaysayerSwap",
+        "naysayNorm":          "src/LASNaysayer.sol:LASNaysayerSwap",
+        "naysayWprime":        "src/LASNaysayer.sol:LASNaysayerSwap",
+        "naysayDigest":        "src/LASNaysayer.sol:LASNaysayerSwap",
+    }
+    header = re.compile(r"^\|\s*(\S+\.sol:\S+)\s+Contract\s*\|")
+    got, current = {}, None
     for line in path.read_text(errors="replace").splitlines():
-        if not line.lstrip().startswith("|"):
+        s = line.strip()
+        h = header.match(s)
+        if h:
+            current = h.group(1)
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 6 or cells[0] not in want:
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) < 6 or want.get(cells[0]) != current:
             continue
         nums = [c for c in cells[1:] if re.fullmatch(r"[0-9]+", c)]
         if len(nums) >= 4:
