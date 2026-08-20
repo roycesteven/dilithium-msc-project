@@ -48,7 +48,7 @@ outside the proof — within 0.4 %, as byte-identical inputs on one `A` predict.
 
 Stage 2's application target moves from a smart-contract chain to a **UTXO-based
 chain**. The EVM results already obtained — native LAS verification **56,538,682 gas
-measured**, against the EIP-7825 per-transaction cap of 16,777,216 (≈3.4× over), plus
+measured**, against the EIP-7825 per-transaction cap of 16,777,216 (**≈3.4× the cap**), plus
 the Naysayer optimistic variant — are **retained as the evidence for why**, not
 discarded. The EVM route is deferred to "if we have time".
 

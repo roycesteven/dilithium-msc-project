@@ -217,18 +217,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-19 14:04 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-20 16:08 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 0f6c914 · 2026-08-19 ·  mcr deck
-- Working tree: 12 modified tracked file(s), 43 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 3b40c3c · 2026-08-19 · throughput scalability proposal unfinished
+- Working tree: 18 modified tracked file(s), 44 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `3b40c3c 2026-08-19 throughput scalability proposal unfinished`
   - `0f6c914 2026-08-19  mcr deck`
   - `ea09bdf 2026-08-18 report deck btc full two leg update`
   - `3800bda 2026-08-18 d2 d3 d5 evm polish report deck not checked`
   - `4cad978 2026-08-17 evm d2 d5 btc two leg swap deck fix`
-  - `d95d3f5 2026-08-15 meeting 10 evm d2 d5 unfinished`
 
 ### Target parameter set — anchors parsed from source
 
@@ -244,7 +244,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8998** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8981** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -262,7 +262,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-19.
+- `CLAUDE.md` hand-written sections last touched 2026-08-20.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -450,16 +450,35 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   than byte-equality — any `(c, ẑ+y')` with `A·y'=Y` passes it. Macros `btcSwap*` (never mix
   with `btcLas*`/`btcMeas*`); PI=0 is recorded INCOMPLETE and does not move `latest`.
   Honest path only — the tapleaf has **no refund branch**, so timeouts are not implemented.
+  ⚠️ **REFUND/TIMEOUT ACROSS VENUES — verified against source 2026-08-19; a relayed
+  "EVM ✅ / Bitcoin ❌" table overstated BOTH sides.** **Neither real-client two-leg run
+  exercises the timeout/refund recovery path** — say *exercises*, never "implements":
+  Bitcoin genuinely has none (no tapleaf branch), but `AdaptorSwapBound.refund` **is**
+  implemented (timeout + payer check + `State.REFUNDED` + transfer) and
+  `run_onchain_two_leg.sh` simply never calls it. Writing "the EVM does not implement
+  refund" would seed a false report claim. ⚠️ "Honest path only" (the runners' own scope
+  line) means the **settlement** path, NOT untested-against-adversarial-input — both runs
+  carry cross-leg negative controls (EVM §11 replay: leg B's message on leg A must revert
+  with the contract's own `message not bound`, then a real send must leave the escrow
+  untouched; Bitcoin adds chain-isolation and patched-vs-stock). **Never call either runner
+  honest-path-only flatly.** Both `refund`s enforce only **their own** leg's timeout —
+  pairing t2<t1 is the funders' job, not the contract's — and `test_Refund` /
+  `test_TwoTimeoutSafetyWindow` cover **`AdaptorSwap` only; `AdaptorSwapBound`, the contract
+  the run uses, has NO refund test.** `rust/las-swap`'s UTXO model *does* exercise refund
+  (`run_refund`): both parties exist, but only **u₁'s leg is funded** — u₂ the counterparty
+  never responds, u₁ reclaims, premature refund rejected. That corrected a report overclaim
+  ("both parties recover their funds" → "the funder recovers its coin", `app:methoddetail`,
+  word-neutral). A Bitcoin refund branch is NEW work under the M10 freeze — Royce's call,
+  not a correctness repair.
 - **Framings that must not drift:** a patched node is **not** Bitcoin — "cannot settle on
   Bitcoin as it stands" stays true; implementing one of `BITCOIN_TX_STRUCTURE.md` §5.4's
   three routes is **not** a position on which should be adopted; **the rule's security is
   still unanalysed** — that caveat never lapses. Bitcoin binds the transaction, **not the
   chain** (BIP341 sighash has no chain id) — the EVM leg does (`AdaptorSwapBound.legMessage`
   hashes `block.chainid`); state the asymmetry.
-  ⚠️ **SUPERSEDED 2026-08-18, do not reinstate:** this bullet also said "no opcode costing,
-  not wired into the swap". Both were true once and are now **FALSE** — the cost is measured
-  (patched-client benchmark below) and `run_btc_two_leg.sh` settles a whole Fig. 1 swap on
-  the patched node. Purged from `app:btcnode` and the deck the same day.
+  ⚠️ **SUPERSEDED 2026-08-18, do not reinstate:** "no opcode costing, not wired into the
+  swap" — both now **FALSE** (cost measured by the patched-client benchmark below;
+  `run_btc_two_leg.sh` settles a whole Fig. 1 swap). Purged from `app:btcnode` and the deck.
 - **It corrected a report number:** `gen_bitcoin_tx_data.py` projected config 1 from the
   64-byte *compact* ECDSA signature, not a DER witness item, understating the classical
   baseline and inflating every PQ ratio. Fixed; macros regenerated.
@@ -568,6 +587,15 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
   floor binds for calldata-heavy/compute-light txs, so the old 16-per-nonzero-byte model
   **understates** them; every total must say which branch bound. (`TwoLegSwapGas.t.sol`'s helper
   models only the standard branch — never copy it for a gate.)
+- **⚠️ EIP-7825 IS A *PER-TRANSACTION* CAP — for THIS PROJECT the block gas limit is NEVER a
+  feasibility basis** (2026-08-19; every artefact measured here is a single transaction, so the
+  per-transaction cap is what binds — this is a scoped rule, not a universal claim about the
+  EVM). The block-limit comparison is the claim this project already RETRACTED, yet it was still
+  live in `BITCOIN_TX_STRUCTURE.md`; fixed, and the `GAS_LIMIT_INVESTIGATION.md` glossary now
+  says so. From the cap derive **only** percentage of cap, whether one transaction fits, and
+  per-transaction headroom — **never claims-per-block**. ⚠️ **Write the ratio "*x* × the cap",
+  never "exceeds it by *x*×"** — the latter reads as the *excess* being *x* times the cap. Four
+  docs carried the ambiguous form and were fixed the same day; take the ratio from the macros.
 - **⚠️ EIP-8051 (ML-DSA precompile) is a CITATION, NOT A ROUTE**: **Draft**, **Declined for
   Inclusion** in Glamsterdam (EIP-7773), **ML-DSA-44 only** — not D3. ⚠️ **Attach no date**:
   pq.ethereum.org places PQ sig precompiles at milestone `J*` in a *relative* order with **no
@@ -816,6 +844,21 @@ within a few percent of the Stage-1 harness's independent D3 packed `Verify`.
 - **Two security caveats stay SEPARATE:** (a) the consensus modification's security is
   unanalysed — a timing figure is not a safety argument; (b) the levels are unmatched —
   secp256k1 ≈ D2, the node runs D3, so the ratio **overstates** the rule's cost.
+- **⚠ THROUGHPUT / SCALABILITY — the brief's deliverable, CLOSED BY DERIVATION, NO *NEW*
+  EXPERIMENT** (Royce, 2026-08-19; the freeze held). The derivation still sources from this
+  measured benchmark, so the MEASURED→DERIVED chain stays intact — never say "no experiment".
+  **This adaptor-signature application has no signer-count axis** (a scoped claim, not one about
+  adaptor constructions generally), so do not look for one. It exposes exactly **two** scaling
+  dimensions. (1) **Validation work per input**, holding two *distinct* quantities: the measured
+  latency and its reciprocal, the derived serial rate `\btcLasSerialRateK` ⇐
+  `gen_btc_las_bench_data.py` — one quantity in two units, never counted as two results — and
+  separately the curve ratio, which is a **comparison against the Schnorr/ECDSA baseline**, not
+  another unit of that quantity. (2) **Ledger capacity**, the block-weight ceiling already in the
+  body. The serial rate **is** a verification rate; it is **not** a network or transaction
+  throughput, and **not** whole-node capacity in *either* direction (parallel script checking
+  pushes up, per-input node work pushes down; net unmeasured). Never combine it with the
+  block-weight ceiling to manufacture a tx/s prediction — they constrain different things. Quote
+  no ±: a reciprocal of a mean is not a mean of rates. Read the generator header first.
 - **It corrected the report twice:** body and `app:btcnode` both said the validation cost
   "is not measured". Fixed; only the *security* remains unmeasured.
 

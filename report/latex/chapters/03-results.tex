@@ -790,9 +790,11 @@ rule, an \texttt{OP\_SUCCESS} opcode \cite{bip342} over the byte interface of
 signature, \btcSwapControls{} mutations tried being refused by it and accepted by an
 unmodified node --- the control attributing the refusals to the new rule. The blocker is a consensus rule, not
 engineering. Its cost was measured: one verification runs
-\btcLasVerifyUs\,$\mu$s against the curve baseline it is compared with, a BIP340 Schnorr
+\btcLasVerifyUs\,$\mu$s against the curve baseline, a BIP340 Schnorr
 check's \btcSchnorrVerifyUs\,$\mu$s --- \btcLasRatioSchnorr$\times$ --- and a signature that
-fails late costs about as much as one that verifies. A patched node is not Bitcoin, so that
+fails late costs about as much as one that verifies. The valid-path latency corresponds to a
+derived serial rate of \btcLasSerialRateK{}k LAS verifications/s on this machine, not
+whole-node or network throughput. A patched node is not Bitcoin, so that
 conclusion stands; the exercise is functional, with no security argument (\cref{app:btcnode}).
 
 \section{Threats to validity}

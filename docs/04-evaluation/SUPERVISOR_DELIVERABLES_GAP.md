@@ -113,7 +113,7 @@ LASVerify`, reusing vendored ZKNox ETHDILITHIUM primitives), validated end-to-en
 the C reference (accepts the golden adapted signature, rejects tamper) — wired into the
 swap as `claimLASVerified` and **measured at 56,538,682 gas** at the D3 set. The floor
 path `claimLAS` (calldata + keccak, no verify) remains 289,930 gas. The measured verifier
-exceeds the **EIP-7825 per-transaction gas cap (16,777,216) by ≈3.4×**, so it cannot run
+is **≈3.4× the EIP-7825 per-transaction gas cap (16,777,216)**, so it cannot run
 as one mainnet transaction. One caveat holds:
 
 - The Foundry local-chain swap *with full verification* is now done; the remaining

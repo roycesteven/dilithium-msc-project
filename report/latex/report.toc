@@ -62,7 +62,7 @@
 \contentsline {chapter}{\numberline {4}Evaluation}{49}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Evaluation strategy and its justification}{49}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Achievement of the objectives}{50}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Implementation challenges}{51}{section.4.3}%
+\contentsline {section}{\numberline {4.3}Implementation challenges}{50}{section.4.3}%
 \contentsline {section}{\numberline {4.4}Limitations}{52}{section.4.4}%
 \contentsline {chapter}{\numberline {5}Conclusion and future work}{53}{chapter.5}%
 \contentsline {section}{\numberline {5.1}Conclusions}{53}{section.5.1}%
@@ -87,15 +87,14 @@
 \contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{66}{section.A.4}%
 \contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{66}{section.A.5}%
 \contentsline {section}{\numberline {A.6}The atomic-swap demonstration and its proof of knowledge}{68}{section.A.6}%
-\contentsline {section}{\numberline {A.7}The optimistic (Naysayer) on-chain verifier}{69}{section.A.7}%
-\contentsline {section}{\numberline {A.8}The six implementation challenges}{70}{section.A.8}%
-\contentsline {section}{\numberline {A.9}Test types and parameter notation}{72}{section.A.9}%
-\contentsline {section}{\numberline {A.10}Full benchmark data tables}{72}{section.A.10}%
-\contentsline {section}{\numberline {A.11}Auditing the reuse claim}{73}{section.A.11}%
-\contentsline {section}{\numberline {A.12}Selected code listing: Adapt and Extract}{74}{section.A.12}%
-\contentsline {section}{\numberline {A.13}Settling on a real node}{77}{section.A.13}%
-\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{77}{section*.49}%
-\contentsline {paragraph}{Verification on a patched node.}{78}{section*.50}%
-\contentsline {paragraph}{A whole swap, not a single spend.}{78}{section*.51}%
-\contentsline {paragraph}{What the rule charges a validating node.}{79}{section*.52}%
-\contentsline {chapter}{Bibliography}{81}{appendix*.53}%
+\contentsline {section}{\numberline {A.7}The six implementation challenges}{69}{section.A.7}%
+\contentsline {section}{\numberline {A.8}Test types and parameter notation}{71}{section.A.8}%
+\contentsline {section}{\numberline {A.9}Full benchmark data tables}{71}{section.A.9}%
+\contentsline {section}{\numberline {A.10}Auditing the reuse claim}{72}{section.A.10}%
+\contentsline {section}{\numberline {A.11}Selected code listing: Adapt and Extract}{73}{section.A.11}%
+\contentsline {section}{\numberline {A.12}Settling on a real node}{76}{section.A.12}%
+\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{76}{section*.49}%
+\contentsline {paragraph}{Verification on a patched node.}{77}{section*.50}%
+\contentsline {paragraph}{A whole swap, not a single spend.}{77}{section*.51}%
+\contentsline {paragraph}{What the rule charges a validating node.}{78}{section*.52}%
+\contentsline {chapter}{Bibliography}{80}{appendix*.53}%

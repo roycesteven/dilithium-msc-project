@@ -184,7 +184,7 @@ not *computation* (sub-ms, ≤×20 time); (ii) LAS adaptor overhead ≈0 (PreSig
 PreVerify≈Verify) vs the classical adaptor's ~4× DLEQ overhead — LAS PreVerify even
 absolutely faster; (iii) on-chain, the swap protocol runs end-to-end, but native LAS
 *verification* costs **56,538,682 gas measured (≈746× a complete classical claim)** and
-**exceeds the EIP-7825 per-transaction cap (16,777,216) by ≈3.4×**, so it cannot run as
+is **≈3.4× the EIP-7825 per-transaction cap (16,777,216)**, so it cannot run as
 one mainnet transaction — it stays under the 60 M *block* limit, so the binding ceiling
 is the per-transaction cap. It needs a SHAKE/NTT precompile or a zk proof. This is a
 *missing-precompile* gap, not an algorithmic defect of LAS: ECDSA is cheap on-chain

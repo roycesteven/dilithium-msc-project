@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  18 AUG 2026 19:51
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  19 AUG 2026 18:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -970,7 +970,7 @@ Package microtype Info: Character `029' is missing
  [26] [27]) (./chapters/03-results.tex [28]
 Chapter 3.
 (./generated/tab_overhead_target.tex)
-<figures/fig_timing.pdf, id=684, 583.66304pt x 350.53972pt>
+<figures/fig_timing.pdf, id=679, 583.66304pt x 350.53972pt>
 File: figures/fig_timing.pdf Graphic file (type pdf)
 <use figures/fig_timing.pdf>
 Package pdftex.def Info: figures/fig_timing.pdf  used on input line 84.
@@ -978,13 +978,13 @@ Package pdftex.def Info: figures/fig_timing.pdf  used on input line 84.
  [29
 
 ]
-<figures/fig_overhead.pdf, id=698, 543.34494pt x 348.09785pt>
+<figures/fig_overhead.pdf, id=693, 543.34494pt x 348.09785pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
 Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 115.
 (pdftex.def)             Requested size: 379.55899pt x 243.17816pt.
  (./generated/tab_rejstats.tex)
-<figures/fig_rejection_cdf.pdf, id=718, 561.25934pt x 340.02834pt>
+<figures/fig_rejection_cdf.pdf, id=713, 561.25934pt x 340.02834pt>
 File: figures/fig_rejection_cdf.pdf Graphic file (type pdf)
 <use figures/fig_rejection_cdf.pdf>
 Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 157.
@@ -995,7 +995,7 @@ Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 157.
 
 pdfTeX warning: pdflatex (file ./figures/fig_criterion_presign.pdf): PDF inclus
 ion: found PDF version <1.7>, but at most version <1.5> allowed
-<figures/fig_criterion_presign.pdf, id=816, 940.54886pt x 668.21893pt>
+<figures/fig_criterion_presign.pdf, id=811, 940.54886pt x 668.21893pt>
 File: figures/fig_criterion_presign.pdf Graphic file (type pdf)
 <use figures/fig_criterion_presign.pdf>
 Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line 
@@ -1004,10 +1004,10 @@ Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line
 [33 <./figures/fig_overhead.pdf>] (./generated/tab_complete_target.tex)
 [34] [35] (./generated/tab_classical.tex) [36 <./figures/fig_rejection_cdf.pdf>
 ] [37 <./figures/fig_criterion_presign.pdf>] [38] [39] [40] [41]
-<figures/fig_onchain.pdf, id=1041, 719.82855pt x 264.96516pt>
+<figures/fig_onchain.pdf, id=1037, 719.82855pt x 264.96516pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
-Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 583.
+Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 581.
 (pdftex.def)             Requested size: 412.56496pt x 151.86456pt.
  [42] [43 <./figures/fig_onchain.pdf>] [44] [45] (./generated/tab_btctx.tex) [4
 6] [47])
@@ -1020,7 +1020,7 @@ Underfull \hbox (badness 2343) in paragraph at lines 76--77
 []|\T1/lmr/m/n/12 (+20) 5. Atomic-swap
  []
 
-[50] [51]) (./chapters/05-conclusion.tex [52]
+[50]) (./chapters/05-conclusion.tex [51] [52]
 Chapter 5.
 [53
 
@@ -1063,7 +1063,7 @@ Overfull \hbox (8.02162pt too wide) in paragraph at lines 371--371
 []\T1/lmr/bx/n/17.28 (-20) The atomic-swap demon-stra-tion and its proof
  []
 
-[67] [68] [69] [70] [71] (./generated/tab_timing.tex)
+[67] [68] [69] [70] (./generated/tab_timing.tex)
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
@@ -1071,7 +1071,7 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[72] [73]
+[71] [72]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
@@ -1080,13 +1080,13 @@ File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [74] [75]
-[76]
-Overfull \hbox (76.65977pt too wide) in paragraph at lines 778--787
+) [73] [74]
+[75]
+Overfull \hbox (76.65977pt too wide) in paragraph at lines 741--750
  [] 
  []
 
-[77] [78] [79]) (./report.bbl [80]
+[76] [77] [78]) (./report.bbl [79]
 Underfull \hbox (badness 10000) in paragraph at lines 19--27
 []\T1/lmr/m/n/12 (+20) Bitcoin Core de-vel-op-ers.  Trans-ac-tion re-lay and mi
 n-ing pol-
@@ -1104,15 +1104,15 @@ Underfull \hbox (badness 10000) in paragraph at lines 19--27
 licy / policy . h$[]\T1/lmr/m/n/12 (+20) ;
  []
 
-[81
+[80
 
-] [82]
+] [81]
 Underfull \hbox (badness 4366) in paragraph at lines 130--134
 []\T1/lmr/m/n/12 (+20) Andrew Poel-stra.  Script-less scripts.  Pre-sen-ta-tion
 , Mi-lan Bit-
  []
 
-) [83] (./report.aux)
+) [82] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1122,14 +1122,14 @@ L3 programming layer <2024-01-22>
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 461E7E44784E0A58F5BB951E1E6222B3;11737.
+(rerunfilecheck)             Checksum: 0702819B9E3B06348BF0B35FD4A6A887;11447.
  ) 
 Here is how much of TeX's memory you used:
- 29196 strings out of 476182
- 528742 string characters out of 5795595
+ 29182 strings out of 476182
+ 528574 string characters out of 5795595
  2185975 words of memory out of 5000000
- 49791 multiletter control sequences out of 15000+600000
- 763741 words of font info for 386 fonts, out of 8000000 for 9000
+ 49787 multiletter control sequences out of 15000+600000
+ 763341 words of font info for 382 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,14n,87p,1003b,2174s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
@@ -1153,10 +1153,10 @@ ts/type1/public/lm/lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb>
 /share/texmf/fonts/type1/public/lm/lmtt8.pfb></usr/share/texmf/fonts/type1/publ
 ic/lm/lmtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/sy
 mbols/msbm10.pfb>
-Output written on report.pdf (83 pages, 983829 bytes).
+Output written on report.pdf (82 pages, 979917 bytes).
 PDF statistics:
- 1824 PDF objects out of 2073 (max. 8388607)
- 1358 compressed objects within 14 object streams
- 349 named destinations out of 1000 (max. 500000)
- 112622 words of extra memory for PDF output out of 128383 (max. 10000000)
+ 1814 PDF objects out of 2073 (max. 8388607)
+ 1349 compressed objects within 14 object streams
+ 347 named destinations out of 1000 (max. 500000)
+ 112614 words of extra memory for PDF output out of 128383 (max. 10000000)
 

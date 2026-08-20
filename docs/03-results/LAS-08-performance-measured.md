@@ -392,7 +392,7 @@ gas/non-zero byte, 4 gas/zero). Three readings for the report:
    entire classical claim** (75,751). The measured figure is larger than the estimate
    because a complete verifier also pays for the real Solidity SHAKE256, the BitPack₁₉
    unpacking of `z`, canonical packing, and ABI/memory overhead. At ≈56.5 M gas it
-   **exceeds Ethereum's EIP-7825 per-transaction gas cap (16,777,216 = 2²⁴) by ≈3.4×**,
+   is **≈3.4× Ethereum's EIP-7825 per-transaction gas cap (16,777,216 = 2²⁴)**,
    so it **cannot execute as one mainnet transaction** — its raw demand is below the
    60-million block gas limit, so the binding limit is the per-transaction cap, not the
    block. It is *economically absurd* and an *implementation burden* (SHAKE256 and a

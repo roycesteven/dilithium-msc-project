@@ -39,8 +39,9 @@ costs a lot more; hashing costs gas per byte; and so on. When you send a transac
 you pay for the total gas it burns.
 
 Crucially, Ethereum bundles transactions into **blocks**, and **each block has a
-hard ceiling on total gas** — the **block gas limit**, currently **60 million** (raised by
-validator vote in late 2025; for years it was ~30M). There is also a **second, tighter
+hard ceiling on total gas** — the **block gas limit**, **60 million as of the late-2025
+validator raise** (for years it was ~30M; it is validator-set and moves, so this figure is
+dated rather than asserted as current). There is also a **second, tighter
 ceiling that a single transaction cannot exceed**: **EIP-7825** caps any one transaction at
 **16,777,216 gas (2²⁴)**, regardless of how much room the block has. The rule is simple and absolute:
 

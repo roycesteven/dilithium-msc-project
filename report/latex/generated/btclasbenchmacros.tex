@@ -9,6 +9,24 @@
 %   (a) the security of the consensus modification is NOT analysed;
 %   (b) the security levels are NOT matched -- the node runs Simplified Dilithium-III
 %       while secp256k1 matches Dilithium-II, so the ratios OVERSTATE the rule's cost.
+%
+% \btcLasSerialRateK IS **DERIVED, NOT MEASURED** -- the reciprocal of the MEASURED
+% accept-path mean above, in THOUSANDS of verifications per second.  It IS legitimately
+% a serial verification rate (a verification throughput).  What it is NOT:
+%   (i)   NOT a network or transaction throughput.  tx/s depends on propagation, policy
+%         and the fee market.  Never multiply this by the block-weight ceiling from
+%         gen_bitcoin_tx_data.py -- that manufactures a tx/s prediction out of two
+%         quantities each of which is explicitly not one.
+%   (ii)  NOT whole-node capacity, in EITHER direction.  Two unmeasured effects pull
+%         opposite ways: Core validates scripts in PARALLEL across a script-check pool
+%         (pushes aggregate verification up), while a node also parses, touches the
+%         UTXO set, runs the other consensus checks and schedules work (pushes per-input
+%         capacity down).  The net is UNQUANTIFIED here -- assert neither direction.
+%   (iii) NOT error-barred.  The reciprocal of a mean is not the mean of a rate, so the
+%         measured SD does not transform linearly.  Quote no +/- on it.
+%   (iv)  ACCEPT path only, one predicate in isolation.
+% Emitted to 2 dp in thousands, not as a 4-digit integer: the underlying mean carries an
+% SD of roughly a couple of percent and does not support 4 significant figures.
 
 \newcommand{\btcLasBenchReps}{10}
 \newcommand{\btcLasBenchIters}{200}
@@ -22,3 +40,4 @@
 \newcommand{\btcLasRatioSchnorr}{11.3}
 \newcommand{\btcLasRatioEcdsa}{11.8}
 \newcommand{\btcLasRejectRatio}{1.00}
+\newcommand{\btcLasSerialRateK}{2.67}
