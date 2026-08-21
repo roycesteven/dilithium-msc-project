@@ -108,11 +108,12 @@ the execution term.
 
 ---
 
-## 4. Measured cost, and why the venue was changed
+## 4. Measured cost on the EVM
 
 All figures from `evidence/onchain/latest/gas_report.log`; the report cites them as
-macros (`\gasClassical`, `\gasLasFloor`, `\gasLasVerified`, `\gasNaysayClaimM`,
-`\gasNaysayDigestM`), never as literals.
+macros (`\gasClassical`, `\gasLasFloor`, `\gasLasVerified`), never as literals.
+(The `gasNaysay*` macros were dropped on 2026-08-19 when Naysayer left the
+dissertation; the contract and its evidence stay, but no figure reaches the report.)
 
 ⚠️ **Both columns are EXECUTION gas, not transaction totals.** `forge --gas-report`
 excludes the 21,000 intrinsic charge and the calldata cost, so the right-hand column

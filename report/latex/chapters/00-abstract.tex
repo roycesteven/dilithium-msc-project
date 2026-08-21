@@ -35,9 +35,10 @@ route halves the signature at equal computation while leaving the statement unto
 it relocates the communication bottleneck rather than removing it.
 
 Taking the protocol to a UTXO ledger, the venue the original construction assumes,
-sharpens the conclusion: at the application level the signature is not the dominant cost
-at all. Measured across three configurations, the zero-knowledge proof of knowledge
-consumes over 98\% of a swap, and substituting a lattice prover for a pairing-based one
+sharpens the conclusion: measured across three configurations, the signature is at the
+application level not the dominant cost at all. The zero-knowledge proof of knowledge
+consumes \cfgThreeProofPct--\cfgTwoProofPct\% of each post-quantum swap, and substituting
+a lattice prover for a pairing-based one
 makes the swap \emph{faster} while making it larger. A working, tested, end-to-end
 post-quantum exotic signature is therefore achievable by reuse of standardised
 primitives, and the proof system, not the signature, is where a post-quantum swap should

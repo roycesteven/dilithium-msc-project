@@ -1,0 +1,18 @@
+run: 20260815_184622
+host: Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+forge: forge Version: 1.7.1
+cc: cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+git HEAD: bc33734a3923ffde90d132e04666f7bc093dcf6c
+git branch: report
+
+parameter set: Simplified Dilithium-II (n=4, ell=4, kappa=39, c_tilde=32B, Z_BITS=18)
+verifier: evm/src/LASVerifierOptD2.sol (copy of LASVerifierOpt.sol, params re-instantiated)
+vectors:  evm/test/vectors/d2/ via ref/test/export_verify_vector2
+
+commands:
+  make -C ref test/export_verify_vector2 && (cd ref && ./test/export_verify_vector2 ../evm/test/vectors/d2)
+  cd evm && forge test --match-contract LASGasBreakdownD2Test -vv   (NO --gas-report)
+
+SCOPE: ONE golden instance. SampleInBall and _decodeZ are data-dependent, so this is
+       NOT an upper bound over all D2 inputs. Supported claim: 'the measured D2 golden
+       instance fits in one transaction'.

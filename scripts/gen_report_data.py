@@ -517,6 +517,19 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     m.append(("clRatioPk", "%.0f" % ratio_pk))
     m.append(("clRatioTimeMax", "%.0f" % time_ratios[slow_op]))
     m.append(("clRatioTimeMaxOp", "Extract" if slow_op == "Ext" else slow_op))
+    # --- THE ADAPTOR LAYER, CHARGED ON BOTH SIDES OF THE MIGRATION (Wang, 2026-08-21).
+    # "The adaptor layer is nearly free" says nothing until the base it is free ON TOP
+    # OF is named: \ovPreSign & co. are LAS against its OWN post-quantum base signature,
+    # NOT against ECDSA.  The classical harness measures the same two pairs, so the
+    # classical adaptor layer can be charged the same way -- its adaptor PreSign over
+    # plain ECDSA Sign, its adaptor PreVerify over plain Verify -- which is what makes
+    # the two comparable: each scheme's adaptor layer against its own base.
+    # DERIVED, and from the classical side's single mixed native-API tier rather than
+    # the paired, interleaved measurement behind \ovPreSign: quote as a ratio of
+    # published means, never as a paired overhead, and never mix the two tiers'
+    # numbers in one sentence without saying so.
+    m.append(("clOvPreSignX", "%.1f" % (classical["PreSign"][0] / classical["Sign"][0])))
+    m.append(("clOvPreVerifyX", "%.1f" % (classical["PreVerify"][0] / classical["Verify"][0])))
     # --- Adapt decomposition (the supervisor-requested explanation of the ~270x
     # headline factor).  The two Adapt calls do DIFFERENT WORK, so the raw ratio
     # is not a speed comparison:

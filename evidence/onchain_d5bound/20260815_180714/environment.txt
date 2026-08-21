@@ -1,0 +1,14 @@
+run: 20260815_180714
+host: Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+forge: forge Version: 1.7.1
+git HEAD: bc33734a3923ffde90d132e04666f7bc093dcf6c
+git branch: report
+git status --porcelain lines: 44
+
+command:
+  cd evm && forge test --match-contract LASShakeGrowthTest -vv   (NO --gas-report)
+  python3 scripts/derive_onchain_d5_bound.py --growth-log <log>
+
+measured inputs consumed:
+  evidence/onchain_onetx/latest/{claim.calldata,claim_receipt.json}
+  evidence/onchain/latest/gas_report.log  (SampleInBall + decode-z stage attribution)

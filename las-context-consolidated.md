@@ -1,4 +1,4 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11)
 
 > **Meeting 6 is now IN this file, at §15A** (2026-08-15) — it sits between §15 (M5) and §16
 > (M7) so the reading order stays chronological, and it is lettered rather than numbered so
@@ -1144,6 +1144,51 @@ parameters are compile-time **D3-only**, so D2 and D5 were never built or measur
 (`docs/03-results/GAS_LIMIT_INVESTIGATION.md` §7). **"Not evaluated" is the only supportable
 wording** — delete the line from the deck. This is the **third** appearance of this exact trap,
 after §18.8 and the retracted "exceeds the block gas limit" claim.
+
+## 19A. Meeting-11 directives [M11, 2026-08-21 (inferred) — deck review, second pass; merged 2026-08-21]
+
+Transcript `meeting11_cleaned_transcript.md`. ⚠ **Single ASR pass, no diarisation** — speaker
+labels are content inferences (§D of the transcript); Royce confirmed the instructions by
+directing that they be fulfilled. The Meeting-10 feature freeze is not mentioned and not lifted.
+
+### 19A.1 Instructions confirmed (already recorded as the 2026-08-21 "second batch")
+
+Lead the deck with quantum-computer background and the urgency — **two motivations, both
+required**: atomic swaps matter *and* quantum security matters, the project is where they meet
+(§7). Close on "is LAS good or not" plus recommendations for developers and the blockchain
+community (§1). Show the transaction structure of Bitcoin (and Ethereum) field by field —
+"which field should I add" (§4). Make the swap followable without the maths — the protocol as
+states and messages (§12). Real logos and real prices, "because you are doing some scientific
+report… even for toy examples, try to be more precise" (§3). Exotic signatures explained on a
+slide or prepared as question backup (§8).
+
+### 19A.2 New rulings
+
+- **"Nearly free" must name its base** (§6): the deck's claim is against the **Dilithium-style
+  lattice base**, never ECDSA — "we should first translate from ECDSA to Dilithium, and then
+  move from Dilithium to LAS." Adaptor-ECDSA vs adaptor-LAS is endorsed as the companion
+  comparison (it already exists: `bench_classical`).
+- **The coins do not move between chains** (§12, laboured): each payment settles as a
+  transaction on its own chain; the swap is the linkage. Every diagram must be unreadable as a
+  cross-chain coin transfer.
+- **Venue wording** (§10): smart contracts are **"more flexible"**; Bitcoin is **"more
+  restricted… because they cannot be modified"** — miners verify directly against transaction
+  content; a contract compiles to opcodes the EVM executes. Replaces a framing Wang called "a
+  bit misleading".
+- **Scope: say the swap is UTXO-with-UTXO** (§13–§16): "it would be safer to just talk about
+  UTXO"; the Ethereum implementation may still be reported. **ETH↔USDC is never an example**
+  (ERC-20 swaps inside Ethereum need no atomic swap; Ethereum bridges outward). BTC↔ETH is
+  doable in principle — "the only different thing is the verification" — and stays a scenario.
+
+### 19A.3 Unresolved — do not act without Royce
+
+- **TPS/throughput** (§17): Wang demonstrated tx-per-block ÷ block-interval with improvised
+  numbers (**none citable** — "let's say 200", "just Google it"). Collides with the standing
+  EIP-7825 never-claims-per-block rule, the once-retracted block-limit claim, and the closed
+  throughput deliverable's never-combine rule. Royce chooses: explain the retraction / record
+  a supervisor override / satisfy the intent with existing per-transaction quantities.
+- **"You have 10 slides"** (§2): recollection vs the deliberate 13-slide deck; not treated as
+  a ruling to cut.
 
 ## 20. Reference links
 

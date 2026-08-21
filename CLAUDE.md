@@ -90,6 +90,13 @@ session that repeats one of these has failed even when its output looks right.
    habits fell out: a relayed critique may be reviewing a **stale diff** (one rejected an edit for
    not doing what that very edit did) or **belong to another thread entirely**, so check that the
    feedback is about the change in front of you before acting on it. → OUTPUT
+   **2026-08-21, standing instruction from Royce: relayed ChatGPT feedback is VERIFIED against
+   the paper/code before it is acted on — every time, in the same turn.** That day's was RIGHT
+   and blocking: an edit that split `r'` from `s` left "The witness is ternary" unscoped, which
+   after the split reads as covering the extracted `s` too (Remark 1 bounds it only by
+   `2(γ−κ)`). Pattern worth naming: **introducing a distinction retroactively widens every
+   earlier sentence that used the old, merged word** — re-read the neighbours after any symbol
+   split, not just the line being edited.
    ⚠️ **A "worst case" is only a bound if EVERY free variable is pushed the adverse way**
    (2026-08-15, cost a retracted draft). A D5-vs-gas-cap derivation was written as *proved*
    under "execution can only grow"— but calldata **byte content** was a second free variable,
@@ -155,6 +162,21 @@ the base signature.** Results/evaluation must lead with this
   **The only authoritative figures are the regenerated report macros `\ovPreSign` /
   `\ovPreVerify` / `\ovAdapt` from the evidence run named in the live block — never retype
   a percentage from any prose (this file included) into the report.**
+  ⚠️ **NAME THE BASE, EVERY TIME — "nearly free" alone is an unbaselined claim (Wang,
+  2026-08-21).** He read the deck's "the adaptor layer is nearly free" as *against Bitcoin's
+  ECDSA*, where it is emphatically false, and the fix he asked for is now the required framing
+  in deck and report alike: **two steps.** Step 1 = classical → post-quantum **basic** (the
+  expensive one — paid in bytes, and the step organisations are already migrating for); step 2
+  = basic → **adaptor**, which is what `\ovPreSign` & co. measure, against the *same* base at
+  identical parameters. The comparator that makes step 2 meaningful is **the same step charged
+  the same way on the classical side**: `\clOvPreSignX` / `\clOvPreVerifyX` (new 2026-08-21,
+  `gen_report_data.py`) = the ECDSA adaptor's own PreSign ÷ its own Sign = **×4.6 / ×4.0**.
+  ⚠️ Those two are **DERIVED from the classical harness's single mixed native-API tier**, not
+  the paired interleaved measurement — never call them a paired overhead, and quote the
+  **packed** LAS figure beside them so the comparison survives the conservative pairing.
+  ⚠️ Never let it imply LAS is *faster* than ECDSA in absolute time (it is not — that is step 1),
+  and never state step 1's `\clRatioSig` flatly as "the cost of post-quantum": it is **this
+  build's simplified base**, and the FIPS 204 ML-DSA route measures a smaller signature.
 - **NOT the focus:** the four parameter sets (paper / D2 / D3 / D5) are only a *secondary
   fairness / parameter-sensitivity* axis (§13.4). Never frame results around "across
   security parameter" or "as the scheme scales"; the across-parameter overhead chart is
@@ -217,18 +239,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-20 16:08 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-21 15:04 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 3b40c3c · 2026-08-19 · throughput scalability proposal unfinished
-- Working tree: 18 modified tracked file(s), 44 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD ad257d1 · 2026-08-20 · report dan deck 19_08 19_00
+- Working tree: 359 modified tracked file(s), 49 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `ad257d1 2026-08-20 report dan deck 19_08 19_00`
   - `3b40c3c 2026-08-19 throughput scalability proposal unfinished`
   - `0f6c914 2026-08-19  mcr deck`
   - `ea09bdf 2026-08-18 report deck btc full two leg update`
   - `3800bda 2026-08-18 d2 d3 d5 evm polish report deck not checked`
-  - `4cad978 2026-08-17 evm d2 d5 btc two leg swap deck fix`
 
 ### Target parameter set — anchors parsed from source
 
@@ -256,13 +278,13 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Supervisor meetings on record
 
-- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 (`meetingN_cleaned_transcript.md`)
-- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 (`meetingN_cleaned_transcript.md`)
+- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-20.
+- `CLAUDE.md` hand-written sections last touched 2026-08-21.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -476,6 +498,14 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   still unanalysed** — that caveat never lapses. Bitcoin binds the transaction, **not the
   chain** (BIP341 sighash has no chain id) — the EVM leg does (`AdaptorSwapBound.legMessage`
   hashes `block.chainid`); state the asymmetry.
+  ⚠️ **NEVER frame the two venues as a timeline** (Royce, 2026-08-21): "Ethereum yes /
+  Bitcoin not yet" is misleading — it reads as Bitcoin lagging and catching up. The
+  difference is **structural**: the EVM is programmable so verification is a contract you
+  *deploy*, while Script is fixed so the same work needs a **consensus rule**. The report's
+  own phrase is the safe one — *"the blocker is a consensus rule, not engineering"*
+  (`03-results.tex`, `05-conclusion.tex`). Deck slide 10 now reads "Ethereum: deploy /
+  Bitcoin: new rule". Naming a *specific* route (soft fork, OP_SUCCESS redefinition) on a
+  slide is still barred — that would be a position on adoption.
   ⚠️ **SUPERSEDED 2026-08-18, do not reinstate:** "no opcode costing, not wired into the
   swap" — both now **FALSE** (cost measured by the patched-client benchmark below;
   `run_btc_two_leg.sh` settles a whole Fig. 1 swap). Purged from `app:btcnode` and the deck.
@@ -622,7 +652,9 @@ is **contract-aware** — a bare `claim` silently bound the test mock `Rejector.
 eprint 2020/845 §4 *assumes* UTXO ("we assume an Unspent Transaction Output (UTXO)-based
 blockchain like Bitcoin"), so UTXO is the paper's own setting and the EVM is what a gas-metered
 venue costs by comparison. "Change of venue" / "first venue failed" / "why the venue was changed"
-are **purged report-wide**; do not reintroduce them. Meeting 7 still stands on fees-not-gas-limits,
+are **purged report-wide** — but the 2026-08-19 purge MISSED two, found 2026-08-20 by grep
+(`03-results.tex` "forced the change of venue", `EVM_TX_STRUCTURE.md` §4 heading): a purge is
+not done until it is re-grepped. Do not reintroduce them. Meeting 7 still stands on fees-not-gas-limits,
 heavy work off-chain, and adaptor swaps being used on UTXO chains in practice; on-chain LAS stays
 orders of magnitude above a classical `ecrecover` claim. Do not re-open Stage 2's venue. Detail: `docs/03-results/GAS_LIMIT_INVESTIGATION.md`,
 `docs/02-methodology/EVM_TX_STRUCTURE.md`. **IPFS off-chain storage** = **fallback, NOT adopted**
@@ -731,7 +763,9 @@ Quote the write-ups for numbers, never this file.
   ⚠️ **NOT wired into the swap**; batched param sets **not independently reviewed**, no security
   claim about batching. ⚠️ **OUT OF THE DISSERTATION (Royce, 2026-08-19) — "tidak ada value nya".**
   Code, params and `evidence/amortise/` **stay**; batching reaches neither report nor deck. Ch. 5
-  now names **two** optimisations, not three.
+  now names **two** optimisations, not three — and so does the deck's evaluation slide, whose headline read
+  "three suggestions" until 2026-08-20 while its own card said "Two". Second missed purge found
+  that day: **re-grep counts, not only phrases.**
 - **Not attempted, by ruling not by shortfall:** *analysing the ML-DSA variant's security* is
   out of scope (a reduction, not code). It stays in Ch. 5. ⚠️ Never restore the superseded
   "needs a SHAKE256 precompile / Merkle dispute / succinct proof" prediction — unevidenced, and
@@ -766,18 +800,61 @@ any of it.
    the deck's next job, not a rebuild** — see the Meeting-10 block for the full ruling: cut
    **13 slides → ~10**, lead with the application motivation, add a high-level **picture of the
    method**, close by answering the questions the opening posed, and **delete the unevidenced
-   "D5 needs more optimisation" line**. **REWORK DONE 2026-08-17** — `video_deck.html` is now
-   **10 slides, planned 6:35**, application-first, closing on the opening questions; slides 2/3/4
-   are **drawn scenes** (inline SVG on the deck tokens, built in four timed `.st1–.st4` stages, no
-   keypress) because the 13→10 pass had only reordered *text*; a **Why · Method · Results ·
-   Takeaway stepper** answers "where are we"; the key-map overlay now defaults **off** (it was in
-   shot); the ML-DSA attempt got the slide **table** Wang suggested. Demos are now slides **5 and
-   8** — fix that pair of numbers wherever it is cited. ⚠ **Under-running is now the timing risk**
-   (6:35 is 35 s over the floor), the opposite of the old 7:12 plan.
+   "D5 needs more optimisation" line**. ⚠ **THE MOTIVATION SLIDE MUST ARGUE THE PQ-EXOTIC CASE,
+   VISUALLY (Wang, 2026-08-21)** — explaining what an atomic swap is is NOT motivation. The
+   argument is a three-step chain and belongs in the picture, never in a footnote: what runs
+   today rests on **elliptic-curve** adaptor signatures → **Shor** breaks the problem they rest
+   on → NIST standardised only **basic** replacements, so the exotic layer is uneven (keep
+   "multi-signatures are being built" — that clause IS the softening M10 #2 ordered) → the
+   adaptor case is this project; slides 2–4 now draw it. **⚠ SECOND BATCH, SAME DAY (Wang via
+   Royce, 2026-08-21) — five instructions, all applied, and they OVERRIDE M10's slide count:**
+   (1) motivation **first and starting with quantum-computer background + the urgency** — why an
+   *expensive* exotic PQ signature is worth paying for; (2) close with **"is LAS good or not"**
+   and the **implications for Bitcoin developers / blockchain communities**; (3) show the
+   **transaction structure of BOTH Bitcoin and Ethereum** — "people want to see how it works in
+   practice, not in theory"; (4) the swap must be followable by someone who does **not** read the
+   maths; (5) **real BTC/ETH logos and real prices**. Plus Royce's framing rule: **the video must
+   not be the report read aloud** — it exploits the medium (motivation, results, evaluation,
+   conclusion, implications), or there was no point asking for a video.
+   **REWORK DONE 2026-08-17, EXTENDED 2026-08-21** — `video_deck.html` is now
+   **13 slides, planned 7:23**: motivation over slides 2–4 (quantum clock → the application →
+   the exotic gap), the two demos, **"What actually goes on chain"** (both venues field by field),
+   and a closing **verdict + one card per audience**. Slides 2–6 are **drawn scenes** (inline
+   SVG on the deck tokens, built in four timed `.st1–.st4` stages, no keypress); the stepper's
+   fourth part is **Implications** (was Takeaway); the key-map overlay defaults **off** (it was in
+   shot); the ML-DSA attempt got the slide **table** Wang suggested. Demos are slides **7 and 11**
+   (13-slide deck, 2026-08-21) — fix that pair of numbers wherever it is cited. ⚠ **13 slides
+   exceeds M10's "~10" deliberately** — each addition is a later Wang instruction; cutting back is
+   *his* call, and `VIDEO_PLAN.md` §1 names the cut order. ⚠ **Timing risk is now BOTH ends**
+   (7:23 leaves ~35 s each way), not under-running.
+   ⚠ **PRICES AND QUANTUM ESTIMATES ARE *CITED* CLAIMS, and carry a source AND an instant.** The
+   swap picture is **value-matched at spot** (so the *ratio* is what is asserted: BTC/USD and
+   ETH/USD from the CoinGecko API at a printed UTC minute, corroborated by Coinbase to 0.04%) —
+   **re-read both before recording on another day; a stale price is a wrong number.** The urgency
+   slide quotes three dated resource estimates and NIST IR 8547; two traps, both live: the fall
+   (20 M → <1 M qubits) may only be quoted **at ONE fixed target** (RSA-2048) — dividing the 2019
+   RSA figure by the 2026 secp256k1 figure is a ratio across targets, not a trend — and the NIST
+   row is the **≥128-bit** one, *disallowed after 2035*, **never** the 112-bit "deprecated after
+   2030" row that second-hand sources quote, which is not where secp256k1 sits. ⚠ These four
+   citations are **deck-only, not in the report** — the one substantive divergence between the two
+   artefacts; putting them in the report needs a sentence in §1.1 and four `refs.bib` entries, and
+   that is Royce's call against the 9,000-word ceiling.
    ⚠ **RENDER, NEVER REASON, ABOUT LAYOUT (2026-08-17)** — the previous session shipped voids and a
    clipped table that were invisible from the markup. Windows Chrome is reachable from WSL and
    screenshots any slide by deep link; the working command is in `VIDEO_PLAN.md` §3. A layout claim
-   without a screenshot is unverified. Plan + beat sheet +
+   without a screenshot is unverified — and after any **chrome** edit (stepper, eyebrow, logo band)
+   re-shoot ALL thirteen, not a sample: a 2026-08-20 stepper edit collided with exactly one
+   eyebrow, on the one slide not sampled. Three further defects were invisible from the markup on
+   2026-08-21 and only a screenshot found them: an SVG label wider than the rect drawn behind it,
+   a `.tx` box **silently clipping** its last line under `overflow:hidden` (now `flex:none`, so an
+   overrun shows instead of truncating), and a two-line source note printing straight through the
+   footer. ⚠ **Attribute beliefs to NO ONE on the evaluation slide** (2026-08-21): quotation marks
+   manufactured a source (read as citing eprint 2020/845, which drops Dilithium's optimizations
+   only *"in order to simplify the presentation"*), and the replacement `I assumed` was ALSO
+   wrong — Royce never held those assumptions and the report says *measured*. The slide is
+   question-form ("Does X? → measured answer"); reintroduce neither framing. ⚠ **In-shot type floor 13px** (Royce, 2026-08-21, "tulisan harus
+   besar dan jelas" per the UoM template, whose own floor is 20pt): rehearsal-only chrome exempt;
+   the gas chart left the evaluation slide because its axis type cannot meet the floor at 720p. Plan + beat sheet +
    on-camera claim discipline in `report/slides/VIDEO_PLAN.md`. It is **generated**:
    `scripts/gen_slides.py` fills `video_deck.template.html` from
    `report/latex/generated/*.tex` and embeds the report's own figures, so slides and report
@@ -785,28 +862,22 @@ any of it.
    output**; re-run after every `sync_report.sh`). Bar geometry is derived from the same
    macros as the labels, so a width cannot drift from its number.
    ⚠ **UoM FORMAT LIVES IN THE HTML DECK — a .pptx conversion was built and REJECTED (Royce,
-   2026-08-19).** `video_deck_uom.pptx` + `scripts/gen_slides_pptx.py` are kept **only as a
-   fallback** if a submission ever demands PowerPoint — never the file to record, never the file
-   to edit, and it goes stale the moment the template changes. The template's chrome was skinned
-   onto the deck instead: **Arial**, headline `--uom` #7800A2, dotted rule `--uom-rule` #660066,
-   and the Manchester mark top-left on every slide (`#uomlogo` ⇐ `{{UOM_LOGO}}` ⇐
-   `report/slides/assets/uom_logo.png`, embedded base64 by `gen_slides.py`'s `ASSETS`). The mark
-   is **reproduced** from `Master_169 presentation(2).pptx`, never redrawn — provenance and the
-   rebuild recipe are in that directory's `README.md`.
-   ⚠ **Brand colour touches CHROME ONLY.** The base / adaptor / reused / warn accents are
-   *semantic* — they mean the same thing in the report figures printed beside them — so they are
-   never recoloured to match a brand. Both light and dark carry their own `--uom` step.
-   ⚠ Rendering the skin caught a **pre-existing** defect: slide 8's card 2 has overflowed its box
-   since the two-leg text landed 2026-08-18 (confirmed against `git show HEAD:`, so it is not the
-   skin's). Fixed by the reusable `.tight` column knob — **scale a column, never cut a claim.**
+   2026-08-19).** `video_deck_uom.pptx` + `scripts/gen_slides_pptx.py` survive **only** as a
+   fallback if a submission demands PowerPoint: never recorded, never edited, stale the moment
+   the template changes. The chrome was skinned onto the deck instead (Arial, `--uom` #7800A2,
+   `--uom-rule` #660066, the mark **reproduced** from `Master_169 presentation(2).pptx` via
+   `assets/uom_logo.png` — recipe in that directory's `README.md`). ⚠ **Brand colour is CHROME
+   ONLY** — base/adaptor/reused/warn are *semantic*, shared with the report's figures, and are
+   never recoloured to a brand. ⚠ Overflow is fixed with the reusable `.tight` column knob —
+   **scale a column, never cut a claim.**
    ⚠ **NO CAPTURES — NOT A TERMINAL, NOT A WINDOW SWITCH (Royce, 2026-08-13; a terminal dump
    was already rejected 2026-08-12 — it shows that a run happened, not what happened).**
    **Both demos step INSIDE the deck**: `data-sub="n"` makes a slide consume the forward key
    n times, driven by four attribute rules (`data-w`/`data-only`/`data-until`/`data-settle`)
-   — a beat is markup, never per-slide script — and each slide **opens on beat 1**. Slide 5 =
+   — a beat is markup, never per-slide script — and each slide **opens on beat 1**. Slide 7 =
    the swap board (abort gate → tripwire → publish σ₂ → Ext y′ **then** Adapt σ̂₁ and publish;
    never collapse those last two, Fig. 1 has both, and u₂ *does* publish — it needs nothing
-   further **from u₁**); slide 9 = the node differential, drawn. `swap_console.html` stays as
+   further **from u₁**); slide 11 = the node differential, drawn. `swap_console.html` stays as
    the standalone artefact **out of the recording**, banner kept, and its narration is
    **configuration-aware**: config 1 has no role-A π and its Ext is a secp256k1 recovery, so
    `classical:{}` overrides every LAS-specific line, and no byte figure may be attributed to
@@ -918,7 +989,7 @@ about order, ask Royce rather than silently reordering.
 
 ## Supervisor rulings in force
 
-Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10).
+Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10, **§19A = M11**).
 Transcripts: `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`). **Read §16 before
 planning application work.** ⚠ **M6 was merged into the spec 2026-08-15** (Royce) — it is
 *lettered* 15A, not numbered, so §16–§19 keep the numbers cited across CLAUDE.md and `docs/`;
@@ -926,7 +997,33 @@ its per-item delivery **status matrix** stays in
 `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` §1. Supersedes the old "meeting 6 is not in
 that file" warning — the spec now covers every meeting.
 
-**Meeting 10 (date NOT confirmed — 2026-08-14 or -15; never cite a firm one) — LATEST WORD.
+**Meeting 11 (2026-08-21, date inferred from file metadata — deck review, second pass) —
+LATEST WORD.** Transcript `meeting11_cleaned_transcript.md`. ⚠ **Single ASR source, NO
+diarisation** — every speaker label is inferred from content; §D forbids promoting anything to
+a ruling on attribution alone, and Royce confirmed the items by instructing they be fulfilled.
+Most of it confirms the second-batch instructions already recorded above (quantum-first
+motivation, verdict + per-audience implications, both venues' transaction structures, maths-free
+swap, real logos/prices — all applied). Genuinely new, all applied 2026-08-21:
+- ⚠ **THE COINS DO NOT MOVE BETWEEN CHAINS** (laboured twice): every swap picture must draw
+  each payment settling ON its own chain — tx boxes anchored to their ledgers, the shared
+  secret the only element crossing. Deck slide 3 redrawn; `fig:swapidea` caption now says it.
+  Never reintroduce a card-to-card coin arrow.
+- ⚠ **Venue vocabulary is Wang's**: contracts **"more flexible"**, Bitcoin **"more restricted,
+  because [its fields] cannot be modified"** — he called the prior framing "a bit misleading".
+  Complements (does not replace) "consensus rule, not engineering" and the no-timeline rule.
+- ⚠ **Scope wording: the measured swap is UTXO-with-UTXO** — *"safer to just talk about
+  UTXO"*; the EVM work may still be reported. **ETH↔USDC is never an example**. BTC↔ETH is
+  *doable* ("the only different thing is the verification") and stays the motivating scenario
+  only — no artefact may imply it was run. DEMO A now says the scope aloud.
+- ⚠ **TPS/THROUGHPUT — UNRESOLVED, NOT A RULING** (§D action 1): Wang's tx-per-block ÷
+  block-interval walkthrough used improvised numbers (**none citable**) and collides with the
+  EIP-7825 never-claims-per-block rule, the retracted block-limit claim, and the closed
+  throughput deliverable. **Royce chooses** (explain retraction / record override / satisfy
+  the intent from existing per-transaction quantities). Until then: **no TPS figure anywhere**.
+- "You have 10 slides" is recollection, not a ruling — the 13-slide deck stands (§D 10).
+**Nothing in Meeting 11 authorises a new experiment; the M10 freeze stands.** Detail: §19A.
+
+**Meeting 10 (date NOT confirmed — 2026-08-14 or -15; never cite a firm one).
 The mock presentation was delivered and reviewed: CONTENT ACCEPTED, PRESENTATION NOT, and the
 feature freeze reaffirmed in the strongest terms yet.** Transcript
 `meeting10_cleaned_transcript.md`, consolidated from two ASR sources — Samsung (diarised, whole
@@ -959,7 +1056,7 @@ stamped "Royce Steven"). Rulings, each mandatory:
   modified Criterion figure, the Bitcoin structure figure. GitHub link **not** required.
   Chapter-header length: no firm ruling. From ≈28:57 the meeting is reviewing the **report**,
   not the deck; do not re-file those comments as slide feedback.
-  ⚠ **Party naming, settled 2026-08-16 — do not "fix" either way.** Deck slide 5 uses **Alice /
+  ⚠ **Party naming, settled 2026-08-16 — do not "fix" either way.** Deck slide 2 uses **Alice /
   Bob** outright. The report keeps `u₁`/`u₂` for mathematics, and the new intro figure
   `fig:swapidea` names them **once** as "Alice $(u_1)$" / "Bob $(u_2)$" so the friendly picture
   also teaches the notation the chapter then uses. Alice/Bob is standard crypto convention
@@ -1190,6 +1287,16 @@ captions, figure labels — never one in isolation):
   ⚠ **A figure must show `SampleInBall` itself, not leave the link to the prose** (Wang,
   Meeting 10): he read the figure, saw `c`, and asked *"how did we get the `c`?"* — the two
   symbols side by side with no function between them read as a typo, not a derivation.
+- **`y` (mask) / `r'` (honest witness) / `s` (extracted) — THREE objects Algorithm 2 names,
+  and the same trap as `c`/`c̃`** (Royce caught it 2026-08-21). The paper overloads `y`: the
+  mask sampled at Step 2, *and* the pair component of `(Y,y)` — which Adapt parses `r' := y`
+  (Step 24), Ext returning `s = z − ẑ` (Step 30). Report maths follows that: `y` **only** the
+  mask, `r'` wherever the witness enters arithmetic, `s` for Ext's output; `(Y,y)` stays the
+  pair's narrative name. ⚠ `s` is guaranteed only `‖s‖∞ ≤ 2(γ−κ)` (Remark 1, knowledge gap),
+  so **"the witness is ternary" is FALSE of `s`** — scope every ternary/norm claim to an
+  *honest* `r'`. ⚠ **`fig:lasfuncs` must carry the response `ẑ = y + c·r` (Step 5)**: it was
+  missing until 2026-08-21, so the panel named an output it never computed — a figure that
+  states a function's inputs, bound and output must state the line producing that output.
 
 Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 

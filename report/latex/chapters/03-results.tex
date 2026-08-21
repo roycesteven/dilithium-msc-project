@@ -104,7 +104,7 @@ At the core boundary the adaptor layer is almost free, and the reasons are struc
 PreSign ($+\ovPreSign\%$ over Sign) runs the same reject loop, adding only $Y$ to the
 commitment and a tighter bound; PreVerify ($+\ovPreVerify\%$) recomputes the same
 commitment shape with the extra $+Y$; Adapt ($+\ovAdapt\%$) runs a PreVerify then adds
-the witness vector; Extract merely subtracts $z-\hat z$ and checks $A\,y=Y$. None changes
+the witness vector; Extract merely subtracts $s=z-\hat z$ and checks $A\,s=Y$. None changes
 the asymptotic work. This is the headline of the standalone-signature evaluation:
 \emph{at the core tier} adaptor functionality costs single-digit percentages at every
 parameter set, and the two operations unique to an adaptor signature cost about a
@@ -441,8 +441,10 @@ below $2^{-\piKnowledgeError}$ and is exchanged off-chain only.
   danger is that one side takes payment and walks away; an atomic swap removes it, so
   either both transfers settle or neither does, with no centralised exchange and nobody
   who has to be trusted to hold both sides. Each party acts on \emph{both} chains --- the
-  chains belong to the coins, not to the people. The names fix Esgin et al.'s $u_1$ and
-  $u_2$ notation used from here on. \Cref{fig:swapflow} shows how the adaptor signature
+  chains belong to the coins, not to the people --- and neither coin ever leaves its
+  chain: each transfer settles as an ordinary transaction on its own ledger, and the swap
+  is the link between the two transactions, not a coin crossing chains. The names fix
+  Esgin et al.'s $u_1$ and $u_2$ notation used from here on. \Cref{fig:swapflow} shows how the adaptor signature
   achieves this.}
   \label{fig:swapidea}
 \end{figure}
@@ -769,7 +771,7 @@ admits an upper bound of \btcThreePerBlock{} settlements per block against
 \btcOnePerBlock{} classical ones, ignoring competing transactions. A UTXO chain does
 impose a limit, then, but a weight limit rather than a gas limit, and one swap sits well
 inside it --- the contrast with the EVM, where the first native verifier exceeded the
-transaction gas cap outright and forced the change of venue.
+transaction gas cap outright.
 
 Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
 verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340

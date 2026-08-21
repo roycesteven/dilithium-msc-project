@@ -1,0 +1,89 @@
+legB settlement tx  : f4fa5e8c0d6c4a7e2636af3bd295643e0f6eaf4aa48cffadec7cd3c47689c9c8
+legB block          : 134fce3796e1aa753ef8fca3010b3bd13b3174ebea87ec028bbf84fb56565da4 (confirmations 1)
+legA settlement tx  : de540ff68f6ce75ad28c6f3091b15615e3e3b2d71d00a7caa592aaa73da6bc99
+legA block          : 2bfb9cdfae9b2df95517af61ef641d6a72c6a3544ba22eaad7ebadb54b7b2ee7 (confirmations 1)
+
+sigma_2 recovered from the MINED witness : 6736 bytes, split found at offset 6736
+  boundary located by                    : sha256(pk) committed by the funding output's tapleaf, not a locally known signature length
+  identical to the Adapt output          : YES   <- Adapt provenance
+  sha256(sigma_2 from chain)             : d96fbaa546da47de90da70f1b9dcc5c3...
+extracted witness == Gen's witness       : YES
+  sha256(witness extracted)              : e83ecc6c62fb3a8b39d4b89b03f3dcc9...
+sigma_1 (adapted under EXTRACTED y)      : 6736 bytes, sha256 1153868d2b2c515439e5a1edb3cad8f9...
+
+legA escrowed coin spent : YES
+legB escrowed coin spent : YES
+legA payout              : 99800000 sat to bcrt1qq4hhu7heaeg8jv8rvztzjt57ny9fj4dw7yyv00 (expected 99800000 to bcrt1qq4hhu7heaeg8jv8rvztzjt57ny9fj4dw7yyv00)
+legB payout              : 99800000 sat to bcrt1qu7x37fyjmqqrwzdj3p9eslyn6e62c54ag9kz59 (expected 99800000 to bcrt1qu7x37fyjmqqrwzdj3p9eslyn6e62c54ag9kz59)
+
+RESULT: a two-leg atomic swap settled on TWO independent Bitcoin regtest chains.
+        Both legs were authorised solely by LAS signatures verified in consensus
+        under OP_CHECKLASSIGVERIFY by a patched Bitcoin Core. Leg B's adapted
+        signature was read back out of the MINED witness, its boundary located by
+        the funding output's own commitment; Ext recovered the witness from those
+        bytes alone, and leg A was adapted with it and settled on the other chain.
+
+--- every case, put to BOTH nodes of its chain as a CONSENSUS question ---
+    (generateblock submit=false: block validation, not mempool policy)
+
+legB_valid                     patched: ACCEPTED                                                   stock: ACCEPTED
+legB_output_amount             patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 3ed2b77720fcd3d1f2a7396d2d07 stock: ACCEPTED
+legB_output_recipient          patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 3f7e2f753a814a2bc9c53515d4cc stock: ACCEPTED
+legB_input_outpoint            patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of eb779d12c95f5cdb5ab9cf818ce3 stock: ACCEPTED
+legB_chunk_truncated           patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (Malformed LAS witness (chunk count or chunk length)), input 0 of f4fa5 stock: ACCEPTED
+legB_chunk_reordered           patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of f4fa5e8c0d6c4a7e2636af3bd295 stock: ACCEPTED
+legB_wrong_pubkey              patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS public key does not match the committed hash), input 0 of f4fa5e8c stock: ACCEPTED
+legB_wrong_prevout_amt         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of f4fa5e8c0d6c4a7e2636af3bd295 stock: ACCEPTED
+legB_foreign_signature         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of f4fa5e8c0d6c4a7e2636af3bd295 stock: ACCEPTED
+legB_non_sighash_msg           patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of f4fa5e8c0d6c4a7e2636af3bd295 stock: ACCEPTED
+legA_valid                     patched: ACCEPTED                                                   stock: ACCEPTED
+legA_output_amount             patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of f1b43ca43bf95755bfb86fe42a9d stock: ACCEPTED
+legA_output_recipient          patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 036d76c8e5af639d5380f4823159 stock: ACCEPTED
+legA_input_outpoint            patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of a919ecca9ae94aaacf8a563e229b stock: ACCEPTED
+legA_chunk_truncated           patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (Malformed LAS witness (chunk count or chunk length)), input 0 of de540 stock: ACCEPTED
+legA_chunk_reordered           patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of de540ff68f6ce75ad28c6f3091b1 stock: ACCEPTED
+legA_wrong_pubkey              patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS public key does not match the committed hash), input 0 of de540ff6 stock: ACCEPTED
+legA_wrong_prevout_amt         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of de540ff68f6ce75ad28c6f3091b1 stock: ACCEPTED
+legA_foreign_signature         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of de540ff68f6ce75ad28c6f3091b1 stock: ACCEPTED
+legA_non_sighash_msg           patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of de540ff68f6ce75ad28c6f3091b1 stock: ACCEPTED
+legA_cross_leg_signature       patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of de540ff68f6ce75ad28c6f3091b1 stock: ACCEPTED
+
+  Required and checked exactly: valid = ACCEPTED/ACCEPTED; every negative =
+  REJECTED/ACCEPTED. The stock node still treats 0xbb as OP_SUCCESS, so it accepts
+  unconditionally and cannot be reacting to the signature. The difference between
+  the two columns is the new consensus rule, and nothing else.
+
+chain 1: block1=1a070a40b46b312be46993bfaf78c0ea284ec5eb7cd6f91cfc6500e95325f6cc tip=61f459c4b7a0eca7e594c1a105847ece179e8473060dd1c758cb3f5b71c39cb3
+chain 2: block1=4c55445262e16c0ed144db07410364c899514eb90eb4854003e7b1c7c274de0d tip=0f158904c5e72ca27862365f32ccdd877f859188b55c7b63927c3a848256a662
+the two chains diverge from height 1 and are never connected to each other
+leg A coin bd9c8c39383ad33f103795ae33f2604d435b379248e16f0e19645c4780e73ae4:1 — present in chain 1's UTXO set, absent from chain 2's
+leg B coin e6d01a7def0062a1317f17f5d5a4616a569bf4ed98b2280461a54fbaf4d317fb:0 — present in chain 2's UTXO set, absent from chain 1's
+asked via gettxout (the UTXO set), so the answer does not depend on -txindex
+
+leg B's settled transaction offered to CHAIN 1: refused (exit 25)
+  reason: error code: -25 error message: TestBlockValidity failed: bad-txns-inputs-missingorspent, CheckTxInputs: inputs missing/spent in transaction f4fa5e8c0d6c4a7e2636
+  reading: the two LEDGERS are separate — leg B's coin does not exist on chain 1.
+  NOT a claim that the signature is bound to a chain: BIP341 has no chain id.
+
+[LAS legA] inputs=1 outputs=1 witness_items=[24]
+  total_size  model 11373    node 11373    OK
+  weight      model 11619    node 11619    OK
+  vsize       model 2905     node 2905     OK
+[LAS legA] size model agrees with the client
+[LAS legB] inputs=1 outputs=1 witness_items=[24]
+  total_size  model 11373    node 11373    OK
+  weight      model 11619    node 11619    OK
+  vsize       model 2905     node 2905     OK
+[LAS legB] size model agrees with the client
+
+Both settlement signatures are Adapt's output. base_sign_det is used by the shim's
+selftest and to make the control signatures above, but neither settlement signature
+comes from it and no transaction it signed was mined. Their Adapt provenance rests
+on the byte-for-byte equality of the chain-recovered signature with the retained
+Adapt output. Ext succeeding on the mined sigma_2 is additional, weaker evidence:
+it shows the chain-observed signature is compatible with the pre-signature and
+yields a witness satisfying A*y = Y — not that Adapt produced those bytes.
+
+SCOPE: honest path only. The tapleaf carries no refund branch, so timeouts and the
+refund case are not implemented and nothing here speaks to them. A patched node is
+not Bitcoin.

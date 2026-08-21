@@ -6,11 +6,12 @@
 
 Public blockchains authorise every transaction with a digital signature, almost
 always the Elliptic Curve Digital Signature Algorithm (ECDSA), Schnorr, or
-Boneh--Lynn--Shacham (BLS) signatures over an elliptic curve. The security of all three rests
-on the hardness of the elliptic-curve discrete logarithm problem. Shor's algorithm
-solves that problem in polynomial time on a sufficiently large quantum computer
-\cite{shor1999polynomial}, so a future quantum adversary could forge signatures and spend other
-users' funds. ``Post-quantum'' (PQ) cryptography replaces these assumptions with
+Boneh--Lynn--Shacham (BLS) signatures over an elliptic curve. ECDSA and Schnorr rely on the
+hardness of the elliptic-curve discrete logarithm problem, while BLS relies on a
+Diffie--Hellman-type assumption in pairing-friendly elliptic-curve groups. Shor's algorithm
+solves discrete logarithms in polynomial time on a sufficiently large quantum computer
+\cite{shor1999polynomial}, breaking all three, so a future quantum adversary could forge
+signatures and spend other users' funds. ``Post-quantum'' (PQ) cryptography replaces these assumptions with
 problems believed hard even for quantum computers, such as those over lattices.
 
 The U.S. National Institute of Standards and Technology (NIST) has standardised

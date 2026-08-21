@@ -1,0 +1,31 @@
+{
+  "hash": "2bfb9cdfae9b2df95517af61ef641d6a72c6a3544ba22eaad7ebadb54b7b2ee7",
+  "confirmations": 1,
+  "height": 104,
+  "version": 536870912,
+  "versionHex": "20000000",
+  "merkleroot": "c1128737d9240f3aff7d4df399f7b707afe982d5e4c38531c757a1706d6f9ee1",
+  "time": 1786992077,
+  "mediantime": 1786992070,
+  "nonce": 1,
+  "bits": "207fffff",
+  "target": "7fffff0000000000000000000000000000000000000000000000000000000000",
+  "difficulty": 4.656542373906925e-10,
+  "chainwork": "00000000000000000000000000000000000000000000000000000000000000d2",
+  "nTx": 2,
+  "previousblockhash": "7ffd1f26273f2f0bbba6d6252020b9e710581931851a8e75115b1d9aec231688",
+  "strippedsize": 295,
+  "size": 11622,
+  "weight": 12507,
+  "coinbase_tx": {
+    "version": 2,
+    "locktime": 103,
+    "sequence": 4294967294,
+    "coinbase": "016800",
+    "witness": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "tx": [
+    "484a35bff731e7702d1489638520dab17d2dc86995d00acffc4a19a9837a2543",
+    "de540ff68f6ce75ad28c6f3091b15615e3e3b2d71d00a7caa592aaa73da6bc99"
+  ]
+}

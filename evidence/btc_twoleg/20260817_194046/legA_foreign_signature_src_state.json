@@ -1,0 +1,13 @@
+{
+  "alt_txid": null,
+  "alt_vout": null,
+  "claimed_value_sat": 100000000,
+  "dest_spk_hex": "0014056f7e7af9ee507930e36096292e9e990a9955ae",
+  "fee_sat": 200000,
+  "mutate": "none",
+  "pk_path": "/home/melly/dilithium-msc-project/evm/test/vectors/swap_btc/pk1.bin",
+  "sighash_hex": "6569a3dd23ff672e58883c3441fdaf4da6337b80dc1282b5661ff896d85443fb",
+  "txid": "9e904a80528087f410f6a9bbd60266e77ce3b020f24b12fe318d6203b6abd5a4",
+  "value_sat": 100000000,
+  "vout": 1
+}

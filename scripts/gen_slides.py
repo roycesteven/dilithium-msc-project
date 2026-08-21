@@ -158,6 +158,16 @@ def derive(macros: dict[str, str]) -> dict[str, str]:
         ("cfgThreeRestPct", "cfgThreeProofPct"),
     ):
         out[key] = f"{100 - num(macro):.1f}"
+
+    # Cost-in-time slide: the adaptor layer's overhead over ITS OWN base, on one
+    # shared scale for both schemes.  The classical macro is a ratio (x4.6 of
+    # Sign), the LAS macros are percentages; the bars encode the same quantity
+    # -- overhead percent -- while each label still prints its macro verbatim,
+    # so no number is retyped in another unit.
+    cl_over_pct = (num("clOvPreSignX") - 1.0) * 100.0
+    out["wClAdLayer"] = "100.00"
+    out["wLasAdPacked"] = f"{100 * num('packedOvPreSign') / cl_over_pct:.2f}"
+    out["wLasAdCore"] = f"{100 * num('ovPreSign') / cl_over_pct:.2f}"
     return out
 
 

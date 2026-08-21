@@ -33,60 +33,76 @@ Re-run it after any `scripts/sync_report.sh`, or the slides will quote an older 
 run than the report does.
 
 **Deck keys:** `→ ←` navigate · `N` speaker notes · `T` start the timer · `S` show the
-talking-head safe area · `G` slide grid · `F` fullscreen · `H` the key map · `video_deck.html#5`
-opens on slide 5 for rehearsing one beat.
+talking-head safe area · `G` slide grid · `F` fullscreen · `H` the key map · `video_deck.html#7`
+opens on slide 7 for rehearsing one beat.
 
 ⚠ **The key-map overlay now defaults to OFF** — it is drawn over the page, so it used to sit in
 shot for the whole take. Press `H` while rehearsing, and it stays hidden when you record.
 
-**A section stepper (Why · Method · Results · Takeaway) sits top-right**, lighting the part the
+**A section stepper (Why · Method · Results · Implications) sits top-right**, lighting the part the
 current slide belongs to; the title slide shows none. That is Wang's "where are we?" marker — the
 thin progress bar says how *far*, not *where*.
 
-⚠ **Slides 5 and 8 have beats inside them.** Each **opens already on its first beat**; `→`
+⚠ **Slides 7 and 11 have beats inside them.** Each **opens already on its first beat**; `→`
 then advances to the next beat and only moves to the following slide once the beats are
-exhausted (`←` walks back the same way). So slide 5 takes **three** presses to walk its four
-beats, and slide 8 **one** press to walk its two. The footer prints `beat k/n` so you always
+exhausted (`←` walks back the same way). So slide 7 takes **three** presses to walk its four
+beats, and slide 11 **one** press to walk its two. The footer prints `beat k/n` so you always
 know where you are. Nothing else in the deck behaves differently.
 
 ---
 
 ## 1. Structure and timing
 
-**Ten slides** (Meeting 10: 13 was too many, "more or less 10"), planned total **6:35** —
-inside the 6–8 minute band, but only 35 s over the **floor** and 85 s under the ceiling, so
-after the rework the risk to rehearse against is **under**-running, the opposite of the old
-7:12 plan. The deck prints each slide's planned time and the running clock in its own footer;
-the table below is the same plan in one view, with the part each slide belongs to — which is
-what the top-right stepper lights.
+**Thirteen slides**, planned total **7:29** — inside the 6–8 minute band with roughly half a
+minute of margin at each end. The count grew past Meeting 10's "more or less 10" because
+three of Wang's later instructions each asked for a slide that did not exist: the quantum
+background and urgency (2), the transaction structure of both venues (10), and the verdict
+with its implications for Bitcoin and blockchain developers (13). **If Wang wants it back
+near ten, that is a cut he has to choose** — the candidates are named under the table.
+
+The deck prints each slide's planned time and the running clock in its own footer; the table
+below is the same plan in one view, with the part each slide belongs to — which is what the
+top-right stepper lights.
 
 | # | Slide | Part | Plan | Job in the story |
 |---|---|---|---|---|
-| 1 | Title | — | 0:12 | who, what, one sentence |
-| 2 | Why this matters | Why | 0:42 | **beginning** — the application first: two chains, one shared secret, and the three questions the talk answers |
-| 3 | What an adaptor signature does | Method | 0:40 | the four functions drawn as one flow, built in four timed stages |
-| 4 | The method | Method | 0:40 | additive architecture, the one substitution, and how `c` is derived from `c̃` |
-| 5 | **DEMO A — walking the swap** | Results | 0:45 | *complement*: the protocol, stepped and broken (4 beats, 3 presses) |
-| 6 | Cost in time | Results | 0:48 | **middle** — per-operation overhead, and the proof dominating a whole swap |
-| 7 | Cost in bytes | Results | 0:38 | communication is the price of post-quantum |
-| 8 | **DEMO B — a real Bitcoin client** | Results | 0:45 | *complement*: the node differential (2 beats, 1 press) |
-| 9 | What I got wrong | Results | 0:45 | two beliefs measurement overturned, three suggestions closed by running them |
-| 10 | Answering the questions | Takeaway | 0:40 | **end** — the same three questions slide 2 posed, then what stays open |
+| 1 | Title | — | 0:10 | who, what, one sentence |
+| 2 | **Why now — the quantum clock** | Why | 0:38 | **the urgency**: three dated resource estimates, the permanence of a ledger, and NIST's own retirement date |
+| 3 | Why this matters | Why | 0:28 | what it protects — two chains, one shared secret, real coins at the real market rate |
+| 4 | Why post-quantum, **and why exotic** | Why | 0:26 | two drawn scenes: the signature stack (migration reaches the basic tier and stops) and the HTLC-vs-adaptor contrast — then the three questions |
+| 5 | What an adaptor signature does | Method | 0:34 | the four functions as one flow, each led by a plain-English line |
+| 6 | The method | Method | 0:30 | additive architecture, the one substitution, `c` derived from `c̃` |
+| 7 | **DEMO A — walking the swap** | Results | 0:44 | *complement*: the protocol, stepped and broken (4 beats, 3 presses) |
+| 8 | Cost in time | Results | 0:44 | **two steps**: post-quantum is the expensive one, the adaptor layer on top is not — and the same layer costs ×4.6 classically |
+| 9 | Cost in bytes | Results | 0:30 | communication is the price of post-quantum |
+| 10 | **What actually goes on chain** | Results | 0:40 | **in practice**: both venues' real transaction structures, field by field |
+| 11 | **DEMO B — a real Bitcoin client** | Results | 0:44 | *complement*: the node differential (2 beats, 1 press) |
+| 12 | Settled by measurement | Results | 0:36 | the evaluation: three beliefs put to a test rather than argued |
+| 13 | **Verdict — and what it means in practice** | Implications | 0:45 | **the close**: the three questions answered, the verdict, and one card per audience |
 
-**If you run long**, cut in this order: slide 9's third card (the three closed suggestions) →
-slide 6's rejection-gate caveat → slide 4's known-answer-digest row. Do **not** cut a
+**If you run long**, cut in this order: slide 12's future-work card (the two closed
+suggestions) → slide 8's rejection-gate caveat → slide 6's known-answer-digest row → slide 2's
+second card (the NIST date), which the narration can carry alone. Do **not** cut a
 demonstration beat — the two demonstrations are where *Use of the Medium* and *Complementing
-the Report* are earned, and those are 80 % of the video mark between them. **If you run short**,
-slide 5's fourth beat and slide 9's ML-DSA table are the two places with more to say than is
-printed on them.
+the Report* are earned, and those are 80 % of the video mark between them. **If you run
+short**, slide 7's fourth beat and slide 12's ML-DSA table have more to say than is printed.
 
----
+⚠ **What the video must NOT be is the report read aloud** (Royce, 2026-08-21). Every slide
+here either *shows* something the report can only assert — the protocol stepped and broken,
+the two clients disagreeing, the two transaction structures side by side — or states a
+consequence *for a named audience*, which a dissertation chapter does not do. Where the deck
+carries a fact the report does not, it is cited on the slide itself: slide 2's quantum
+estimates and NIST date, and slide 3's spot prices, are **cited** claims, not measured ones.
+⚠ Slide 2's three estimates and the NIST transition date are **not in the report**. That is a
+deliberate deck-only motivation, and it is the one place the two artefacts differ in
+substance; if it should be in both, the report's §1.1 needs a sentence and four references.
 
 ## 2. The two demonstrations — how each is driven
 
-### DEMO A — walking the swap (slide 5, ~45 s, 4 beats, 3 presses)
+### DEMO A — walking the swap (slide 7, ~44 s, 4 beats, 3 presses)
 
-The board is u₁ · two chains · u₂, with the objects each party holds and the measured size
+The board is u₁ · two chains · u₂ — **two UTXO ledgers**, which the eyebrow and the opening
+narration now state (Meeting 11 scope ruling), with the objects each party holds and the measured size
 of each. The exchange has already happened when the slide opens, **on beat 1**.
 
 | beat | reached by | what is on screen | the line to land |
@@ -98,7 +114,7 @@ of each. The exchange has already happened when the slide opens, **on beat 1**.
 
 Beat 4 is the one to slow down on — it is the whole reason a swap is atomic.
 
-### DEMO B — a real Bitcoin client (slide 8, ~45 s, 2 beats, 1 press)
+### DEMO B — a real Bitcoin client (slide 11, ~44 s, 2 beats, 1 press)
 
 The same spend, byte for byte, put to two clients of the same release.
 
@@ -138,7 +154,7 @@ directory, so read `evidence/btc_las_node/<run>/verdict.txt`.
 - **Turn the speaker notes OFF (`N`) before recording.** They are a rehearsal aid and are
   drawn over the page.
 - **Press `T` when you start speaking.** The clock turns red past 8:00.
-- Rehearse slides 5 and 8 with `#5` / `#8` until the beat presses land with the sentence —
+- Rehearse slides 7 and 11 with `#7` / `#11` until the beat presses land with the sentence —
   they are the only places where a keypress has to be timed to speech.
 - Theme follows the system setting; both light and dark are laid out deliberately. Pick one
   and keep it for the whole recording.
@@ -168,9 +184,9 @@ captured this way — press for those by hand.
 
 | Criterion | Weight | Where |
 |---|---|---|
-| Use of the medium | 40 % | the protocol stepped and broken on screen (5); the node differential drawn as a two-column verdict (8); the swap scenario, the four functions and the architecture each drawn and built in stages (2, 3, 4); every chart generated from the evidence rather than screenshotted; talking-head overlay; no terminal transcripts anywhere |
-| Complementing the report | 40 % | slide 5 makes the protocol *watchable* — the abort gate, a pre-signature refused, the witness falling out of a published signature — where the report can only assert that each step was asserted; slide 8 puts the patched and stock verdicts side by side as one contrast, which the appendix can only state in prose |
-| Presentation | 20 % | fixed 6:35 plan with per-slide budgets and an on-screen clock; a section stepper for orientation; a clear beginning (2), middle (5–9), end (10) |
+| Use of the medium | 40 % | the protocol stepped and broken on screen (7); the node differential drawn as a two-column verdict (11); the quantum timeline, the swap scenario, the signature stack with its migration arrow, the HTLC-vs-adaptor contrast, the four functions and the architecture each drawn and built in stages (2–6); the adaptor-layer cost drawn as three bars on one shared scale (8); both transaction structures laid out field by field (10); every chart generated from the evidence rather than screenshotted; talking-head overlay; no terminal transcripts anywhere |
+| Complementing the report | 40 % | slide 7 makes the protocol *watchable* — the abort gate, a pre-signature refused, the witness falling out of a published signature — where the report can only assert that each step was asserted; slide 11 puts the patched and stock verdicts side by side as one contrast, which the appendix can only state in prose; slide 13 turns the results into consequences **for a named audience**, which the dissertation never does |
+| Presentation | 20 % | fixed 7:29 plan with per-slide budgets and an on-screen clock; a section stepper for orientation; a clear beginning (2–4), middle (5–12), end (13) |
 
 ---
 
@@ -194,7 +210,7 @@ recorded in `CLAUDE.md`; none is stylistic.
   PreSign call match the closed-form prediction within five standard errors. Verify-class
   calls have no attempt counter, and the figures on the slide are the distribution sample's,
   not the gated aggregate's.
-- **One LAS settlement transaction** weighs the weight units on slide 8 — that is one
+- **One LAS settlement transaction** weighs the weight units on slides 10 and 11 — that is one
   transaction against the standardness *weight* ceiling, not the whole two-leg swap, and
   fitting that ceiling is not the same as being standard: the carriage run was refused by
   default relay policy.
@@ -220,3 +236,60 @@ recorded in `CLAUDE.md`; none is stylistic.
   sighash.
 - Do not claim the STARK gadget as π — it is not zero-knowledge, and it is excluded from
   both the report and this deck.
+
+- **The quantum slide is three CITED estimates, not a forecast.** Say "resource estimates for
+  hardware that does not exist". The fall quoted on camera is for **one fixed target**
+  (RSA-2048, 20 M qubits in 2019 → under 1 M in 2025); the secp256k1 figure is a separate
+  2026 estimate, so never divide one by the other and call the quotient a trend. The NIST row
+  is the **≥128-bit** one — *disallowed after 2035* — because that is where secp256k1 sits;
+  the widely quoted "deprecated after 2030" belongs to the 112-bit row and would be the wrong
+  row to attach to a blockchain curve. Never give a date for when a machine will exist.
+- **The prices are cited, and they are the ratio.** The two legs are *value-matched at spot*,
+  so what the picture asserts is the 1 : 32.4 exchange ratio, sourced and time-stamped on the
+  slide. **Re-read both sources before recording on another day** — a stale price is a wrong
+  number, not a rounding — and re-run `gen_slides.py` after editing the template.
+- **The two transaction structures are different KINDS of figure.** Bitcoin's sizes are
+  *derived*: measured object sizes projected onto the wire format. Ethereum's gas is
+  *measured*: one real client's receipt. The slide tags each; the narration must not blur them
+  into "we measured both".
+- **Never say "the adaptor layer is nearly free" without naming the base.** Wang read exactly
+  that headline as a comparison against Bitcoin's ECDSA, where nothing here is free (2026-08-21).
+  The narration is the **two-step migration**: step 1, classical → post-quantum *basic*, is the
+  expensive one and is the step organisations are already taking; step 2, basic → *adaptor*, is
+  what this project measured, **against the same base signature at identical parameters**. Say
+  "against its own post-quantum base", never a bare percentage. The classical comparator is the
+  **same step charged the same way** — the ECDSA adaptor's PreSign over its own Sign, ×`\clOvPreSignX`
+  — and it is **derived from that harness's unpaired per-operation means**, so it may not be
+  called a paired overhead; quote the LAS byte-tier figure beside it, because the claim has to
+  survive the conservative pairing. Never let the slide imply LAS is *faster* than ECDSA in
+  absolute time: it is not, and that cost belongs to step 1.
+- **Step 1's ×72 is *this build's* simplified lattice base**, not the standardised FIPS 204 one —
+  the ML-DSA route on slide 12 measures a smaller signature. Saying "post-quantum costs ×72"
+  flatly overstates the price of the step the audience is being told they are already paying.
+- **The measured swap is UTXO-with-UTXO** (Wang, Meeting 11: *"it would be safer to just talk
+  about UTXO"*). DEMO A's eyebrow and opening line say so out loud. Bitcoin↔Ethereum is the
+  *motivating scenario*, never the artefact — Wang confirms it is doable and that "the only
+  different thing is the verification", which is exactly how the narration frames it. Never
+  imply a live BTC↔ETH swap was run, and **never use ETH↔USDC as an example** — ERC-20 tokens
+  swap inside Ethereum via contracts and need no atomic swap; the case that needs one is going
+  *outside* Ethereum, and Ethereum itself uses bridges for that.
+- **The coins never move between chains** (Wang, Meeting 11, laboured twice). Slide 3 now draws
+  each payment as a transaction that settles ON its own chain, with the shared secret as the
+  only element crossing the middle; the headline caption says "neither coin ever leaves its
+  chain". Never reintroduce a card-to-card coin arrow, and say "settles on its own ledger —
+  the swap is the linkage" on camera.
+- **Venue vocabulary is Wang's own** (Meeting 11, replacing a framing he called "a bit
+  misleading"): smart contracts are **"more flexible"**; Bitcoin is **"more restricted,
+  because [its fields] cannot be modified"** — miners verify directly against the transaction
+  content, while a contract compiles to opcodes the EVM executes. This sits alongside, and
+  does not replace, "the blocker is a consensus rule, not engineering".
+- **No TPS number, in any form.** Meeting 11 closed on a whiteboard TPS derivation
+  (transactions-per-block ÷ block interval); every number in it was improvised ("let's say
+  200", "just Google it") and the derivation collides with a documented, once-retracted rule.
+  Until Royce rules on it, the deck and narration carry **no throughput figure** — the
+  supported quantities remain the per-transaction cap percentage, the serial verification
+  rate (never called a network throughput), and the block-weight ceiling, each on its own.
+- **The verdict is a judgement, not a measurement.** "Good enough to build on, not yet to
+  deploy" is supported by three stated facts — the parameter set's concrete security is
+  unanalysed by design, the consensus rule's security is unanalysed, and nothing settled on a
+  live network. Say those, not "it is not secure enough", which claims an analysis nobody ran.

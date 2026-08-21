@@ -449,8 +449,9 @@ than a page.
         At $\gamma-\kappa$ instead, PreSign, PreVerify and Extract all still succeed, but
         the \emph{adapted} signature can exceed the bound and be rejected by ordinary
         Verify --- silently, probabilistically, two operations from the cause.
-      & Prevented by reasoning through the norm budget ($\inftynorm{y}\le 1$, hence
-        $\inftynorm{\hat{\vecz}+y}\le\gamma-\kappa$) rather than found by testing. \\[3pt]
+      & Prevented by reasoning through the norm budget (an honest witness has
+        $\inftynorm{r'}\le 1$, hence $\inftynorm{\hat{\vecz}+r'}\le\gamma-\kappa$)
+        rather than found by testing. \\[3pt]
     2. Reference optimisations appear to fight the adaptor identity
       & Power2Round, the hint vector and high/low-bit decomposition discard low-order
         information, which appeared to rule out the exact identity

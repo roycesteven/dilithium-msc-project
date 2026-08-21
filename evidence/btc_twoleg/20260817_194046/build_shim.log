@@ -1,0 +1,3 @@
+make: Entering directory '/home/melly/dilithium-msc-project/bitcoin/las_consensus'
+cc -O2 -Wall -Wextra -Wshadow -Wpointer-arith -DDILITHIUM_MODE=3 -DLAS_N=6 -DELL=5 -DKAPPA=49 -I. -I../../ref las_consensus.c las_btc_tool.c randombytes_abort.c ../../ref/basesig.c ../../ref/serialize.c ../../ref/setup.c ../../ref/relation.c ../../ref/las.c ../../ref/poly.c ../../ref/polyvec.c ../../ref/ntt.c ../../ref/reduce.c ../../ref/rounding.c ../../ref/fips202.c ../../ref/symmetric-shake.c ../../ref/packing.c ../../ref/sign.c -lpthread -o las_btc_tool
+make: Leaving directory '/home/melly/dilithium-msc-project/bitcoin/las_consensus'
