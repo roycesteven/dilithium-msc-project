@@ -1,0 +1,10 @@
+
+RESULT: FAIL — could not build the carriage transaction
+
+run_id: 20260806_141923
+This is a recorded negative result, not a crashed run. Retained alongside it:
+  datadir_*/regtest/debug.log     both nodes' own logs
+  A*_decoded.json                 what the client made of each transaction
+  A*_testmempoolaccept_*.json     each policy regime's verdict, verbatim
+  A3_build.json                   the carriage tx, its shape and the helpers used
+  environment.txt                 tag, commit, binary and archive digests

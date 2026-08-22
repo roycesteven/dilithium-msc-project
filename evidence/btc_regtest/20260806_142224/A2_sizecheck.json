@@ -1,0 +1,27 @@
+{
+  "agree": true,
+  "label": "A2",
+  "model": {
+    "base_size": 94,
+    "total_size": 162,
+    "vsize": 111,
+    "weight": 444,
+    "witness_size": 68
+  },
+  "node": {
+    "total_size": 162,
+    "vsize": 111,
+    "weight": 444
+  },
+  "script_pubkey_lengths": [
+    34
+  ],
+  "script_sig_lengths": [
+    0
+  ],
+  "witness_item_lengths": [
+    [
+      64
+    ]
+  ]
+}

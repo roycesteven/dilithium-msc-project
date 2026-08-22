@@ -1,0 +1,50 @@
+{
+  "agree": true,
+  "label": "LAS legA",
+  "model": {
+    "base_size": 82,
+    "total_size": 11373,
+    "vsize": 2905,
+    "weight": 11619,
+    "witness_size": 11291
+  },
+  "node": {
+    "total_size": 11373,
+    "vsize": 2905,
+    "weight": 11619
+  },
+  "script_pubkey_lengths": [
+    22
+  ],
+  "script_sig_lengths": [
+    0
+  ],
+  "witness_item_lengths": [
+    [
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      496,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      520,
+      256,
+      35,
+      33
+    ]
+  ]
+}

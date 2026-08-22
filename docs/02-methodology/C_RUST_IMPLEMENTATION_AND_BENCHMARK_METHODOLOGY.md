@@ -54,22 +54,26 @@ per-function audit is `docs/02-methodology/FUNCTION_MAP.md`; the diff-level view
 
 | Module | Role |
 | --- | --- |
-| `ref/las.{c,h}` | the LAS scheme: `las_setup/keygen/sign/verify` (Algorithm 1 path) + `las_presign/preverify/adapt/ext` (Algorithm 2), deterministic variants (`*_det`, seeded KATs), `las_attempts` counter, `las_expected_attempts` (exact restart-rate theory for the benchmark gate) |
-| `ref/basesig.{c,h}` | **independent** ordinary-signature baseline (Algorithm 1 only, no statement anywhere) — the fair comparison partner, kept out of `las.c` so neither path can contaminate the other |
-| `ref/serialize.{c,h}` | bit-packed wire encoding, validating decoders, `las_verify_packed` (byte-level verifier) |
-| `ref/amhl.{c,h}`, `ref/chain.{c,h}` | multi-hop locks (optional tier) and the simulated ledger for the atomic-swap demo — Stage 2, not part of the Stage-1 comparison |
-| `ref/test/…` | correctness tests (1000-iteration contract, KATs, serde/tamper) and the benchmark drivers (primary: `bench_levels.c`; secondary: `bench_compare.c`, `bench_app.c`, `bench_classical.c` — see `docs/02-methodology/FUNCTION_MAP.md` §3.5) |
+| `ref/setup.{c,h}` | shared construction parameters + `public_params` (`pp = (A,H)`) + `setup_public_params` (A expanded once from a public seed) |
+| `ref/las_types.h` | the six protocol object types (`public_key`, `secret_key`, `signature`, `statement`, `witness`, `pre_signature`), each owned by one layer |
+| `ref/relation.{c,h}` | the hard relation: `relation_gen`/`relation_gen_seed` → `(statement Y = t′, witness r′)` |
+| `ref/basesig.{c,h}` | **Algorithm 1 only**, and the ONE canonical ordinary signature of the build (Definition 3: the adaptor *inherits* KeyGen/Sign/Verify from it): `base_keygen`/`base_sign`/`base_verify` + seeded-KAT variants (`base_keygen_seed`, `base_sign_det`), `base_attempts`. No statement anywhere — also the fair comparison partner, kept out of `las.c` so neither path can contaminate the other |
+| `ref/las.{c,h}` | **Algorithm 2 only**: `las_presign/preverify/adapt/ext` + `las_presign_det`, `las_attempts` counter, `las_expected_attempts` (exact restart-rate theory for the benchmark gate) |
+| `ref/serialize.{c,h}` | the wire codec: six typed pack/unpack pairs, wire `c_tilde ‖ BitPack(z)`, validating pk/sk decoders (`base_verify_packed`, the byte-level verifier, lives in `basesig.c`) |
+| `ref/amhl.{c,h}`, `ref/chain.{c,h}` | **dead legacy, dropped from the project (2026-08-03)** — left on the pre-restructure API, does not compile, deliberately not repaired; the Stage-2 evaluation lives in `rust/las-swap/` |
+| `ref/test/…` | correctness tests (1000-iteration contract, KATs, serde/tamper) and the benchmark drivers (primary: `bench_levels.c`; secondary: `bench_compare.c`, `bench_classical.c` — see `docs/02-methodology/FUNCTION_MAP.md` §3.5) |
 
 ## 3. The Rust implementation (independent cross-language confirmation)
 
 Same methodology, second language: the vendored `fips204` crate is untouched
-except two registration lines and one dev-dependency bump (criterion 0.4.0 →
-0.8.2); LAS is additive modules `src/las.rs`, `src/las_basesig.rs`,
-`src/las_serialize.rs` calling the crate's `ntt`, `mont_reduce`, SHAKE, etc.
-(full table: `rust/fips204-las/LAS_PROVENANCE.md`).
+except the `pub mod` registration lines and one dev-dependency bump (criterion
+0.4.0 → 0.8.2); LAS is additive modules `src/setup.rs`, `src/las_types.rs`,
+`src/relation.rs`, `src/serialize.rs`, `src/basesig.rs`, `src/las.rs` — the same
+layering as the C build — calling the crate's `ntt`, `mont_reduce`, SHAKE and
+`conversion::bit_pack` as-is (full table: `rust/fips204-las/LAS_PROVENANCE.md`).
 
 **The two implementations are locked together by a KAT:** the Rust port
-reproduces the C pinned SHAKE256 digest (`641a176c…5a19`, 4 deterministic
+reproduces the C pinned SHAKE256 digest (`bb6ad0da…260c`, 4 deterministic
 vectors, D3 set) **byte-for-byte** — `cargo test --test las_kat` vs
 `make test/test_kat3`. This works because the crate's Montgomery reduction is
 bit-identical to C's, every hashed value is canonicalised, and the C
@@ -98,7 +102,7 @@ fairness/scaling axis only.
 ### 4.2 Validity safeguards (identical in C and Rust)
 
 1. **Module isolation:** the two paths live in separate modules
-   (`basesig.c`/`las.c`; `las_basesig.rs`/`las.rs`).
+   (`basesig.c`/`las.c`; `basesig.rs`/`las.rs`).
 2. **Contract gate before any timing** — the run refuses to measure unless:
    the ordinary signature verifies; the pre-signature pre-verifies but
    **fails** ordinary Verify (statement-binding tripwire); the adapted
@@ -163,7 +167,7 @@ communication-cost claim cross-language too.
   by the next `run_benchmark_suite.sh` run under §4.3): at Simplified
   Dilithium-III — PreSign **+6.7 %** vs Sign, PreVerify **+3.1 %** vs Verify,
   Adapt **+8.1 %** vs Verify, Ext ≈ 101 µs. Sizes: pk/Y 4416 B, sk/witness
-  704 B, c 64 B, z 6688 B (99.05 % of the 6752 B signature);
+  704 B, c_tilde 32 B, z 6688 B (99.52 % of the 6720 B signature);
   signature = pre-signature = adapted signature.
 - **Rust Criterion run 2026-07-05** (0.8.2, 300/60, baseline `criterion082`,
   `bench_las_criterion.log`): PreSign vs Sign **statistically

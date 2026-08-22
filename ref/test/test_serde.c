@@ -5,11 +5,13 @@
  * decode them defensively (an on-chain verifier cannot trust its input).  This
  * test hard-asserts, over many random instances:
  *
- *   - round-trip:   unpack(pack(x)) == x   for pk, sk, and (pre/adapted-)sig;
+ *   - round-trip:   unpack(pack(x)) == x   for pk, statement, sk, witness, sig
+ *                   and pre-signature (each with its OWN typed codec);
  *   - verify-from-bytes: a packed (pk, adapted sig) verifies via the on-chain-style
- *                   entry point las_verify_packed, while a packed PRE-signature does
+ *                   entry point base_verify_packed, while a packed PRE-signature does
  *                   NOT (the statement-binding tripwire survives serialisation);
- *   - tamper:       flipping any byte of a packed signature makes it fail to verify;
+ *   - tamper:       flipping the low bit of every byte of a packed signature makes
+ *                   it fail to verify;
  *   - validation:   pack rejects out-of-range inputs and unpack rejects malformed
  *                   bytes (coeff >= Q, non-ternary code, z outside the valid band).
  *
@@ -21,7 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "../randombytes.h"
-#include "../las.h"
+#include "../basesig.h"   /* Algorithm 1 + its packed tier (base_verify_packed is the byte verifier) */
+#include "../relation.h"  /* relation_gen -> (statement, witness) */
+#include "../las.h"       /* Algorithm 2 + its packed tier */
 #include "../serialize.h"
 #include "../params.h"
 
@@ -31,141 +35,217 @@
 #define CHECK(cond, msg) do { if(!(cond)) { \
   fprintf(stderr, "  [FAIL] %s\n", msg); return 1; } } while(0)
 
+/* Semantic wire-size equalities (hold for every parameter set): a statement is
+ * pk-shaped, a witness sk-shaped, a pre-signature sig-shaped. */
+typedef char serde_size_relations[
+  (STATEMENT_BYTES == PUBLIC_KEY_BYTES &&
+   WITNESS_BYTES == SECRET_KEY_BYTES &&
+   PRE_SIGNATURE_BYTES == SIGNATURE_BYTES) ? 1 : -1];
+
 static int poly_eq(const poly *a, const poly *b) {
   unsigned int k;
-  for(k = 0; k < N; ++k) if(a->coeffs[k] != b->coeffs[k]) return 0;
+  for(k = 0; k < LAS_D; ++k) if(a->coeffs[k] != b->coeffs[k]) return 0;
   return 1;
 }
-static int pk_eq(const las_pk *a, const las_pk *b) {
+static int pk_eq(const public_key *a, const public_key *b) {
   unsigned int i;
   for(i = 0; i < LAS_N; ++i) if(!poly_eq(&a->t[i], &b->t[i])) return 0;
   return 1;
 }
-static int sk_eq(const las_sk *a, const las_sk *b) {
+static int stmt_eq(const statement *a, const statement *b) {
   unsigned int i;
-  for(i = 0; i < LAS_M; ++i) if(!poly_eq(&a->s[i], &b->s[i])) return 0;
+  for(i = 0; i < LAS_N; ++i) if(!poly_eq(&a->t_prime[i], &b->t_prime[i])) return 0;
   return 1;
 }
-static int sig_eq(const las_sig *a, const las_sig *b) {
+static int sk_eq(const secret_key *a, const secret_key *b) {
   unsigned int i;
-  if(!poly_eq(&a->c, &b->c)) return 0;
-  for(i = 0; i < LAS_M; ++i) if(!poly_eq(&a->z[i], &b->z[i])) return 0;
+  for(i = 0; i < N_PLUS_ELL; ++i) if(!poly_eq(&a->r[i], &b->r[i])) return 0;
+  return 1;
+}
+static int witness_eq(const witness *a, const witness *b) {
+  unsigned int i;
+  for(i = 0; i < N_PLUS_ELL; ++i) if(!poly_eq(&a->value[i], &b->value[i])) return 0;
+  return 1;
+}
+static int sig_eq(const signature *a, const signature *b) {
+  unsigned int i;
+  if(memcmp(a->c_tilde, b->c_tilde, LAS_CTILDEBYTES) != 0) return 0;  /* challenge digest */
+  for(i = 0; i < N_PLUS_ELL; ++i) if(!poly_eq(&a->z[i], &b->z[i])) return 0;
+  return 1;
+}
+static int presig_eq(const pre_signature *a, const pre_signature *b) {
+  unsigned int i;
+  if(memcmp(a->c_tilde, b->c_tilde, LAS_CTILDEBYTES) != 0) return 0;  /* challenge digest */
+  for(i = 0; i < N_PLUS_ELL; ++i) if(!poly_eq(&a->z_hat[i], &b->z_hat[i])) return 0;
   return 1;
 }
 
 int main(void) {
   uint8_t ppseed[LAS_SEEDBYTES];
-  las_pp pp;
+  public_params pp;
   uint8_t m[MLEN];
-  uint8_t pk_b[LAS_PK_BYTES], sk_b[LAS_SK_BYTES];
-  uint8_t sig_b[LAS_SIG_BYTES], pre_b[LAS_SIG_BYTES], adp_b[LAS_SIG_BYTES];
-  las_pk pk, Y, pk2;
-  las_sk sk, y, sk2;
-  las_sig sig, presig, adapted, sig2;
+  uint8_t pk_b[PUBLIC_KEY_BYTES], sk_b[SECRET_KEY_BYTES];
+  uint8_t sig_b[SIGNATURE_BYTES], pre_b[PRE_SIGNATURE_BYTES], adp_b[SIGNATURE_BYTES];
+  public_key pk, pk2;
+  statement Y, Y2;
+  secret_key sk, sk2;
+  witness r_prime, r_prime2;
+  signature sig, adapted, sig2;
+  pre_signature presig, presig2;
   int i;
 
   randombytes(ppseed, LAS_SEEDBYTES);
-  las_setup(&pp, ppseed);
+  setup_public_params(&pp, ppseed);
 
   printf("=== LAS serialisation tests (mode %d) ===\n", DILITHIUM_MODE);
-  printf("packed sizes: pk/Y=%d B  sk/witness=%d B  sig/pre-sig=%d B\n",
-         LAS_PK_BYTES, LAS_SK_BYTES, LAS_SIG_BYTES);
+  printf("packed sizes: pk/statement=%d B  sk/witness=%d B  sig/pre-sig=%d B\n",
+         PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES);
 
   for(i = 0; i < NITER; ++i) {
     randombytes(m, MLEN);
-    las_keygen(&pk, &sk, &pp);
-    las_keygen(&Y, &y, &pp);
-    las_sign(&sig, m, MLEN, &pk, &sk, &pp);
-    las_presign(&presig, m, MLEN, &Y, &pk, &sk, &pp);
-    CHECK(las_adapt(&adapted, &presig, m, MLEN, &Y, &y, &pk, &pp) == 0, "adapt");
+    CHECK(base_keygen(&pk, &sk, &pp) == 0, "base_keygen");
+    CHECK(relation_gen(&Y, &r_prime, &pp) == 0, "relation_gen");
+    CHECK(base_sign(&sig, m, MLEN, &pk, &sk, &pp) == 0, "base_sign");
+    CHECK(las_presign(&presig, m, MLEN, &Y, &pk, &sk, &pp) == 0, "las_presign");
+    CHECK(las_adapt(&adapted, &presig, m, MLEN, &Y, &r_prime, &pk, &pp) == 0, "adapt");
 
-    /* round-trip: pk */
-    las_pack_pk(pk_b, &pk);
-    CHECK(las_unpack_pk(&pk2, pk_b) == 0, "unpack pk");
+    /* round-trip: public key */
+    pack_public_key(pk_b, &pk);
+    CHECK(unpack_public_key(&pk2, pk_b) == 0, "unpack pk");
     CHECK(pk_eq(&pk, &pk2), "pk round-trip");
 
-    /* round-trip: sk (ternary) */
-    CHECK(las_pack_sk(sk_b, &sk) == 0, "pack sk");
-    CHECK(las_unpack_sk(&sk2, sk_b) == 0, "unpack sk");
+    /* round-trip: statement (pk-shaped, DISTINCT type + codec) */
+    {
+      uint8_t Y_b[STATEMENT_BYTES];
+      pack_statement(Y_b, &Y);
+      CHECK(unpack_statement(&Y2, Y_b) == 0, "unpack statement");
+      CHECK(stmt_eq(&Y, &Y2), "statement round-trip");
+    }
+
+    /* round-trip: secret key (ternary) */
+    CHECK(pack_secret_key(sk_b, &sk) == 0, "pack sk");
+    CHECK(unpack_secret_key(&sk2, sk_b) == 0, "unpack sk");
     CHECK(sk_eq(&sk, &sk2), "sk round-trip");
 
-    /* round-trip: signature, pre-signature, adapted signature */
-    CHECK(las_pack_sig(sig_b, &sig) == 0, "pack sig");
-    CHECK(las_unpack_sig(&sig2, sig_b) == 0, "unpack sig");
+    /* round-trip: honest witness (ternary, DISTINCT type + codec) */
+    {
+      uint8_t rw_b[WITNESS_BYTES];
+      CHECK(pack_witness(rw_b, &r_prime) == 0, "pack witness");
+      CHECK(unpack_witness(&r_prime2, rw_b) == 0, "unpack witness");
+      CHECK(witness_eq(&r_prime, &r_prime2), "witness round-trip");
+    }
+
+    /* round-trip: signature (its own codec) */
+    CHECK(pack_signature(sig_b, &sig) == 0, "pack sig");
+    CHECK(unpack_signature(&sig2, sig_b) == 0, "unpack sig");
     CHECK(sig_eq(&sig, &sig2), "sig round-trip");
 
-    CHECK(las_pack_sig(pre_b, &presig) == 0, "pack presig");
-    CHECK(las_unpack_sig(&sig2, pre_b) == 0, "unpack presig");
-    CHECK(sig_eq(&presig, &sig2), "presig round-trip");
+    /* round-trip: pre-signature (DISTINCT type, its own codec) */
+    CHECK(pack_pre_signature(pre_b, &presig) == 0, "pack presig");
+    CHECK(unpack_pre_signature(&presig2, pre_b) == 0, "unpack presig");
+    CHECK(presig_eq(&presig, &presig2), "presig round-trip");
 
-    CHECK(las_pack_sig(adp_b, &adapted) == 0, "pack adapted");
-    CHECK(las_unpack_sig(&sig2, adp_b) == 0, "unpack adapted");
+    /* round-trip: adapted signature */
+    CHECK(pack_signature(adp_b, &adapted) == 0, "pack adapted");
+    CHECK(unpack_signature(&sig2, adp_b) == 0, "unpack adapted");
     CHECK(sig_eq(&adapted, &sig2), "adapted round-trip");
 
-    /* verify-from-bytes: adapted sig verifies, pre-sig does NOT (tripwire) */
-    CHECK(las_verify_packed(pk_b, adp_b, m, MLEN, &pp) == 0, "verify_packed(adapted)");
-    CHECK(las_verify_packed(pk_b, pre_b, m, MLEN, &pp) != 0, "verify_packed(presig) must fail");
+    /* verify-from-bytes: adapted sig verifies, pre-sig bytes do NOT (tripwire) */
+    CHECK(base_verify_packed(adp_b, m, MLEN, pk_b, &pp) == 0, "verify_packed(adapted)");
+    CHECK(base_verify_packed(pre_b, m, MLEN, pk_b, &pp) != 0, "verify_packed(presig) must fail");
     /* the plain ordinary signature also verifies through bytes */
-    CHECK(las_verify_packed(pk_b, sig_b, m, MLEN, &pp) == 0, "verify_packed(sig)");
+    CHECK(base_verify_packed(sig_b, m, MLEN, pk_b, &pp) == 0, "verify_packed(sig)");
   }
   printf("round-trip + verify-from-bytes: %d iterations OK\n", NITER);
 
-  /* ---- tamper: every single-byte flip of a valid adapted sig fails verify ---- */
+  /* ---- end-to-end PACKED-API tier: unpack -> core -> pack INSIDE the call
+   * (the second measured boundary; see basesig.h/las.h) ---- */
   {
-    int b, flips = 0;
-    for(b = 0; b < LAS_SIG_BYTES; ++b) {
-      uint8_t saved = adp_b[b];
-      adp_b[b] ^= 0x01;
-      if(las_verify_packed(pk_b, adp_b, m, MLEN, &pp) != 0) ++flips;
-      adp_b[b] = saved;
-    }
-    CHECK(flips == LAS_SIG_BYTES, "every byte-flip must break verification");
-    printf("tamper: all %d single-byte flips rejected\n", LAS_SIG_BYTES);
+    uint8_t ppk_b[PUBLIC_KEY_BYTES], psk_b[SECRET_KEY_BYTES];
+    uint8_t Y_b[STATEMENT_BYTES], rw_b[WITNESS_BYTES];
+    uint8_t s_b[SIGNATURE_BYTES], p_b[PRE_SIGNATURE_BYTES], a_b[SIGNATURE_BYTES];
+    uint8_t w_b[WITNESS_BYTES];
+    statement Ys;
+    witness rps;
+
+    CHECK(base_keygen_packed(ppk_b, psk_b, &pp) == 0, "base_keygen_packed");
+    /* mint a packed statement/witness pair from the relation generator */
+    CHECK(relation_gen(&Ys, &rps, &pp) == 0, "relation_gen (statement/witness)");
+    pack_statement(Y_b, &Ys);
+    CHECK(pack_witness(rw_b, &rps) == 0, "pack_witness");
+
+    CHECK(base_sign_packed(s_b, m, MLEN, ppk_b, psk_b, &pp) == 0, "base_sign_packed");
+    CHECK(base_verify_packed(s_b, m, MLEN, ppk_b, &pp) == 0, "base_verify_packed(sign_packed)");
+    CHECK(las_presign_packed(p_b, m, MLEN, Y_b, ppk_b, psk_b, &pp) == 0, "las_presign_packed");
+    CHECK(las_preverify_packed(p_b, m, MLEN, Y_b, ppk_b, &pp) == 0, "las_preverify_packed");
+    CHECK(base_verify_packed(p_b, m, MLEN, ppk_b, &pp) != 0,
+          "base_verify_packed(presign_packed) must fail (tripwire through bytes)");
+    CHECK(las_adapt_packed(a_b, p_b, m, MLEN, Y_b, rw_b, ppk_b, &pp) == 0, "las_adapt_packed");
+    CHECK(base_verify_packed(a_b, m, MLEN, ppk_b, &pp) == 0, "base_verify_packed(adapt_packed)");
+    CHECK(las_ext_packed(w_b, a_b, p_b, Y_b, &pp) == 0, "las_ext_packed");
+    CHECK(memcmp(w_b, rw_b, WITNESS_BYTES) == 0,
+          "las_ext_packed recovers the exact packed (honest, ternary) witness");
+
+    /* base scheme's own packed tier (keygen/sign/verify) */
+    CHECK(base_keygen_packed(ppk_b, psk_b, &pp) == 0, "base_keygen_packed (2)");
+    CHECK(base_sign_packed(s_b, m, MLEN, ppk_b, psk_b, &pp) == 0, "base_sign_packed (2)");
+    CHECK(base_verify_packed(s_b, m, MLEN, ppk_b, &pp) == 0, "base_verify_packed (2)");
+    printf("end-to-end packed tier: keygen/sign/verify/presign/preverify/adapt/ext OK\n");
   }
 
-  /* ---- validation: unpack rejects malformed bytes ---- */
+  /* ---- tamper: flipping the low bit of every byte breaks verification.  The
+   * encoding has NO padding (8*LAS_CTILDEBYTES + (n+ell)*d*z_bits bits = exactly
+   * SIGNATURE_BYTES), so each byte belongs to c_tilde or a USED z field.  Decode
+   * is now permissive (c_tilde is raw bytes, z uses FIPS BitUnpack), so every
+   * flip is caught at Verify: it changes the stored c_tilde, or changes z (hence
+   * w') so the recomputed challenge digest no longer matches. ---- */
   {
-    uint8_t buf[LAS_SIG_BYTES];
-    las_pk tpk; las_sk tsk; las_sig tsig;
+    int b, broke = 0;
+    for(b = 0; b < SIGNATURE_BYTES; ++b) {
+      uint8_t saved = adp_b[b];
+      adp_b[b] ^= 0x01;
+      if(base_verify_packed(adp_b, m, MLEN, pk_b, &pp) != 0) ++broke;
+      adp_b[b] = saved;
+    }
+    CHECK(broke == SIGNATURE_BYTES, "low-bit flip of every byte must break verification");
+    printf("tamper: low-bit flip of all %d bytes rejected\n", SIGNATURE_BYTES);
+  }
+
+  /* ---- validation: unpack rejects malformed bytes (separate typed buffers) ---- */
+  {
+    uint8_t pkbuf[PUBLIC_KEY_BYTES], skbuf[SECRET_KEY_BYTES];
+    public_key tpk; secret_key tsk;
 
     /* pk coeff = 0x7FFFFF >= Q  -> reject */
-    memset(buf, 0xFF, LAS_PK_BYTES);
-    CHECK(las_unpack_pk(&tpk, buf) == -1, "unpack_pk must reject coeff>=Q");
+    memset(pkbuf, 0xFF, sizeof pkbuf);
+    CHECK(unpack_public_key(&tpk, pkbuf) == -1, "unpack_pk must reject coeff>=Q");
 
     /* sk 2-bit code 3 -> reject */
-    memset(buf, 0xFF, LAS_SK_BYTES);
-    CHECK(las_unpack_sk(&tsk, buf) == -1, "unpack_sk must reject code 3");
+    memset(skbuf, 0xFF, sizeof skbuf);
+    CHECK(unpack_secret_key(&tsk, skbuf) == -1, "unpack_sk must reject code 3");
 
-    /* sig: valid c, but force the FIRST z field to all-ones (= 2^LAS_Z_COEFF_BITS - 1,
-     * which is always > LAS_Z_MAX, hence out of band, for ANY parameter set / z width).
-     * The z region is byte-aligned: it starts at bit N*LAS_C_COEFF_BITS (= 512 = byte 64). */
-    CHECK(las_pack_sig(buf, &adapted) == 0, "re-pack adapted for z-validation");
-    {
-      int zstart = (N * LAS_C_COEFF_BITS) / 8;         /* first z field's start byte */
-      int full   = LAS_Z_COEFF_BITS / 8;               /* whole 0xFF bytes           */
-      int rem    = LAS_Z_COEFF_BITS % 8;               /* leftover low bits          */
-      int wb;
-      for(wb = 0; wb < full; ++wb) buf[zstart + wb] = 0xFF;
-      if(rem) buf[zstart + full] |= (uint8_t)((1u << rem) - 1u);  /* keep next field's bits */
-    }
-    CHECK(las_unpack_sig(&tsig, buf) == -1, "unpack_sig must reject z out of band");
-    printf("validation: unpack rejects coeff>=Q, code-3 sk, and z out of band\n");
+    /* The signature's challenge c_tilde is 32 raw bytes and its response z uses
+     * the upstream FIPS BitUnpack: both decode permissively (any bytes / any
+     * 19-bit field are in range), so there is NO decode-time rejection for a
+     * signature -- a tampered (c_tilde, z) is caught at Verify instead (the
+     * tamper loop above exercises exactly that via base_verify_packed). */
+    printf("validation: unpack rejects coeff>=Q (pk) and code-3 sk; sig decode is upstream-permissive\n");
   }
 
   /* ---- validation: pack rejects out-of-range inputs ---- */
   {
-    las_sk bad_sk = sk;
-    las_sig bad_sig = adapted;
-    bad_sk.s[0].coeffs[0] = 2;                         /* non-ternary */
-    CHECK(las_pack_sk(sk_b, &bad_sk) == -1, "pack_sk must reject non-ternary");
-    bad_sig.z[0].coeffs[0] = LAS_GAMMA;                /* > g-k, out of band */
-    CHECK(las_pack_sig(sig_b, &bad_sig) == -1, "pack_sig must reject z out of band");
+    secret_key bad_sk = sk;
+    signature bad_sig = adapted;
+    bad_sk.r[0].coeffs[0] = 2;                         /* non-ternary */
+    CHECK(pack_secret_key(sk_b, &bad_sk) == -1, "pack_sk must reject non-ternary");
+    bad_sig.z[0].coeffs[0] = GAMMA;                    /* > g-k, out of band */
+    CHECK(pack_signature(sig_b, &bad_sig) == -1, "pack_sig must reject z out of band");
     printf("validation: pack rejects non-ternary sk and out-of-band z\n");
   }
 
   printf("=== All serialisation tests passed. ===\n");
   printf("These packed sizes are the realistic on-wire / on-chain object sizes for\n");
-  printf("the simplified scheme; las_verify_packed is the byte-level verifier an\n");
+  printf("the simplified scheme; base_verify_packed is the byte-level verifier an\n");
   printf("on-chain integration (poqeth-style) would call.\n");
   return 0;
 }

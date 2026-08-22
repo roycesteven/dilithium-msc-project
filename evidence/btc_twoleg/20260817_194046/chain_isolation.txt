@@ -1,0 +1,4 @@
+leg B's settled transaction offered to CHAIN 1: refused (exit 25)
+  reason: error code: -25 error message: TestBlockValidity failed: bad-txns-inputs-missingorspent, CheckTxInputs: inputs missing/spent in transaction f4fa5e8c0d6c4a7e2636
+  reading: the two LEDGERS are separate — leg B's coin does not exist on chain 1.
+  NOT a claim that the signature is bound to a chain: BIP341 has no chain id.

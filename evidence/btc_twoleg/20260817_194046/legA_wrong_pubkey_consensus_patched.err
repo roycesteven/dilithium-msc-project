@@ -1,0 +1,3 @@
+error code: -25
+error message:
+TestBlockValidity failed: block-script-verify-flag-failed (LAS public key does not match the committed hash), input 0 of de540ff68f6ce75ad28c6f3091b15615e3e3b2d71d00a7caa592aaa73da6bc99 (wtxid e942ef53003f5d5e513df57fd4ee2d28283ac15bb8f62450c4fa94b98f08789f), spending bd9c8c39383ad33f103795ae33f2604d435b379248e16f0e19645c4780e73ae4:1

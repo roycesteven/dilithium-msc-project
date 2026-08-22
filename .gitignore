@@ -12,3 +12,54 @@ ref/test/vectors*.txt
 *.patch
 *.Identifier
 third_party/
+meeting*.md
+PROGRESS*.md
+research_writing_guide.md
+*.cls
+*.txt 
+*.pdf
+CONTEXT.md 
+CLAUDE.md
+MSc_Report_and_Video_Rubric.md
+muthesis_formatting_rules.md
+.claude
+.vscode
+plot*.py
+make_report*.py
+gen_report*.py
+sync_report.sh
+*params.py
+runlcov.sh
+runtests.sh
+docs/paper/
+docs/references/
+defense/
+docs/STATUS.md
+avx2/
+scripts/__pycache__
+*.pdf
+LICENSE
+REVIEW_GUIDE.md
+docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md
+docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md
+evidence/
+2020-845.md
+2025-091.md
+AUTHORS.md
+LAS_KNOWLEDGE_MAP.md
+las-context-consolidated.md
+SHA256SUMS
+*.log
+# Rust build artefacts
+**/target/
+**/amhl.h
+# scratch handoff between script/OneTxClaim.s.sol and scripts/run_onchain_one_tx.sh
+evm/onetx/
+# same, for the two-leg swap: script/TwoLeg.s.sol <-> scripts/run_onchain_two_leg.sh.
+# The swap vectors are regenerated per run (each leg's message comes from its chain), so
+# unlike evm/test/vectors/*.bin they are scratch and are not committed.
+evm/twoleg/
+evm/test/vectors/swap/
+ref/*.o
+bitcoin/las_consensus/*.o
+bitcoin/las_consensus/bench_las_consensus

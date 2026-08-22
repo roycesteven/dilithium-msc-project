@@ -1,0 +1,40 @@
+run_id: 20260806_142224
+
+SCOPE. Carriage only: construction, policy, broadcast, mining, serialisation, size.
+       No LAS verification takes place in this stage; A3's spend is authorised by an
+       ordinary BIP340 Schnorr signature and the LAS bytes are dropped.
+
+Bitcoin Core v31.1 (STOCK, unmodified): binary sha256 986e63b3c8770f08...
+source HEAD 9be056a8a72b624dae9623b2f7bded92c2a21c91 == tag commit 9be056a8a72b624dae9623b2f7bded92c2a21c91, working tree clean
+
+--- policy verdicts (RESULTS, recorded either way; both nodes on one chain) ---
+A1   default-policy: ACCEPTED                                   permissive: ACCEPTED
+A2   default-policy: ACCEPTED                                   permissive: ACCEPTED
+A3   default-policy: REJECTED: bad-witness-nonstandard          permissive: ACCEPTED
+
+--- size model vs the client (GATE) ---
+[A1] inputs=1 outputs=1 witness_items=[2]
+  total_size  model 191      node 191      OK
+  weight      model 437      node 437      OK
+  vsize       model 110      node 110      OK
+[A1] size model agrees with the client
+[A2] inputs=1 outputs=1 witness_items=[1]
+  total_size  model 162      node 162      OK
+  weight      model 444      node 444      OK
+  vsize       model 111      node 111      OK
+[A2] size model agrees with the client
+[A3] inputs=1 outputs=1 witness_items=[25]
+  total_size  model 11471    node 11471    OK
+  weight      model 11753    node 11753    OK
+  vsize       model 2939     node 2939     OK
+[A3] size model agrees with the client
+
+--- mined, and the containing block accepted by the DEFAULT-policy node too ---
+A1 txid=f553daf307a04bfad5f4b253e7995fa64349f71a038fb84902fabe679969491f vsize=110 weight=437
+A2 txid=20508c424bc3f6eb0224974a136c9dd0db46c1f57416859b5f539fdbde8735d8 vsize=111 weight=444
+A3 txid=4ccf71532988abd269b02842685596f06ffe5983113091a38cd696ee2cc7c08f vsize=2939 weight=11753
+
+RESULT: a transaction carrying a real packed LAS signature and public key was
+        constructed with stock Bitcoin Core's own helpers, offered to both policy
+        regimes on one chain, broadcast and MINED, and this project's size model
+        reproduced the client's vsize and weight for every mined transaction.

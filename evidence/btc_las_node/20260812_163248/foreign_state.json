@@ -1,0 +1,12 @@
+{
+  "alt_txid": null,
+  "alt_vout": null,
+  "claimed_value_sat": 100000000,
+  "fee_sat": 200000,
+  "mutate": "none",
+  "pk_path": "/home/melly/dilithium-msc-project/evidence/btc_las_node/20260812_163248/las_key/pk.bin",
+  "sighash_hex": "dba627bdbd0bb4a3d746cbf0bdbd0759cacee1990ac8535b9ddf21aab1fad422",
+  "txid": "989eedb4543c4f2ff1b2ac283432ae56db662080af98d4ecad4894c562931922",
+  "value_sat": 100000000,
+  "vout": 0
+}

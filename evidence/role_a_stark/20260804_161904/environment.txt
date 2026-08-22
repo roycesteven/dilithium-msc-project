@@ -1,0 +1,14 @@
+run_id=20260804_161904
+git=a44468a
+branch=report
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+cpu_cores=16
+rustc=rustc 1.96.0 (ac68faa20 2026-05-25)
+profile=release (opt-level 3, debug-assertions off)
+winterfell="0.13"
+sources=rust/las-stark/src/role_a_air.rs rust/las-stark/src/bin/bench_role_a.rs
+vectors=evm/test/vectors (A' is the REAL matrix of the C build)
+baselines=evidence/amortise/latest (Groth16 k=1), evidence/lazer_amortise/latest (LaZer k=1)
+note=succinct ARGUMENT of knowledge; zero-knowledge NOT added by Winterfell's prover
+note=no concrete-security analysis of this AIR; engineering data point only

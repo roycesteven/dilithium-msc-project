@@ -31,11 +31,12 @@ demonstrate the full adaptor-signature contract end to end.
 A separate suite exercises the byte-level encoding of Section 5.10 over 256 random
 instances, hard-asserting: (i) **round-trip** `unpack(pack(x)) == x` for pk, sk, and
 the ordinary / pre / adapted signatures; (ii) **verify-from-bytes** — a packed
-`(pk, adapted σ)` verifies via `las_verify_packed`, while a packed *pre-signature*
+`(pk, adapted σ)` verifies via `base_verify_packed`, while a packed *pre-signature*
 is rejected (the tripwire survives serialisation); (iii) **tamper** — every one of
-the `LAS_SIG_BYTES = 4672` single-byte flips of a valid packed signature makes it
-fail verification; (iv) **validation** — `pack` and `unpack` both reject
-out-of-range inputs (coefficient `≥ Q`, non-ternary code, `z` outside the band).
+the `SIGNATURE_BYTES = 4640` single-byte flips of a valid packed signature makes it
+fail verification (caught at Verify: the wire is `c_tilde ‖ BitPack(z)`, decoded
+permissively); (iv) **validation** — `pack`/`unpack` reject out-of-range pk/sk
+inputs (coefficient `≥ Q`, non-ternary code).
 All pass, zero warnings.
 
 ### 6.4 Known-answer tests (`ref/test/test_kat.c`)
@@ -55,3 +56,16 @@ the same vectors. The digest is reproduced on every run; the test passes.
 
 ---
 
+### 6.5 Proof-of-knowledge tests (`ref/test/test_zkp.c`; opt-in, needs LaZer)
+
+The π module of Section 7.6 has its own suite, hard-asserting: (i)
+**completeness** — an honest `Gen` witness proves and the proof verifies; (ii)
+**tamper** — a single-byte flip anywhere in the ≈30.7 KB proof (sampled stride)
+is rejected; (iii) **wrong statement** — the proof does not transfer to a
+different `Y`; (iv) **prover contract** — a non-ternary (Ext-style, `R′_A`)
+witness is refused before any proof is built. The rewritten `test_swap.c`
+additionally exercises π inside the Fig. 1 message flow (Bob's abort gate, plus
+a proof-against-wrong-statement rejection). Rust twins run the identical checks
+through the same C bridge (`cargo test --features relation-zk`); the
+non-ternary refusal lives as an in-crate unit test because outside the crate a
+non-ternary witness is unconstructible by design. All pass, zero warnings.

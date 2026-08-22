@@ -1,0 +1,3 @@
+error code: -25
+error message:
+TestBlockValidity failed: bad-txns-inputs-missingorspent, CheckTxInputs: inputs missing/spent in transaction f4fa5e8c0d6c4a7e2636af3bd295643e0f6eaf4aa48cffadec7cd3c47689c9c8

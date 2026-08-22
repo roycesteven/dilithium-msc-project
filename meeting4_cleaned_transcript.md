@@ -423,3 +423,59 @@ For the next meeting, prepare:
 The key message from Wang is:
 
 > First make the standalone LAS benchmark perfect. Then discuss atomic swap, local EVM gas, Foundry, and classical adaptor-signature comparison.
+
+---
+
+## F. Addendum (2026-07-20) — content omitted or misattributed by the ChatGPT cleaning
+
+Audited against `meeting4_transcript_original.md` (1080 lines → 425 in the cleaned version). The cleaned transcript compressed correctly in most places, but the following substantive exchanges were **dropped or misattributed**:
+
+### F.1 Dropped: "normally we only report the FINAL signature" (13:04)
+
+**Wang (13:04)** — *dropped entirely:*
+> But are they the same? Sorry, I'm really confused here. So normally we only need to report the **final signature** — not the pre-signature, right? We just follow the algorithm in the paper.
+
+Implication missed by the cleaned version: if the communication figure shows signature, pre-signature, AND adapted signature as three bars, the report must justify why the pre-signature is shown at all (it is an on-wire object in the swap protocol) — otherwise a reader following the LAS paper expects only the final signature to be reported.
+
+### F.2 Dropped: the "LAS looks smaller than Dilithium-II — that is misleading" exchange (14:29–14:56 + 21:37–21:58)
+
+**Wang (14:29–14:56)** — *dropped entirely:*
+> Okay, so in this way, it means that the adaptor signature is **better**? Because we have smaller size — even compared with L2?
+
+**Royce (21:37)** — *dropped entirely (and important: it is Royce who flags it):*
+> But this is a bit misleading… it's not misleading, [but] it's because it's **simplified** [reduced security].
+
+**Wang (21:41)** — the response, partially kept but with the reasoning cut:
+> Yes — you should cover **all the parameters**, because otherwise… for the LAS paper, the number is 60 [or 36], I forgot — you should give all the details here.
+
+Implication: the size chart made simplified-LAS look *smaller/better than standard Dilithium-II*, which is an artefact of the simplified parameter set, not a real advantage. Every size comparison must carry its parameter set (this is the origin of the "state κ per set — 60/39/49/60, never a global constant" rule).
+
+### F.3 Misattribution: "make the scale larger" was Royce's proposal, not Wang's
+
+Cleaned §6 has Wang saying "Maybe you can make the scale clearer". In the original (13:32–13:45) it is **Royce** who proposes:
+> Probably I have to make it more closely — make the scale larger so the difference can be more clearly seen.
+
+Wang merely acknowledged ("OK, OK, I see, it's fine").
+
+### F.4 Dropped: "have you pushed the figures to the repo?" (18:48–18:59)
+
+**Wang (18:48)** — *dropped:*
+> Have you also pushed the figures there [to the repo] or not? The figures you shared with me.
+
+Implication: the benchmark figures (not just code) are expected to be versioned in the repository Wang reviews.
+
+### F.5 Dropped: Wang's positive assessment (22:39–23:50)
+
+> You have some good results so far. … The numbers are the numbers I would expect to see.
+
+(The cleaned version kept only the second half, dropping the encouragement — worth restoring for an accurate record of how Meeting 4 actually went.)
+
+### F.6 Dropped context: Wang had to leave for another meeting (25:30)
+
+> OK, so I have to jump to another meeting to meet another student…
+
+This explains the abrupt ending; the PR discussion (§11) was cut short by the schedule, not concluded.
+
+### F.7 Small correction to §2
+
+At 11:59–12:04 the original also contains Royce identifying the **Y bar** in the size figure ("Y is [produced from] the public matrix" — i.e. the statement Y = A·y). The cleaned §6 lists only pk/sk/c/z; the Y component was discussed too.

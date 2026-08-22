@@ -1,11 +1,34 @@
 //! LAS — Lattice-based Adaptor Signature (Esgin–Ersoy–Erkin, eprint 2020/845,
 //! Algorithm 2), layered ADDITIVELY on this crate's FIPS 204 primitives.
 //!
+//! This module holds ONLY the four Algorithm-2 adaptor operations
+//! (PreSign / PreVerify / Adapt / Ext) plus their deterministic-KAT variants.
+//! Definition 3 (paper §2.3) says the adaptor scheme Π_{R,R',Σ} *inherits*
+//! KeyGen / Sign / Verify from the underlying signature scheme Σ — so those
+//! live in `basesig.rs` (Algorithm 1) and NOT here, and the hard-relation
+//! generator `Gen` lives in `relation.rs`.  The `las` surface is reserved for
+//! the operations the paper adds on top of the base signature; an adapted
+//! pre-signature is checked by `basesig::verify`.
+//!
+//!   -- Algorithm 2 (adaptor layer; upstream = the PAPER, names kept) --
+//!   presign_internal / presign / presign_det /
+//!   preverify_internal / preverify / adapt / ext.
+//!
+//! Object types: [`PreSignature`] is OWNED here (physical home `setup.rs`,
+//! re-exported below); [`Statement`]/[`Witness`] come from `relation`
+//! (consumed as parameters); [`PublicKey`]/[`SecretKey`]/[`Signature`]/
+//! [`PublicParams`] come from `basesig`/`setup` (Adapt produces a
+//! `Signature`, Ext produces a `Witness`).
+//!
+//! The local helpers are defined at the BOTTOM of the file, in the same order
+//! as `basesig.rs`'s (ml_dsa.rs keeps its equivalents in hashing.rs /
+//! helpers.rs / ntt.rs), so the scheme functions read side by side.
+//!
 //! This module is a Rust port of the C implementation `ref/las.c` from the
-//! dilithium-msc-project repository (deterministic path only: seeded KeyGen,
-//! deterministic Sign/PreSign, Verify/PreVerify/Adapt/Ext).  It is
-//! byte-for-byte cross-checked against the C known-answer test
-//! (`ref/test/test_kat.c`, pinned SHAKE256 digest) — see `tests/las_kat.rs`.
+//! dilithium-msc-project repository (deterministic path only: deterministic
+//! PreSign, PreVerify/Adapt/Ext).  It is byte-for-byte cross-checked against
+//! the C known-answer test (`ref/test/test_kat.c`, pinned SHAKE256 digest) —
+//! see `tests/las_kat.rs`.
 //!
 //! Methodology mirrors the C build exactly: ZERO upstream functions are
 //! modified; LAS only *calls* the crate's mode-independent primitives
@@ -62,49 +85,54 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use rand_core::CryptoRngCore;
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use sha3::{Shake128, Shake256};
+use sha3::Shake256;
+use zeroize::Zeroize;
 
 use crate::helpers::{center_mod, full_reduce32, mont_reduce, partial_reduce32, to_mont};
 use crate::ntt::{inv_ntt, ntt};
 use crate::types::{R, R0, T, T0};
 use crate::Q;
 
-/* ---- LAS parameters (paper Section 3 / Table 1), Simplified Dilithium-III set.
- * Mirrors ref/las.h with -DLAS_N=6 -DLAS_ELL=5 -DLAS_KAPPA=49. ---- */
+/* ---- Shared system setup: the construction parameters and object types live
+ * in setup.rs (PublicParams / PublicKey / SecretKey / Signature / PreSignature)
+ * because BOTH basesig.rs and this file consume the same setup; the hard
+ * relation types (Statement / Witness) are owned by relation.rs.  This file
+ * consumes them as parameters and OWNS PreSignature (re-exported below).
+ * Mirrors the C `las.h` including `setup.h`. ---- */
+use crate::relation::{Statement, Witness};
+use crate::las_types::{PublicKey, SecretKey, Signature};
+use crate::setup::{PublicParams, D, ELL, GAMMA, KAPPA, N, N_PLUS_ELL, LAS_CTILDEBYTES, LAS_SEEDBYTES};
+// Validating byte codecs for the end-to-end packed tier (mirrors basesig.rs's
+// serialize imports for its *_packed twins).
+use crate::serialize::{
+    pack_pre_signature, pack_signature, pack_witness, unpack_pre_signature, unpack_public_key,
+    unpack_secret_key, unpack_signature, unpack_statement, unpack_witness, PRE_SIGNATURE_BYTES,
+    PUBLIC_KEY_BYTES, SECRET_KEY_BYTES, SIGNATURE_BYTES, STATEMENT_BYTES, WITNESS_BYTES,
+};
+// Owner re-export: the Algorithm-2 pre-signature type belongs to THIS module
+// (physical home is las_types.rs) — callers import it from its owner:
+// `use fips204::las::PreSignature`.
+pub use crate::las_types::PreSignature;
 
-/// n: rows of A, dimension of t (=Y).
-pub const LAS_N: usize = 6;
-/// ell: extra columns of A.
-pub const LAS_ELL: usize = 5;
-/// n+ell: dimension of r, y, z.
-pub const LAS_M: usize = LAS_N + LAS_ELL;
-/// kappa: challenge weight ||c||_1.
-pub const LAS_KAPPA: i32 = 49;
-/// gamma = kappa * d * (n+ell), d = 256.
-pub const LAS_GAMMA: i32 = LAS_KAPPA * 256 * (LAS_M as i32);
-/// Seed length in bytes.
-pub const LAS_SEEDBYTES: usize = 32;
+/// PreSign/PreVerify rejection bound: reject |z^|inf > gamma-kappa-1 (the
+/// tighter -1 budget).  Adaptor-only (Algorithm 2) — no basesig analogue — so
+/// it OWNS this bound (the Algorithm-1 `BOUND_SIGN` lives in `basesig`).
+pub const BOUND_PRESIGN: i32 = GAMMA - KAPPA;
 
-/// Sign/Verify rejection bound: reject |z|inf  > gamma-kappa   (chknorm-style: >= bound).
-pub const LAS_BOUND_SIGN: i32 = LAS_GAMMA - LAS_KAPPA + 1;
-/// PreSign/PreVerify rejection bound: reject |z^|inf > gamma-kappa-1 (the tighter -1 budget).
-pub const LAS_BOUND_PRESIGN: i32 = LAS_GAMMA - LAS_KAPPA;
-
-const N: usize = 256;
 const SHAKE256_RATE: usize = 136;
 
 /// Rejection-sampling attempt counter (measurement only; mirrors the C
 /// `las_attempts`).  Incremented once per rejection-loop iteration in
-/// `sign_core`/`presign_core`; never read by the scheme itself.  Benchmarks
-/// reset it and read it to report the restart rate DIRECTLY rather than
-/// estimating it from a timing ratio.  Relaxed ordering: single-threaded
-/// benchmark instrumentation, not synchronisation.
+/// `presign_internal`; never read by the scheme itself.  Benchmarks reset it
+/// and read it to report the restart rate DIRECTLY rather than estimating it
+/// from a timing ratio.  Relaxed ordering: single-threaded benchmark
+/// instrumentation, not synchronisation.
 pub static LAS_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 
 /// EXACT expected attempts/call of the rejection loop running at `bound`
-/// (`LAS_BOUND_SIGN` or `LAS_BOUND_PRESIGN`), for validating a measured
-/// attempt counter against theory. Derivation, verified against eprint
-/// 2020/845 (Esgin-Ersoy-Erkin):
+/// (`BOUND_PRESIGN` or the base `BOUND_SIGN`), for validating a
+/// measured attempt counter against theory. Derivation, verified against
+/// eprint 2020/845 (Esgin-Ersoy-Erkin):
 ///
 /// The mask y is drawn from S_gamma^(n+ell), i.e. every coefficient uniform
 /// on [-GAMMA, GAMMA] — 2*GAMMA+1 values (Table 1: S_c = {f : |f|inf <= c}).
@@ -122,45 +150,336 @@ pub static LAS_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 /// about e < 3" (Section 3.2). At this build's D3 engineering set it gives
 /// Sign 2.7188 and PreSign 2.7748 attempts/call.
 pub fn las_expected_attempts(bound: i32) -> f64 {
-    let p_coeff = f64::from(2 * bound - 1) / f64::from(2 * LAS_GAMMA + 1);
-    p_coeff.powi(-((LAS_M * N) as i32))
+    // p^((n+ell)*d) via square-and-multiply, then reciprocal — mirrors the C
+    // `las_expected_attempts` exactly (no libm `powf`/`powi`, so this stays
+    // usable in the crate's `#![no_std]` build; `f64::powi` is std-only).
+    let mut p = f64::from(2 * bound - 1) / f64::from(2 * GAMMA + 1);
+    let mut acc = 1.0_f64;
+    let mut e = (N_PLUS_ELL * D) as u32; // (n+ell)*d coefficients
+    while e != 0 {
+        if e & 1 == 1 {
+            acc *= p;
+        }
+        p *= p;
+        e >>= 1;
+    }
+    1.0 / acc
 }
 
-/* ---- Types (vectors are plain arrays of the crate's degree-256 polys).
- * A' is stored in the NTT domain (type T), exactly like the C `las_pp.mat`. ---- */
+/* =============== scheme, Algorithm 2 (adaptor layer) ===============
+ * No basesig.rs/ml_dsa.rs analogue: these are the adaptor operations LAS adds
+ * on top of the base signature (upstream = the PAPER).  Algorithm 1
+ * (KeyGen/Sign/Verify) lives in basesig.rs; Gen lives in relation.rs. */
 
-/// Public parameters pp = A = [I | A'] expanded from a public seed (A' in NTT domain).
-#[derive(Clone)]
-pub struct LasPp {
-    pub(crate) mat: [[T; LAS_ELL]; LAS_N],
-    pub(crate) seed: [u8; LAS_SEEDBYTES],
+/// `presign_internal` (adaptor twin of `basesig::sign_internal`; C twin
+/// `las_presign_internal`): like the Sign body but hashes (w+Y) and rejects
+/// at `bound` (gamma-kappa-1 single-hop).
+pub(crate) fn presign_internal(
+    m: &[u8],             // paper M: message
+    statement: &Statement, // paper t′ := Y: statement, as_t_prime() = Y = A y
+    pk: &PublicKey,       // paper t: pk.t = t (public key)
+    sk: &SecretKey,       // paper r: sk.r = r (secret key)
+    pp: &PublicParams,    // paper A: pp = A = [I | A']
+    bound: i32,           // paper γ−κ−1 (single-hop) / γ−κ−K (AMHL)
+    seed: &[u8; 64],      // PRG mask seed (no paper symbol)
+) -> PreSignature {       // paper σ̂: returns σ̂ = (c, ẑ)
+    // [PAPER Alg.2] 1:  procedure PreSign((pk, sk), Y, M):
+    let t_prime = statement.as_t_prime(); // paper t′ := Y (Alg. 2 step 4)
+    let mut mask_nonce: u16 = 0; // PRG counter (no paper symbol)
+    let r_hat_mont: [T; N_PLUS_ELL] = from_fn(|j| ntt_b_mont(&sk.r[j])); // paper r in NTT domain: NTT(r) once per call
+    loop {
+        LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
+        // [PAPER Alg.2] 2:      y ←$ Sγ^(n+ℓ)
+        let mut y: [R; N_PLUS_ELL] = [R0; N_PLUS_ELL]; // paper y: mask, y <-$ Sγ^(n+ℓ)
+        for j in 0..N_PLUS_ELL {
+            y[j] = sample_sgamma(seed, mask_nonce);
+            mask_nonce = mask_nonce.wrapping_add(1);
+        }
+        // [PAPER Alg.2] 3:      w = A y
+        let w = amul(pp, &y); // paper w: commitment w = A y
+        // [PAPER Alg.2] 4:      c = H(pk, w + t′, M), where t′ := Y
+        let mut w_plus_t_prime: [R; N] = [R0; N]; // paper w + t′: the hashed commitment w + Y
+        for j in 0..N {
+            for n in 0..D {
+                // commit = w + Y, canonical (C: poly_add; poly_reduce; poly_caddq)
+                w_plus_t_prime[j].0[n] = full_reduce32(w[j].0[n] + t_prime[j].0[n]);
+            }
+        }
+        let c_tilde = hash_challenge(pk, &w_plus_t_prime, m); // paper c: challenge DIGEST c_tilde = H(pk, w+Y, M)
+        let c = sample_in_ball(&c_tilde); // paper c: challenge polynomial c = SampleInBall(c_tilde) (local only)
+        let c_hat = ntt_a(&c); // paper c in NTT domain: NTT(c) once per attempt
+
+        // [PAPER Alg.2] 5:      ẑ = y + c r, where r := sk
+        let mut z_hat: [R; N_PLUS_ELL] = [R0; N_PLUS_ELL]; // paper ẑ: pre-sig response ẑ = y + c r
+        for j in 0..N_PLUS_ELL {
+            let c_r = polymul_prehat(&c_hat, &r_hat_mont[j]); // paper c·r: the product c r
+            for n in 0..D {
+                z_hat[j].0[n] = y[j].0[n] + c_r.0[n]; // ẑ = y + c r
+            }
+        }
+        // [PAPER Alg.2] 6:      if ||ẑ||∞ > γ − κ − 1, then Restart
+        if chknorm_vec(&z_hat, bound) {
+            continue;
+        }
+        // [PAPER Alg.2] 7:      return σ̂ = (c, ẑ)
+        return PreSignature { c_tilde, z_hat };
+    }
+    // [PAPER Alg.2] 8:  end procedure
 }
 
-/// Public key / statement: t = A r, canonical [0,Q).
-#[derive(Clone, PartialEq)]
-pub struct LasPk {
-    pub(crate) t: [R; LAS_N],
+/// `presign` (adaptor twin of `basesig::sign`; C twin `las_presign`):
+/// PreSign(sk, Y, M), random path — fresh 64-byte mask seed per call,
+/// single-hop bound gamma-kappa-1.
+pub fn presign(
+    m: &[u8],                      // paper M: message
+    statement: &Statement,         // paper t′ := Y: statement
+    pk: &PublicKey,                // paper t: pk.t = t (public key)
+    sk: &SecretKey,                // paper r: sk.r = r (secret key)
+    pp: &PublicParams,             // paper A: pp = A = [I | A']
+    rng: &mut impl CryptoRngCore,  // CSPRNG for the mask seed (no paper symbol)
+) -> PreSignature {                // paper σ̂: returns σ̂ = (c, ẑ)
+    let mut seed = [0u8; 64]; // PRG mask seed (no paper symbol)
+    rng.fill_bytes(&mut seed);
+    let sigma_hat = presign_internal(m, statement, pk, sk, pp, BOUND_PRESIGN, &seed);
+    seed.zeroize(); // mask seed: wipe
+    sigma_hat
 }
 
-/// Secret key / witness: r in S_1 (ternary, stored as exact -1/0/1).
-#[derive(Clone, PartialEq)]
-pub struct LasSk {
-    pub(crate) s: [R; LAS_M],
+/// `presign_det` (adaptor twin of `basesig::sign_det`; KAT path):
+/// mask randomness derived from (sk, Y, M); single-hop bound gamma-kappa-1.
+/// C twin `las_presign_det`.
+pub fn presign_det(
+    m: &[u8],              // paper M: message
+    statement: &Statement, // paper t′ := Y: statement
+    pk: &PublicKey,        // paper t: pk.t = t (public key)
+    sk: &SecretKey,        // paper r: sk.r = r (secret key)
+    pp: &PublicParams,     // paper A: pp = A = [I | A']
+) -> PreSignature {        // paper σ̂: returns σ̂ = (c, ẑ)
+    let mut seed = det_seed(1, sk, Some(statement), m); // PRG mask seed from (sk, Y, M); tag 1 = presign (binds Y)
+    let sigma_hat = presign_internal(m, statement, pk, sk, pp, BOUND_PRESIGN, &seed);
+    seed.zeroize(); // sk-derived mask seed: wipe
+    sigma_hat
 }
 
-/// (Pre-)signature (c, z): c ternary challenge, z exact centred response.
-#[derive(Clone, PartialEq)]
-pub struct LasSig {
-    pub(crate) c: R,
-    pub(crate) z: [R; LAS_M],
+/// `preverify_internal` (adaptor twin of `basesig::verify_internal`; C twin
+/// `las_preverify_internal`): PreVerify body, parameterised by the rejection
+/// bound.
+pub(crate) fn preverify_internal(
+    sigma_hat: &PreSignature, // paper σ̂: sigma_hat = (c, ẑ), pre-sig to verify
+    m: &[u8],                 // paper M: message
+    statement: &Statement,    // paper t′ := Y: statement, as_t_prime() = Y
+    pk: &PublicKey,           // paper t: pk.t = t (public key)
+    pp: &PublicParams,        // paper A: pp = A = [I | A']
+    bound: i32,               // paper γ−κ−1 (single-hop) / γ−κ−K (AMHL)
+) -> bool {
+    // [PAPER Alg.2] 9:  procedure PreVerify(Y, pk, σ̂, M):
+    // [PAPER Alg.2] 10:     Parse (c, ẑ) := σ̂ and t′ := Y
+    let t_prime = statement.as_t_prime();
+    // [PAPER Alg.2] 11:     if ||ẑ||∞ > γ − κ − 1 then
+    // [PAPER Alg.2] 12:         return 0
+    // [PAPER Alg.2] 13:     end if
+    if chknorm_vec(&sigma_hat.z_hat, bound) {
+        return false;
+    }
+    // [PAPER Alg.2] 14:     w′ = A ẑ − c t, where t := pk
+    let mut w_prime = amul(pp, &sigma_hat.z_hat); // paper w′: w′ = A ẑ − c t (starts as A ẑ)
+    let c = sample_in_ball(&sigma_hat.c_tilde); // paper c: challenge polynomial from the stored digest
+    let c_hat = ntt_a(&c); // paper c in NTT domain: NTT(c) once per call
+    for j in 0..N {
+        let c_t = polymul_prehat(&c_hat, &ntt_b_mont(&pk.t[j])); // paper c·t: the product c t
+        for n in 0..D {
+            w_prime[j].0[n] = full_reduce32(w_prime[j].0[n] - c_t.0[n]); // w' = A ẑ - c t
+        }
+    }
+    let mut w_prime_plus_t_prime: [R; N] = [R0; N]; // paper w′ + t′: the hashed commitment w′ + Y
+    for j in 0..N {
+        for n in 0..D {
+            w_prime_plus_t_prime[j].0[n] = full_reduce32(w_prime[j].0[n] + t_prime[j].0[n]); // w' + Y
+        }
+    }
+    // [PAPER Alg.2] 15:     if c ≠ H(pk, w′ + t′, M) then
+    // [PAPER Alg.2] 16:         return 0
+    // [PAPER Alg.2] 17:     end if
+    // [PAPER Alg.2] 18:     return 1
+    let c_tilde_check = hash_challenge(pk, &w_prime_plus_t_prime, m); // paper H(pk, w′+t′, M): recomputed digest
+    c_tilde_check == sigma_hat.c_tilde // accept iff the recomputed digest equals the stored one (byte compare)
+    // [PAPER Alg.2] 19: end procedure
 }
 
-/* ============================ helpers ============================ */
+/// `preverify` (adaptor twin of `basesig::verify`; C twin `las_preverify`):
+/// PreVerify(Y, pk, sigma^, M), public entry point at the single-hop bound.
+/// Returns true iff valid.
+pub fn preverify(
+    sigma_hat: &PreSignature, // paper σ̂: sigma_hat = (c, ẑ), pre-sig to verify
+    m: &[u8],                 // paper M: message
+    statement: &Statement,    // paper t′ := Y: statement, as_t_prime() = Y
+    pk: &PublicKey,           // paper t: pk.t = t (public key)
+    pp: &PublicParams,        // paper A: pp = A = [I | A']
+) -> bool {
+    preverify_internal(sigma_hat, m, statement, pk, pp, BOUND_PRESIGN)
+}
+
+/// `adapt` (C twin `las_adapt`): Adapt((Y,y), sigma^): PreVerify, then
+/// sigma = (c, z^ + y).  None on failure.
+pub fn adapt(
+    sigma_hat: &PreSignature, // paper σ̂: sigma_hat = (c, ẑ)
+    m: &[u8],                 // paper M: message
+    statement: &Statement,    // paper t′ := Y: statement
+    witness: &Witness,        // paper (Y,y) witness, r′ := y: as_relation_vector() = y (A y = Y)
+    pk: &PublicKey,           // paper t: pk.t = t (public key)
+    pp: &PublicParams,        // paper A: pp = A = [I | A']
+) -> Option<Signature> {      // paper σ: returns σ = (c, ẑ + r′), or None for ⊥
+    // [PAPER Alg.2] 20: procedure Adapt((Y, y), pk, σ̂, M):
+    // [PAPER Alg.2] 21:     if PreVerify(Y, pk, σ̂, M) = 0 then
+    // [PAPER Alg.2] 22:         return ⊥
+    // [PAPER Alg.2] 23:     end if
+    if !preverify(sigma_hat, m, statement, pk, pp) {
+        return None;
+    }
+    // [PAPER Alg.2] 24:     Parse (c, ẑ) := σ̂ and r′ := y
+    let r_prime = witness.as_relation_vector(); // paper r′ := y (Alg. 2 step 24)
+    // [PAPER Alg.2] 25:     return σ = (c, ẑ + r′)
+    let mut z: [R; N_PLUS_ELL] = [R0; N_PLUS_ELL]; // paper ẑ + r′: adapted response
+    for j in 0..N_PLUS_ELL {
+        for n in 0..D {
+            z[j].0[n] = sigma_hat.z_hat[j].0[n] + r_prime[j].0[n]; // z = ẑ + r′ (exact)
+        }
+    }
+    Some(Signature {
+        c_tilde: sigma_hat.c_tilde, // Adapt preserves the challenge digest unchanged (array copy)
+        z,
+    })
+    // [PAPER Alg.2] 26: end procedure
+}
+
+/// `ext` (C twin `las_ext`): Ext(Y, sigma, sigma^): s = z - z^;
+/// Some(witness) iff A*s == Y, else None.
+pub fn ext(
+    sigma: &Signature,        // paper σ: sigma = (c, z)
+    sigma_hat: &PreSignature, // paper σ̂: sigma_hat = (ĉ, ẑ)
+    statement: &Statement,    // paper t′ := Y: statement
+    pp: &PublicParams,        // paper A: pp = A = [I | A']
+) -> Option<Witness> {        // paper s: returns witness s, or None for ⊥
+    // [PAPER Alg.2] 27: procedure Ext(Y, σ, σ̂):
+    // [PAPER Alg.2] 28:     Parse (c, z) := σ and (ĉ, ẑ) := σ̂
+    // [PAPER Alg.2] 29:     Parse t′ := Y
+    let t_prime = statement.as_t_prime();
+    // [PAPER Alg.2] 30:     s = z − ẑ
+    let mut s: [R; N_PLUS_ELL] = [R0; N_PLUS_ELL]; // paper s: extracted witness s = z − ẑ
+    for j in 0..N_PLUS_ELL {
+        for n in 0..D {
+            s[j].0[n] = sigma.z[j].0[n] - sigma_hat.z_hat[j].0[n]; // s = z - ẑ (exact)
+        }
+    }
+    // [PAPER Alg.2] 31:     if t′ ≠ A s, then return ⊥
+    let a_s = amul(pp, &s); // paper A s: the product A s, checked against t′ = Y
+    if &a_s != t_prime {
+        return None;
+    }
+    // [PAPER Alg.2] 32:     return s
+    Some(Witness::from_relation_vector(s))
+    // [PAPER Alg.2] 33: end procedure
+}
+
+/* ==================== end-to-end packed tier (byte API) ====================
+ * Validating byte-boundary wrappers around the four core Algorithm-2 ops:
+ * decode every input (statement Y, keys, (pre-)signatures, witness) with the
+ * validating serialize.rs codecs, run the core op, pack the output.  These are
+ * the *_packed twins the benchmark's TIER-2 measures and what a wire/on-chain
+ * consumer pays.  C twins: las_presign_packed / las_preverify_packed /
+ * las_adapt_packed / las_ext_packed (las.c). */
+
+/// `presign_packed` (end-to-end tier of [`presign`]); C twin `las_presign_packed`
+/// (las.c).  Validating decode of the statement Y, public and secret keys, then
+/// core PreSign (c = H(pk, w + Y, M)), then pack the pre-signature.  `None` if
+/// any input fails validating decode.
+pub fn presign_packed(
+    m: &[u8],                              // paper M: message
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    pk_b: &[u8; PUBLIC_KEY_BYTES],         // packed public key (bytes)
+    sk_b: &[u8; SECRET_KEY_BYTES],         // packed secret key (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+    rng: &mut impl CryptoRngCore,          // CSPRNG for the mask seed
+) -> Option<[u8; PRE_SIGNATURE_BYTES]> {
+    let statement = unpack_statement(y_b)?;
+    let pk = unpack_public_key(pk_b)?;
+    let sk = unpack_secret_key(sk_b)?;
+    let presig = presign(m, &statement, &pk, &sk, pp, rng);
+    pack_pre_signature(&presig) // in-band by the norm gate: always Some
+}
+
+/// `preverify_packed` (end-to-end tier of [`preverify`]); C twin
+/// `las_preverify_packed` (las.c).  Validating decode of Y, pk and the
+/// pre-signature, then core PreVerify (c == H(pk, w' + Y, M)).  Returns `true`
+/// iff the bytes decode AND the pre-signature pre-verifies.
+pub fn preverify_packed(
+    presig_b: &[u8; PRE_SIGNATURE_BYTES],  // packed pre-signature (bytes)
+    m: &[u8],                              // paper M: message
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    pk_b: &[u8; PUBLIC_KEY_BYTES],         // packed public key (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+) -> bool {
+    let Some(statement) = unpack_statement(y_b) else {
+        return false; // malformed statement
+    };
+    let Some(pk) = unpack_public_key(pk_b) else {
+        return false; // malformed pk
+    };
+    let Some(presig) = unpack_pre_signature(presig_b) else {
+        return false; // malformed pre-signature
+    };
+    preverify(&presig, m, &statement, &pk, pp)
+}
+
+/// `adapt_packed` (end-to-end tier of [`adapt`]); C twin `las_adapt_packed`
+/// (las.c).  Validating decode of the pre-signature, statement, honest witness
+/// r' and public key; core Adapt (which pre-verifies first); pack the adapted
+/// (fully ordinary) signature.  `None` on any decode failure or invalid
+/// pre-signature.
+pub fn adapt_packed(
+    presig_b: &[u8; PRE_SIGNATURE_BYTES],  // packed pre-signature (bytes)
+    m: &[u8],                              // paper M: message
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    r_prime_b: &[u8; WITNESS_BYTES],       // packed honest witness r' (bytes)
+    pk_b: &[u8; PUBLIC_KEY_BYTES],         // packed public key (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+) -> Option<[u8; SIGNATURE_BYTES]> {
+    let statement = unpack_statement(y_b)?;
+    let witness = unpack_witness(r_prime_b)?;
+    let pk = unpack_public_key(pk_b)?;
+    let presig = unpack_pre_signature(presig_b)?;
+    let sigma = adapt(&presig, m, &statement, &witness, &pk, pp)?;
+    pack_signature(&sigma)
+}
+
+/// `ext_packed` (end-to-end tier of [`ext`]); C twin `las_ext_packed` (las.c).
+/// Validating decode of both signatures and the statement; core Ext
+/// (s = z − ẑ, checked against A s == Y); pack the recovered witness s.  This is
+/// the on-chain leak made byte-real: the two byte strings anyone can fetch from
+/// the chain yield the witness.  `None` on any decode failure or invalid input.
+pub fn ext_packed(
+    sig_b: &[u8; SIGNATURE_BYTES],         // packed adapted signature (bytes)
+    presig_b: &[u8; PRE_SIGNATURE_BYTES],  // packed pre-signature (bytes)
+    y_b: &[u8; STATEMENT_BYTES],           // packed statement Y (bytes)
+    pp: &PublicParams,                     // paper A: A = [I | A']
+) -> Option<[u8; WITNESS_BYTES]> {
+    let statement = unpack_statement(y_b)?;
+    let sigma = unpack_signature(sig_b)?;
+    let presig = unpack_pre_signature(presig_b)?;
+    let s = ext(&sigma, &presig, &statement, pp)?;
+    pack_witness(&s)
+}
+
+/* ============================ helpers ============================
+ * Defined at the BOTTOM of the file, in the same order as basesig.rs's
+ * local copies (b_ prefix there), plus one LAS-only helper at the end
+ * (det_seed for the _det KAT variants; the setup expansion lives in
+ * setup.rs, Gen's samplers live in relation.rs). */
 
 /// Pack one polynomial into 4 bytes/coeff (canonical [0,Q)) for hashing.
 /// Mirrors ref/las.c pack_poly_canon (poly_reduce + poly_caddq == full_reduce32).
-fn pack_poly_canon(a: &R) -> [u8; N * 4] {
-    let mut out = [0u8; N * 4];
+fn pack_poly_canon(a: &R) -> [u8; D * 4] {
+    let mut out = [0u8; D * 4];
     for (i, &c) in a.0.iter().enumerate() {
         let x = full_reduce32(c) as u32;
         out[4 * i..4 * i + 4].copy_from_slice(&x.to_le_bytes());
@@ -170,7 +489,7 @@ fn pack_poly_canon(a: &R) -> [u8; N * 4] {
 
 /// Reject if any component has ||.||inf >= bound (values are exact/small here,
 /// so plain abs() equals the C bit-trick absolute value). Mirrors chknorm_vec.
-fn chknorm_vec(z: &[R; LAS_M], bound: i32) -> bool {
+fn chknorm_vec(z: &[R; N_PLUS_ELL], bound: i32) -> bool {
     // C poly_chknorm guard: bounds above (Q-1)/8 are rejected outright.
     if bound > (Q - 1) / 8 {
         return true;
@@ -180,34 +499,54 @@ fn chknorm_vec(z: &[R; LAS_M], bound: i32) -> bool {
         .any(|&x| x.abs() >= bound)
 }
 
-/// out = a*b mod (X^256+1, Q), exact CENTRED representative.
-/// Mirrors ref/las.c polymul (NTT -> pointwise -> invNTT -> reduce); the final
-/// center_mod pins the unique centred representative, which for the uses below
-/// (c*r with |c*r|inf <= kappa; c*t later canonicalised) matches the C values.
-fn polymul_centered(a: &R, b: &R) -> R {
+/// Challenge-side ("a") NTT operand: NTT + partial reduce, computed ONCE and
+/// reused across all products that share the challenge — mirrors ml_dsa.rs
+/// sign_internal step 17 (`c_hat ← NTT(c)`, then reused for c*s_1, c*s_2,
+/// c*t_0) and ref/las.c's `chat`.  Representative-neutral: identical values to
+/// the a-side half of the former per-call `polymul_centered`.
+fn ntt_a(a: &R) -> T {
     let mut ah = ntt(&[a.clone()]);
-    let mut bh = ntt(&[b.clone()]);
-    // Keep values small before to_mont / pointwise (representative-neutral).
     for x in ah[0].0.iter_mut() {
         *x = partial_reduce32(*x);
     }
+    let [ah] = ah;
+    ah
+}
+
+/// Invariant-side ("b") NTT operand in Montgomery form: NTT + partial reduce +
+/// to_mont, computed ONCE per call for operands that do not change across
+/// rejection attempts (secret r) or products (public t) — mirrors the
+/// `s_1_hat_mont`/`t1_d2_hat_mont` pre-computes in ml_dsa.rs/types.rs and
+/// ref/las.c's `shat`/`that`.  Identical values to the b-side half of the
+/// former per-call `polymul_centered`.
+fn ntt_b_mont(b: &R) -> T {
+    let mut bh = ntt(&[b.clone()]);
     for x in bh[0].0.iter_mut() {
         *x = partial_reduce32(*x);
     }
     let bm = to_mont(&bh);
+    let [bm] = bm;
+    bm
+}
+
+/// Second half of the exact centred product out = a*b mod (X^256+1, Q): both
+/// operands already transformed (`ntt_a` / `ntt_b_mont`).  The final
+/// center_mod pins the unique centred representative, which for the uses above
+/// (c*r with |c*r|inf <= kappa; c*t later canonicalised) matches the C values.
+fn polymul_prehat(ah: &T, bm: &T) -> R {
     let mut ch = T0;
-    for n in 0..N {
-        ch.0[n] = mont_reduce(i64::from(ah[0].0[n]) * i64::from(bm[0].0[n]));
+    for n in 0..D {
+        ch.0[n] = mont_reduce(i64::from(ah.0[n]) * i64::from(bm.0[n]));
     }
     let prod = inv_ntt(&[ch]);
     R(from_fn(|n| center_mod(prod[0].0[n])))
 }
 
-/// w = A*v = v_top + A'*v_bot, with A=[I|A'], A' (pp.mat) already in NTT domain.
-/// Output is canonical [0,Q). Mirrors ref/las.c las_Amul.
-fn amul(pp: &LasPp, v: &[R; LAS_M]) -> [R; LAS_N] {
+/// w = A*v = v_top + A'*v_bot, with A=[I|A'], A' (pp.a_prime) already in NTT
+/// domain.  Output is canonical [0,Q). Mirrors ref/las.c las_Amul.
+fn amul(pp: &PublicParams, v: &[R; N_PLUS_ELL]) -> [R; N] {
     // vhat = NTT(v_bot), reduced to (-Q,Q) before use (representative-neutral).
-    let vbot: [R; LAS_ELL] = from_fn(|j| v[LAS_N + j].clone());
+    let vbot: [R; ELL] = from_fn(|j| v[N + j].clone());
     let mut vhat = ntt(&vbot);
     for p in vhat.iter_mut() {
         for x in p.0.iter_mut() {
@@ -216,12 +555,12 @@ fn amul(pp: &LasPp, v: &[R; LAS_M]) -> [R; LAS_N] {
     }
     let vm = to_mont(&vhat);
 
-    let mut w: [R; LAS_N] = [R0; LAS_N];
-    for i in 0..LAS_N {
+    let mut w: [R; N] = [R0; N];
+    for i in 0..N {
         let mut acc = T0;
-        for j in 0..LAS_ELL {
-            for n in 0..N {
-                acc.0[n] += mont_reduce(i64::from(pp.mat[i][j].0[n]) * i64::from(vm[j].0[n]));
+        for j in 0..ELL {
+            for n in 0..D {
+                acc.0[n] += mont_reduce(i64::from(pp.a_prime[i][j].0[n]) * i64::from(vm[j].0[n]));
             }
         }
         // Mirrors C poly_reduce(&acc) before the inverse NTT (keeps i32 bounds).
@@ -229,7 +568,7 @@ fn amul(pp: &LasPp, v: &[R; LAS_M]) -> [R; LAS_N] {
             *x = partial_reduce32(*x);
         }
         let lo = inv_ntt(&[acc]); // canonical [0,Q)
-        for n in 0..N {
+        for n in 0..D {
             // identity block + canonicalise (C: poly_add; poly_reduce; poly_caddq)
             w[i].0[n] = full_reduce32(lo[0].0[n] + v[i].0[n]);
         }
@@ -237,10 +576,13 @@ fn amul(pp: &LasPp, v: &[R; LAS_M]) -> [R; LAS_N] {
     w
 }
 
-/// H: challenge poly with ||c||_1 = LAS_KAPPA, ||c||inf = 1.
+/// H: challenge poly with ||c||_1 = KAPPA, ||c||inf = 1.
 /// Same construction as Dilithium's poly_challenge, kappa fixed here.
-/// Mirrors ref/las.c las_challenge, including SHAKE256 block buffering.
-fn las_challenge(seed: &[u8; LAS_SEEDBYTES]) -> R {
+/// Mirrors ref/las.c las_poly_challenge, including SHAKE256 block buffering.
+/// Renamed from the former `las_challenge` to its upstream twin's name
+/// (`sample_in_ball`); the `las_` prefix is reserved for the four Algorithm-2
+/// public operations, not private helpers.
+fn sample_in_ball(seed: &[u8; LAS_CTILDEBYTES]) -> R {
     let mut h = Shake256::default();
     h.update(seed);
     let mut rd = h.finalize_xof();
@@ -251,7 +593,7 @@ fn las_challenge(seed: &[u8; LAS_SEEDBYTES]) -> R {
     let mut pos = 8usize;
 
     let mut c = R0;
-    for i in (N - LAS_KAPPA as usize)..N {
+    for i in (D - KAPPA as usize)..D {
         let b = loop {
             if pos >= SHAKE256_RATE {
                 rd.read(&mut buf);
@@ -270,20 +612,22 @@ fn las_challenge(seed: &[u8; LAS_SEEDBYTES]) -> R {
     c
 }
 
-/// c = H(pk, commit, M) where commit is the (already w or w+Y) commitment.
-/// Mirrors ref/las.c hash_challenge.
-fn hash_challenge(pk: &LasPk, commit: &[R; LAS_N], m: &[u8]) -> R {
+/// c_tilde = H(pk, commit, M) where commit is the (already w or w+Y) commitment:
+/// the paper challenge as its 32-byte hash DIGEST.  The caller derives the local
+/// challenge polynomial separately via `sample_in_ball(&c_tilde)`, and stores
+/// the digest in the (pre-)signature.  Mirrors ref/las.c hash_challenge.
+fn hash_challenge(pk: &PublicKey, commit: &[R; N], m: &[u8]) -> [u8; LAS_CTILDEBYTES] {
     let mut h = Shake256::default();
-    for i in 0..LAS_N {
+    for i in 0..N {
         h.update(&pack_poly_canon(&pk.t[i]));
     }
-    for i in 0..LAS_N {
+    for i in 0..N {
         h.update(&pack_poly_canon(&commit[i]));
     }
     h.update(m);
-    let mut seed = [0u8; LAS_SEEDBYTES];
-    h.finalize_xof().read(&mut seed);
-    las_challenge(&seed)
+    let mut c_tilde = [0u8; LAS_CTILDEBYTES];
+    h.finalize_xof().read(&mut c_tilde);
+    c_tilde
 }
 
 /// Sample one poly with coefficients uniform in [-GAMMA, GAMMA] (set S_g).
@@ -291,7 +635,7 @@ fn hash_challenge(pk: &LasPk, commit: &[R; LAS_N], m: &[u8]) -> R {
 /// semantics: 3 bytes per attempt, and the last byte of each 136-byte block
 /// is DISCARDED (C refills when pos+3 > RATE).
 fn sample_sgamma(seed: &[u8; 64], nonce: u16) -> R {
-    let two_gamma = 2u32 * (LAS_GAMMA as u32);
+    let two_gamma = 2u32 * (GAMMA as u32);
     let mut gmask: u32 = 1;
     while gmask < two_gamma {
         gmask <<= 1;
@@ -308,7 +652,7 @@ fn sample_sgamma(seed: &[u8; 64], nonce: u16) -> R {
 
     let mut y = R0;
     let mut ctr = 0usize;
-    while ctr < N {
+    while ctr < D {
         if pos + 3 > SHAKE256_RATE {
             rd.read(&mut buf);
             pos = 0;
@@ -319,328 +663,40 @@ fn sample_sgamma(seed: &[u8; 64], nonce: u16) -> R {
             & gmask;
         pos += 3;
         if t < two_gamma + 1 {
-            y.0[ctr] = (t as i32) - LAS_GAMMA;
+            y.0[ctr] = (t as i32) - GAMMA;
             ctr += 1;
         }
     }
     y
 }
 
-/// Sample one poly with coefficients uniform in {-1,0,1} (set S_1, ternary).
-/// Mirrors ref/las.c sample_ternary (2-bit codes, reject 3; contiguous stream).
-fn sample_ternary(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> R {
-    let mut h = Shake256::default();
-    h.update(seed);
-    h.update(&nonce.to_le_bytes());
-    let mut rd = h.finalize_xof();
-    let mut buf = [0u8; SHAKE256_RATE];
-    rd.read(&mut buf);
-    let mut pos = 0usize;
-
-    let mut r = R0;
-    let mut ctr = 0usize;
-    while ctr < N {
-        if pos >= SHAKE256_RATE {
-            rd.read(&mut buf);
-            pos = 0;
-        }
-        let byte = buf[pos];
-        pos += 1;
-        let mut s = 0u8;
-        while s < 4 && ctr < N {
-            let v = (byte >> (2 * s)) & 3;
-            if v < 3 {
-                r.0[ctr] = i32::from(v) - 1;
-                ctr += 1;
-            }
-            s += 1;
-        }
-    }
-    r
-}
-
-/// Expand one uniform poly in [0,Q) DIRECTLY IN THE NTT DOMAIN from
-/// SHAKE128(seed || nonce_le16). Byte-stream-identical to the C poly_uniform
-/// (contiguous 3-byte groups; 840 and 168 are both divisible by 3, so the C
-/// leftover-carry never discards bytes).
-fn poly_uniform_ntt(seed: &[u8; LAS_SEEDBYTES], nonce: u16) -> T {
-    let mut h = Shake128::default();
-    h.update(seed);
-    h.update(&nonce.to_le_bytes());
-    let mut rd = h.finalize_xof();
-
-    let mut t = T0;
-    let mut ctr = 0usize;
-    let mut b = [0u8; 3];
-    while ctr < N {
-        rd.read(&mut b);
-        let x = (u32::from(b[0]) | (u32::from(b[1]) << 8) | (u32::from(b[2]) << 16)) & 0x7F_FFFF;
-        if x < Q as u32 {
-            t.0[ctr] = x as i32;
-            ctr += 1;
-        }
-    }
-    t
-}
-
 /// Deterministic per-(pre)signature mask randomness:
 /// seed = SHAKE256(tag || sk || [Y] || M), 64 bytes. Mirrors ref/las.c det_seed.
-fn det_seed(tag: u8, sk: &LasSk, y_stmt: Option<&LasPk>, m: &[u8]) -> [u8; 64] {
+/// LAS-only helper (the _det KAT path); no basesig.rs analogue (basesig has
+/// its own tag-0-only twin because it never binds a statement).
+fn det_seed(tag: u8, sk: &SecretKey, statement: Option<&Statement>, m: &[u8]) -> [u8; 64] {
     let mut h = Shake256::default();
     h.update(&[tag]); // domain: 0=sign, 1=presign
 
     // ternary sk -> 1 byte/coeff, (uint8_t)(int8_t) semantics: -1 -> 0xFF
-    let mut skb = [0u8; LAS_M * N];
-    for i in 0..LAS_M {
-        for k in 0..N {
-            skb[i * N + k] = sk.s[i].0[k] as i8 as u8;
+    let mut skb = [0u8; N_PLUS_ELL * D];
+    for i in 0..N_PLUS_ELL {
+        for k in 0..D {
+            skb[i * D + k] = sk.r[i].0[k] as i8 as u8;
         }
     }
     h.update(&skb);
 
-    if let Some(y) = y_stmt {
-        for i in 0..LAS_N {
-            h.update(&pack_poly_canon(&y.t[i])); // bind the statement Y
+    if let Some(y) = statement {
+        let t_prime = y.as_t_prime();
+        for i in 0..N {
+            h.update(&pack_poly_canon(&t_prime[i])); // bind the statement Y
         }
     }
     h.update(m);
+    skb.zeroize(); // raw sk bytes: wipe (upstream secret-material policy)
 
     let mut out = [0u8; 64];
     h.finalize_xof().read(&mut out);
     out
-}
-
-/* ============================ scheme ============================ */
-
-/// Public parameters pp = A (A' expanded from a public seed, NTT domain).
-pub fn las_setup(seed: &[u8; LAS_SEEDBYTES]) -> LasPp {
-    LasPp {
-        mat: from_fn(|i| from_fn(|j| poly_uniform_ntt(seed, ((i as u16) << 8) + j as u16))),
-        seed: *seed,
-    }
-}
-
-/// Deterministic KeyGen from an explicit 32-byte seed (reproducible KATs).
-/// KeyGen = Gen: r <- S_1^(n+l); t = A r; (pk,sk) = (t,r).
-pub fn las_keygen_seed(pp: &LasPp, seed: &[u8; LAS_SEEDBYTES]) -> (LasPk, LasSk) {
-    let sk = LasSk {
-        s: from_fn(|j| sample_ternary(seed, j as u16)),
-    };
-    let pk = LasPk {
-        t: amul(pp, &sk.s),
-    };
-    (pk, sk)
-}
-
-/// Shared Sign body, parameterised by the 64-byte mask seed. Mirrors sign_core.
-fn sign_core(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp, seed: &[u8; 64]) -> LasSig {
-    let mut nonce: u16 = 0;
-    loop {
-        LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
-        let mut y: [R; LAS_M] = [R0; LAS_M];
-        for j in 0..LAS_M {
-            y[j] = sample_sgamma(seed, nonce);
-            nonce = nonce.wrapping_add(1);
-        }
-        let w = amul(pp, &y); //  w = A y
-        let c = hash_challenge(pk, &w, m); //  c = H(pk, w, M)
-
-        let mut z: [R; LAS_M] = [R0; LAS_M];
-        for j in 0..LAS_M {
-            let cr = polymul_centered(&c, &sk.s[j]); // exact, |.|inf <= kappa
-            for n in 0..N {
-                z[j].0[n] = y[j].0[n] + cr.0[n]; // z = y + c r (exact, C reduce = identity)
-            }
-        }
-        if chknorm_vec(&z, LAS_BOUND_SIGN) {
-            continue;
-        }
-        return LasSig { c, z };
-    }
-}
-
-/// Deterministic Sign: mask randomness derived from (sk, M). Mirrors las_sign_det.
-pub fn las_sign_det(m: &[u8], pk: &LasPk, sk: &LasSk, pp: &LasPp) -> LasSig {
-    let seed = det_seed(0, sk, None, m); // tag 0 = sign (no statement)
-    sign_core(m, pk, sk, pp, &seed)
-}
-
-/// Randomised KeyGen: fresh 32-byte seed from the caller's RNG (mirrors
-/// C `las_keygen` = `randombytes` + `las_keygen_seed`; RNG injected, Rust idiom).
-pub fn las_keygen(pp: &LasPp, rng: &mut impl CryptoRngCore) -> (LasPk, LasSk) {
-    let mut seed = [0u8; LAS_SEEDBYTES];
-    rng.fill_bytes(&mut seed);
-    las_keygen_seed(pp, &seed)
-}
-
-/// Randomised Sign: fresh 64-byte mask seed per call (mirrors C `las_sign`).
-pub fn las_sign(
-    m: &[u8],
-    pk: &LasPk,
-    sk: &LasSk,
-    pp: &LasPp,
-    rng: &mut impl CryptoRngCore,
-) -> LasSig {
-    let mut seed = [0u8; 64];
-    rng.fill_bytes(&mut seed);
-    sign_core(m, pk, sk, pp, &seed)
-}
-
-/// Ordinary Verify. Returns true iff the signature is valid. Mirrors las_verify.
-pub fn las_verify(sig: &LasSig, m: &[u8], pk: &LasPk, pp: &LasPp) -> bool {
-    if chknorm_vec(&sig.z, LAS_BOUND_SIGN) {
-        return false;
-    }
-    let mut w = amul(pp, &sig.z); // A z
-    for j in 0..LAS_N {
-        let ct = polymul_centered(&sig.c, &pk.t[j]);
-        for n in 0..N {
-            // w' = A z - c t, canonicalised (C: poly_sub; poly_reduce; poly_caddq)
-            w[j].0[n] = full_reduce32(w[j].0[n] - ct.0[n]);
-        }
-    }
-    let c2 = hash_challenge(pk, &w, m);
-    c2 == sig.c
-}
-
-/// Shared PreSign body: like sign_core but hashes (w+Y) and rejects at `bound`.
-fn presign_core(
-    m: &[u8],
-    y_stmt: &LasPk,
-    pk: &LasPk,
-    sk: &LasSk,
-    pp: &LasPp,
-    bound: i32,
-    seed: &[u8; 64],
-) -> LasSig {
-    let mut nonce: u16 = 0;
-    loop {
-        LAS_ATTEMPTS.fetch_add(1, Ordering::Relaxed); // instrumentation only
-        let mut y: [R; LAS_M] = [R0; LAS_M];
-        for j in 0..LAS_M {
-            y[j] = sample_sgamma(seed, nonce);
-            nonce = nonce.wrapping_add(1);
-        }
-        let w = amul(pp, &y); // w = A y
-        let mut w_y: [R; LAS_N] = [R0; LAS_N];
-        for j in 0..LAS_N {
-            for n in 0..N {
-                // commit = w + Y, canonical (C: poly_add; poly_reduce; poly_caddq)
-                w_y[j].0[n] = full_reduce32(w[j].0[n] + y_stmt.t[j].0[n]);
-            }
-        }
-        let c = hash_challenge(pk, &w_y, m); // c = H(pk, w+Y, M)
-
-        let mut z: [R; LAS_M] = [R0; LAS_M];
-        for j in 0..LAS_M {
-            let cr = polymul_centered(&c, &sk.s[j]);
-            for n in 0..N {
-                z[j].0[n] = y[j].0[n] + cr.0[n]; // z^ = y + c r
-            }
-        }
-        if chknorm_vec(&z, bound) {
-            continue;
-        }
-        return LasSig { c, z };
-    }
-}
-
-/// Deterministic PreSign: mask randomness derived from (sk, Y, M); single-hop
-/// bound gamma-kappa-1. Mirrors las_presign_det.
-pub fn las_presign_det(
-    m: &[u8],
-    y_stmt: &LasPk,
-    pk: &LasPk,
-    sk: &LasSk,
-    pp: &LasPp,
-) -> LasSig {
-    let seed = det_seed(1, sk, Some(y_stmt), m); // tag 1 = presign (binds Y)
-    presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed)
-}
-
-/// Randomised PreSign: fresh 64-byte mask seed per call, single-hop bound
-/// gamma-kappa-1 (mirrors C `las_presign`).
-pub fn las_presign(
-    m: &[u8],
-    y_stmt: &LasPk,
-    pk: &LasPk,
-    sk: &LasSk,
-    pp: &LasPp,
-    rng: &mut impl CryptoRngCore,
-) -> LasSig {
-    let mut seed = [0u8; 64];
-    rng.fill_bytes(&mut seed);
-    presign_core(m, y_stmt, pk, sk, pp, LAS_BOUND_PRESIGN, &seed)
-}
-
-/// PreVerify(Y, pk, sigma^, M). Returns true iff the pre-signature is valid.
-pub fn las_preverify(
-    presig: &LasSig,
-    m: &[u8],
-    y_stmt: &LasPk,
-    pk: &LasPk,
-    pp: &LasPp,
-) -> bool {
-    if chknorm_vec(&presig.z, LAS_BOUND_PRESIGN) {
-        return false;
-    }
-    let mut w = amul(pp, &presig.z); // A z^
-    for j in 0..LAS_N {
-        let ct = polymul_centered(&presig.c, &pk.t[j]);
-        for n in 0..N {
-            w[j].0[n] = full_reduce32(w[j].0[n] - ct.0[n]); // w' = A z^ - c t
-        }
-    }
-    let mut w_y: [R; LAS_N] = [R0; LAS_N];
-    for j in 0..LAS_N {
-        for n in 0..N {
-            w_y[j].0[n] = full_reduce32(w[j].0[n] + y_stmt.t[j].0[n]); // w' + Y
-        }
-    }
-    let c2 = hash_challenge(pk, &w_y, m); // check c == H(pk, w'+Y, M)
-    c2 == presig.c
-}
-
-/// Adapt((Y,y), sigma^): PreVerify, then sigma = (c, z^ + y). None on failure.
-pub fn las_adapt(
-    presig: &LasSig,
-    m: &[u8],
-    y_stmt: &LasPk,
-    y_wit: &LasSk,
-    pk: &LasPk,
-    pp: &LasPp,
-) -> Option<LasSig> {
-    if !las_preverify(presig, m, y_stmt, pk, pp) {
-        return None;
-    }
-    let mut z: [R; LAS_M] = [R0; LAS_M];
-    for j in 0..LAS_M {
-        for n in 0..N {
-            z[j].0[n] = presig.z[j].0[n] + y_wit.s[j].0[n]; // z = z^ + y_wit (exact)
-        }
-    }
-    Some(LasSig {
-        c: presig.c.clone(),
-        z,
-    })
-}
-
-/// Ext(Y, sigma, sigma^): s = z - z^; Some(s) iff A*s == Y, else None.
-pub fn las_ext(
-    sig: &LasSig,
-    presig: &LasSig,
-    y_stmt: &LasPk,
-    pp: &LasPp,
-) -> Option<LasSk> {
-    let mut s: [R; LAS_M] = [R0; LAS_M];
-    for j in 0..LAS_M {
-        for n in 0..N {
-            s[j].0[n] = sig.z[j].0[n] - presig.z[j].0[n]; // s = z - z^ (exact)
-        }
-    }
-    let ay = amul(pp, &s); // check A s == Y (both canonical)
-    if ay != y_stmt.t {
-        return None;
-    }
-    Some(LasSk { s })
 }

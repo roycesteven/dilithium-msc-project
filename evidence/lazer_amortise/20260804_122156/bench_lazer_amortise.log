@@ -1,0 +1,63 @@
+=== Does the role-A proof amortise across swaps? -- LaZer ===
+
+Proof system : LaZer (LNP22 linear relation with norms), post-quantum
+Relation     : exists r : A r = t and ||r||inf <= 1   (per instance)
+Statement    : block-diagonal, 6 x 23 polynomials per instance
+Repetitions  : 5 per batch size, after an untimed warm-up
+k=1 uses the COMMITTED parameter set configuration 3 ships.
+
+  measured k = 1  (proof 30723 B)
+  measured k = 2  (proof 46751 B)
+  measured k = 4  (proof 76191 B)
+  measured k = 8  (proof 141157 B)
+
+--- Cost of ONE proof covering k statements (totals) ---
+
+    k            prove (ms)           verify (ms)     proof (B)
+    1         158.8 +-  73.3          75.2 +-   4.2         30723
+    2         276.2 +-  22.3         218.6 +-   8.4         46751
+    4         931.8 +-  92.2         692.7 +-  27.6         76191
+    8        3560.5 +- 354.5        2676.4 +- 255.1        141157
+
+--- Amortised PER SWAP (total / k) ---
+
+    k      prove (ms)     verify (ms)       proof (B)      proof vs k=1
+    1           158.8            75.2         30723.0             1.00x
+    2           138.1           109.3         23375.5             0.76x
+    4           233.0           173.2         19047.8             0.62x
+    8           445.1           334.6         17644.6             0.57x
+
+--- What this shows ---
+
+Unlike Groth16, whose proof is a CONSTANT 128 B, LaZer's proof grows with k
+-- but SUBLINEARLY, so per-swap size does fall: 0.57x at k=8.
+That is a saving on a cost that actually mattered: the proof is the dominant
+communication object of configuration 3, where Groth16's 128 B never was.
+
+BUT IT IS A TRADE, NOT A WIN, AND THE TRADE IS BAD HERE. Per-swap compute
+goes the other way and goes further: prove+verify per swap is 3.33x at k=8
+(prove 159 -> 445 ms, verify 75 -> 335 ms). LaZer's work grows
+SUPERLINEARLY in the batch, so each extra instance costs more than the last.
+
+For configuration 3 that settles it. evidence/stage2/latest shows the role-A
+proof is already 98.6% of end-to-end time, so the binding constraint is
+COMPUTE, not communication -- and batching buys communication by spending
+compute. Trading 43% of the proof bytes for 3.3x the per-swap proof time
+makes the dominant cost worse to improve a subordinate one.
+
+Taken with the Groth16 run, BOTH provers answer the amortisation question
+negatively, for opposite reasons: Groth16's 1/k is perfect but lands on a
+cost that was already negligible; LaZer's lands on a cost that matters but
+is paid for in the one that matters more.
+
+Against that, batching costs the same protocol concessions it costs for any
+proof system: the batch must be proved BEFORE any of its statements is used,
+so a party has to know its next k swaps in advance; every counterparty
+verifies the whole batch to use one statement of it; and the statements in a
+batch become linked, since anyone seeing two of them knows they were proved
+together. None of those is priced above.
+
+SCOPE: time and communication only. The batched parameter sets were generated
+by the same LaZer codegen as the committed k=1 set and target the same
+knowledge error, but have NOT been independently reviewed, and no security
+claim about batching is made here. Configuration 3 still uses k=1.

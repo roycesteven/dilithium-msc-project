@@ -1,0 +1,10 @@
+=== LAS adaptor-signature correctness contract (mode 3, n=6 ell=5 kappa=49) ===
+  [1] PreSign produces a pre-sig that PreVerify accepts PASS
+  [2] the pre-signature FAILS ordinary Verify (tripwire) PASS
+  [3] Adapt yields a signature ordinary Verify accepts PASS
+  [4] Ext recovers the witness exactly (y' == y) PASS
+  [5a] a tampered message fails Verify           PASS
+  [5b] every single bit-flip of the packed signature is rejected PASS
+  [6] malformed packed bytes are rejected (pk>=Q, sk code-3, sig c & z) PASS
+  [7] deterministic API is byte-stable on re-run PASS
+=== ALL CONTRACT CHECKS PASSED ===

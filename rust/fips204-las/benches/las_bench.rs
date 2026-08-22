@@ -46,11 +46,19 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::hint::black_box;
 
-use fips204::las::{
-    las_adapt, las_expected_attempts, las_ext, las_keygen, las_presign, las_preverify, las_setup,
-    LAS_ATTEMPTS, LAS_BOUND_PRESIGN, LAS_BOUND_SIGN,
+use fips204::basesig::{
+    keygen, keygen_packed, sign, sign_packed, verify, verify_packed, BASE_ATTEMPTS, BOUND_SIGN,
 };
-use fips204::las_basesig::{base_keygen, base_sign, base_verify, BASE_ATTEMPTS};
+use fips204::las::{
+    adapt, adapt_packed, ext, ext_packed, las_expected_attempts, presign, presign_packed,
+    preverify, preverify_packed, LAS_ATTEMPTS, BOUND_PRESIGN,
+};
+use fips204::relation::gen;
+use fips204::serialize::{
+    pack_pre_signature, pack_public_key, pack_secret_key, pack_signature, pack_statement,
+    pack_witness, unpack_signature,
+};
+use fips204::setup::setup_public_params;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::cell::Cell;
@@ -88,46 +96,50 @@ fn rejection_gate(label: &str, attempts: u64, calls: u64, theory: f64) {
 fn bench_stage1(c: &mut Criterion) {
     // Fixed public parameters and fixed-seed RNG => reproducible workload.
     let ppseed: [u8; 32] = core::array::from_fn(|i| i as u8);
-    let pp = las_setup(&ppseed);
+    let pp = setup_public_params(&ppseed);
     let mut rng = ChaCha8Rng::seed_from_u64(0x4c41_5342_454e_4348); // "LASBENCH"
 
     // One consistent state, gated on the full success-path contract.
-    let (pk, sk) = las_keygen(&pp, &mut rng);
-    let (y_stmt, y_wit) = las_keygen(&pp, &mut rng);
-    let sig_base = base_sign(MSG, &pk, &sk, &pp, &mut rng);
-    let presig = las_presign(MSG, &y_stmt, &pk, &sk, &pp, &mut rng);
-    let adapted = las_adapt(&presig, MSG, &y_stmt, &y_wit, &pk, &pp).expect("adapt");
+    let (pk, sk) = keygen(&pp, &mut rng);
+    let (statement, witness) = gen(&pp, &mut rng);
+    let sig_base = sign(MSG, &pk, &sk, &pp, &mut rng);
+    let presig = presign(MSG, &statement, &pk, &sk, &pp, &mut rng);
+    let adapted = adapt(&presig, MSG, &statement, &witness, &pk, &pp).expect("adapt");
 
-    assert!(base_verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
-    assert!(las_preverify(&presig, MSG, &y_stmt, &pk, &pp), "gate: pre-signature pre-verifies");
-    assert!(!base_verify(&presig, MSG, &pk, &pp), "gate: pre-signature must FAIL ordinary Verify");
-    assert!(base_verify(&adapted, MSG, &pk, &pp), "gate: adapted passes the independent base verifier");
-    let yext = las_ext(&adapted, &presig, &y_stmt, &pp).expect("gate: ext");
-    assert!(yext == y_wit, "gate: ext recovers the witness exactly");
+    assert!(verify(&sig_base, MSG, &pk, &pp), "gate: ordinary signature verifies");
+    assert!(preverify(&presig, MSG, &statement, &pk, &pp), "gate: pre-signature pre-verifies");
+    // Pre-signature is a distinct type from a signature; the "must FAIL ordinary
+    // Verify" tripwire runs at the BYTE level (decode its bytes AS a signature).
+    let pre_b_gate = pack_pre_signature(&presig).expect("gate: presig packs");
+    let pre_as_sig = unpack_signature(&pre_b_gate).expect("gate: presig bytes decode as a signature");
+    assert!(!verify(&pre_as_sig, MSG, &pk, &pp), "gate: pre-signature must FAIL ordinary Verify");
+    assert!(verify(&adapted, MSG, &pk, &pp), "gate: adapted passes the independent base verifier");
+    let wext = ext(&adapted, &presig, &statement, &pp).expect("gate: ext");
+    assert!(wext == witness, "gate: ext recovers the witness exactly");
 
-    // ---- Algorithm 1: the ordinary signature (independent module las_basesig.rs) ----
+    // ---- Algorithm 1: the ordinary signature (independent module basesig.rs) ----
     let mut g1 = c.benchmark_group("Algorithm 1 - ordinary lattice-based signature");
     g1.bench_function("KeyGen", |b| {
-        b.iter(|| black_box(base_keygen(&pp, &mut rng)));
+        b.iter(|| black_box(keygen(&pp, &mut rng)));
     });
     let sign_calls = Cell::new(0u64);
     let sign_att0 = BASE_ATTEMPTS.load(Ordering::Relaxed);
     g1.bench_function("Sign", |b| {
         b.iter(|| {
             sign_calls.set(sign_calls.get() + 1);
-            black_box(base_sign(black_box(MSG), &pk, &sk, &pp, &mut rng))
+            black_box(sign(black_box(MSG), &pk, &sk, &pp, &mut rng))
         });
     });
     let sign_attempts = BASE_ATTEMPTS.load(Ordering::Relaxed) - sign_att0;
     g1.bench_function("Verify", |b| {
-        b.iter(|| black_box(base_verify(black_box(&sig_base), MSG, &pk, &pp)));
+        b.iter(|| black_box(verify(black_box(&sig_base), MSG, &pk, &pp)));
     });
     g1.finish();
     rejection_gate(
         "Algorithm 1 Sign",
         sign_attempts,
         sign_calls.get(),
-        las_expected_attempts(LAS_BOUND_SIGN),
+        las_expected_attempts(BOUND_SIGN),
     );
 
     // ---- Algorithm 2: the LAS adaptor signature (las.rs) ----
@@ -137,25 +149,98 @@ fn bench_stage1(c: &mut Criterion) {
     g2.bench_function("PreSign", |b| {
         b.iter(|| {
             presign_calls.set(presign_calls.get() + 1);
-            black_box(las_presign(black_box(MSG), &y_stmt, &pk, &sk, &pp, &mut rng))
+            black_box(presign(black_box(MSG), &statement, &pk, &sk, &pp, &mut rng))
         });
     });
     let presign_attempts = LAS_ATTEMPTS.load(Ordering::Relaxed) - presign_att0;
     g2.bench_function("PreVerify", |b| {
-        b.iter(|| black_box(las_preverify(black_box(&presig), MSG, &y_stmt, &pk, &pp)));
+        b.iter(|| black_box(preverify(black_box(&presig), MSG, &statement, &pk, &pp)));
     });
     g2.bench_function("Adapt (including its internal PreVerify)", |b| {
-        b.iter(|| black_box(las_adapt(black_box(&presig), MSG, &y_stmt, &y_wit, &pk, &pp).is_some()));
+        b.iter(|| black_box(adapt(black_box(&presig), MSG, &statement, &witness, &pk, &pp).is_some()));
     });
     g2.bench_function("Extract", |b| {
-        b.iter(|| black_box(las_ext(black_box(&adapted), &presig, &y_stmt, &pp).is_some()));
+        b.iter(|| black_box(ext(black_box(&adapted), &presig, &statement, &pp).is_some()));
     });
     g2.finish();
     rejection_gate(
         "Algorithm 2 PreSign",
         presign_attempts,
         presign_calls.get(),
-        las_expected_attempts(LAS_BOUND_PRESIGN),
+        las_expected_attempts(BOUND_PRESIGN),
+    );
+
+    // ==================== end-to-end packed tier (byte API) ====================
+    // Full protocol cost INCLUDING packing/unpacking: each *_packed call does
+    // validating unpack -> core -> pack INSIDE the call.  Pack the canonical
+    // state once and re-enforce the byte-level success contract before timing.
+    let pk_b = pack_public_key(&pk);
+    let sk_b = pack_secret_key(&sk).expect("sk packs");
+    let y_b = pack_statement(&statement);
+    let w_b = pack_witness(&witness).expect("witness packs");
+    let sig_b = pack_signature(&sig_base).expect("sig packs");
+    let presig_b = pack_pre_signature(&presig).expect("presig packs");
+    let adapted_b = pack_signature(&adapted).expect("adapted packs");
+    assert!(verify_packed(&sig_b, MSG, &pk_b, &pp), "gate: base sig verifies (bytes)");
+    assert!(preverify_packed(&presig_b, MSG, &y_b, &pk_b, &pp), "gate: presig pre-verifies (bytes)");
+    assert!(!verify_packed(&presig_b, MSG, &pk_b, &pp), "gate: presig FAILS ordinary Verify (bytes)");
+    assert!(verify_packed(&adapted_b, MSG, &pk_b, &pp), "gate: adapted verifies (bytes)");
+    assert!(
+        ext_packed(&adapted_b, &presig_b, &y_b, &pp).as_ref() == Some(&w_b),
+        "gate: ext recovers the witness bytes exactly"
+    );
+
+    // ---- Algorithm 1 packed (end-to-end) ----
+    let mut g3 = c.benchmark_group("Algorithm 1 - ordinary signature (packed / end-to-end)");
+    g3.bench_function("KeyGen_packed", |b| {
+        b.iter(|| black_box(keygen_packed(&pp, &mut rng)));
+    });
+    let sign_p_calls = Cell::new(0u64);
+    let sign_p_att0 = BASE_ATTEMPTS.load(Ordering::Relaxed);
+    g3.bench_function("Sign_packed", |b| {
+        b.iter(|| {
+            sign_p_calls.set(sign_p_calls.get() + 1);
+            black_box(sign_packed(black_box(MSG), &pk_b, &sk_b, &pp, &mut rng))
+        });
+    });
+    let sign_p_attempts = BASE_ATTEMPTS.load(Ordering::Relaxed) - sign_p_att0;
+    g3.bench_function("Verify_packed", |b| {
+        b.iter(|| black_box(verify_packed(black_box(&sig_b), MSG, &pk_b, &pp)));
+    });
+    g3.finish();
+    rejection_gate(
+        "Algorithm 1 Sign (packed tier)",
+        sign_p_attempts,
+        sign_p_calls.get(),
+        las_expected_attempts(BOUND_SIGN),
+    );
+
+    // ---- Algorithm 2 packed (end-to-end) ----
+    let mut g4 = c.benchmark_group("Algorithm 2 - LAS adaptor signature (packed / end-to-end)");
+    let presign_p_calls = Cell::new(0u64);
+    let presign_p_att0 = LAS_ATTEMPTS.load(Ordering::Relaxed);
+    g4.bench_function("PreSign_packed", |b| {
+        b.iter(|| {
+            presign_p_calls.set(presign_p_calls.get() + 1);
+            black_box(presign_packed(black_box(MSG), &y_b, &pk_b, &sk_b, &pp, &mut rng))
+        });
+    });
+    let presign_p_attempts = LAS_ATTEMPTS.load(Ordering::Relaxed) - presign_p_att0;
+    g4.bench_function("PreVerify_packed", |b| {
+        b.iter(|| black_box(preverify_packed(black_box(&presig_b), MSG, &y_b, &pk_b, &pp)));
+    });
+    g4.bench_function("Adapt_packed (including its internal PreVerify)", |b| {
+        b.iter(|| black_box(adapt_packed(black_box(&presig_b), MSG, &y_b, &w_b, &pk_b, &pp).is_some()));
+    });
+    g4.bench_function("Extract_packed", |b| {
+        b.iter(|| black_box(ext_packed(black_box(&adapted_b), &presig_b, &y_b, &pp).is_some()));
+    });
+    g4.finish();
+    rejection_gate(
+        "Algorithm 2 PreSign (packed tier)",
+        presign_p_attempts,
+        presign_p_calls.get(),
+        las_expected_attempts(BOUND_PRESIGN),
     );
 }
 

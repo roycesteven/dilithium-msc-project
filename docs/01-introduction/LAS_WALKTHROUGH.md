@@ -85,28 +85,37 @@ Alice has 1 coin on chain A; Bob has 1 coin on chain B. They want to trade with
 **no trusted middleman** and **no risk of one side running off with both**.
 
 ```
-   Bob invents a secret key  y  and its public "padlock"  Y.
+   Alice invents a secret key  y  and its public "padlock"  Y — plus a
+   RECEIPT π that proves, without revealing y, that the padlock is honestly
+   made (it has exactly one ordinary key).
 
-   1) Bob → Alice:  "here is the padlock Y"
-   2) Alice pre-signs "pay Bob on chain A", locked to Y      → σ̂_A  (not spendable yet)
-   3) Bob   pre-signs "pay Alice on chain B", locked to Y    → σ̂_B  (not spendable yet)
+   1) Alice → Bob:  "here is the padlock Y, the receipt π, and my half:
+        I pre-signed 'pay Bob on chain 1', locked to Y"     → σ̂_1  (not spendable yet)
+   2) Bob checks the receipt π and σ̂_1. If either fails he WALKS AWAY —
+        he has risked nothing yet. Otherwise he answers with his half:
+        pre-signs "pay Alice on chain 2", locked to Y       → σ̂_2  (not spendable yet)
         ── neither pre-signature can move any coin on its own ──
-   4) Bob knows y, so Bob ADAPTS σ̂_A → σ_A, a normal signature, and PUBLISHES it
-        → Bob gets Alice's coin on chain A.            (this is the only way for Bob to get paid)
-   5) Alice was watching chain A. From the published σ_A she EXTRACTS y.
-   6) Now Alice knows y too, so she ADAPTS σ̂_B → σ_B and publishes it
-        → Alice gets Bob's coin on chain B.
+   3) Alice knows y, so she ADAPTS σ̂_2 → σ_2, a normal signature, and PUBLISHES it
+        → Alice gets Bob's coin on chain 2.    (this is the only way for Alice to get paid)
+   4) Bob was watching chain 2. From the published σ_2 he EXTRACTS y.
+   5) Now Bob knows y too, so he ADAPTS σ̂_1 → σ_1 and publishes it
+        → Bob gets Alice's coin on chain 1.
 ```
 
-Why it's safe ("atomic"): the *same* padlock `Y` locks both sides. Bob can only
-take his coin by publishing something that **hands Alice the key** to take hers.
-Before that, Alice literally cannot finish her side. So **either both trades
-happen or neither does** — enforced by maths, not by trust. (This exact scenario
-runs and self-checks in `ref/test/test_swap.c`.)
+Why it's safe ("atomic"): the *same* padlock `Y` locks both sides. Alice can
+only take her coin by publishing something that **hands Bob the key** to take
+his. Before that, Bob literally cannot finish his side. So **either both trades
+happen or neither does** — enforced by maths, not by trust. And the receipt π
+closes the last loophole: without it, a cheating Alice could hand over a
+*defective* padlock whose leaked key turns out not to fit Bob's lock — π
+guarantees in advance that the key Bob will learn actually works. (This exact
+scenario — the paper's Fig. 1, receipt included — runs and self-checks in
+`ref/test/test_swap.c`; the receipt has its own check in `ref/test/test_zkp.c`.)
 
 We also built the richer version — **paying through several people in a chain**
 (a payment-channel network), where each hop has its *own* padlock so no
-intermediary can cheat the others. That's the "AMHL" part (Section 6.4).
+intermediary can cheat the others — the "AMHL" construction of the LAS paper, which
+this project does not build.
 
 ---
 
@@ -160,8 +169,8 @@ of its functions** (`docs/02-methodology/FUNCTION_MAP.md`). The new pieces:
 
 ```
    ┌──────────────────────────────────────────────────────────────────────┐
-   │  Dilithium reference primitives (REUSED AS-IS — 0 functions modified)  │
-   │  polynomial maths · NTT multiply · SHAKE/Keccak hashing · samplers      │
+   │  Dilithium reference primitives (REUSED AS-IS — 0 functions modified)│
+   │  polynomial maths · NTT multiply · SHAKE/Keccak hashing · samplers   │
    └───────────────▲──────────────────────────────────────────────────────┘
                    │ calls
    ┌───────────────┴────────────┐   the scheme: KeyGen / Sign / Verify +
@@ -169,10 +178,10 @@ of its functions** (`docs/02-methodology/FUNCTION_MAP.md`). The new pieces:
    └───┬───────────┬────────────┘
        │           │
        │           ├── ref/serialize.{c,h}  turn objects into BYTES (+ a
-       │           │     validating decoder + las_verify_packed = the
+       │           │     validating decoder + base_verify_packed = the
        │           │     interface an on-chain verifier would call)
        │           │
-       │           ├── ref/amhl.{c,h}        multi-hop locks (paying via a chain
+       │           ├── ref/relation.{c,h}    statement/witness generation (Y = A*y)
        │           │     of people, each hop its own padlock)
        │           │
        │           └── ref/chain.{c,h}       a tiny pretend-ledger (accounts,
@@ -189,34 +198,13 @@ What each test program proves (all pass, zero compiler warnings):
   sig, extracted secret is exactly right. 100% correct.
 - **`test_swap`** — the Alice/Bob atomic swap of Section 4, every step asserted.
 - **`test_pcn`** — the pretend-ledger: a cross-chain swap, a *timeout-refund*
-  (nobody loses coins if a party vanishes), and a multi-hop payment.
-- **`test_amhl`** — the proper multi-hop version (§6.4 below).
+  (nobody loses coins if a party vanishes).
 - **`test_serde`** — bytes round-trip perfectly; **flipping any single one of the
-  4672 signature bytes makes verification fail** (tamper-evidence); garbage input
+  4640 signature bytes makes verification fail** (tamper-evidence); garbage input
   is rejected.
 - **`test_kat`** — runs everything from fixed seeds and checks the output against a
   **pinned fingerprint** (`f7fc40…e6b1`), so the build is bit-for-bit reproducible
   on any machine.
-
-### 6.4 The multi-hop part (AMHL), in one picture
-
-Pay Erin through Bob, Carol, Dave. Each hop gets its **own** padlock built so that
-unlocking one hop reveals exactly what's needed to unlock the previous one — and
-*nothing* about non-neighbouring hops (so a middleman can't steal). Erin (paid
-last in the chain, claims first) pulls her hop, which cascades the secret backward:
-
-```
- Alice ─Y₁→ Bob ─Y₂→ Carol ─Y₃→ Dave ─Y₄→ Erin
-   claims last  ◄─────────────────────────  Erin claims first
-   "no wormhole": the secret for hop 4 cannot open hop 1 (different padlocks) ✓ asserted
-```
-
-A subtlety we *measured*: each hop's secret is a sum of small numbers, so its size
-grows with the number of hops (1, 2, 3, 4 …). That growth — the famous "knowledge
-gap" — is exactly why deeper routes pre-sign with a slightly tighter budget
-(`γ−κ−K` for `K` hops). We show it costs essentially nothing in speed (Section 7).
-
----
 
 ## 7. The results, in plain words
 
@@ -237,16 +225,23 @@ normal verify — folding `+Y` into a hash costs almost nothing. LAS's pre-verif
 even *absolutely faster* than the classical adaptor's. This is LAS's quiet win.
 
 **(c) On a real blockchain, the protocol runs but on-chain *verification* is the wall.**
-We deployed a real Solidity swap contract on a local Ethereum and settled it with
-each scheme (`evm/`). Settling with ECDSA costs **75,709 gas**. Just *publishing* a
-LAS signature (4,672 bytes of calldata) — before doing any checking — already costs
-**208,400 gas**, ~2.75× more; and fully verifying a lattice signature inside the
-EVM is **prohibitively expensive — a measured ≈12M gas, ≈40% of a 30M-gas block**
-(it *fits* within a block, but is economically absurd and needs SHAKE256 + a
-negacyclic NTT in EVM bytecode — it is *not* a hard block-limit failure). That's the
-honest frontier: the *swap works end-to-end*, but cheap on-chain verification needs future
-blockchain support (a precompile or a zero-knowledge proof) — the same wall the
-"poqeth" project hit for basic post-quantum signatures.
+We deployed a real Solidity swap contract on a local Ethereum (`evm/`). The two
+claim paths are not symmetric: the ECDSA path settles by cryptographic verification in a
+native precompile, at **75,751 gas**. The LAS path has two entrypoints. `claimLAS` measures
+only an unconditional **floor** — publishing the 6,720-byte signature (calldata + one
+keccak) with **no** lattice check — **289,930 gas**, ~3.8× the complete ECDSA claim.
+`claimLASVerified` performs the **complete** lattice verification: we **built it**
+(`evm/src/LASVerifier.sol`, reusing vendored ZKNox primitives — an experimental,
+self-described non-production library — validated end-to-end against
+the C reference — it *accepts* the real adapted signature and *rejects* tampered bytes) and
+**measured it at 56,538,682 gas**, ~746× the classical claim. That is now a *measured*
+number, superseding an earlier ≈16.7M op-count estimate; it is larger because a complete
+verifier also runs a real Solidity SHAKE256, unpacks `z`, and packs its inputs. At ≈56.5M
+it **exceeds Ethereum's per-transaction gas cap (16,777,216, EIP-7825)**, so it cannot run
+as one mainnet transaction (though it would fit inside a block). That's the honest frontier:
+the *swap works end-to-end* AND on-chain verification is now real, validated code — but a
+*deployable* path needs a precompile, a zero-knowledge proof, or an optimistic (Naysayer)
+scheme — the same wall the "poqeth" project charted for basic post-quantum signatures.
 
 Plus: rejection sampling accepts ~**37%** of attempts (~2.7 tries/signature),
 which matches the textbook prediction `(1 − κ/γ)^{2048} ≈ e⁻¹` — a small sign the
@@ -266,8 +261,10 @@ implementation behaves exactly as theory says.
 - **Simplified scheme.** We omit Dilithium's compression tricks (hints) so the
   adaptor algebra stays clean; the cost is larger signatures (~40% over the
   paper's optimised estimate). Honest trade for a transparent research artefact.
-- **On-chain verification** is not yet feasible natively (Section 7c) — flagged as
-  future work, not hidden.
+- **On-chain verification** is now **implemented and validated** natively (Section 7c),
+  but at ≈56.5M gas it exceeds Ethereum's per-transaction gas cap — so a *deployable* path
+  (a precompile, a zk proof, or an optimistic/Naysayer scheme) is future work, flagged not
+  hidden.
 - **Privacy & constant-time** hardening are out of scope.
 
 ---
@@ -277,9 +274,9 @@ implementation behaves exactly as theory says.
 ```sh
 cd ref
 make test/test_las3   && ./test/test_las3     # core: 1000 trials, the 8-point contract
-make test/test_swap3  && ./test/test_swap3    # the Alice↔Bob atomic swap, narrated
-make test/test_amhl3  && ./test/test_amhl3    # multi-hop: wormhole-resistance + norm growth
-make test/test_serde3 && ./test/test_serde3   # tamper test: all 4672 byte-flips rejected
+make test/test_zkp3   && ./test/test_zkp3     # the padlock receipt π (needs LaZer — see README)
+make test/test_swap3  && ./test/test_swap3    # the Alice↔Bob atomic swap incl. π, narrated (needs LaZer)
+make test/test_serde3 && ./test/test_serde3   # tamper test: all 4640 byte-flips rejected
 make test/test_kat3   && ./test/test_kat3     # reproducible fingerprint match
 make test/bench_las3      && ./test/bench_las3      # speeds + rejection rate
 make test/bench_compare3  && ./test/bench_compare3  # LAS vs basic Dilithium-3
@@ -291,8 +288,8 @@ make test/export_packed && ./test/export_packed ../evm/test/las_sig.bin
 cd ../evm && forge test --gas-report
 ```
 *(The classical baseline needs a one-time clone — see `README.md`.)*
-Good things to film: `test_amhl3` scrolling its wormhole/norm-growth asserts; the
-`test_serde3` "all 4672 byte-flips rejected" line; the `bench_classical` 2×2; the
+Good things to film: `test_contract3` scrolling its itemised 8-point PASS; the
+`test_serde3` "all 4640 byte-flips rejected" line; the `bench_classical` 2×2; the
 `forge --gas-report` table.
 
 ---
@@ -316,8 +313,8 @@ Good things to film: `test_amhl3` scrolling its wormhole/norm-growth asserts; th
   completed signature still verifies; the project's key correctness knob.
 - **Atomic swap** — trustless coin trade across two chains; all-or-nothing.
 - **HTLC** — the classic "hash-and-timeout lock" that adaptor signatures replace.
-- **AMHL (multi-hop lock)** — paying through a chain of people, each hop its own lock.
-- **Wormhole attack** — a multi-hop theft that distinct per-hop locks prevent.
+- **AMHL (multi-hop lock)** — paying through a chain of people, each hop its own lock;
+  a construction of the LAS paper that this project does not build.
 - **Serialisation / packing** — turning objects into the byte string sent on the wire.
 - **KAT (known-answer test)** — fixed-input test pinned to an expected fingerprint.
 - **Gas** — what an Ethereum operation costs; you pay per byte and per computation.

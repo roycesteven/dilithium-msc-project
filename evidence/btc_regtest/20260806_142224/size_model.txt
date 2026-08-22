@@ -1,0 +1,15 @@
+[A1] inputs=1 outputs=1 witness_items=[2]
+  total_size  model 191      node 191      OK
+  weight      model 437      node 437      OK
+  vsize       model 110      node 110      OK
+[A1] size model agrees with the client
+[A2] inputs=1 outputs=1 witness_items=[1]
+  total_size  model 162      node 162      OK
+  weight      model 444      node 444      OK
+  vsize       model 111      node 111      OK
+[A2] size model agrees with the client
+[A3] inputs=1 outputs=1 witness_items=[25]
+  total_size  model 11471    node 11471    OK
+  weight      model 11753    node 11753    OK
+  vsize       model 2939     node 2939     OK
+[A3] size model agrees with the client

@@ -34,7 +34,7 @@ No dedicated file. Compress from: the framing paragraphs of
 | `LAS-04-adaptor-extension.md` | LAS.md §4 — Algorithm 2 (variant B), bound budget γ−κ−1 |
 | `LAS-05-implementation.md` | LAS.md §5 — module-by-module C implementation incl. serialization + deterministic API |
 | `LAS-06-testing.md` | LAS.md §6 — correctness/KAT/tamper test suite |
-| `LAS-07-application-atomic-swap.md` | LAS.md §7 — Stage-2 design: swap, chain model, AMHL |
+| `LAS-07-application-atomic-swap.md` | LAS.md §7 — Stage-2 design: the Fig. 1 atomic swap and its proof of knowledge π |
 | `THEORY_IMPL_BRIDGE.md` | every 2020/845 equation → exact C function |
 | `FUNCTION_MAP.md` | per-function call-as-is / modify / new classification (zero upstream functions modified) — the rubric's reuse table |
 | `CODE_DIFF_VIEW.md` | Meeting-3 diff-level view: original Dilithium vs this work |

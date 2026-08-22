@@ -70,11 +70,9 @@ implementation is exact, but in the general lattice setting the extraction can
 carry bounded noise that *accumulates* across long payment-channel paths (the
 "knowledge gap" identified in eprint 2022/1151). For a K-hop path the extraction
 guarantee degrades unless PreSign uses the tighter bound `γ−κ−K` per hop (rather
-than `γ−κ−1`). Both the single-hop case (Sections 4, 7) **and** the full K-hop
-Adaptor Multi-Hop Lock (AMHL) construction from LAS Fig. 2 are now implemented
-(Section 7.5): `las_presign_k` enforces the `γ−κ−K` bound, each hop carries a
-distinct cumulative statement, and the per-hop witness-norm growth `‖s_j‖∞ ≤ j`
-— the concrete face of the knowledge gap — is exhibited directly in the demo.
+than `γ−κ−1`). This project implements and measures the **single-hop** case only
+(Sections 4, 7); the K-hop Adaptor Multi-Hop Lock construction of eprint 2020/845
+Fig. 2 is out of scope, so the knowledge gap is discussed rather than exhibited.
 
 **poqeth context.** The integration template eprint 2025/091 (poqeth, Erwig et al.)
 put *basic* PQ signatures on Ethereum. Our project extends the same idea to an

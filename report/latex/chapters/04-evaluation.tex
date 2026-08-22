@@ -1,75 +1,130 @@
-\chapter{Evaluation and reflection}
+\chapter{Evaluation}
 \label{ch:evaluation}
 
-This chapter evaluates the work against the objectives set out in \cref{sec:aims} and
-reflects on the soundness of the approach, building on the validity discussion in
-\cref{sec:res-validity}.
+This chapter judges the work against the objectives of \cref{sec:aims}: the evaluation
+strategy and its alignment with those objectives, each objective against the evidence of
+\cref{ch:results}, then the implementation challenges that shaped the outcome and the
+limitations that bound it. Judgement of \emph{what the artefact achieves} is made here;
+\cref{sec:reflection} steps back to the process.
 
-\section{Evaluation against the objectives}
+\section{Evaluation strategy and its justification}
+\label{sec:eval-strategy}
+
+The aim was to establish what adaptor functionality \emph{costs}, so each measured
+difference had to be attributable to one cause. Four decisions follow, each tied to an
+objective.
+
+\textbf{Correctness is established before any cost is reported} (objective~3). A fast
+but wrong scheme measures nothing, and no formal proof was in scope, so correctness rests
+on differential evidence: a pinned known-answer digest reproduced byte-for-byte by a
+second, independently written implementation (\cref{sec:res-rust}). Internal
+self-consistency is not correctness --- \cref{sec:eval-challenges} gives a case where
+every primitive passed in isolation and the assembled whole was still wrong.
+
+\textbf{The primary comparison is controlled, not merely convenient} (objective~4).
+LAS is measured against its own simplified base at identical algorithm, parameters and
+primitives, so the difference between the two paths is the adaptor layer and nothing
+else. Comparing instead against the optimised CRYSTALS-Dilithium reference would
+confound the adaptor cost with parameter, packing and hint-vector differences; that
+comparison is therefore retained only as context, and the classical ECDSA adaptor only
+as a functionality-matched ``price of post-quantum'' baseline.
+
+\textbf{Every measurement declares its boundary.} Results are reported at two tiers
+(\cref{sec:benchmethod}), because an undeclared boundary is the commonest way a benchmark
+misleads --- as it did twice here before the tiers were fixed. For the same reason each
+run gates on a directly counted rejection rate against its closed-form prediction, rather
+than inferring acceptance from timing.
+
+\textbf{Metrics follow the venue} (objective~5). The application study reports execution
+time and communication bytes with off-chain messages counted, because the evaluated UTXO
+ledger has no gas metric --- and because off-chain messaging is where the post-quantum
+cost lands.
+
+\section{Achievement of the objectives}
 \label{sec:eval-objectives}
 
-Each objective from \cref{sec:aims} is judged in turn against the evidence in
-\cref{ch:results}.
+\Cref{tab:objectives} sets out the evidence behind each objective. All five were met;
+two carry qualifications that matter.
 
-\begin{enumerate}
-  \item \emph{Literature and scheme selection --- met.} The adaptor signature was
-        selected as a representative exotic scheme with high blockchain value, and
-        LAS \cite{esgin2020post} as the design with the clearest path from a standardised
-        lattice signature, following the survey's framing of the gap
-        \cite{buser2023survey} and the supervisor's steer toward the simplest viable
-        construction.
-  \item \emph{Additive implementation --- met.} The lattice core is reused
-        byte-for-byte (\cref{tab:reuse}); zero upstream functions were modified, which
-        the two-branch diff makes auditable. The adaptor layer, wire encoding, and
-        application are new code.
-  \item \emph{Validation --- met.} Functional, serialization, tamper, and
-        known-answer tests all pass (\cref{sec:res-correctness}), establishing the
-        adaptor contract, wire-encoding integrity, and reproducibility.
-  \item \emph{Fair benchmarking --- met.} The primary comparison holds algorithm,
-        parameters, and primitives fixed between LAS and its own simplified base, so the
-        primary comparison isolates the adaptor overhead --- the base-signature path
-        against the LAS adaptor path, every operation timed independently. The adaptor
-        overhead is reported per operation as the headline (\cref{tab:overhead-l3}), with
-        the absolute timings and a parameter-sensitivity check across four settings shown
-        as supporting context (\cref{fig:timing,fig:overhead}, exact
-        mean\,$\pm$\,standard-deviation figures in \cref{tab:timing}); computation and
-        communication are separated and broken down by component. The optimised CRYSTALS-Dilithium
-        reference is included only as context (not algorithm-matched), and a classical
-        ECDSA adaptor as a functionality-matched ``price of post-quantum'' baseline,
-        each with the standard five metrics.
-  \item \emph{Atomic-swap demonstration --- met at the simulated-ledger level.} An
-        end-to-end two-party, two-chain swap settles both legs and asserts
-        unspendability before adaptation (\cref{sec:res-app}). A full deployment on a
-        live testnet was not in scope; an on-chain gas floor and a multi-hop variant
-        exist as bonus-tier evidence.
-\end{enumerate}
+\begin{table}[htbp]
+  \centering
+  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} against the
+           evidence reported in \cref{ch:results}. All five were met; the evidence
+           column states what each rests on.}
+  \label{tab:objectives}
+  \begin{tabular}{@{}p{0.24\textwidth}p{0.68\textwidth}@{}}
+    \toprule
+    \textbf{Objective} & \textbf{Evidence} \\
+    \midrule
+    1. Literature and scheme selection
+      & Adaptor signature selected as the exotic scheme of highest blockchain value;
+        LAS \cite{esgin2020post} selected as the design with the shortest path from a
+        standardised lattice signature (\cref{sec:relatedwork}). \\[3pt]
+    2. Additive implementation
+      & Lattice core reused byte-for-byte, zero upstream functions modified, made
+        auditable by a two-branch diff; adaptor layer, wire encoding and application
+        are new code (\cref{tab:reuse}). \\[3pt]
+    3. Validation
+      & Functional, serialization, tamper and known-answer tests pass
+        (\cref{sec:res-correctness}); an independent Rust implementation reproduces
+        the wire format and the pinned digest byte-for-byte (\cref{sec:res-rust}). \\[3pt]
+    4. Fair benchmarking
+      & Adaptor overhead isolated per operation at two declared tiers
+        (\cref{tab:overhead-l3}); two further baselines, computation separated from
+        communication, rejection rate gated against theory, relative conclusions
+        reproduced by the Rust port (\cref{tab:rust}). \\[3pt]
+    5. Atomic-swap demonstration
+      & End-to-end two-party, two-chain swap settling both legs and asserting
+        unspendability before adaptation (\cref{sec:res-app}); extended to a measured
+        three-configuration study on a UTXO ledger (\cref{sec:res-stage2}). \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-\section{Reflection on the approach}
-\label{sec:eval-reflection}
+Objective~4's fairness claim rests on control rather than assertion: in Stage~1 the two
+compared paths share algorithm, parameters and primitives, and in Stage~2 the two LAS
+configurations share one public matrix and receive byte-identical inputs, verified at run
+time. The measurements are then defended from two independent directions --- a
+closed-form gate on the rejection rate, and re-measurement under a different compiler and
+an independent statistical harness.
 
-Four reflections stand out. First, reuse was the right strategy: building additively
-on a standardised reference made the implementation tractable in the available time
-and produced an unusually strong trust story, since the security-critical arithmetic
-is exactly the audited upstream code. Second, the main engineering subtlety was the
-PreSign bound budget (\cref{eq:signbound}); getting it wrong does not crash the
-program but makes every adapted signature fail verification, so it had to be reasoned
-through rather than discovered by testing alone. Third, measuring the rejection rate
-directly, by counting attempts, corrected an earlier figure that had been estimated
-from a biased timing ratio --- a concrete lesson in preferring direct measurement to a
-proxy. Finally, confronting the fairness problem honestly, by stating every scheme's
-parameters and comparing LAS to a parameter-matched base, strengthens the conclusions
-rather than weakening them: the size gap to optimised Dilithium is shown to be a
-packing gap, not a dimension gap.
+Objective~5 was met on the UTXO ledger \cite{esgin2020post} assumes, with a gas-metered
+venue measured against it. On a local EVM a
+\emph{complete}, validated native LAS verifier was measured at
+$\approx$\gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the EIP-7825
+per-transaction cap. That negative result is quantified
+rather than assumed, and it is what the comparison contributes. That ceiling later proved to bound the
+\emph{implementation} rather than the scheme: a claim transaction running a restructured
+verifier was mined inside the cap, at the target parameter set and message length
+(\cref{sec:res-app}). The venue decision therefore rests on cost, not impossibility.
+
+\section{Implementation challenges}
+\label{sec:eval-challenges}
+
+Turning the simplified-Dilithium base into LAS was conceptually small --- four added
+operations and one extra term in a hash --- but the six problems of \cref{tab:challenges}
+consumed most of the engineering effort. Three themes recur. Two are failures that
+\emph{pass every local test}: a loosened PreSign bound leaves the adaptor operations
+working while breaking ordinary verification two steps later, and a doubly-transformed
+public matrix produces a verifier whose parts agree with each other but not with the C
+implementation --- both caught only by checking outside the component, which is why
+\cref{sec:eval-strategy} treats internal self-consistency as insufficient. Two more are
+measurement artefacts that would have biased the headline
+result had they survived, and are why every boundary is now declared and every run
+gated. The last is asymptotic rather than arithmetic, and generalises past this project:
+in constraint-system libraries the ergonomic interface and the scalable interface are
+not the same interface.
+
 
 \section{Limitations}
 \label{sec:eval-limitations}
 
-The limitations follow from the validity discussion in \cref{sec:res-validity} and
-are restated compactly here. There is no formal security analysis of the chosen
-parameter set, by design. The modulus is $q\approx 2^{23}$ rather than the paper's
-$2^{24}$. The witness is extracted exactly, sidestepping the paper's relaxed,
-noisy-witness setting and the witness growth it implies for long channels. And the
-simplified, hint-free scheme produces larger keys and signatures than optimised
-Dilithium. Each of these is a deliberate scope choice that trades cryptographic
-optimisation for a transparent, testable artefact, and each maps directly to an item
-of future work in \cref{sec:future}.
+The validity threats of \cref{sec:res-validity} bound what the results \emph{mean}. Two
+further limitations belong to the artefact rather than the measurement. The hint-free
+construction yields larger keys and signatures than optimised Dilithium ---
+cryptographic optimisation given up for a transparent, testable artefact --- and
+\cref{sec:res-mldsa} quantifies that price and shows it recoverable in principle, though
+only for the signature and not the statement. Configuration~2 instead gives up post-quantum assurance for a controlled
+comparison: it is the intermediate point that makes the proof-system comparison possible,
+not a stack anyone should deploy, since a post-quantum signature does not protect a swap
+whose fairness rests on a pairing assumption.

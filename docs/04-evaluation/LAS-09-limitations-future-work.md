@@ -4,37 +4,30 @@
 
 ## 9. Limitations and future work
 
-- **AMHL (multi-hop, K-hop bound).** ✅ **Implemented** (Section 7.5,
-  `ref/amhl.{c,h}`, `ref/test/test_amhl.c`). Each hop carries a distinct cumulative
-  statement `Y_j = A·(l_1+…+l_j)`, pre-signing uses the `γ−κ−K` bound via
-  `las_presign_k`, and the demo asserts wormhole resistance, the witness-norm
-  growth `‖s_j‖∞ ≤ j`, exact per-hop recovery, and a timeout/refund path. The
-  same-Y scriptless HTLC (Section 7.4) is retained as the simpler baseline. A
-  remaining nicety is a *privacy*-preserving variant (statements are public
-  on-chain) and randomised (non-cumulative-sum) lock setups.
-
-- **Knowledge gap.** The extracted witness norm grows with path length: a K-hop
-  intermediate witness has `‖s_j‖∞ ≤ j` (a sum of up to K ternary vectors), now
-  exhibited concretely by `test_amhl` (`‖s_1‖∞=1 … ‖s_4‖∞=4`). In *this*
-  parameterisation extraction is still **exact** (the cumulative witness is an
-  integer vector recovered without error). The deeper limitation is in the paper's
+- **Knowledge gap.** In the general lattice setting the extracted witness norm grows
+  with path length: a K-hop intermediate witness would have `‖s_j‖∞ ≤ j` (a sum of up
+  to K ternary vectors). In *this* single-hop parameterisation extraction is **exact**
+  (the witness is an integer vector recovered without error). The deeper limitation is in the paper's
   *relaxed* relation, where extraction may carry bounded noise that accumulates
   across long chains — acknowledged in the survey (eprint 2022/1151) as a
   fundamental gap of lattice adaptor signatures vs. classical ones. Analysing that
   relaxed-relation noise growth is out of scope for this project.
 
-- **Modulus.** `Q ≈ 2^23` rather than the paper's `2^24` (Section 5.9). Correctness
-  holds; only the MSIS/MLWE security margin differs.
+- **Modulus.** `Q = 8380417 ≈ 2^23`, which is **NIST FIPS 204's modulus**, rather than
+  the `≈2^24` of eprint 2020/845 (Section 5.9). Since FIPS 204 is this project's
+  parameter authority, that is the correct choice rather than a shortfall; `Q > 2γ`,
+  so correctness holds, and only the concrete MSIS/MLWE margin differs from the
+  paper's. Migrating to `2^24` is **not** a goal of this project.
 
 - **Signature packing.** ✅ **Implemented** (`ref/serialize.{c,h}`, Section 5.10):
   bit-packed wire/on-chain encoding with a validating decoder and the
-  `las_verify_packed` byte-level verifier, giving a measured packed signature of
-  4672 B (vs 9216 B in-memory). The residual gap to optimised Dilithium-3 (3309 B)
+  `base_verify_packed` byte-level verifier, giving a measured packed signature of
+  4640 B (vs 8224 B in-memory). The residual gap to optimised Dilithium-3 (3309 B)
   is the modulus (`2^23` vs `2^24`) and the hint/decomposition compression of the
   optimised scheme — out of scope here.
 
 - **Reproducibility / KATs.** ✅ **Implemented** (`ref/test/test_kat.c`, Sections
-  5.11 and 6.4): a deterministic API (`las_keygen_seed`, `las_sign_det`,
+  5.11 and 6.4): a deterministic API (`base_keygen_seed`, `base_sign_det`,
   `las_presign_det`) plus a pinned SHAKE256 known-answer digest over fixed vectors.
   This satisfies objective C4's reproducibility requirement and provides the test
   vectors a future on-chain verifier would be cross-checked against. (NIST-style

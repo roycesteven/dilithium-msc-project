@@ -58,6 +58,30 @@ ORD_COL = OI["skyblue"]   # basic signature operations / objects
 LAS_COL = OI["blue"]      # LAS adaptor operations
 
 
+def _style():
+    """One shared matplotlib style (Meeting-6: label/legend fonts must stay
+    readable once the figure is shrunk to \\linewidth in the report).
+    Recessive axes (no top/right spine, light grid), >=10pt text everywhere."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({
+        "font.size": 11,
+        "axes.labelsize": 11.5,
+        "axes.titlesize": 11.5,
+        "xtick.labelsize": 10.5,
+        "ytick.labelsize": 10.5,
+        "legend.fontsize": 10.5,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": False,
+        "grid.alpha": 0.25,
+        "grid.linewidth": 0.6,
+        "figure.dpi": 200,
+    })
+    return plt
+
+
 # ---------------------------------------------------------------------------
 # read existing CSVs (numbers come only from these; nothing is computed/invented)
 # ---------------------------------------------------------------------------
@@ -91,12 +115,13 @@ def load_all(in_dir):
         if (r.get("overhead_pct") or "").strip():
             overhead.setdefault(r["level"], {})[r["pair"]] = float(r["overhead_pct"])
     rej_rows = _read(in_dir, "rejection_sampling.csv", required=False)
-    rej = None
+    rej, rej_full = None, None
     if rej_rows:
-        rej = {}
+        rej, rej_full = {}, {}
         for r in rej_rows:
             rej.setdefault(r["level"], {})[r["operation"]] = float(r["acceptance_pct"])
-    return params, timing, comm, overhead, rej
+            rej_full.setdefault(r["level"], {})[r["operation"]] = r
+    return params, timing, comm, overhead, rej, rej_full
 
 
 def _save(fig, out_dir, name):
@@ -156,9 +181,7 @@ ADPT_COL = OI["orange"]    # LAS adaptor operations    (Meeting-4: LAS  = orange
 
 
 def fig_per_op(timing, overhead, params, hl, out_dir):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _style()
     from matplotlib.patches import Patch
 
     t = timing[hl]
@@ -186,13 +209,13 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
                    edgecolor="black", linewidth=0.4)
             tops += [bm + bs, lm + ls]
             ax.text(gi - w / 2, bm + bs, "%.0f" % bm, ha="center", va="bottom",
-                    fontsize=7.5)
+                    fontsize=9.5)
             ax.text(gi + w / 2, lm + ls, "%.0f" % lm, ha="center", va="bottom",
-                    fontsize=7.5)
+                    fontsize=9.5)
             if okey in o:                                 # exact overhead, on the orange bar
                 ax.annotate("+%.1f%%" % o[okey], xy=(gi + w / 2, lm + ls),
-                            xytext=(0, 13), textcoords="offset points", ha="center",
-                            va="bottom", fontsize=9, fontweight="bold",
+                            xytext=(0, 15), textcoords="offset points", ha="center",
+                            va="bottom", fontsize=11, fontweight="bold",
                             color=OI["vermillion"])
         else:                                             # single bar (shared / LAS-only)
             op = bop or lop
@@ -201,22 +224,22 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
             ax.bar(gi, m, w, yerr=s, capsize=3, color=col, edgecolor="black",
                    linewidth=0.4)
             tops.append(m + s)
-            ax.text(gi, m + s, "%.0f" % m, ha="center", va="bottom", fontsize=7.5)
+            ax.text(gi, m + s, "%.0f" % m, ha="center", va="bottom", fontsize=9.5)
     top = max(tops)
     ax.set_ylim(0, top * 1.30)
     ax.set_xticks(xticks)
-    ax.set_xticklabels(xlabels, fontsize=9)
+    ax.set_xticklabels(xlabels)
     ax.set_ylabel("time per operation (microseconds)")
     ax.legend(handles=[Patch(facecolor=BASE_COL, edgecolor="black",
                              label="basic signature"),
                        Patch(facecolor=ADPT_COL, edgecolor="black",
                              label="LAS adaptor")],
-              loc="upper right", fontsize=9, framealpha=0.95)
+              loc="upper right", framealpha=0.95)
     p = params[hl]
     ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s"
             % (SHORT.get(hl, hl), p["n"], p["ell"], p["M"], p["kappa"], p["gamma"],
                p["N"], p["Q"]),
-            transform=ax.transAxes, ha="left", va="bottom", fontsize=9,
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
             color="#444444")
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "per_operation_timing_paper")
@@ -227,9 +250,7 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
 # ---------------------------------------------------------------------------
 
 def fig_comm(comm, params, hl, out_dir):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _style()
 
     c = comm[hl]
     sig = OI["grey"]                         # the three signature objects share one colour
@@ -250,11 +271,11 @@ def fig_comm(comm, params, hl, out_dir):
             linewidth=0.4, height=0.66)
     maxv = max(r[1] for r in rows)
     for y, r in zip(ys, rows):
-        ax.text(r[1] + maxv * 0.01, y, "%d bytes" % r[1], va="center", fontsize=8.5,
+        ax.text(r[1] + maxv * 0.01, y, "%d bytes" % r[1], va="center", fontsize=10,
                 fontweight="bold")
     ax.set_xlim(0, maxv * 1.22)
     ax.set_yticks(ys)
-    ax.set_yticklabels([r[0] for r in rows], fontsize=9)
+    ax.set_yticklabels([r[0] for r in rows])
     ax.set_xlabel("serialized size (bytes)")
     p = params[hl]
     ax.text(0.0, 1.02, "%s setting\nn=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s"
@@ -263,7 +284,7 @@ def fig_comm(comm, params, hl, out_dir):
             p["n"], p["ell"], p["M"], p["kappa"],
             p["gamma"], p["N"], p["Q"]
         ), transform=ax.transAxes,
-            ha="left", va="bottom", fontsize=9, color="#444444")
+            ha="left", va="bottom", fontsize=10, color="#444444")
     ax.grid(axis="x", alpha=0.3)
     _save(fig, out_dir, "communication_components_paper")
 
@@ -273,9 +294,7 @@ def fig_comm(comm, params, hl, out_dir):
 # ---------------------------------------------------------------------------
 
 def fig_overhead(overhead, params, levels, out_dir):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _style()
 
     pairs = [("PreSign vs Sign", "PreSign versus Sign", OI["blue"]),
              ("PreVerify vs Verify", "PreVerify versus Verify", OI["orange"]),
@@ -291,14 +310,14 @@ def fig_overhead(overhead, params, levels, out_dir):
                       edgecolor="black", linewidth=0.3)
         for b, v in zip(bars, vals):
             ax.text(b.get_x() + b.get_width() / 2, v + (0.12 if v >= 0 else -0.3),
-                    "%+.1f" % v, ha="center", fontsize=7)
+                    "%+.1f" % v, ha="center", fontsize=8.5)
     ax.axhline(0, color="black", linewidth=0.6)
     ax.set_ylim(bottom=min(0.0, min(allv)) - 0.5, top=max(allv) * 1.32)
     ax.set_xticks(xs)
-    ax.set_xticklabels([_xtick(params, lvl) for lvl in levels], fontsize=7.5)
+    ax.set_xticklabels([_xtick(params, lvl) for lvl in levels], fontsize=9)
     ax.set_xlabel("parameter setting (engineering benchmark setting)")
-    ax.set_ylabel("overhead vs basic operation (percent)", fontsize=9)
-    ax.legend(fontsize=8, loc="upper right")
+    ax.set_ylabel("overhead vs basic operation (percent)")
+    ax.legend(loc="upper right")
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "adaptor_overhead_paper")
 
@@ -308,9 +327,7 @@ def fig_overhead(overhead, params, levels, out_dir):
 # ---------------------------------------------------------------------------
 
 def fig_rejection(rej, params, levels, out_dir):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _style()
 
     xs = list(range(len(levels)))
     eul = 100.0 / 2.718281828459045
@@ -325,13 +342,133 @@ def fig_rejection(rej, params, levels, out_dir):
     ax.axhline(eul, color=OI["vermillion"], linestyle="--", linewidth=1.2,
                label="1/e = %.1f percent" % eul)
     ax.set_xticks(xs)
-    ax.set_xticklabels([_xtick(params, lvl) for lvl in levels], fontsize=7.5)
+    ax.set_xticklabels([_xtick(params, lvl) for lvl in levels], fontsize=9)
     ax.set_xlabel("parameter setting (engineering benchmark setting)")
     ax.set_ylabel("acceptance per attempt (percent)")
     ax.set_ylim(0, max(base + las) * 1.35)
-    ax.legend(fontsize=8)
+    ax.legend()
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "rejection_sampling_paper")
+
+
+# ---------------------------------------------------------------------------
+# MAIN figure -- cumulative probability of acceptance at the headline setting
+# ---------------------------------------------------------------------------
+# Meeting-7 ruling (Wang, 2026-07-24): the per-k probability-mass presentation
+# (fig_attempts_dist below) is misread by readers, because P(exactly k) is
+# HIGHEST at k=1 and decays -- which looks backwards to anyone who expects
+# "more attempts -> more likely to have succeeded". Report the CUMULATIVE
+# probability of acceptance within k attempts instead: it rises from the
+# single-attempt acceptance rate (~36.8% = 1/e at the target setting) and
+# flattens towards 100%, and the flattening is itself the message.
+#
+# The curve is the closed-form geometric model, derived from the parameter set
+# alone; every overlaid statistic is MEASURED and parsed from the CSV. Nothing
+# here invents a number.
+
+def _acc_per_attempt(params, hl):
+    """Single-attempt acceptance probability for (Sign bound, PreSign bound)."""
+    p = params[hl]
+    n, ell = int(p["n"]), int(p["ell"])
+    kappa, gamma, d = int(p["kappa"]), int(p["gamma"]), int(p["N"])
+
+    def acc(bound):
+        return ((2.0 * bound + 1.0) / (2.0 * gamma + 1.0)) ** ((n + ell) * d)
+
+    return acc(gamma - kappa), acc(gamma - kappa - 1)
+
+
+def fig_acceptance_cdf(params, rej_full, hl, out_dir):
+    plt = _style()
+
+    p = params[hl]
+    acc_sign, acc_presign = _acc_per_attempt(params, hl)
+    series = [
+        ("basic Sign", acc_sign, rej_full[hl]["Base Sign"], BASE_COL, "o"),
+        ("LAS PreSign", acc_presign, rej_full[hl]["LAS PreSign"], ADPT_COL, "s"),
+    ]
+    ks = list(range(1, 16))
+    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+
+    for lbl, pa, row, col, mk in series:
+        cdf = [100.0 * (1.0 - (1.0 - pa) ** k) for k in ks]
+        ax.plot(ks, cdf, color=col, linewidth=2.0, marker=mk, markersize=6,
+                label="%s: geometric model (%.1f%% on the first attempt, "
+                      "mean %.3f attempts)" % (lbl, 100.0 * pa, 1.0 / pa))
+
+    # measured statistics (C driver distribution sample, straight from the CSV)
+    for i, (lbl, _, row, col, _) in enumerate(series):
+        ax.text(0.98, 0.34 - 0.07 * i,
+                "%s: measured mean %s, p50 %s, p95 %s, max %s (2000 calls)"
+                % (lbl, row["avg_attempts"], row["p50"], row["p95"], row["max"]),
+                transform=ax.transAxes, ha="right", va="top", fontsize=10,
+                color=col)
+    ax.text(0.98, 0.41, "measured (C implementation):", transform=ax.transAxes,
+            ha="right", va="top", fontsize=10, color="#444444")
+
+    ax.set_xticks(ks)
+    ax.set_ylim(0, 104)
+    ax.set_xlabel("attempts allowed (k)")
+    ax.set_ylabel("probability of acceptance within k attempts (percent)")
+    ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, κ=%s, γ=%s, d=%s"
+            % (SHORT.get(hl, hl), p["n"], p["ell"], p["kappa"], p["gamma"],
+               p["N"]),
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
+            color="#444444")
+    ax.legend(loc="lower right")
+    ax.grid(axis="y", alpha=0.3)
+    _save(fig, out_dir, "rejection_acceptance_cdf_paper")
+
+
+# ---------------------------------------------------------------------------
+# APPENDIX figure -- per-attempt probability mass at the headline setting
+# ---------------------------------------------------------------------------
+# Superseded as a BODY figure by fig_acceptance_cdf (Meeting-7 ruling above).
+# Retained for the appendix: it is the distribution the measured tail
+# statistics (p50/p95/max) actually describe, and it shows the geometric decay
+# directly. Body text must cite the cumulative figure, not this one.
+
+def fig_attempts_dist(params, rej_full, hl, out_dir):
+    plt = _style()
+
+    p = params[hl]
+    acc_sign, acc_presign = _acc_per_attempt(params, hl)
+    series = [
+        ("basic Sign", acc_sign, rej_full[hl]["Base Sign"], BASE_COL, "o"),
+        ("LAS PreSign", acc_presign, rej_full[hl]["LAS PreSign"], ADPT_COL, "s"),
+    ]
+    ks = list(range(1, 16))
+    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+    mean_y = {0: 0.72, 1: 0.64}            # stagger the two mean labels (axes coords)
+    for i, (lbl, pa, row, col, mk) in enumerate(series):
+        pmf = [100.0 * pa * (1.0 - pa) ** (k - 1) for k in ks]
+        ax.plot(ks, pmf, color=col, linewidth=2.0, marker=mk, markersize=6,
+                label="%s: geometric model (mean %.3f)" % (lbl, 1.0 / pa))
+        m = float(row["avg_attempts"])
+        ax.axvline(m, color=col, linestyle="--", linewidth=1.4, alpha=0.8)
+        ax.text(0.30, mean_y[i], "%s measured mean %.3f" % (lbl, m),
+                transform=ax.transAxes, ha="left", va="top",
+                fontsize=10, color=col)
+    # measured tail statistics (C driver distribution sample, from the CSV)
+    for i, (lbl, _, row, col, _) in enumerate(series):
+        ax.text(0.98, 0.50 - 0.07 * i,
+                "%s: p50 %s, p95 %s, max %s (2000 calls)"
+                % (lbl, row["p50"], row["p95"], row["max"]),
+                transform=ax.transAxes, ha="right", va="top", fontsize=10,
+                color="#444444")
+    ax.text(0.98, 0.57, "measured tail (C driver):", transform=ax.transAxes,
+            ha="right", va="top", fontsize=10, color="#444444")
+    ax.set_xticks(ks)
+    ax.set_xlabel("attempts until acceptance (k)")
+    ax.set_ylabel("probability of exactly k attempts (percent)")
+    ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, κ=%s, γ=%s, d=%s"
+            % (SHORT.get(hl, hl), p["n"], p["ell"], p["kappa"], p["gamma"],
+               p["N"]),
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
+            color="#444444")
+    ax.legend(loc="upper right")
+    ax.grid(axis="y", alpha=0.3)
+    _save(fig, out_dir, "rejection_attempts_distribution_paper")
 
 
 # ---------------------------------------------------------------------------
@@ -404,6 +541,20 @@ def write_manifest(out_dir, generated):
         rows.append(["rejection_sampling_paper.pdf/.png",
                      "appendix (optional, supporting)", "rejection_sampling.csv",
                      "acceptance per attempt", "all settings", "percent", S])
+    if "acceptance_cdf" in generated:
+        rows.append(["rejection_acceptance_cdf_paper.pdf/.png",
+                     "main (cumulative acceptance within k attempts; "
+                     "Meeting-7 replacement for the per-attempt mass figure)",
+                     "parameter_sets.csv + rejection_sampling.csv",
+                     "P(accepted within k) model; measured mean/p50/p95/max annotated",
+                     "Simplified Dilithium-III (headline)", "percent", S])
+    if "attempts_dist" in generated:
+        rows.append(["rejection_attempts_distribution_paper.pdf/.png",
+                     "appendix (per-attempt mass function; superseded in the body "
+                     "by rejection_acceptance_cdf_paper)",
+                     "parameter_sets.csv + rejection_sampling.csv",
+                     "P(exactly k attempts) model; measured mean/p50/p95/max overlaid",
+                     "Simplified Dilithium-III (headline)", "percent", S])
     rows.append(["KEY_FINDINGS.md", "main (text summary)",
                  "adaptor_overhead.csv + communication_components.csv + primary_timing.csv",
                  "2-3 sentence overhead summary", "Simplified Dilithium-III (headline)", "text", S])
@@ -489,7 +640,7 @@ def main(argv=None):
     if app_dir != out_dir:
         app_dir.mkdir(parents=True, exist_ok=True)
 
-    params, timing, comm, overhead, rej = load_all(in_dir)
+    params, timing, comm, overhead, rej, rej_full = load_all(in_dir)
     levels = [l for l in LEVEL_ORDER if l in params] or sorted(params)
     if not levels:
         sys.exit("ERROR: no parameter settings found in parameter_sets.csv")
@@ -513,6 +664,13 @@ def main(argv=None):
         if rej:
             fig_rejection(rej, params, levels, app_dir)   # optional appendix figure
             generated.add("rejection")
+        if rej_full and hl in rej_full:
+            # MAIN: cumulative acceptance within k attempts (Meeting-7 ruling)
+            fig_acceptance_cdf(params, rej_full, hl, out_dir)
+            generated.add("acceptance_cdf")
+            # APPENDIX: the per-attempt mass function it supersedes
+            fig_attempts_dist(params, rej_full, hl, app_dir)
+            generated.add("attempts_dist")
     except ImportError as e:
         print("WARNING: matplotlib unavailable (%s); wrote .tex/.md and will write "
               "the manifest, but skipped the figures. Install with: pip install matplotlib"
@@ -525,7 +683,9 @@ def main(argv=None):
     print("Headline      : %s" % SHORT.get(hl, hl))
     print("Settings      : %s" % ", ".join(SHORT.get(l, l) for l in levels))
     print("Main package  : parameter_sets_paper.tex (Table 1); "
-          "per_operation_timing_paper (Fig 1); communication_components_paper (Fig 2)")
+          "per_operation_timing_paper (Fig 1); communication_components_paper (Fig 2)"
+          + ("; rejection_acceptance_cdf_paper (cumulative acceptance)"
+             if "acceptance_cdf" in generated else ""))
     print("Appendix      : adaptor_overhead_paper (multi-setting sweep) -> %s%s"
           % (app_dir,
              ("; rejection_sampling_paper" if rej

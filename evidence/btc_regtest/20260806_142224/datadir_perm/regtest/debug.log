@@ -1,0 +1,479 @@
+
+
+
+
+
+2026-08-06T13:22:25Z Bitcoin Core version v31.1.0 (release build)
+2026-08-06T13:22:25Z parameter interaction: -bind set -> setting -listen=1
+2026-08-06T13:22:25Z parameter interaction: -connect or -maxconnections=0 set -> setting -dnsseed=0
+2026-08-06T13:22:25Z Log output may contain privacy-sensitive information. Be cautious when sharing logs.
+2026-08-06T13:22:25Z Using the 'x86_shani(1way;2way)' SHA256 implementation
+2026-08-06T13:22:25Z Using RdSeed as an additional entropy source
+2026-08-06T13:22:25Z Using RdRand as an additional entropy source
+2026-08-06T13:22:25Z Default data directory /home/melly/.bitcoin
+2026-08-06T13:22:25Z Using data directory /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest
+2026-08-06T13:22:25Z Config file: /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/bitcoin.conf (not found, skipping)
+2026-08-06T13:22:25Z Command-line arg: acceptnonstdtxn="1"
+2026-08-06T13:22:25Z Command-line arg: bind="127.0.0.1"
+2026-08-06T13:22:25Z Command-line arg: connect="127.0.0.1:18565"
+2026-08-06T13:22:25Z Command-line arg: daemonwait=""
+2026-08-06T13:22:25Z Command-line arg: datadir="/home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm"
+2026-08-06T13:22:25Z Command-line arg: debug="mempool"
+2026-08-06T13:22:25Z Command-line arg: fallbackfee="0.0002"
+2026-08-06T13:22:25Z Command-line arg: port="18566"
+2026-08-06T13:22:25Z Command-line arg: regtest=""
+2026-08-06T13:22:25Z Command-line arg: rpcport="18556"
+2026-08-06T13:22:25Z Using at most 125 automatic connections (1048576 file descriptors available)
+2026-08-06T13:22:25Z scheduler thread start
+2026-08-06T13:22:25Z Binding RPC on address ::1 port 18556
+2026-08-06T13:22:25Z Binding RPC on address 127.0.0.1 port 18556
+2026-08-06T13:22:25Z Generated RPC authentication cookie /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/.cookie
+2026-08-06T13:22:25Z Permissions used for cookie: rw-------
+2026-08-06T13:22:25Z Using random cookie authentication.
+2026-08-06T13:22:25Z Starting HTTP server with 16 worker threads
+2026-08-06T13:22:25Z http_pool_0 thread start
+2026-08-06T13:22:25Z http_pool_1 thread start
+2026-08-06T13:22:25Z http_pool_2 thread start
+2026-08-06T13:22:25Z http_pool_3 thread start
+2026-08-06T13:22:25Z http_pool_4 thread start
+2026-08-06T13:22:25Z http_pool_5 thread start
+2026-08-06T13:22:25Z http_pool_6 thread start
+2026-08-06T13:22:25Z http_pool_7 thread start
+2026-08-06T13:22:25Z http_pool_8 thread start
+2026-08-06T13:22:25Z http_pool_9 thread start
+2026-08-06T13:22:25Z http_pool_10 thread start
+2026-08-06T13:22:25Z http_pool_11 thread start
+2026-08-06T13:22:25Z http_pool_12 thread start
+2026-08-06T13:22:25Z http_pool_13 thread start
+2026-08-06T13:22:25Z http_pool_14 thread start
+2026-08-06T13:22:25Z http_pool_15 thread start
+2026-08-06T13:22:25Z Using wallet directory /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/wallets
+2026-08-06T13:22:25Z Using SQLite Version 3.50.4
+2026-08-06T13:22:25Z init message: Verifying wallet(s)…
+2026-08-06T13:22:25Z Using /16 prefix for IP bucketing
+2026-08-06T13:22:25Z init message: Loading P2P addresses…
+2026-08-06T13:22:25Z Creating peers.dat because the file was not found ("/home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/peers.dat")
+2026-08-06T13:22:25Z init message: Loading banlist…
+2026-08-06T13:22:25Z Recreating the banlist database
+2026-08-06T13:22:25Z SetNetworkActive: true
+2026-08-06T13:22:25Z /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/fee_estimates.dat is not found. Continue anyway.
+2026-08-06T13:22:25Z Cache configuration:
+2026-08-06T13:22:25Z * Using 2.0 MiB for block index database
+2026-08-06T13:22:25Z * Using 8.0 MiB for chain state database
+2026-08-06T13:22:25Z * Using 1014.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2026-08-06T13:22:25Z Script verification uses 15 additional threads
+2026-08-06T13:22:25Z Using obfuscation key for blocksdir *.dat files (/home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/blocks): '97e189c8b6432318'
+2026-08-06T13:22:25Z Opening LevelDB in /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/blocks/index
+2026-08-06T13:22:25Z Opened LevelDB successfully
+2026-08-06T13:22:25Z Using obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/blocks/index: 0000000000000000
+2026-08-06T13:22:25Z Using 16 MiB out of 16 MiB requested for signature cache, able to store 524288 elements
+2026-08-06T13:22:25Z Using 16 MiB out of 16 MiB requested for script execution cache, able to store 524288 elements
+2026-08-06T13:22:25Z init message: Loading block index…
+2026-08-06T13:22:25Z Validating signatures for all blocks.
+2026-08-06T13:22:25Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2026-08-06T13:22:25Z Loading block index db: last block file = 0
+2026-08-06T13:22:25Z Loading block index db: last block file info: CBlockFileInfo(blocks=0, size=0, heights=0...0, time=1970-01-01...1970-01-01)
+2026-08-06T13:22:25Z Checking all blk files are present...
+2026-08-06T13:22:25Z Initializing chainstate Chainstate [ibd] @ height -1 (null)
+2026-08-06T13:22:25Z Opening LevelDB in /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/chainstate
+2026-08-06T13:22:25Z Opened LevelDB successfully
+2026-08-06T13:22:25Z Wrote new obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/chainstate: 788aadfceeae7d1c
+2026-08-06T13:22:25Z Using obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_perm/regtest/chainstate: 788aadfceeae7d1c
+2026-08-06T13:22:25Z init message: Verifying blocks…
+2026-08-06T13:22:25Z Block index and chainstate loaded
+2026-08-06T13:22:25Z Setting NODE_NETWORK in non-prune mode
+2026-08-06T13:22:25Z initload thread start
+2026-08-06T13:22:25Z UpdateTip: new best=0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206 height=0 version=0x00000001 log2_work=1.000000 tx=1 date='2011-02-02T23:16:42Z' progress=0.000002 cache=0.3MiB(0txo)
+2026-08-06T13:22:25Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:25Z block tree size = 1
+2026-08-06T13:22:25Z nBestHeight = 0
+2026-08-06T13:22:25Z Failed to open mempool file. Continuing anyway.
+2026-08-06T13:22:25Z initload thread exit
+2026-08-06T13:22:25Z mapport thread start
+2026-08-06T13:22:25Z Bound to 127.0.0.1:18566
+2026-08-06T13:22:25Z init message: Starting network threads…
+2026-08-06T13:22:25Z torcontrol thread start
+2026-08-06T13:22:25Z DNS seeding disabled
+2026-08-06T13:22:25Z net thread start
+2026-08-06T13:22:25Z addcon thread start
+2026-08-06T13:22:25Z opencon thread start
+2026-08-06T13:22:25Z init message: Done loading
+2026-08-06T13:22:25Z msghand thread start
+2026-08-06T13:22:25Z New manual peer connected: transport: v2, version: 70016, blocks=0 peer=0
+2026-08-06T13:22:26Z init message: Creating wallet…
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = a1d3a23b343796704abe3da2f9217a400718d0e7febf7b545e1dc4f5d161db4c, type = legacy, internal = false
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = 8e5d222dfd503411b3b897ef9a620f31ac29a0b075ad853d4f8fd81e16cc6fe3, type = p2sh-segwit, internal = false
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = b14844361369648b2ae572ccba9f73b7bc0ebfe987e28bc68ed4c2ca671035f7, type = bech32, internal = false
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = 5f25ca5d42282303843e349d4392c7c3db3486fdcc3811f19b91bebf498ba7c4, type = bech32m, internal = false
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = 67117e94e9f28a7a950cb6ede543714ce62cdea10a320399cccbb618e4b2176c, type = legacy, internal = true
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = 1d792e43fc5f54d1f28cd31bfa1b74b0fffc709cc66e6881d18e408212d08477, type = p2sh-segwit, internal = true
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = fa5a19bac7c9b449a93f0894cb6f61f884214c5df3df2e617359ecc7bf6e0ac5, type = bech32, internal = true
+2026-08-06T13:22:26Z [carriage] Setting spkMan to active: id = 65a1cb9e4223ecebe813a64a25bdd6791e19c46111b69a7ceb3956da2216d5fa, type = bech32m, internal = true
+2026-08-06T13:22:26Z [carriage] Wallet completed creation in             407ms
+2026-08-06T13:22:26Z [carriage] setKeyPool.size() = 8000
+2026-08-06T13:22:26Z [carriage] mapWallet.size() = 0
+2026-08-06T13:22:26Z [carriage] m_address_book.size() = 0
+2026-08-06T13:22:26Z Synchronizing blockheaders, height: 5 (~100.00%)
+2026-08-06T13:22:26Z Enabling script verification at block #1 (01499b92e3eb36abc42cdca177f530989f8238b94ac2e938c30c0d918ac631d8): assumevalid=0 (always verify).
+2026-08-06T13:22:26Z Leaving InitialBlockDownload (latching to false)
+2026-08-06T13:22:26Z UpdateTip: new best=01499b92e3eb36abc42cdca177f530989f8238b94ac2e938c30c0d918ac631d8 height=1 version=0x20000000 log2_work=2.000000 tx=2 date='2026-08-06T13:22:26Z' progress=0.454545 cache=0.3MiB(1txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z UpdateTip: new best=7f12d8f2ec500f5a1d52b5d72dfebc6e069138916d690fc2b48c83baab4745d2 height=2 version=0x20000000 log2_work=2.584963 tx=3 date='2026-08-06T13:22:27Z' progress=0.625000 cache=0.3MiB(2txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z UpdateTip: new best=2ef740d8e0f57a5c8e1bda1176364f2b79ea4562d81b267d6c1550b22e75cf99 height=3 version=0x20000000 log2_work=3.000000 tx=4 date='2026-08-06T13:22:27Z' progress=0.769231 cache=0.3MiB(3txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z UpdateTip: new best=3011e6d8dea31935e73c53a2946a5516e57e399e7830184f0295a294890a7ecf height=4 version=0x20000000 log2_work=3.321928 tx=5 date='2026-08-06T13:22:28Z' progress=0.892857 cache=0.3MiB(4txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z UpdateTip: new best=773d1652933c884fa4bc4e8798131e16030af6cca00191c6e53f450b49130c4f height=5 version=0x20000000 log2_work=3.584963 tx=6 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(5txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=698eaf77bbfde97d9f1a5f5d929f13f732a9c62cccebfcd862f67662f24cec45 height=6 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=698eaf77bbfde97d9f1a5f5d929f13f732a9c62cccebfcd862f67662f24cec45 height=6 version=0x20000000 log2_work=3.807355 tx=7 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(6txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=26edc9c236410461bc8e5cfacac37a76a45c7b8f553561b7b4f7186868f803ab height=7 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=26edc9c236410461bc8e5cfacac37a76a45c7b8f553561b7b4f7186868f803ab height=7 version=0x20000000 log2_work=4.000000 tx=8 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(7txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=6bd89e638f0a859443ae85a8cb9ba44e9136ba37ad782cf6d52e993aa46d65ea height=8 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=6bd89e638f0a859443ae85a8cb9ba44e9136ba37ad782cf6d52e993aa46d65ea height=8 version=0x20000000 log2_work=4.169925 tx=9 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(8txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=046ea7ea93c1a83e21ee84d2cea71108b12b236d7a5f122e12ed398f69c53d07 height=9 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=046ea7ea93c1a83e21ee84d2cea71108b12b236d7a5f122e12ed398f69c53d07 height=9 version=0x20000000 log2_work=4.321928 tx=10 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(9txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=22afb2ef0393540f0187e31e59061bd48d37b4c6e58e3dd927f540e7a297c74c height=10 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=22afb2ef0393540f0187e31e59061bd48d37b4c6e58e3dd927f540e7a297c74c height=10 version=0x20000000 log2_work=4.459432 tx=11 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(10txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=7c05ea7052f15fa314d8b345ba47f0d4f19947b99f900e781e5089d7a923b5f4 height=11 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=7c05ea7052f15fa314d8b345ba47f0d4f19947b99f900e781e5089d7a923b5f4 height=11 version=0x20000000 log2_work=4.584963 tx=12 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(11txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=5b982618f4112f1af6a5e59268bb2cb1c18010d6ae2759905c79e88cb9183fed height=12 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=5b982618f4112f1af6a5e59268bb2cb1c18010d6ae2759905c79e88cb9183fed height=12 version=0x20000000 log2_work=4.700440 tx=13 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(12txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z Saw new cmpctblock header hash=5d419e18a34e9da2657cbe173033bc8ce9437c69b2526e9dd0eb57ae539a3f96 height=13 peer=0
+2026-08-06T13:22:27Z UpdateTip: new best=5d419e18a34e9da2657cbe173033bc8ce9437c69b2526e9dd0eb57ae539a3f96 height=13 version=0x20000000 log2_work=4.807355 tx=14 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(13txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=07ed52c6a5aed4dc98fb5583ae966fe13ae542eabc8ecf2cd3086d206b25af4f height=14 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=07ed52c6a5aed4dc98fb5583ae966fe13ae542eabc8ecf2cd3086d206b25af4f height=14 version=0x20000000 log2_work=4.906891 tx=15 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(14txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=495b4ec447b18a5d8ea18357bb16f3c848721903da8256d32901f18787a8f3ca height=15 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=495b4ec447b18a5d8ea18357bb16f3c848721903da8256d32901f18787a8f3ca height=15 version=0x20000000 log2_work=5.000000 tx=16 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(15txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=18dd51dc0342ac5dc8ed5de4a7dbb7a0b73a56d2c04b4738034abe5d184a038a height=16 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=18dd51dc0342ac5dc8ed5de4a7dbb7a0b73a56d2c04b4738034abe5d184a038a height=16 version=0x20000000 log2_work=5.087463 tx=17 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(16txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=6623a32f8071d540aca6ae2af7677dc1ce80db30739580f2e511ea99f4fcabda height=17 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=6623a32f8071d540aca6ae2af7677dc1ce80db30739580f2e511ea99f4fcabda height=17 version=0x20000000 log2_work=5.169925 tx=18 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(17txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=10c2357cab004a1e78da3908bf8f0f4e0665dedf3f01f76173d104b931896ca9 height=18 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=10c2357cab004a1e78da3908bf8f0f4e0665dedf3f01f76173d104b931896ca9 height=18 version=0x20000000 log2_work=5.247928 tx=19 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(18txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=31a91e2b4d5635e2557b8fd897d9f476826e24f679ccd92a0b73fa4e06d5973e height=19 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=31a91e2b4d5635e2557b8fd897d9f476826e24f679ccd92a0b73fa4e06d5973e height=19 version=0x20000000 log2_work=5.321928 tx=20 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(19txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=4408b3aef441525839324fd13a62c9d674e975f09359c582af73e68f30f13571 height=20 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=4408b3aef441525839324fd13a62c9d674e975f09359c582af73e68f30f13571 height=20 version=0x20000000 log2_work=5.392317 tx=21 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(20txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=723e839eceffbf1f9d700054c959b611a57391bb9718f25701e5199abaa0cef2 height=21 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=723e839eceffbf1f9d700054c959b611a57391bb9718f25701e5199abaa0cef2 height=21 version=0x20000000 log2_work=5.459432 tx=22 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(21txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=0c17c6d5e714d7fa4a48b13c07aae7f11f0c0894e4f9aedcfcd437fb68228626 height=22 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=0c17c6d5e714d7fa4a48b13c07aae7f11f0c0894e4f9aedcfcd437fb68228626 height=22 version=0x20000000 log2_work=5.523562 tx=23 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(22txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=266879f394f387b2ab120d6d4221ef239c5f8a67fe78a10c691a75d92dc3e2ff height=23 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=266879f394f387b2ab120d6d4221ef239c5f8a67fe78a10c691a75d92dc3e2ff height=23 version=0x20000000 log2_work=5.584963 tx=24 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(23txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z Saw new cmpctblock header hash=53a1cefc483bf161c074d760b8f76e2e2bf4f3b0aabfa1ea628b04d04632304f height=24 peer=0
+2026-08-06T13:22:28Z UpdateTip: new best=53a1cefc483bf161c074d760b8f76e2e2bf4f3b0aabfa1ea628b04d04632304f height=24 version=0x20000000 log2_work=5.643856 tx=25 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(24txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=0b73abf647bc79c246a9a43e90c41885860e2f135493fa6dd0b4ba226609a7d1 height=25 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=0b73abf647bc79c246a9a43e90c41885860e2f135493fa6dd0b4ba226609a7d1 height=25 version=0x20000000 log2_work=5.700440 tx=26 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(25txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=3ac1c6331254eb74b834be9bcab1d6dec3a179790f7499303ea0f98684ff59c3 height=26 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=3ac1c6331254eb74b834be9bcab1d6dec3a179790f7499303ea0f98684ff59c3 height=26 version=0x20000000 log2_work=5.754888 tx=27 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(26txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=5dcdded376d1e6178ab7187a475c956e599b4ee2a9b411050cc519c74ddc4957 height=27 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=5dcdded376d1e6178ab7187a475c956e599b4ee2a9b411050cc519c74ddc4957 height=27 version=0x20000000 log2_work=5.807355 tx=28 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(27txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=40ced2144d30cc6ec5c335db958ff9cda510027642835aa0675564412fbc7e76 height=28 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=40ced2144d30cc6ec5c335db958ff9cda510027642835aa0675564412fbc7e76 height=28 version=0x20000000 log2_work=5.857981 tx=29 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(28txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=7e94d0c9aee02def7980ddb20e924efa202b7f7ed709f16ded5a9287a9debccf height=29 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=7e94d0c9aee02def7980ddb20e924efa202b7f7ed709f16ded5a9287a9debccf height=29 version=0x20000000 log2_work=5.906891 tx=30 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(29txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=7fc2bf35ecb65827a3de727ee1c8bf820bdaa73c012ec31e09167328844a5a91 height=30 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=7fc2bf35ecb65827a3de727ee1c8bf820bdaa73c012ec31e09167328844a5a91 height=30 version=0x20000000 log2_work=5.954196 tx=31 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(30txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=3ca71102f5c10799cbcca083c1d5ca568cba911a9ed080ca110d06a02ec157d4 height=31 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=3ca71102f5c10799cbcca083c1d5ca568cba911a9ed080ca110d06a02ec157d4 height=31 version=0x20000000 log2_work=6.000000 tx=32 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(31txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=0a73d20e4091e38b394bb94dc42507e62cfec2b8c31e8ce33ed199420867415a height=32 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=0a73d20e4091e38b394bb94dc42507e62cfec2b8c31e8ce33ed199420867415a height=32 version=0x20000000 log2_work=6.044394 tx=33 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(32txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=1bcafb05208cb8501622ac4e69402c6cd897be8ec865a9a19694227f97df142d height=33 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=1bcafb05208cb8501622ac4e69402c6cd897be8ec865a9a19694227f97df142d height=33 version=0x20000000 log2_work=6.087463 tx=34 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(33txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z Saw new cmpctblock header hash=2bebbd824802307715524af43bd28a37e03b416e848ecc07787dd99f43f82651 height=34 peer=0
+2026-08-06T13:22:29Z UpdateTip: new best=2bebbd824802307715524af43bd28a37e03b416e848ecc07787dd99f43f82651 height=34 version=0x20000000 log2_work=6.129283 tx=35 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(34txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=152224364d3fe9f04c28a210641194f2b9fe230b4e6d7a95e9da9add57d09c7f height=35 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=152224364d3fe9f04c28a210641194f2b9fe230b4e6d7a95e9da9add57d09c7f height=35 version=0x20000000 log2_work=6.169925 tx=36 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(35txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=7b6e232c70f3654d759226f8471980e2c30e4ca53dd0f24a3dfc836483093d6d height=36 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=7b6e232c70f3654d759226f8471980e2c30e4ca53dd0f24a3dfc836483093d6d height=36 version=0x20000000 log2_work=6.209453 tx=37 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(36txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=245b8dab86d02a4636cfa1f88eb3b6a5ad569724d604601e221b7e470fb32ef2 height=37 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=245b8dab86d02a4636cfa1f88eb3b6a5ad569724d604601e221b7e470fb32ef2 height=37 version=0x20000000 log2_work=6.247928 tx=38 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(37txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=07f91d97f5fc79c6cb83777346920a6aedca556f163ae2a13e0896bbd3662be5 height=38 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=07f91d97f5fc79c6cb83777346920a6aedca556f163ae2a13e0896bbd3662be5 height=38 version=0x20000000 log2_work=6.285402 tx=39 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(38txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=2a941ef7cd3b4ad11c7a4224315aaf52eac652e345f52def751fe5b98b8f1b40 height=39 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=2a941ef7cd3b4ad11c7a4224315aaf52eac652e345f52def751fe5b98b8f1b40 height=39 version=0x20000000 log2_work=6.321928 tx=40 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(39txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=1fe2929a7434935e8a6b7db2344bb37ec77f386e2c75994c808a683c1646480f height=40 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=1fe2929a7434935e8a6b7db2344bb37ec77f386e2c75994c808a683c1646480f height=40 version=0x20000000 log2_work=6.357552 tx=41 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(40txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=5d83fa8ab17f7810ebec62e70746e75ebdf78cc17c593df0b88cce8c33e48419 height=41 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=5d83fa8ab17f7810ebec62e70746e75ebdf78cc17c593df0b88cce8c33e48419 height=41 version=0x20000000 log2_work=6.392317 tx=42 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(41txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=2ebc20b704284b71cd6f126cbd74dc29e9de82497bac14bfcf6279235ff17199 height=42 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=2ebc20b704284b71cd6f126cbd74dc29e9de82497bac14bfcf6279235ff17199 height=42 version=0x20000000 log2_work=6.426265 tx=43 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(42txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=657cae79dec0624ca9769d2821d7676f20a267aa96a1e37092a6e64f872f38a5 height=43 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=657cae79dec0624ca9769d2821d7676f20a267aa96a1e37092a6e64f872f38a5 height=43 version=0x20000000 log2_work=6.459432 tx=44 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(43txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=636c6f77e8d47fc01bb8b3a29292c5696cb249ac2d83808a3da5e7b8b728d06e height=44 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=636c6f77e8d47fc01bb8b3a29292c5696cb249ac2d83808a3da5e7b8b728d06e height=44 version=0x20000000 log2_work=6.491853 tx=45 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(44txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z Saw new cmpctblock header hash=0daaa9bf2b28d38788996cda15c413c817bb2c38c67eddc120c8ebf2731d890d height=45 peer=0
+2026-08-06T13:22:30Z UpdateTip: new best=0daaa9bf2b28d38788996cda15c413c817bb2c38c67eddc120c8ebf2731d890d height=45 version=0x20000000 log2_work=6.523562 tx=46 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(45txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=0879647000c1aa81fb91e2d6f341feef87823420d43a5a6aba3d747628e068c4 height=46 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=0879647000c1aa81fb91e2d6f341feef87823420d43a5a6aba3d747628e068c4 height=46 version=0x20000000 log2_work=6.554589 tx=47 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(46txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=255381fd98ed608a66419872ced6e836514d890ad9ebcf4726676dbfe23c0abd height=47 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=255381fd98ed608a66419872ced6e836514d890ad9ebcf4726676dbfe23c0abd height=47 version=0x20000000 log2_work=6.584963 tx=48 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(47txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=4c8268dab377c3c63af96e7b92612c7c786200852ada3e73be65dfc0b7ae9422 height=48 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=4c8268dab377c3c63af96e7b92612c7c786200852ada3e73be65dfc0b7ae9422 height=48 version=0x20000000 log2_work=6.614710 tx=49 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(48txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=63f89ef37bfd3c3bffd6dfbd81d654b17d0f105c0b7329227bc78a3545555b84 height=49 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=63f89ef37bfd3c3bffd6dfbd81d654b17d0f105c0b7329227bc78a3545555b84 height=49 version=0x20000000 log2_work=6.643856 tx=50 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(49txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=4eadb042bfcfe3cc9c93b61025b4a441ef5f6f473014f94f980ddf846202c01c height=50 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=4eadb042bfcfe3cc9c93b61025b4a441ef5f6f473014f94f980ddf846202c01c height=50 version=0x20000000 log2_work=6.672425 tx=51 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(50txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=7e18b0af96601e9e4ad80bd2bcae478638d75fce84477a5b77c53cdaabc8c952 height=51 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=7e18b0af96601e9e4ad80bd2bcae478638d75fce84477a5b77c53cdaabc8c952 height=51 version=0x20000000 log2_work=6.700440 tx=52 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(51txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=4c2f1ff90b3aab84b2c316ff57a47bee5c5a2e06fdb359bce7bc7f6057d93fe7 height=52 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=4c2f1ff90b3aab84b2c316ff57a47bee5c5a2e06fdb359bce7bc7f6057d93fe7 height=52 version=0x20000000 log2_work=6.727920 tx=53 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(52txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=123f768949790914d9465064fd82be16763e4ca27a3ae8ef503b4526f0d59340 height=53 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=123f768949790914d9465064fd82be16763e4ca27a3ae8ef503b4526f0d59340 height=53 version=0x20000000 log2_work=6.754888 tx=54 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(53txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=67b349023b4992e86b4e8a22441f3db58d76217794fbad655f5e7fabb5927720 height=54 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=67b349023b4992e86b4e8a22441f3db58d76217794fbad655f5e7fabb5927720 height=54 version=0x20000000 log2_work=6.781360 tx=55 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(54txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=1ca02156d6996d35099b06cb19bc66ee1ee153fc98861850e8fe63ba70f6288a height=55 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=1ca02156d6996d35099b06cb19bc66ee1ee153fc98861850e8fe63ba70f6288a height=55 version=0x20000000 log2_work=6.807355 tx=56 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(55txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z Saw new cmpctblock header hash=0edf3765ce2cef2619a5ef30785e49cb93f4552665908784674616332931515f height=56 peer=0
+2026-08-06T13:22:31Z UpdateTip: new best=0edf3765ce2cef2619a5ef30785e49cb93f4552665908784674616332931515f height=56 version=0x20000000 log2_work=6.832890 tx=57 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(56txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=3886f5d3c6effee4deb388ea9d7833ba25f883c3dd49f0f0d5b9354c1be5d243 height=57 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=3886f5d3c6effee4deb388ea9d7833ba25f883c3dd49f0f0d5b9354c1be5d243 height=57 version=0x20000000 log2_work=6.857981 tx=58 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(57txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=46ae1cf6287301dd832ca957ab5e476765e83cd2dae79a1a9ad9a6bcd7791cf6 height=58 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=46ae1cf6287301dd832ca957ab5e476765e83cd2dae79a1a9ad9a6bcd7791cf6 height=58 version=0x20000000 log2_work=6.882643 tx=59 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(58txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=600994c834ef513546878f77466f10fd06a68fb86c50969728e7c7f70195a997 height=59 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=600994c834ef513546878f77466f10fd06a68fb86c50969728e7c7f70195a997 height=59 version=0x20000000 log2_work=6.906891 tx=60 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(59txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=1b6058ba32a3bf0bb70bd90bcb31805f19ef59005ef81396efb0572ab137d106 height=60 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=1b6058ba32a3bf0bb70bd90bcb31805f19ef59005ef81396efb0572ab137d106 height=60 version=0x20000000 log2_work=6.930737 tx=61 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(60txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=13ee5d04475e6e01154a1f7a19a5b7e7b4ba7d006d86efb860664e3094b2f776 height=61 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=13ee5d04475e6e01154a1f7a19a5b7e7b4ba7d006d86efb860664e3094b2f776 height=61 version=0x20000000 log2_work=6.954196 tx=62 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(61txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=5addbb20cd1c5dfa0e5e4557f0769bff4cbb8c4808b971de634e3e36e9f27dea height=62 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=5addbb20cd1c5dfa0e5e4557f0769bff4cbb8c4808b971de634e3e36e9f27dea height=62 version=0x20000000 log2_work=6.977280 tx=63 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(62txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=1794f13a099817369cae66373cdf9d55783fb2a0ed7c2f6828494178dc2f7669 height=63 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=1794f13a099817369cae66373cdf9d55783fb2a0ed7c2f6828494178dc2f7669 height=63 version=0x20000000 log2_work=7.000000 tx=64 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(63txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=46d0c3b4f24e903d4f1fdf817494ca558f9aa394e9400c7ea7842c52182edc68 height=64 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=46d0c3b4f24e903d4f1fdf817494ca558f9aa394e9400c7ea7842c52182edc68 height=64 version=0x20000000 log2_work=7.022368 tx=65 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(64txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=4a06f83118af8cc4a2dcd56f1479c761cd4ec9617a8062ecb1daff99a4477ee6 height=65 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=4a06f83118af8cc4a2dcd56f1479c761cd4ec9617a8062ecb1daff99a4477ee6 height=65 version=0x20000000 log2_work=7.044394 tx=66 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(65txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=70ec974e24f9514b2b9b15e4a68de0a59609f7802145887f80ccfa122bdab6f0 height=66 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=70ec974e24f9514b2b9b15e4a68de0a59609f7802145887f80ccfa122bdab6f0 height=66 version=0x20000000 log2_work=7.066089 tx=67 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(66txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z Saw new cmpctblock header hash=1a00087b68292e438b235024edb956dbba4cc5bc9af2c604d0293fce0966f643 height=67 peer=0
+2026-08-06T13:22:32Z UpdateTip: new best=1a00087b68292e438b235024edb956dbba4cc5bc9af2c604d0293fce0966f643 height=67 version=0x20000000 log2_work=7.087463 tx=68 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(67txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=10f9a5c44b494844a255081c5046d68f7e68c48abe8d1f297540064c74eff359 height=68 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=10f9a5c44b494844a255081c5046d68f7e68c48abe8d1f297540064c74eff359 height=68 version=0x20000000 log2_work=7.108524 tx=69 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(68txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=6f94048fce2d467f3cc9dae31ed31cc38647efb38ca243894a8591fdd91cffd1 height=69 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=6f94048fce2d467f3cc9dae31ed31cc38647efb38ca243894a8591fdd91cffd1 height=69 version=0x20000000 log2_work=7.129283 tx=70 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(69txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=205fe3b10996dc1914e6d863670c8976deea25fc5ca9e5a6c9789b7303516dd9 height=70 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=205fe3b10996dc1914e6d863670c8976deea25fc5ca9e5a6c9789b7303516dd9 height=70 version=0x20000000 log2_work=7.149747 tx=71 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(70txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=2f75520b0bee9045c86e5da4be9b88fd16c874176929f5980fafb9e21781bff6 height=71 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=2f75520b0bee9045c86e5da4be9b88fd16c874176929f5980fafb9e21781bff6 height=71 version=0x20000000 log2_work=7.169925 tx=72 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(71txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=78e2035eb74d91b5586fe4b8685a0279ad07a895788e81128475150b9bf5cbf8 height=72 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=78e2035eb74d91b5586fe4b8685a0279ad07a895788e81128475150b9bf5cbf8 height=72 version=0x20000000 log2_work=7.189825 tx=73 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(72txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=454d3577bcfbc09925b7a2a70dbb54cfca9e4aaf63be83150399e11eaecbdce5 height=73 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=454d3577bcfbc09925b7a2a70dbb54cfca9e4aaf63be83150399e11eaecbdce5 height=73 version=0x20000000 log2_work=7.209453 tx=74 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(73txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=24704279e35ed8db02abbc1d8a5a8e3d2e7366048dc22be6f76d69adb5645fe9 height=74 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=24704279e35ed8db02abbc1d8a5a8e3d2e7366048dc22be6f76d69adb5645fe9 height=74 version=0x20000000 log2_work=7.228819 tx=75 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(74txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=5bcfb107f9e1f4253594fbe2edd29af9193d27278de78e4cb0c83ee50c223121 height=75 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=5bcfb107f9e1f4253594fbe2edd29af9193d27278de78e4cb0c83ee50c223121 height=75 version=0x20000000 log2_work=7.247928 tx=76 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(75txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=24878fcaa66568edd12c8c1785a946b99ad9c7748a133f3096cd71cddd1fdc11 height=76 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=24878fcaa66568edd12c8c1785a946b99ad9c7748a133f3096cd71cddd1fdc11 height=76 version=0x20000000 log2_work=7.266787 tx=77 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(76txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=2c988cdf9aeca2115690e34d0d816b8a05536941e545f8fd3afaf46a437aa89d height=77 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=2c988cdf9aeca2115690e34d0d816b8a05536941e545f8fd3afaf46a437aa89d height=77 version=0x20000000 log2_work=7.285402 tx=78 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(77txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z Saw new cmpctblock header hash=1f5f1ce3a92772fa40a28a6bb9a8cea4eae3df1b2f4c477de582fb751cdd49d8 height=78 peer=0
+2026-08-06T13:22:33Z UpdateTip: new best=1f5f1ce3a92772fa40a28a6bb9a8cea4eae3df1b2f4c477de582fb751cdd49d8 height=78 version=0x20000000 log2_work=7.303781 tx=79 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(78txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=178e4a35ce6625a4f4bc4bd71d816a1e128c0bf19fac390e60824819509076d7 height=79 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=178e4a35ce6625a4f4bc4bd71d816a1e128c0bf19fac390e60824819509076d7 height=79 version=0x20000000 log2_work=7.321928 tx=80 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(79txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=1aca529a849ac2c0968e13d1ab7b3e2943fc34be2845b0c26b1bb371e893a913 height=80 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=1aca529a849ac2c0968e13d1ab7b3e2943fc34be2845b0c26b1bb371e893a913 height=80 version=0x20000000 log2_work=7.339850 tx=81 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(80txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=67eec5ebfcc59c32a0316d951eac7a960c9d6846e9da911b4769aa101499fb0a height=81 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=67eec5ebfcc59c32a0316d951eac7a960c9d6846e9da911b4769aa101499fb0a height=81 version=0x20000000 log2_work=7.357552 tx=82 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(81txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=7cd13d6730e988d58e12005b535d083b78be2ef8b122be4ac222c64e282278f2 height=82 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=7cd13d6730e988d58e12005b535d083b78be2ef8b122be4ac222c64e282278f2 height=82 version=0x20000000 log2_work=7.375039 tx=83 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(82txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=154c5ef66c2317af65d9d73dc77ce88c59aa1dd4bd583cf0638fae25d6414937 height=83 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=154c5ef66c2317af65d9d73dc77ce88c59aa1dd4bd583cf0638fae25d6414937 height=83 version=0x20000000 log2_work=7.392317 tx=84 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(83txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=4bd4c9c1b212893f2a82987ad3cee8000d1e95b574378443a57d999436b07e9f height=84 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=4bd4c9c1b212893f2a82987ad3cee8000d1e95b574378443a57d999436b07e9f height=84 version=0x20000000 log2_work=7.409391 tx=85 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(84txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=3885399fe3e7554ef19ca54eb7af3b46ad5458a5a8c39596ded9c89db5e9a0c0 height=85 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=3885399fe3e7554ef19ca54eb7af3b46ad5458a5a8c39596ded9c89db5e9a0c0 height=85 version=0x20000000 log2_work=7.426265 tx=86 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(85txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=161115e9b55c0da7689dbb3346f1b4e72b86f9d904e46fc25c6754553849a740 height=86 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=161115e9b55c0da7689dbb3346f1b4e72b86f9d904e46fc25c6754553849a740 height=86 version=0x20000000 log2_work=7.442943 tx=87 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(86txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=21bc40b2990532f3bc4beb05a9c1ebd56310c710883abc5fdd70e3ec53d438aa height=87 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=21bc40b2990532f3bc4beb05a9c1ebd56310c710883abc5fdd70e3ec53d438aa height=87 version=0x20000000 log2_work=7.459432 tx=88 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(87txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z Saw new cmpctblock header hash=2e226430574b00b3d6a59b71d18d55c1140b900d5bd23ec9b4ee17a6b2088526 height=88 peer=0
+2026-08-06T13:22:34Z UpdateTip: new best=2e226430574b00b3d6a59b71d18d55c1140b900d5bd23ec9b4ee17a6b2088526 height=88 version=0x20000000 log2_work=7.475733 tx=89 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(88txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=3afa23d40a32446f71f7d00229885a8f2a53e6f4fed7f28426de8fa367adb06f height=89 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=3afa23d40a32446f71f7d00229885a8f2a53e6f4fed7f28426de8fa367adb06f height=89 version=0x20000000 log2_work=7.491853 tx=90 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(89txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=05e7dc6e23407339bc971b5d034447699ea9fc8f0059637a8484f8b970cbd2a4 height=90 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=05e7dc6e23407339bc971b5d034447699ea9fc8f0059637a8484f8b970cbd2a4 height=90 version=0x20000000 log2_work=7.507795 tx=91 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(90txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=5738143538d3b769cbbe96dd3924f3de7b2d56678f7a3c1219c3aa1a4c657340 height=91 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=5738143538d3b769cbbe96dd3924f3de7b2d56678f7a3c1219c3aa1a4c657340 height=91 version=0x20000000 log2_work=7.523562 tx=92 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(91txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=680cda8c95ae875ce7a2fd19cf9155b73e5465098ddb020070d0f56eb5274ffc height=92 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=680cda8c95ae875ce7a2fd19cf9155b73e5465098ddb020070d0f56eb5274ffc height=92 version=0x20000000 log2_work=7.539159 tx=93 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(92txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=55d12a75a0bb0d0e31c88d0a10638ea97943c9847b7a0d7019d6fd176d4cf42c height=93 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=55d12a75a0bb0d0e31c88d0a10638ea97943c9847b7a0d7019d6fd176d4cf42c height=93 version=0x20000000 log2_work=7.554589 tx=94 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(93txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=7f30305d6cdad841a347dce094e011eeee21f669b4b1dfd8812cb6ddaf793174 height=94 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=7f30305d6cdad841a347dce094e011eeee21f669b4b1dfd8812cb6ddaf793174 height=94 version=0x20000000 log2_work=7.569856 tx=95 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(94txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=15141efcb70f046d33b7f04229f64079450d057d01aae673c327983233580440 height=95 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=15141efcb70f046d33b7f04229f64079450d057d01aae673c327983233580440 height=95 version=0x20000000 log2_work=7.584963 tx=96 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(95txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=312d029699c4ad1319bf5d74ea6532bdf48fb6ad4a1a30aa5355b3bbeabf7245 height=96 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=312d029699c4ad1319bf5d74ea6532bdf48fb6ad4a1a30aa5355b3bbeabf7245 height=96 version=0x20000000 log2_work=7.599913 tx=97 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(96txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=48345850da1ee76dd5ab9709ff00a3e6b3c27c9fc9486706f67046cb2962bd14 height=97 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=48345850da1ee76dd5ab9709ff00a3e6b3c27c9fc9486706f67046cb2962bd14 height=97 version=0x20000000 log2_work=7.614710 tx=98 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(97txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=64f2dfb4a8bb2e5df4e2d387158842b8b41fccbaaa8c3b09d698a751bfa2ec57 height=98 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=64f2dfb4a8bb2e5df4e2d387158842b8b41fccbaaa8c3b09d698a751bfa2ec57 height=98 version=0x20000000 log2_work=7.629357 tx=99 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(98txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z Saw new cmpctblock header hash=574c5daef01f0c91becf76f86ba00fa53201377f9df8c8d4be24c33578e37d53 height=99 peer=0
+2026-08-06T13:22:35Z UpdateTip: new best=574c5daef01f0c91becf76f86ba00fa53201377f9df8c8d4be24c33578e37d53 height=99 version=0x20000000 log2_work=7.643856 tx=100 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(99txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z Saw new cmpctblock header hash=18f68cecd9b3f70dfea6b16cd46aa269a2c5e72365d885b70e50a68b47f769c5 height=100 peer=0
+2026-08-06T13:22:36Z UpdateTip: new best=18f68cecd9b3f70dfea6b16cd46aa269a2c5e72365d885b70e50a68b47f769c5 height=100 version=0x20000000 log2_work=7.658211 tx=101 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(100txo)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z Saw new cmpctblock header hash=734b8fabd283c7290ff18d3ad87c6bb0081c9a65f8d024b6e8e5d8ad90bac620 height=101 peer=0
+2026-08-06T13:22:36Z UpdateTip: new best=734b8fabd283c7290ff18d3ad87c6bb0081c9a65f8d024b6e8e5d8ad90bac620 height=101 version=0x20000000 log2_work=7.672425 tx=102 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(101txo)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z Saw new cmpctblock header hash=688dd7d2b556a116fc711e47fc569b90912e1933e19e89a5026304af7682a4ca height=102 peer=0
+2026-08-06T13:22:36Z UpdateTip: new best=688dd7d2b556a116fc711e47fc569b90912e1933e19e89a5026304af7682a4ca height=102 version=0x20000000 log2_work=7.686501 tx=104 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(104txo)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z [mempool] Checking mempool with 1 transactions and 1 inputs
+2026-08-06T13:22:36Z CreateNewBlock(): block weight: 1325 txs: 1 fees: 100000 sigops 401
+2026-08-06T13:22:36Z [mempool] Removed f553daf307a04bfad5f4b253e7995fa64349f71a038fb84902fabe679969491f from set of unbroadcast txns before confirmation that txn was sent out
+2026-08-06T13:22:36Z UpdateTip: new best=4d52eeabc13b2d9202fe43bb197a6bd75c255f22f3e5181e18a21ba1cdce14e0 height=103 version=0x20000000 log2_work=7.700440 tx=106 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(105txo)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [carriage] AddToWallet f8f9ed9125832ef102ac7a910ea5d9055672a9ce7dc6121fc669dd89d4f8b097  new Confirmed (block=4d52eeabc13b2d9202fe43bb197a6bd75c255f22f3e5181e18a21ba1cdce14e0, height=103, index=0)
+2026-08-06T13:22:37Z Saw new cmpctblock header hash=0e6f06ef467fead78c38c8e36ae6ecdff0a210c4bd37c8d0933ce40092cbd30c height=104 peer=0
+2026-08-06T13:22:37Z UpdateTip: new best=0e6f06ef467fead78c38c8e36ae6ecdff0a210c4bd37c8d0933ce40092cbd30c height=104 version=0x20000000 log2_work=7.714246 tx=108 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(107txo)
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [mempool] Checking mempool with 1 transactions and 1 inputs
+2026-08-06T13:22:37Z CreateNewBlock(): block weight: 1332 txs: 1 fees: 100000 sigops 400
+2026-08-06T13:22:37Z [mempool] Removed 20508c424bc3f6eb0224974a136c9dd0db46c1f57416859b5f539fdbde8735d8 from set of unbroadcast txns before confirmation that txn was sent out
+2026-08-06T13:22:37Z UpdateTip: new best=79e7ee39e1dd76108de9c1f3488d2a737ce7fd6c61b7c12938d3f73c26752e4d height=105 version=0x20000000 log2_work=7.727920 tx=110 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(108txo)
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [carriage] AddToWallet 3f017d4c6548a0ea5becbd5823edae271d8b38da3bd84c750d5eb4b6fc384cd3  new Confirmed (block=79e7ee39e1dd76108de9c1f3488d2a737ce7fd6c61b7c12938d3f73c26752e4d, height=105, index=0)
+2026-08-06T13:22:38Z Saw new cmpctblock header hash=5004bf8770ea590ff9c138ed221647ee6a9ca8705d5fd0ce854b8a8d76f68e58 height=106 peer=0
+2026-08-06T13:22:38Z UpdateTip: new best=5004bf8770ea590ff9c138ed221647ee6a9ca8705d5fd0ce854b8a8d76f68e58 height=106 version=0x20000000 log2_work=7.741467 tx=112 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(110txo)
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [mempool] Checking mempool with 1 transactions and 1 inputs
+2026-08-06T13:22:38Z CreateNewBlock(): block weight: 12641 txs: 1 fees: 100000 sigops 400
+2026-08-06T13:22:38Z [mempool] Removed 4ccf71532988abd269b02842685596f06ffe5983113091a38cd696ee2cc7c08f from set of unbroadcast txns before confirmation that txn was sent out
+2026-08-06T13:22:38Z UpdateTip: new best=05051fa8e82f47979b2a03f7968e0e1e8002be570f68c0adf4fca888ed12fe9d height=107 version=0x20000000 log2_work=7.754888 tx=114 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(111txo)
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [carriage] AddToWallet 3427f9d77ad8e767bf817e065fc51b4daf0d887da5f204f44f0c9945886f2601  new Confirmed (block=05051fa8e82f47979b2a03f7968e0e1e8002be570f68c0adf4fca888ed12fe9d, height=107, index=0)
+2026-08-06T13:22:38Z http_pool_11 thread exit
+2026-08-06T13:22:38Z http_pool_13 thread exit
+2026-08-06T13:22:38Z http_pool_12 thread exit
+2026-08-06T13:22:38Z http_pool_14 thread exit
+2026-08-06T13:22:38Z http_pool_0 thread exit
+2026-08-06T13:22:38Z http_pool_4 thread exit
+2026-08-06T13:22:38Z http_pool_6 thread exit
+2026-08-06T13:22:38Z http_pool_7 thread exit
+2026-08-06T13:22:38Z http_pool_8 thread exit
+2026-08-06T13:22:38Z tor: Thread interrupt
+2026-08-06T13:22:38Z http_pool_10 thread exit
+2026-08-06T13:22:38Z http_pool_2 thread exit
+2026-08-06T13:22:38Z opencon thread exit
+2026-08-06T13:22:38Z http_pool_1 thread exit
+2026-08-06T13:22:38Z torcontrol thread exit
+2026-08-06T13:22:38Z http_pool_15 thread exit
+2026-08-06T13:22:38Z Shutdown in progress...
+2026-08-06T13:22:38Z http_pool_5 thread exit
+2026-08-06T13:22:38Z http_pool_3 thread exit
+2026-08-06T13:22:38Z mapport thread exit
+2026-08-06T13:22:38Z http_pool_9 thread exit
+2026-08-06T13:22:38Z addcon thread exit
+2026-08-06T13:22:38Z net thread exit
+2026-08-06T13:22:38Z [carriage] Releasing wallet carriage..
+2026-08-06T13:22:38Z msghand thread exit
+2026-08-06T13:22:38Z scheduler thread exit
+2026-08-06T13:22:38Z Writing 0 mempool transactions to file...
+2026-08-06T13:22:38Z Writing 0 unbroadcast transactions to file.
+2026-08-06T13:22:38Z Dumped mempool: 0.000s to copy, 0.008s to dump, 27 bytes dumped to file
+2026-08-06T13:22:38Z Shutdown done

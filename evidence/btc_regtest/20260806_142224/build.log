@@ -1,0 +1,22 @@
+make: Entering directory '/home/melly/dilithium-msc-project/ref'
+make: 'test/export_verify_vector' is up to date.
+make: Leaving directory '/home/melly/dilithium-msc-project/ref'
+make: Entering directory '/home/melly/dilithium-msc-project/ref'
+make: 'test/export_swap_vectors' is up to date.
+make: Leaving directory '/home/melly/dilithium-msc-project/ref'
+  C self-check: SHAKE256(pack(t)||pack(w')||M) ==  (w_prime.bin OK) c_tilde
+Wrote verifier vectors to /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/las_objects/
+  pp_normal.bin: 30 polys, 30720 bytes
+  t.bin:         6 polys, 6144 bytes
+  msg.bin:       32 bytes
+  sig.bin:       6736 bytes
+  conv_a.bin:    1 poly, 1024 bytes
+  conv_b.bin:    1 poly, 1024 bytes
+  conv_out.bin:  1 poly, 1024 bytes
+  c.bin:         1 poly, 1024 bytes
+  z.bin:         11 polys, 11264 bytes
+  C base_verify(golden sig) = ACCEPT
+  Solidity verifier must reproduce the same result.
+pi: SKIPPED by explicit --no-pi (the run is NOT a full Fig. 1 execution)
+setup: pp_normal.bin t1.bin t2.bin pk{1,2}.bin sk{1,2}.bin Y.bin witness.bin
+next: fund both legs, write legA_msg.bin and legB_msg.bin (32 B each), then `presign`

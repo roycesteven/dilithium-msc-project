@@ -23,6 +23,12 @@ ml-dsa-44 = []
 ml-dsa-65 = []
 ml-dsa-87 = []
 dudect = []
+# LAS additive (dilithium-msc-project): the Fig.-1 proof of knowledge pi
+# (eprint 2020/845 Section 4.1) via FFI to the SAME C bridge + vendored LaZer
+# library the C build uses (ref/relation_zk_lazer.c, third_party/lazer).
+# Opt-in: needs the one-time LaZer build (see repo README "pi + atomic swap");
+# the default build and the KAT gate are untouched.
+relation-zk = []
 
 
 [dependencies]  # Some are marginally held-back to retain MSRV 1.70

@@ -1,0 +1,10 @@
+valid                patched: ACCEPTED                                                   stock: ACCEPTED
+output_amount        patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 5c63dadf0061fe62b63a77a5bc8c stock: ACCEPTED
+output_recipient     patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of ed5175d78c04d0fd73d62fe86f0c stock: ACCEPTED
+input_outpoint       patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of cc81e9e4140fc57dbb0e6a825da7 stock: ACCEPTED
+chunk_truncated      patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (Malformed LAS witness (chunk count or chunk length)), input 0 of 97775 stock: ACCEPTED
+chunk_reordered      patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+wrong_pubkey         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS public key does not match the committed hash), input 0 of 97775062 stock: ACCEPTED
+wrong_prevout_amt    patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+foreign_signature    patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED
+non_sighash_msg      patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 97775062e22dc1e7ad70be74ab73 stock: ACCEPTED

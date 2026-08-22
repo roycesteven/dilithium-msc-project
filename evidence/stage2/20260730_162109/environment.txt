@@ -1,0 +1,6 @@
+run_id=20260730_162109
+git=4aef1f7
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+rustc=rustc 1.96.0 (ac68faa20 2026-05-25)
+features=secp256k1,groth16,relation-zk

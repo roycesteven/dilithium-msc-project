@@ -1,0 +1,25 @@
+No files changed, compilation skipped
+
+Ran 3 tests for test/LASShakeGrowth.t.sol:LASShakeGrowthTest
+[PASS] test_absorb_growth_D3_to_D5() (gas: 63547468)
+Logs:
+  absorbPad arena bytes (identical in both calls) 16416
+  absorbPad len D3 / D5 12320 16416
+  absorbPad gas D3 10263566
+  absorbPad gas D5 13646751
+  absorbPad DELTA gas D5 minus D3 3383185
+
+[PASS] test_block_arithmetic_holds() (gas: 4049)
+Logs:
+  full rate blocks D3 / D5 90 120
+  tail bytes D3 / D5 80 96
+
+[PASS] test_permute_unit_cost() (gas: 5263337)
+Logs:
+  permute unrolled x8 / x16 gas 874623 1749247
+  permute MARGINAL gas per call 109328
+  30 x marginal permute (cross-check only) 3279840
+
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 365.57ms (397.21ms CPU time)
+
+Ran 1 test suite in 367.28ms (365.57ms CPU time): 3 tests passed, 0 failed, 0 skipped (3 total tests)

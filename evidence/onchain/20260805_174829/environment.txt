@@ -1,0 +1,10 @@
+run_id=20260805_174829
+git=bc2fe4a
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+forge=forge Version: 1.7.1
+solc=default
+evm_version=default
+sig_bytes=6736
+note=gas is deterministic for fixed bytecode, EVM revision, inputs and state
+pass1_gates_exit=0
+pass2_table_exit=0

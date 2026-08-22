@@ -403,3 +403,42 @@ The supervisor’s priority is not “add more features immediately.” The prio
 The most important instruction is:
 
 > Finish the first-stage LAS benchmark correctly before expanding the application layer.
+
+---
+
+## F. Addendum (2026-07-20) — content omitted by the ChatGPT cleaning
+
+Audited against `meeting3_transcript_original.md` (501 lines → 405 in the cleaned version). Restored substantive omissions:
+
+### F.1 Dropped: Royce's "PreSign is slower because the bound is tighter" (05:00–05:08)
+
+**Royce (05:05)** — *dropped:*
+> [Sign and PreSign are almost the same size,] but PreSign probably takes more time, because the bound is [tighter].
+
+This is the first meeting where the tighter PreSign rejection bound (γ−κ−1 vs γ−κ) is voiced as the expected cause of a Sign-vs-PreSign timing gap — the thread Wang picks up again in Meeting 6 when he asks for the measured attempt counts.
+
+### F.2 Dropped: Wang pointed at Dilithium's own 2/3/5 parameter sets as the sweep to use (13:08–14:43)
+
+Royce asked *"how many different security parameter sets [should I run]?"* and Wang **checked the Dilithium documentation live**:
+
+> I do believe they have… here — they have [modes] 2, 3, and 5, right? I think they correspond to the NIST security levels. You can start from Dilithium-2… by choosing the smaller parameter set… but ideally we should compare [Dilithium] mode 2 with the same security level of LAS. That way you can argue that in practice you can achieve this security level… You can Google it — you'll find it easily.
+
+The cleaned version kept only a generic "start from Dilithium mode 2". The specific instruction — *sweep over Dilithium's three mode dimensions (2/3/5) as the NIST-level-aligned parameter sets* — is the origin of the Simplified Dilithium-II/III/V settings used ever since.
+
+### F.3 Dropped: presenting benchmarks in slides + Wang's endorsement of the write-as-you-go slides (02:23–02:46, 25:05–25:36)
+
+**Wang (02:31)** — *dropped:*
+> Assume the things you have done are all correct — then you could start presenting the benchmark… you can share it with me in the slides.
+
+**Wang (25:05–25:36)** — *dropped:*
+> It could be a good idea that you write things down while you are doing the project — kept tidy, shown with me in slides like this… the slides you showed, that's fine.
+
+Wang explicitly validated the running slide deck as the medium for meeting reviews.
+
+### F.4 Compressed away: the "second PQ adaptor scheme" was conditional (15:53–16:28)
+
+The original wording makes the conditionality explicit — *"once the first stage is ready **and** the second stage is easy, **if we have time**, we can consider… other post-quantum adaptor signatures and compare"*. (Later scoped out entirely by Royce — LAS only.)
+
+### F.5 Minor attribution note
+
+In §C.4 (09:32), Royce's parameter guess concerns the module dimension: the LAS paper set has *n = 4* while Dilithium-III has *K = 6*; the recording's "kappa/K" is that dimension, not the challenge weight κ (which is 60 in the LAS paper set). The cleaned table's "carpa / capa → security parameter / kappa / Dilithium parameter k" conflated the two; the fairness point (compare at matched dimensions) is unaffected.

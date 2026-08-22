@@ -1,0 +1,26 @@
+No files changed, compilation skipped
+Script ran successfully.
+
+## Setting up 1 EVM.
+
+==========================
+
+Chain 31338
+
+Estimated gas price: 2.000000001 gwei
+
+Estimated total gas used for script: 2968586
+
+Estimated amount required: 0.005937172002968586 ETH
+
+==========================
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /home/melly/dilithium-msc-project/evm/broadcast/TwoLeg.s.sol/31338/run-latest.json
+
+Sensitive values saved to: /home/melly/dilithium-msc-project/evm/cache/TwoLeg.s.sol/31338/run-latest.json
+

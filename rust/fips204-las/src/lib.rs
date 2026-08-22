@@ -106,15 +106,35 @@ mod types;
 // C build where las.c/serialize.c are new files and only the Makefile gains
 // additive targets. ----
 
+/// The SHARED system setup — the paper's `Setup() -> pp`: the construction
+/// parameters, the `PublicParams` type and `setup_public_params` (Rust port of
+/// C `ref/setup.{c,h}`), consumed by every layer below.
+pub mod setup;
+/// The six LAS protocol object types (PublicKey, SecretKey, Signature,
+/// Statement, Witness, PreSignature), split out of `setup` so the codec and
+/// both schemes share one physical home (Rust port of C `ref/las_types.h`).
+/// Each type is re-exported by its owning layer (`basesig`, `relation`, `las`).
+pub mod las_types;
+/// The HARD-RELATION layer — the statement/witness generator `Gen` for
+/// `R_A`/`R'_A` (Rust port of C `ref/relation.{c,h}`); owns `Statement`/
+/// `Witness`.  Sits below both schemes: `las` consumes them, `basesig` never
+/// sees them.
+pub mod relation;
+/// The Fig.-1 proof of knowledge pi for `R_A` (eprint 2020/845 Section 4.1),
+/// via FFI to the same C bridge + vendored LaZer library the C build uses
+/// (Rust port of C `ref/relation_zk.{c,h}`).  OPT-IN: `--features relation-zk`
+/// (needs the one-time LaZer build, see the repo README "pi + atomic swap").
+#[cfg(feature = "relation-zk")]
+pub mod relation_zk;
+/// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
+pub mod serialize;
+/// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the
+/// fair-benchmark baseline (Rust port of C `ref/basesig.c`).
+pub mod basesig;
 /// LAS — Lattice-based Adaptor Signature (eprint 2020/845) layered additively
 /// on this crate's primitives; Rust port of the C `ref/las.c`, KAT-locked
 /// against the C pinned digest (see `tests/las_kat.rs`).
 pub mod las;
-/// The SEPARATE simplified Dilithium-style base signature (Algorithm 1), the
-/// fair-benchmark baseline (Rust port of C `ref/basesig.c`).
-pub mod las_basesig;
-/// Byte-level serialisation for LAS objects (Rust port of C `ref/serialize.c`).
-pub mod las_serialize;
 
 /// All functionality is covered by traits, such that consumers can utilize trait objects as desired.
 pub mod traits;

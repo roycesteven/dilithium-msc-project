@@ -47,12 +47,12 @@ you changed it. Every claim is grounded in the code as it stands today.
 
 ---
 
-## 3. Public parameters: `las_setup`
+## 3. Public parameters: `setup_public_params`
 
 ### Paper: sample `A' ← R_q^{n×ℓ}` uniformly at random
 
 ```c
-/* las.c — las_setup */
+/* las.c — setup_public_params */
 poly_uniform(&pp->mat[i][j], seed, (uint16_t)((i << 8) + j));
 ```
 
@@ -97,7 +97,7 @@ means the equality check `poly_equal(Ay, Y->t)` in `las_ext` is byte-exact.
 ### Paper: `r ← S_1^{n+ℓ}; t = A·r; return (pk=t, sk=r)`
 
 ```c
-/* las.c — las_keygen */
+/* las.c — base_keygen */
 randombytes(seed, LAS_SEEDBYTES);            // fresh randomness
 for(j = 0; j < LAS_M; ++j)
     sample_ternary(&sk->s[j], seed, LAS_SEEDBYTES, (uint16_t)j);  // r ← S_1^8
@@ -151,15 +151,16 @@ return σ = (c, z)
 ```
 
 ```c
-/* las.c — las_sign */
-randombytes(seed, 64);
+/* las.c — base_sign_internal (shared by base_sign / base_sign_det) */
+for(j=0; j<LAS_M; ++j) { shat[j] = sk->s[j]; poly_ntt(&shat[j]); }  // NTT(s) once per CALL
 for(;;) {                                          // rejection loop
     for(j=0; j<LAS_M; ++j)
         sample_Sgamma(&y[j], seed, 64, nonce++);  // y ← S_γ^8
     las_Amul(w, pp, y);                            // w = A·y
     hash_challenge(&c, pk, w, m, mlen);            // c = H(pk, w, M)
+    chat = c; poly_ntt(&chat);                     // NTT(c) once per ATTEMPT
     for(j=0; j<LAS_M; ++j) {
-        polymul(&cr, &c, &sk->s[j]);               // c·r_j
+        polymul_prehat(&cr, &chat, &shat[j]);      // c·r_j (operands pre-NTT'd)
         poly_add(&sig->z[j], &y[j], &cr);          // z_j = y_j + c·r_j
         poly_reduce(&sig->z[j]);
     }
@@ -168,6 +169,18 @@ for(;;) {                                          // rejection loop
     return;
 }
 ```
+
+**NTT hoisting (mirrors upstream `ref/sign.c`).** The secret `r` is invariant
+across rejection attempts, so `NTT(s_j)` is computed **once per call** —
+exactly as `crypto_sign_signature_internal` does `polyvecl_ntt(&s1)` *before*
+its `rej:` loop ([sign.c:128](../../ref/sign.c#L128)). The challenge `c` is
+shared by all `n+ℓ` products `c·r_j`, so `NTT(c)` is computed **once per
+attempt** — as `sign.c:154` does `poly_ntt(&cp)`. `polymul_prehat` is then only
+the pointwise-multiply + inverse-NTT half of the product. The earlier
+`polymul(&cr, &c, &sk->s[j])` re-transformed *both* operands on every product
+(so `NTT(c)` ran `n+ℓ`× per attempt and `NTT(s_j)` `n+ℓ`× per attempt); the
+hoisted form is algebraically identical and is the same amortisation the
+reference Dilithium uses.
 
 **Rejection condition:** `LAS_BOUND_SIGN = γ−κ+1 = 122821`. `poly_chknorm(v, B)`
 rejects when `‖v‖∞ ≥ B`. So `chknorm_vec(z, 122821)` rejects when `‖z‖∞ ≥ 122821`,
@@ -192,11 +205,11 @@ hint-free design carries no acceptance penalty (the old ">80% with hints" framin
 was directionally wrong); Dilithium's own expected repetitions are a small
 single-digit count per its specification.
 
-**Deterministic variant (`las_sign_det`, `las.c`).** The randomised `las_sign`
-draws the 64-byte mask seed from `randombytes`; `las_sign_det` instead derives it
+**Deterministic variant (`base_sign_det`, `las.c`).** The randomised `base_sign`
+draws the 64-byte mask seed from `randombytes`; `base_sign_det` instead derives it
 as `SHAKE256(0x00 ‖ sk ‖ M)` (and `las_presign_det` as `SHAKE256(0x01 ‖ sk ‖ Y ‖ M)`),
-making (pre)signing a pure function of its inputs. Both call the same `sign_core`
-/ `presign_core` rejection loop, so distribution and validity are unchanged; the
+making (pre)signing a pure function of its inputs. Both call the same `base_sign_internal`
+/ `las_presign_internal` rejection loop, so distribution and validity are unchanged; the
 deterministic variants exist only for reproducible KATs (`test_kat.c`) and to
 remove the nonce-reuse failure mode. This is the standard Fiat–Shamir
 "derandomisation" (as in deterministic Dilithium), not a change to the scheme.
@@ -213,11 +226,13 @@ return c == H(pk, w', M)
 ```
 
 ```c
-/* las.c — las_verify */
+/* las.c — base_verify */
 if(chknorm_vec(sig->z, LAS_BOUND_SIGN)) return -1;   // ‖z‖∞ > γ−κ
 las_Amul(w, pp, sig->z);                              // A·z
+chat = sig->c; poly_ntt(&chat);                       // NTT(c) once (cf. sign.c:333)
 for(j=0; j<LAS_N; ++j) {
-    polymul(&ct, &sig->c, &pk->t[j]);                 // c·t_j
+    that = pk->t[j]; poly_ntt(&that);                 // NTT(t_j)
+    polymul_prehat(&ct, &chat, &that);                // c·t_j (operands pre-NTT'd)
     poly_sub(&w[j], &w[j], &ct);                      // A·z − c·t
     poly_reduce(&w[j]);
     poly_caddq(&w[j]);                                // → [0, Q)
@@ -225,6 +240,11 @@ for(j=0; j<LAS_N; ++j) {
 hash_challenge(&c2, pk, w, m, mlen);                  // H(pk, w', M)
 return poly_equal(&c2, &sig->c) ? 0 : -1;            // c == c2 ?
 ```
+
+The same hoisting applies on the verify side: `NTT(c)` once per call (upstream
+`crypto_sign_verify_internal` does `poly_ntt(&cp)` once at
+[sign.c:333](../../ref/sign.c#L333)), then one `NTT(t_j)` per public-key
+polynomial. `PreVerify` is identical with the `w' + Y` offset.
 
 **Why Verify works (the algebra):**
 ```
@@ -300,7 +320,7 @@ return poly_equal(&c2, &presig->c) ? 0 : -1;        // c == c2 ?
 **Why it works:** `w' = A·ẑ − c·t = w` (same algebra as Verify), so
 `w' + Y = w + Y`, and `H(pk, w+Y, M) = c` (the pre-signing challenge). ✓
 
-**The tripwire (test step 5):** If you feed `σ̂` to standard `las_verify`, it
+**The tripwire (test step 5):** If you feed `σ̂` to standard `base_verify`, it
 computes `H(pk, w', M) = H(pk, w, M)`. Since `c = H(pk, w+Y, M) ≠ H(pk, w, M)`
 (with overwhelming probability over the random oracle H), standard Verify returns
 false. This is asserted in `test_las.c` (the tripwire, test step 5).
@@ -370,67 +390,63 @@ z − ẑ = (ẑ + y_wit) − ẑ = y_wit
 Then `A·y_wit = Y` by construction (Y is the statement). ✓
 
 **`poly_equal` is safe here** because both `Ay[j]` (output of `las_Amul`,
-always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `las_keygen` via
+always canonicalised to `[0,Q)`) and `Y->t[j]` (set by `base_keygen` via
 `las_Amul`, also `[0,Q)`) use the same canonical representation.
 
 ---
 
-## 12.5 AMHL — multi-hop locks (`amhl.c`, `las_presign_k`)
+## 12.5 AMHL — multi-hop locks — **out of scope**
 
-### Paper: AMHL (eprint 2020/845, Fig. 2 / Section 5)
-For a K-hop route, lock hop `j` with the cumulative statement `Y_j = A·s_j` where
-`s_j = l_1 + … + l_j`, and pre-sign every hop with the tightened bound `γ−κ−K`.
+> **Dropped from the project (2026-08-03).** Anonymous multi-hop locks (AMHL,
+> eprint 2020/845 Fig. 2 / §5) are **out of scope** — not a deliverable, not a
+> bonus, and not future work. The exploratory C files `ref/amhl.{c,h}` remain in
+> the tree on the pre-restructure API, do not compile, and must not be repaired.
+> Nothing in this project's results, report or evaluation rests on them.
 
-#### The K-hop bound
-```c
-/* las.h */
-#define LAS_BOUND_PRESIGN_K(K)  (LAS_GAMMA - LAS_KAPPA - (int32_t)(K) + 1)
+The paper's `γ−κ−K` bound therefore has no counterpart in this build: only the
+single-hop `K = 1` case (`BOUND_PRESIGN` = `γ−κ`, §9) is implemented and measured.
+
+---
+
+## 12.6 The proof of knowledge π — paper §4.1 / Fig. 1 (`relation_zk.c`, `relation_zk_lazer.c`)
+
+**Paper.** Fig. 1, message 1: `π ← P((t′; r′), {∃ r′ : A·r′ = t′ ∧ ‖r′‖∞ ≤ 1})`,
+suggested realisation Esgin–Nguyen–Seiler; §4.1's fairness analysis needs the
+**exact** ternary bound (`s = r′` by M-SIS uniqueness, hence `‖s‖∞ ≤ 1`, hence
+u₂'s Adapt clears `γ − κ`). π is verified by u₂ before pre-signing ("If verif.
+of π or σ̂₁ fails, Abort") and travels **off-chain only**.
+
+**Code.** Two halves, split because ref headers and the vendored LaZer's
+`lazer.h` cannot share a translation unit:
+
+| Paper object / step | C function (file) |
+|---|---|
+| `π ← P((t′; r′), …)` | `relation_prove` (`relation_zk.c`) |
+| verify π against `(A, t′)` | `relation_proof_verify` (`relation_zk.c`) |
+| the LNP prover/verifier | `relation_zk_lin_prove` / `relation_zk_lin_verify` (`relation_zk_lazer.c` → LaZer `lin_prover_*` / `lin_verifier_*`) |
+| proof-system parameters | `ref/relation_zk_params.h` (committed; generated by LaZer's `sage lin-codegen.sage` from `scripts/las_pi_params.py`) |
+
+**Statement encoding.** LaZer's linear frontend proves per-partition *binary*
+coefficients or *exact ℓ₂* bounds (its `wlinf` input is a size hint, **not**
+proven), so the ternary statement is the binary decomposition
+
 ```
-`poly_chknorm` rejects at `≥ bound`, so this accepts `‖ẑ‖∞ ≤ γ−κ−K`. The adapted
-response `z = ẑ + s_j` then has `‖z‖∞ ≤ (γ−κ−K) + ‖s_j‖∞ ≤ (γ−κ−K) + K = γ−κ`,
-which clears ordinary `Verify`. `K=1` reproduces `LAS_BOUND_PRESIGN` exactly.
-
-```c
-/* las.c — las_presign_k */   // identical to las_presign except:
-if(chknorm_vec(presig->z, LAS_BOUND_PRESIGN_K(nhops))) continue;  // las.c
-/* las.c — las_preverify_k */ // same, with LAS_BOUND_PRESIGN_K(nhops)
+[A | −A | 0] · (r₊ ‖ r₋ ‖ e) = t′ ,   r₊, r₋ binary (proven),  ℓ₂(e) ≤ 16
 ```
-(The parameter is named `nhops`, not `K`, because Dilithium's `params.h` already
-defines the object-like macro `K` for its module dimension — a direct `K`
-parameter would be textually replaced by `6` and fail to compile.)
 
-#### Cumulative setup: `amhl_setup_gen`
-```c
-/* amhl.c — amhl_setup_gen */
-las_keygen(&Lj, &st->incr[j-1], pp);      // (L_j, l_j) = (A·l_j, l_j) ← reuse KeyGen
-// s_j = s_{j-1} + l_j           (amhl.c, kept small/centred)
-// Y_j = Y_{j-1} + L_j = A·s_j   (amhl.c, canonical [0,Q))
-```
-The statements are built **additively** from the increment key pairs, so AMHL adds
-no new lattice arithmetic — it is pure reuse of `las_keygen` (= `A·(·)`) plus
-`poly_add`. `Y_0 = 0`, `s_0 = 0`.
+with `r′ = r₊ − r₋`; the all-zero 23rd column carries a dummy witness poly
+`e = 0` only because the parameter generator requires one ℓ₂-bounded partition.
+`relation_prove` refuses non-ternary witnesses (an Ext output in `R′_A` is not
+a π witness). The normal-domain `A′` is recovered from the NTT-domain
+`pp->a_prime` by pushing `ntt(1)` through the same pipeline `relation.c` uses
+for `A·r′` (validated once against schoolbook negacyclic multiplication), so
+the proven matrix is exactly the build's matrix.
 
-#### Adapt / Ext are unchanged
-Hop `j` is adapted with the *cumulative* witness `s_j` (= `cum[j]`), and `las_ext`
-returns exactly `s_j` because `A·s_j = Y_j` by construction. No K-specific code
-path is needed in Adapt or Ext (§11, §12).
-
-#### Witness recovery along the path: `amhl_recover_prev`
-```c
-/* amhl.c — amhl_recover_prev:  prev = cur − incr */
-poly_sub(&prev->s[i], &cur->s[i], &incr->s[i]);   // s_{j-1} = s_j − l_j
-```
-After extracting `s_j` from the on-chain claim of hop `j`, intermediary `U_{j-1}`
-subtracts the increment `l_j` it was given to obtain `s_{j-1}`, the opener of its
-own hop. `test_amhl.c` asserts the recovered `s_{j-1}` equals the setup value
-byte-for-byte (exact recovery).
-
-#### Why there is no wormhole
-The statements are pairwise distinct (`Y_i ≠ Y_j`), so the opener of one hop does
-not open a non-adjacent hop. `test_amhl.c` asserts the attack fails directly:
-adapting hop 1 with the receiver's secret `s_K` produces a signature for which
-ordinary `Verify` recomputes `A·z−c·t = w + Y_K`, but the challenge was
-`c = H(pk, w + Y_1, M)`, so `H(pk, w+Y_K, M) ≠ c` and `Verify` returns false.
+**Guarantees (generated parameter set).** Knowledge error ≤ 2⁻¹²⁷ under M-SIS,
+zero-knowledge under M-LWE; measured proof ≈ 30.7 KB. Tests: `test_zkp.c`
+(completeness / tamper / wrong statement / non-ternary refusal), `test_swap.c`
+(π inside the Fig. 1 gate). Rust twin `relation_zk.rs` (feature `relation-zk`)
+FFIs into the *same* bridge and parameter set.
 
 ---
 
@@ -478,9 +494,9 @@ Neither proof is reproduced here — see eprint 2020/845 §4 for the formal trea
 
 | Property | Paper | This implementation | Impact |
 |---|---|---|---|
-| Modulus `q` | ≈2^24 | 8380417 ≈ 2^23 | Correctness unaffected (Q > 2γ); reduced MSIS/MLWE security margin |
-| Multi-hop PCN | AMHL with `γ−κ−K` per hop | **AMHL implemented** (`amhl.c`, `las_presign_k`, §12.5) + same-Y baseline (`chain.c`) | Functionally matches the paper's multi-hop locks; a *privacy*-preserving variant remains future work |
-| Signature packing | Bit-packed, ~3210B | Bit-packed wire/on-chain encoding **implemented** (`serialize.c`, 4672B) + full-int32 9216B in-memory structs | Sizes only; correctness unaffected. Validating decoder + `las_verify_packed` byte-level verifier added for on-chain use |
+| Modulus `q` | ≈2^24 | 8380417 ≈ 2^23 — **NIST FIPS 204's modulus**, and FIPS 204 is this project's parameter authority | Correctness unaffected (Q > 2γ); the concrete MSIS/MLWE margin differs from the paper's. Not a shortfall and not a migration target |
+| Multi-hop PCN | AMHL with `γ−κ−K` per hop | **out of scope** (dropped 2026-08-03) — single-hop `K = 1` only | The paper's §5 construction is neither built nor claimed; nothing in the results depends on it |
+| Signature packing | Bit-packed, ~3210B | Wire/on-chain encoding **implemented** (`serialize.c`, `c_tilde ‖ BitPack(z)`, 4640B) + in-memory structs (8224B) | Sizes only; correctness unaffected. Validating pk/sk decoder + `base_verify_packed` byte-level verifier for on-chain use |
 | Hint vector | Used in paper's optimised scheme | Not used (simplified scheme) | ~2.7 attempts/sign (≈37% acceptance, measured directly); Dilithium's own rate not measured here |
 
 ---
@@ -499,18 +515,4 @@ assertions over 1000 randomised iterations (modes 2/3/5):
 | Sign/Verify round-trip | Base scheme correctness |
 | Forgery check (flip bit, expect reject) | Basic unforgeability |
 
-`ref/test/test_amhl.c` then extends these to the multi-hop (AMHL) setting:
-
-| AMHL test step | Theorem being checked |
-|---|---|
-| `Y_j ≠ Y_{j-1}` for all hops | Distinct per-hop statements (no shared lock) |
-| `‖s_j‖∞ ≤ j` for all hops | Cumulative witness-norm growth (the `γ−κ−K` bound's reason) |
-| Adapt hop 1 with `s_K` ⇒ `Verify` rejects | Wormhole resistance (non-adjacent hops are unrelated) |
-| Right-to-left cascade all `Verify`/claim | K-hop adaptability with the `γ−κ−K` bound |
-| `Ext`→`s_j`, then `s_j − l_j == s_{j-1}` (setup) | Exact per-hop witness recovery along the path |
-| Refund rejected pre-timeout, accepted post-timeout | Time-lock safety on a route |
-
-All pass on every run. The AMHL test (`test_amhl3`, mode 3 — mode-independent by
-construction, like `test_pcn`/`test_swap`) exercises the general `K`-hop case
-(`K = 4` happy path, `K = 2` refund path) with the `γ−κ−K` bound; the single-hop
-`test_las.c` remains the `K = 1` specialisation, run on modes 2/3/5.
+All pass on every run, on modes 2/3/5.

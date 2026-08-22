@@ -40,9 +40,9 @@ static int scenario_swap_happy(const las_pp *pp) {
   int aA, aB, bA, bB, cidA, cidB;
 
   printf("== Scenario 1: cross-chain atomic swap (happy path) ==\n");
-  las_keygen(&pkA, &skA, pp);
-  las_keygen(&pkB, &skB, pp);
-  las_keygen(&Y, &y, pp);                       /* Bob's swap secret (Y, y) */
+  las_keypair(&pkA, &skA, pp);
+  las_keypair(&pkB, &skB, pp);
+  las_keypair(&Y, &y, pp);                       /* Bob's swap secret (Y, y) */
 
   chain_init(&chA, "chainA", pp);
   chain_init(&chB, "chainB", pp);
@@ -93,9 +93,9 @@ static int scenario_swap_refund(const las_pp *pp) {
   int aA, bA, aB, bB, cidA, cidB;
 
   printf("== Scenario 2: cross-chain swap times out (refund path) ==\n");
-  las_keygen(&pkA, &skA, pp);
-  las_keygen(&pkB, &skB, pp);
-  las_keygen(&Y, &y, pp);
+  las_keypair(&pkA, &skA, pp);
+  las_keypair(&pkB, &skB, pp);
+  las_keypair(&Y, &y, pp);
 
   chain_init(&chA, "chainA", pp);
   chain_init(&chB, "chainB", pp);
@@ -142,10 +142,10 @@ static int scenario_pcn_multihop(const las_pp *pp) {
   int A, B, C, cidAB, cidBC;
 
   printf("== Scenario 3: multi-hop payment Alice -> Bob -> Carol (PCN) ==\n");
-  las_keygen(&pkA, &skA, pp);
-  las_keygen(&pkB, &skB, pp);
-  las_keygen(&pkC, &skC, pp);
-  las_keygen(&Y, &y, pp);                          /* Carol's invoice secret */
+  las_keypair(&pkA, &skA, pp);
+  las_keypair(&pkB, &skB, pp);
+  las_keypair(&pkC, &skC, pp);
+  las_keypair(&Y, &y, pp);                          /* Carol's invoice secret */
 
   chain_init(&net, "PCN", pp);
   A = chain_account_add(&net, "Alice", &pkA, 100);

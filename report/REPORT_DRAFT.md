@@ -624,7 +624,7 @@ floor — which performs no cryptographic check — is **2.75× the full classic
 **What would *full* native verification cost?** Rather than assert that it "exceeds
 the block gas limit" — an intuition this project initially held and which turns out
 to be wrong — we measured it. A gas-faithful cost probe (`evm/LASVerifyCost.sol`)
-executes the exact arithmetic op-budget of one `las_verify` (`w' = A·ẑ − c·t`:
+executes the exact arithmetic op-budget of one `base_verify` (`w' = A·ẑ − c·t`:
 12 forward NTTs, 8 inverse NTTs, 20 pointwise products over N=256) on the local EVM;
 because EVM opcode gas is independent of operand *values* (`mulmod`/`addmod` are a
 flat 8 gas), this reproduces a correct verifier's arithmetic cost without being a
@@ -633,7 +633,7 @@ challenge adds ≈64 Keccak-f[1600] permutations, ≈1.92 M gas calculated at a
 representative 30k/permutation (the EVM's native `keccak256` opcode cannot implement
 SHAKE256's padding/squeeze, so it is only a lower bound) — **≈12 M gas in total**.
 
-| `las_verify` component | gas | basis |
+| `base_verify` component | gas | basis |
 |---|---:|---|
 | forward NTT ×12 | 4,537,776 | measured |
 | inverse NTT ×8 | 3,374,048 | measured |
@@ -641,7 +641,7 @@ SHAKE256's padding/squeeze, so it is only a lower bound) — **≈12 M gas in to
 | coefficient passes (~40) | ≈1,227,720 | measured (residual) |
 | **arithmetic subtotal** | **10,080,044** | **measured** |
 | SHAKE256 challenge (~64 Keccak-f) | 1,920,000 | calculated |
-| **native `las_verify`** | **≈12,000,044** | measured + calculated |
+| **native `base_verify`** | **≈12,000,044** | measured + calculated |
 
 That is **≈158× the classical `ecrecover` claim and ≈40% of a single 30 M block**
 (≈33% of the ~36 M limit of 2025). The honest conclusion is therefore sharper than

@@ -1,0 +1,3 @@
+error code: -25
+error message:
+TestBlockValidity failed: block-script-verify-flag-failed (Malformed LAS witness (chunk count or chunk length)), input 0 of 97775062e22dc1e7ad70be74ab73c7b70d391fd7c66608abf6b5015271392134 (wtxid b127bac80bdb82e5781aa46f0ee59731056d1212326c3011996079bd283d01f5), spending a140ea3095c6821240964710de0911730958a26a3da46cfc70d242d51360d68d:1

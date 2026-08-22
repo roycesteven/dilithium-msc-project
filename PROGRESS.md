@@ -1,134 +1,104 @@
----
-## Checkpoint — 2026-06-30 00:30
 
-Branch: main
+
+## Checkpoint — 2026-08-17 15:40
+
+Branch: report
 
 Current goal:
-- Reorganise benchmark evidence output into clean subfolders so Stage-1 paper figures aren't mixed with debug/application output.
+- Discharge Meeting-10 items (deck rework + report fixes). Secondary, Royce-directed: settle
+  on-chain fit at D2/D5.
 
 Done:
-- Reworked scripts/run_benchmark_suite.sh: logs/, tables/, paper_package/, appendix_package/, debug_figures/, application_package/ via staging + allowlist distribution.
-- Added --appendix-dir to scripts/plot_las_paper_figures.py (rejection figure -> appendix_package).
-- Generated organised MANIFEST.md + paper_package/README.md ("show these to Wang").
+- Meeting-10 transcript consolidated from two ASR sources (Samsung diarised + Teams
+  undiarised); Meeting 6 merged into the spec as §15A, Meeting 10 as §19; spec retitled 1-10.
+- Deck 13 -> 10 slides, 6:30 planned: application-first opener posing 3 questions, closing
+  slide answering them, conclusion made blockchain-specific, swap board relabelled Alice/Bob.
+- Deck "The method" slide rebuilt as an SVG diagram (3 reused/added layers + the one
+  substitution Sign c=H(pk,w,M) vs PreSign c=H(pk,w+Y,M)); prose 116 -> 71 words.
+- Report: fig:swapidea added before fig:swapflow (net-zero words); fig:lasfuncs panel (a) now
+  shows c = H(...) = SampleInBall(c-tilde); exotic-implementation claim softened to "remain
+  unevenly served by practical implementations"; fig:lasfuncs caption -39 words.
+- D5: LASShakeGrowth.t.sol (fixed arena) + derive_onchain_d5_bound.py -> exceeds one tx.
+- D2: LASVerifierOptD2.sol (copy, not parameterised) + LASGasBreakdownD2.t.sol + Makefile
+  target test/export_verify_vector2 -> golden instance fits at ~65% of cap.
 
-Files touched/inspected:
-- scripts/run_benchmark_suite.sh
-- scripts/plot_las_paper_figures.py
-- scripts/plot_las_benchmarks.py (read only; unchanged)
+Files touched:
+- meeting10_cleaned_transcript.md, las-context-consolidated.md, CLAUDE.md
+- report/slides/video_deck.template.html, report/slides/VIDEO_PLAN.md
+- report/latex/chapters/{01-introduction,02-methodology,03-results}.tex
+- evm/src/LASVerifierOptD2.sol, evm/test/{LASShakeGrowth,LASGasBreakdownD2}.t.sol
+- scripts/derive_onchain_d5_bound.py, scripts/update_claude_context.py
+- ref/Makefile, ref/test/export_verify_vector.c
 
 Evidence used:
-- none
+- evidence/onchain_d5bound/latest (deltaAbsorb 3383185 vs threshold 963322)
+- evidence/onchain_d2/latest (golden instance total 10956784, ~65% of cap)
+- evidence/onchain_onetx/latest + evidence/onchain/latest (D3 anchor + stage attribution)
 
 Open risks:
-- Suite not yet run; new tree only validated via bash -n + py_compile + scratch run of paper script.
+- Deck 6:30 is PLANNED, never spoken. Four slides have rewritten notes. Unvalidated.
+- SVG method diagram verified structurally only (XML valid, macros resolved) - NOT rendered;
+  no browser on this machine. Layout unconfirmed.
+- 3 slides still have no visual: "Why this matters", "What an adaptor signature does",
+  "Answering the questions" (100/108/121 words).
+- Word count at 8999/9000 - one word of headroom, any addition needs an offsetting cut.
+- derive_onchain_d5_bound.py comment calls the whole packed region "4-byte big-endian";
+  aHat/tHat are BE but tPacked is LE. Counts unaffected, comment wrong.
+- Instance variation unquantified at every parameter set; D3 headroom ~364k vs ~732k spent in
+  the two data-dependent stages. Do not assert negligible or material.
 
 Next action:
-- Run scripts/run_benchmark_suite.sh and eyeball paper_package/ before showing Wang.
-- Make Stage-1 results/methodology presentation defensible (Meeting-4) + paper-faithful notation.
+- Open report/slides/video_deck.html and check the method-diagram layout renders; then run the
+  deck aloud against a clock to validate 6-8 min.
+
+## Checkpoint — 2026-08-17 17:55
+
+Branch: report
+
+Current goal:
+- Make the Meeting-10 deck rework real: Wang's critique was "pictures, not text", and the
+  13->10 pass had only reordered text.
 
 Done:
-- New supervisor-review skill (.claude/skills/supervisor-review); used it to judge Fig 3.1 + methodology.
-- Fig 3.1 reworked to paired basic(blue)-vs-LAS(orange) overhead chart at D3 (overhead % labels); moved tab:overhead-l3 to appendix (chart-in-body/table-in-appendix); Table 3.2 caveat+param strip; fixed methodology kappa=60 + polynomial-count inconsistencies.
-- Report notation N->d (paper) everywhere + figures regenerated (d=256); CLAUDE.md source-of-truth rule strengthened; las.h:18 paper<->code bridge comment; THEORY_IMPL_BRIDGE.md X^N->X^d cell.
+- Rendered every slide headless (Windows Chrome via /mnt/c, #N deep links, both themes) and
+  confirmed the defects: 200-260 px voids on slides 2/3/6/9/10, slide 9's headline promising
+  "three things" while showing two, no "where are we" marker, help overlay in shot.
+- Slides 2, 3, 4 rebuilt as drawn SVG scenes on the deck tokens, four timed stages each:
+  2 = the swap scenario (Alice/Bob, two chains, one shared secret, asymmetric caption),
+  3 = the four functions as one flow (PreVerify named; Ext checked against Y),
+  4 = landscape architecture + the one substitution + c = SampleInBall(c-tilde).
+- Slide 9: headline now "Two beliefs measurement overturned - and three suggestions I closed
+  instead"; ML-DSA mini table (macro-backed) = Wang's slide-table ask; caveat re-scoped to
+  on-chain gas only; columns rebalanced after a render showed the table clipped.
+- Chrome: section stepper (Why/Method/Results/Takeaway, data-part per slide), help overlay
+  default off, .mid utility to centre short cards in stretched columns.
+- Claim fixes, repo-wide: uncited "mostly paper-only" deleted from 01-introduction.tex:36 and
+  00-abstract.tex:8 (word-neutral) and from CLAUDE.md's "Why"; deck notes' hand-typed
+  "98 percent" -> {{cfgThreeProofPct}}, "Dilithium-2 near 65 percent" -> no number (no macro
+  exists); "size work must target Y, not the signature" -> "Y is the dominant remaining
+  target" (payload still falls to 0.69x).
+- VIDEO_PLAN.md: 13-slide table -> the real 10 with parts and 6:35; demos are slides 5 and 8;
+  cut order rewritten; rubric row numbers fixed; keys + stepper documented.
 
-Files touched/inspected:
-- report/latex/chapters/{02-methodology,03-results,A-appendix}.tex
-- scripts/plot_las_paper_figures.py; report/latex/figures/{fig_timing,fig_components}.pdf
-- CLAUDE.md; ref/las.h; docs/THEORY_IMPL_BRIDGE.md
+Files touched:
+- report/slides/video_deck.template.html (+ regenerated video_deck.html, swap_console.html)
+- report/slides/VIDEO_PLAN.md
+- report/latex/chapters/{00-abstract,01-introduction}.tex
+- CLAUDE.md, PROGRESS.md
 
 Evidence used:
-- evidence/latest/tables/{primary_timing,adaptor_overhead}.csv
+- report/latex/generated/*.tex macros only (gen_slides.py --check passes)
+- ref/las.c, ref/basesig.c:556, ref/test/test_serde.c:155,182 (PreVerify accepts / Verify
+  rejects), rust/fips204-las/src/basesig.rs:756 (SampleInBall twin)
 
 Open risks:
-- Report PDF not rebuilt (no make per guardrail); Royce to run make in report/latex.
-- Table 3.2 still lacks +/- SD (needs measured classical run, not invented).
+- 6:35 planned is 35 s over the 6:00 floor: under-running is now the risk, and the deck has
+  still never been spoken against a clock.
+- Slide 10's three cards centre independently, so their headings sit up to ~13 px apart.
+- Report word count not regenerated after the two chapter edits (both word-neutral by
+  construction, but unverified): run make -C report/latex wordcount.
+- Screenshots live in /mnt/c/Users/Royce/AppData/Local/Temp/deckshot, outside the repo.
 
 Next action:
-- Rebuild report.pdf (make in report/latex) and eyeball Fig 3.1 + tab:notation render.
----
-Checkpoint 2026-07-06 — run-validity rejection gates + C↔Rust methodology mirror
-
-Branch: main (working tree UNCOMMITTED — commit only when Royce asks)
-
-Objective: every benchmark run must prove its acceptance rate matches theory
-(else invalid per Royce/Wang), and bench_levels.c must mirror the Rust driver 100%.
-
-Done:
-- `las_expected_attempts(bound)` added to ref/las.{c,h} AND rust src/las.rs —
-  exact E[attempts] = ((2·bound−1)/(2γ+1))^(−(n+ℓ)d), verified against the
-  RENDERED 2020-845.pdf (Table 1 S_c, Alg.1 s11, Alg.2 s6, Fact 1, §3.2 ≈e).
-  D3: Sign 2.71875, PreSign 2.77483 (differ by design, −1 bound).
-- 5σ rejection gate (prints "rejection gate [...] => OK", aborts on FAIL) in
-  benches/las_bench.rs, examples/bench_levels.rs, ref/test/bench_levels.c
-  (new variadic MEASURE(niter,...) + MEASURE_SIGN(counter,...); per-attempt
-  diagnostic now printed in C too).
-- bench_levels.c mirrors the Rust driver: 5 reps × 500 sign / 1000 verify
-  (was 10×1000), fixed ppseed 00..1f + fixed 33-byte MSG (same bytes as Rust
-  → identical pp); randombytes include removed. Parser anchors of
-  scripts/plot_las_benchmarks.py all preserved (gate labels chosen to avoid
-  "Base Sign"/"LAS PreSign" substrings).
-- Checks: gcc -fsyntax-only clean ×4 param sets (-Wall -Wextra); cargo check clean.
-- Docs synced: BENCHMARKING.md (Run-validity section, parity table, RNG-source
-  note), REPRODUCE_LAS_C.md Step 11, FUNCTION_MAP.md §3.1, LAS.md §8 Method,
-  LAS_PROVENANCE.md. Memory: benchmark-rejection-gate.md added; working
-  agreement + rust-port memory refreshed.
-- Earlier in session: criterion 0.8.2 run (300/60, baseline criterion082,
-  2026-07-05) analysed; examples/size_report.rs + size_report_rust.log;
-  variance-provenance test (sign-class variance = i.i.d. restarts, slope≈−0.8
-  autocorr≈0; verify-class = drift).
-
-Evidence used: target/criterion estimates.json+sample.json (Jul-4 base /
-Jul-5 criterion082), bench_levels_rust.log (Jul-3), communication_components.csv L3.
-
-Open risks:
-- ALL committed logs predate the gates: bench_las_criterion.log,
-  bench_levels_rust.log, evidence/latest C tables need regeneration by Royce
-  (guardrail: Claude never runs benches, reads outputs only).
-- docs/REPRODUCE_LAS_RUST.md Step 8a still shows the old Jul-3 criterion-0.4
-  numbers (replacement edit was rejected) — redo after the next criterion run.
-- report/latex methodology wording may still assume the old 10×1000 scheme —
-  check after evidence regeneration.
-
-Next action (new chat):
-1. Royce runs: cd rust/fips204-las && cargo bench --bench las_bench --
-   --baseline criterion082 2>&1 | tee bench_las_criterion.log; then
-   cargo run --release --example bench_levels 2>&1 | tee bench_levels_rust.log;
-   then bash scripts/run_benchmark_suite.sh (C evidence).
-2. Claude reads the logs: all gates "=> OK"; criterion diff vs criterion082
-   should say "No change in performance detected" (instrumentation is inert);
-   then sync numbers into REPRODUCE_LAS_RUST.md Step 8a + BENCHMARKING.md
-   measured section (+ LAS.md/report if C numbers moved), update memory, and
-   make ONE commit when Royce says so.
----
-
-Checkpoint 2026-07-06 (b) — docs/ restructured by report chapter
-
-Objective: (1) new consolidated C+Rust implementation & benchmark-methodology
-doc; (2) docs/ physically organised per report.tex chapter, big files split.
-
-Done:
-- NEW docs/02-methodology/C_RUST_IMPLEMENTATION_AND_BENCHMARK_METHODOLOGY.md
-  (chapter-2 entry point: both implementations, KAT lock, Alg1-vs-Alg2
-  methodology incl. rejection gate; measured snapshot provenance-cited).
-- Chapter folders docs/{01-introduction,02-methodology,03-results,
-  04-evaluation,A-appendix}; single-topic docs moved via git mv (history kept).
-- LAS.md (1164 lines) split VERBATIM at ## boundaries into 10 part files
-  (diff-verified lossless; § numbering preserved); docs/LAS.md is now the
-  hub/index (path + "LAS.md §N" convention preserved; §11 refs kept there).
-- Repo-wide reference sweep: CLAUDE.md, README.md, las-context-consolidated.md,
-  docs cross-refs, rust/fips204-las docs, .claude agents/skills,
-  ref/scripts/docs_guard.sh, defense/build_defense.py, session memory —
-  all old docs/ paths rewritten; verified zero stale references.
-  PROGRESS.md history + evidence/ captures intentionally untouched.
-- docs/DOCS_BY_CHAPTER.md: per-chapter map + topic-ownership (anti-redundancy)
-  rules + split/merge decisions. STATUS.md, paper/, references/ stay put as
-  cross-cutting authorities.
-
-Open risks:
-- Nothing committed yet (this restructure + the earlier gate work are one
-  working tree). Untracked: LAS-* part files, DOCS_BY_CHAPTER.md, C_RUST_* doc.
-- Benchmark rerun by Royce still pending (see previous checkpoint).
-
-Next action: Royce reruns benches (previous checkpoint's commands), Claude
-reads logs, syncs numbers, then ONE commit of gates + restructure when asked.
----
+- Run the deck aloud against a clock (N for notes, T to start) and adjust per-slide data-time
+  from what it actually takes; then regenerate the word count.

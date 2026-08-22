@@ -1,0 +1,1626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAS — 6–8 minute project video deck</title>
+<!--
+  GENERATED OUTPUT: report/slides/video_deck.html
+  This file is the TEMPLATE. Every double-brace placeholder is substituted by
+  scripts/gen_slides.py from report/latex/generated/*.tex, i.e. from the same
+  measured evidence run the report quotes. Never hand-type a number here.
+  Keys: -> / <- navigate . n notes . t timer . s safe-area . g grid . f fullscreen
+-->
+<style>
+  :root{
+    --paper:#f4f7fb; --card:#ffffff; --ink:#14213a; --muted:#5a6b86;
+    --line:#d8e0ec; --grid:#e7edf6; --wash:#eef3fa;
+    --base:#1f6feb; --base-soft:#e8f1ff;
+    --adaptor:#e8590c; --adaptor-soft:#fdece1;
+    --reused:#2f9e44; --reused-soft:#e6f6ea;
+    --warn:#b02a37; --warn-soft:#fdecee;
+    /* Chart MARKS are a separate token from the accent inks: the categorical
+       palette is validated per mode (OKLCH lightness band, chroma floor, CVD
+       separation, contrast vs the card surface), while the inks are governed by
+       WCAG text contrast.  One token cannot satisfy both in dark mode.
+       Validated: light #1f6feb / #e8590c on #ffffff -- all checks pass. */
+    --mark-b:#1f6feb; --mark-ad:#e8590c; --ink-ad:#c2410c;
+    --shadow:0 1px 2px rgba(20,33,58,.06), 0 18px 44px -24px rgba(20,33,58,.32);
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    /* University of Manchester house typeface, read off the template's own
+       theme (Office Classic 2: Arial for both major and minor latin). */
+    --sans:Arial,"Helvetica Neue",Helvetica,"Segoe UI",system-ui,sans-serif;
+    /* UoM chrome, read off report/slides/Master_169 presentation(2).pptx --
+       --uom = slideMaster1 titleStyle #7800A2, --uom-rule = the dotted
+       connector on the Title Slide layout.  These colour the TEMPLATE's
+       furniture only: the deck's base/adaptor/reused/warn accents are semantic
+       (they mean the same thing in the report figures printed beside them) and
+       must not be recoloured to match a brand. */
+    --uom:#7800a2; --uom-rule:#660066;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0a1120; --card:#121b2b; --ink:#eaf0fa; --muted:#93a3be;
+      --line:#26324a; --grid:#141d2d; --wash:#0f1828;
+      --base:#5b9bff; --base-soft:#152741;
+      --adaptor:#ff8a4c; --adaptor-soft:#33210f;
+      --reused:#5bd07a; --reused-soft:#12271a;
+      --warn:#ff7b8a; --warn-soft:#2c1418;
+      /* dark marks re-stepped for the dark surface, not flipped: validated
+         #3f86ee / #e2610f on #121b2b -- all checks pass */
+      --mark-b:#3f86ee; --mark-ad:#e2610f; --ink-ad:#ff8a4c;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 22px 48px -26px rgba(0,0,0,.8);
+      /* #7800a2 fails contrast on the dark surface: same hue, re-stepped */
+      --uom:#c58ade; --uom-rule:#a45cc0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0a1120; --card:#121b2b; --ink:#eaf0fa; --muted:#93a3be;
+    --line:#26324a; --grid:#141d2d; --wash:#0f1828;
+    --base:#5b9bff; --base-soft:#152741;
+    --adaptor:#ff8a4c; --adaptor-soft:#33210f;
+    --reused:#5bd07a; --reused-soft:#12271a;
+    --warn:#ff7b8a; --warn-soft:#2c1418;
+    --mark-b:#3f86ee; --mark-ad:#e2610f; --ink-ad:#ff8a4c;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 22px 48px -26px rgba(0,0,0,.8);
+    --uom:#c58ade; --uom-rule:#a45cc0;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#05080f}
+  body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+
+  /* ---- fixed 1280x720 stage, scaled to the window: what you see is what records ---- */
+  #frame{position:fixed;inset:0;display:grid;place-items:center;background:#05080f}
+  #stage{
+    width:1280px;height:720px;transform-origin:center center;position:relative;
+    background:var(--paper);overflow:hidden;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+
+  .slide{
+    position:absolute;inset:0;padding:30px 56px 58px;
+    display:flex;flex-direction:column;gap:16px;
+    opacity:0;visibility:hidden;transform:translateY(10px);
+    transition:opacity .32s ease, transform .32s ease, visibility 0s .32s;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .32s ease, transform .32s ease}
+
+  /* ---- University of Manchester mark ------------------------------------
+     The template carries it as a MASTER shape, so it repeats on every slide
+     at a fixed top-left position; the deck does the same with one absolutely
+     positioned image rather than one copy per slide.  It is drawn at the
+     template's own aspect ratio, scaled down so the band it occupies costs the
+     dense slides as little height as possible, and the eyebrow row is pushed
+     clear of it instead of being pushed below it -- which would cost another
+     full row.  Not on the title slide's flow: that slide is centred. */
+  #uomlogo{position:absolute;left:56px;top:24px;width:146px;height:62px;z-index:6}
+  /* padding-right RESERVES the stepper's gutter.  The stepper is absolutely
+     positioned, so it does not push text out of its way: before this, the method
+     94-character eyebrow ran straight underneath it and the two overprinted.
+     Reserving the width makes a long eyebrow WRAP inside min-height instead --
+     it degrades, it cannot collide.  Re-shoot ALL ten slides after touching
+     either this or #parts: the chrome is global, so one slide proves nothing. */
+  .slide:not(.title) > .eyebrow:first-child{margin-left:164px;min-height:56px;padding-right:400px;
+                                            display:flex;align-items:center}
+  /* One knob for a column whose content is a few lines past its box.  The Bitcoin-client slide's
+     left column outgrew it when the two-leg swap result was added on
+     2026-08-18 -- the committed deck was already overflowing card 2 before this
+     skin, which is what rendering it caught.  Scale the column, never cut the
+     claim. */
+  .tight .card{padding:14px 17px;gap:7px}
+  .tight .card h3{font-size:17.5px}
+  .tight .card p{font-size:16px;line-height:1.36}
+  .tight .caveat{font-size:14px}
+
+  .eyebrow{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  h1.headline{font-size:40px;line-height:1.06;font-weight:800;letter-spacing:-.028em;margin:0;
+              text-wrap:balance;color:var(--uom)}
+  h1.big{font-size:50px}
+  .dek{color:var(--muted);font-size:19px;line-height:1.4;margin:0;max-width:80ch}
+  .kicker{font-size:22px;font-weight:650;line-height:1.32;margin:0}
+  strong.hi{color:var(--adaptor)}
+  strong.hb{color:var(--base)}
+
+  .cols{display:grid;gap:16px;flex:1;min-height:0;align-items:start}
+  .cols.stretch{align-items:stretch}
+  /* stretched cards whose text is shorter than the card: centre it, so the slack
+     reads as deliberate space rather than as content stuck to the top edge */
+  .mid .card{justify-content:center}
+  .c2{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:1fr 1fr 1fr}
+  .c25{grid-template-columns:1.25fr 1fr}
+  .c52{grid-template-columns:1fr 1.35fr}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-height:0;
+  }
+  .card.tint-base{background:var(--base-soft);border-color:color-mix(in srgb,var(--base) 32%,var(--line))}
+  .card.tint-ad{background:var(--adaptor-soft);border-color:color-mix(in srgb,var(--adaptor) 32%,var(--line))}
+  .card.tint-ok{background:var(--reused-soft);border-color:color-mix(in srgb,var(--reused) 32%,var(--line))}
+  .card.tint-warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 32%,var(--line))}
+  .card h3{margin:0;font-size:19px;font-weight:750;letter-spacing:-.01em}
+  .card p{margin:0;font-size:17px;line-height:1.42;color:var(--muted)}
+  .card p.on{color:var(--ink)}
+  .num{font-family:var(--mono);font-size:15px}
+
+  /* Compact in-card table.  Wang, Meeting 10: the ML-DSA attempt stays prose in
+     the report, but "in the slides, you can add some table". */
+  table.minitab{border-collapse:collapse;width:100%}
+  table.minitab th,table.minitab td{padding:4px 6px;text-align:right;border-top:1px solid var(--line)}
+  table.minitab thead th{border-top:0;font-size:13.5px;font-weight:700;letter-spacing:.06em;
+                         text-transform:uppercase;color:var(--muted)}
+  table.minitab td{font-family:var(--mono);font-size:14.5px}
+  table.minitab th:first-child,table.minitab td:first-child{text-align:left;font-family:var(--sans);
+                         font-size:13.5px;color:var(--muted)}
+
+  ul.tight{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:17px;line-height:1.35}
+  ul.tight li::marker{color:var(--muted)}
+
+  .stat{display:flex;flex-direction:column;gap:2px}
+  .stat .v{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1;font-family:var(--mono)}
+  .stat .v.ad{color:var(--adaptor)} .stat .v.b{color:var(--base)} .stat .v.w{color:var(--warn)} .stat .v.ok{color:var(--reused)}
+  .stat .l{font-size:14px;color:var(--muted);line-height:1.25}
+  .statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .statrow.four{grid-template-columns:repeat(4,1fr)}
+
+  .figbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;
+          box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden}
+  .figbox img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+
+  .caveat{font-size:14.5px;color:var(--muted);border-left:3px solid var(--warn);padding-left:10px;line-height:1.35}
+  .caveat b{color:var(--warn)}
+
+  /* ---- provenance line: where the numbers beside it came from -------------
+     A figure on a slide is a claim, and a claim the audience cannot trace is
+     an assertion.  .src carries the source, the retrieval time and the run id
+     in one muted mono line, at the 13px in-shot type floor -- never smaller,
+     or it stops being readable at 720p and becomes decoration. */
+  .src{font-family:var(--mono);font-size:13px;line-height:1.4;color:var(--muted);margin:0}
+  .src b{color:var(--ink);font-weight:700}
+
+  /* ---- warrant tag: which KIND of claim the number beside it is -----------
+     This project admits exactly three warrants (measured / derived / cited);
+     anything else is an open question and is said to be one.  The tags make
+     that discipline visible on the slide rather than only in the report, so a
+     derived bound is never read as a measurement. */
+  .wt{font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;border:1px solid var(--line);border-radius:999px;
+      padding:2px 8px;white-space:nowrap;color:var(--muted);background:var(--card)}
+  .wt.m{color:var(--reused);border-color:var(--reused)}
+  .wt.d{color:var(--base);border-color:var(--base)}
+  .wt.c{color:var(--ink-ad);border-color:var(--ink-ad)}
+
+  /* ---- implication list: one finding per line, each carrying its warrant ----
+     The closing slide answers "so what, and for whom", so every line is a
+     consequence for a named audience -- and the scope that bounds it sits in
+     the same list (li.cav), attached to the claim rather than exiled to a
+     footnote where it stops qualifying anything. */
+  .imp{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .imp li{font-size:14.5px;line-height:1.34;color:var(--muted)}
+  .imp li b{color:var(--ink)}
+  .imp li .wt{margin-right:5px}
+  .imp li.cav{color:var(--warn);border-left:3px solid var(--warn);padding-left:9px;margin-top:auto}
+  /* the closing slide runs three lists plus an answer strip in one 720p frame,
+     so it gets its own tighter step -- measured by screenshot, not guessed */
+  .ansstrip b{font-size:12.5px !important;letter-spacing:.02em}
+  .ansstrip span{font-size:13px !important}
+  .closing .imp li{font-size:13.5px;line-height:1.3}
+  .closing .card p.on{font-size:15px;line-height:1.32}
+  .closing .card h3{font-size:18px}
+
+  /* ---- transaction structure: the two venues' real serializations ---------
+     Wang, 2026-08-21: "include the structure of the transaction, both Bitcoin
+     and Ethereum -- people want to see how it works in PRACTICE".  So the
+     fields are the actual ones, in order, with the measured objects dropped
+     into the slots they occupy.  The point the layout has to make on sight is
+     that the adaptor adds no field to either: on Bitcoin the signature slot
+     merely grows, on Ethereum the whole scheme rides inside `data` while the
+     transaction is still authorised by secp256k1. */
+  .tx{display:flex;flex-direction:column;border:1.6px solid var(--line);border-radius:11px;
+      overflow:hidden;background:var(--card);flex:none}
+  .tx .th{font-family:var(--mono);font-size:13px;letter-spacing:.07em;text-transform:uppercase;
+          padding:6px 11px;background:var(--wash);color:var(--muted);
+          border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+  .tx .th b{color:var(--ink)}
+  .tx .tf{display:flex;align-items:baseline;gap:10px;padding:5px 11px;
+          border-bottom:1px dashed var(--line);line-height:1.3}
+  .tx .tf .k{font-family:var(--mono);font-size:13.5px;color:var(--muted);flex:1;min-width:0}
+  .tx .tf .v{font-family:var(--mono);font-size:13.5px;font-weight:700;white-space:nowrap;color:var(--ink)}
+  .tx .tf.big{background:var(--adaptor-soft);border-bottom-color:var(--mark-ad)}
+  .tx .tf.big .k{color:var(--ink);font-weight:700}
+  .tx .tf.big .v{color:var(--ink-ad);font-size:15px}
+  .tx .tf.ec{background:var(--base-soft)}
+  .tx .tf.ec .k{color:var(--ink)}
+  .tx .tf.ec .v{color:var(--base)}
+  .tx .tf.ghost{background:transparent}
+  .tx .tf.ghost .k{font-style:italic}
+  .tx .tf.ghost .v{color:var(--muted);font-weight:400}
+  .tx .tot{padding:6px 11px;font-family:var(--mono);font-size:13px;background:var(--wash);
+           border-top:1px solid var(--line);color:var(--ink);line-height:1.5}
+  .tx .tot .wt{margin-right:5px}
+  .txsay{font-size:15px;line-height:1.34;color:var(--ink);margin:0}
+  .txsay b{color:var(--ink-ad)}
+
+  /* ---- migration ladder: WHICH step each cost belongs to -------------------
+     Wang, 2026-08-21: "nearly free" invites the question "free against what?".
+     Against Bitcoin's ECDSA nothing here is free -- that is step 1, and it is
+     the step being taken anyway.  The adaptor layer is step 2, measured against
+     the SAME post-quantum base signature, and the ladder puts the two costs on
+     different rungs so they can never be read as one number. */
+  .lad{display:flex;flex-direction:column;gap:7px}
+  .rung{border:1.6px solid var(--line);border-radius:11px;padding:9px 12px;background:var(--card);
+        display:flex;gap:11px;align-items:center}
+  .rung .n{font-family:var(--mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;
+           color:var(--muted);flex:none;width:74px;line-height:1.25}
+  .rung .t{flex:1;min-width:0;font-size:14.5px;line-height:1.3;color:var(--muted)}
+  .rung .t b{color:var(--ink)}
+  .rung .c{font-family:var(--mono);font-weight:800;font-size:15px;white-space:nowrap;text-align:right}
+  .rung.s1{border-color:var(--mark-b);background:var(--base-soft)}
+  .rung.s1 .n,.rung.s1 .c{color:var(--base)}
+  .rung.s2{border-color:var(--mark-ad);background:var(--adaptor-soft)}
+  .rung.s2 .n,.rung.s2 .c{color:var(--ink-ad)}
+  .ladarrow{font-size:13px;color:var(--muted);text-align:center;margin:-3px 0;font-family:var(--mono)}
+
+  /* ---- the two tiers of the signature stack -------------------------------
+     "An exotic scheme = a basic scheme + extra functions" is the project's own
+     design fact, and the slide has to SHOW the stacking: the exotic layer is
+     drawn resting on the standardised basic one, so "built on top of" is read
+     off the picture instead of taken on trust. */
+  .tier{display:flex;flex-direction:column;gap:0}
+  .tier .lvl{border:1.7px solid var(--line);padding:9px 12px;background:var(--card)}
+  .tier .lvl:first-child{border-radius:11px 11px 0 0}
+  .tier .lvl:last-child{border-radius:0 0 11px 11px;border-top-width:0}
+  .tier .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+            font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase}
+  .tier .hd b{font-size:14px;letter-spacing:0;text-transform:none}
+  .tier .up{border-color:var(--mark-ad);background:var(--adaptor-soft)}
+  .tier .up .hd{color:var(--ink-ad)}
+  .tier .lo{border-color:var(--reused);background:var(--reused-soft)}
+  .tier .lo .hd{color:var(--reused)}
+  .tier .lo .sub{font-size:14px;color:var(--ink);margin-top:3px;line-height:1.3}
+
+  .chipline{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-family:var(--mono);font-size:14px;border:1px solid var(--line);border-radius:999px;
+        padding:5px 11px;color:var(--muted);background:var(--card)}
+  .chip.b{color:var(--base);border-color:var(--base)}
+  .chip.ad{color:var(--ink-ad);border-color:var(--ink-ad)}
+  .chip.ok{color:var(--reused);border-color:var(--reused)}
+
+  /* ---- drawn scenes: one picture carrying the slide ----------------------
+     Meeting 10: a slide of prose is a report page read aloud, and the concept
+     has to be visible before the detail earns any attention.  Each scene is
+     inline SVG on the deck's own tokens, so it re-colours with the theme
+     instead of being a pasted image, and it builds in four timed stages on
+     entry -- no keypress, so nothing has to be cued to a sentence. */
+  .scene{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  .scene svg{width:100%;height:100%}
+  .scene .st{opacity:0}
+  .slide.active .scene .st{animation:beatin .5s cubic-bezier(.2,.7,.2,1) forwards}
+  .slide.active .scene .st1{animation-delay:.10s}
+  .slide.active .scene .st2{animation-delay:.70s}
+  .slide.active .scene .st3{animation-delay:1.30s}
+  .slide.active .scene .st4{animation-delay:1.90s}
+  @media (prefers-reduced-motion:reduce){.slide.active .scene .st{animation:none;opacity:1}}
+
+  /* ---- the four adaptor functions: beats animated on entry ---- */
+  .beats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:stretch;flex:1;min-height:0}
+  .beat{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 17px;
+        display:flex;flex-direction:column;gap:9px;justify-content:center;
+        box-shadow:var(--shadow);opacity:0;transform:translateY(12px)}
+  .slide.active .beat{animation:beatin .45s cubic-bezier(.2,.7,.2,1) forwards}
+  .slide.active .beat:nth-child(1){animation-delay:.15s}
+  .slide.active .beat:nth-child(2){animation-delay:.75s}
+  .slide.active .beat:nth-child(3){animation-delay:1.35s}
+  .slide.active .beat:nth-child(4){animation-delay:1.95s}
+  @keyframes beatin{to{opacity:1;transform:none}}
+  .beat .n{font-family:var(--mono);font-size:14px;color:var(--muted);letter-spacing:.12em}
+  .beat .op{font-size:23px;font-weight:750;letter-spacing:-.015em}
+  .beat .eq{font-family:var(--mono);font-size:16px;color:var(--base)}
+  .beat .why{font-size:15.5px;color:var(--muted);line-height:1.36}
+  .beat.lock{border-color:var(--adaptor)}
+  .beat.leak{border-color:var(--reused)}
+  @media (prefers-reduced-motion:reduce){.slide.active .beat{animation:none;opacity:1;transform:none}}
+
+  /* ---- proportional bars ----------------------------------------------
+     Every number is a direct label OUTSIDE the mark, in text tokens: nothing
+     is read off a coloured fill, so mark contrast never gates legibility.
+     Bar widths are computed by scripts/gen_slides.py from the same macros as
+     the labels, on one shared scale, so geometry cannot drift from the value.
+     Fills sit square on the baseline and are 4px-rounded at the data end. */
+  .bars{display:flex;flex-direction:column;gap:11px}
+  .bar{display:grid;grid-template-columns:136px 1fr 236px;gap:14px;align-items:center}
+  .bars.mini{gap:8px}
+  .bars.mini .bar{grid-template-columns:126px 1fr 128px;gap:10px}
+  .bars.mini .track{height:20px}
+  .bars.mini .lab,.bars.mini .val{font-size:12.5px;line-height:1.25}
+  .bar .lab{font-size:14.5px;color:var(--muted);text-align:right;line-height:1.2}
+  .bar .track{height:26px;background:var(--wash);border:1px solid var(--line);border-radius:5px;position:relative}
+  .bar .fill{position:absolute;left:0;top:0;bottom:0;min-width:3px;border-radius:0 4px 4px 0;width:0;
+             transition:width .7s cubic-bezier(.2,.7,.2,1)}
+  .slide.active .bar .fill{width:var(--w)}
+  .fill.b{background:var(--mark-b)} .fill.ad{background:var(--mark-ad)}
+  .bar .val{font-family:var(--mono);font-size:14px;color:var(--ink);line-height:1.3}
+  .bar .val em{font-style:normal;color:var(--muted)}
+
+  /* ---- part-to-whole strip: 2px surface gap between segments, legend below ---- */
+  .strip{display:flex;height:28px;gap:2px}
+  .strip div:first-child{border-radius:5px 0 0 5px}
+  .strip div:last-child{border-radius:0 5px 5px 0}
+  /* "On the wire": the objects a path actually transmits, drawn to scale.  Each
+     block's flex weight IS its byte macro, so a width cannot drift from the
+     number printed inside it -- the same guarantee the bar geometry has.  This
+     replaced a four-line paragraph: the point being made is a size comparison,
+     which is a picture, not a sentence. */
+  .wire{display:flex;flex-direction:column;gap:9px}
+  .wrow{display:flex;align-items:center;gap:10px}
+  .wlab{font-family:var(--mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+        color:var(--muted);width:104px;flex:none;text-align:right;line-height:1.2}
+  /* NOT .wobjs -- the swap-walk object chips already own that name, and a second
+     rule with equal specificity would resolve per-property across both slides. */
+  .wireobjs{display:flex;flex-wrap:nowrap;gap:3px;flex:1;min-width:0}
+  .wo{height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+      font-family:var(--mono);font-size:14px;font-weight:700;color:#fff;min-width:0;
+      overflow:hidden;white-space:nowrap}
+  .wo.b{background:var(--mark-b)}
+  .wo.ad{background:var(--mark-ad)}
+  .wo.ghost{background:transparent;border:1.6px dashed var(--line);color:var(--muted);font-weight:400}
+
+  /* Belief -> measurement.  "I was wrong, and here is the number" is a comparison
+     against a limit, which is a picture; it was three lines of prose.  The struck
+     heading carries the belief, the meter carries the evidence.  The TRACK is the
+     cap, so a fill width is a percentage of it and comes from the same macro that
+     prints inside the bar -- geometry cannot drift from the label.
+     D5 is deliberately NOT drawn: only a derived lower bound exists for it, and a
+     bar of any length would assert a value we do not have. */
+  /* Closing-slide verdicts at poster size.  The takeaway is the last thing on
+     screen; a verdict the viewer can read from across the room, with the prose
+     living in the spoken notes, is what separates a deck from a report page. */
+  .card p.bigv{font-size:30px;font-weight:800;line-height:1.12;letter-spacing:-.015em;color:var(--ink)}
+  .card p.bigv .hb{color:var(--base)}
+  .card p.bigv .hi{color:var(--adaptor)}
+  .card p.vsub{font-family:var(--mono);font-size:13.5px;color:var(--muted);line-height:1.45}
+  .meter{display:flex;flex-direction:column;gap:4px}
+  .mrow{display:flex;align-items:center;gap:9px}
+  .mlab{font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-transform:uppercase;
+        color:var(--muted);width:124px;flex:none;text-align:right;line-height:1.2}
+  .mtrack{flex:1;height:18px;background:var(--wash);border:1px solid var(--line);
+          border-radius:5px;min-width:0;overflow:hidden}
+  .mfill{height:100%;background:var(--mark-ad);display:flex;align-items:center;justify-content:flex-end;
+         padding-right:7px;font-family:var(--mono);font-size:13.5px;font-weight:700;color:#fff;white-space:nowrap}
+  .mfill.b{background:var(--mark-b)}
+  .mcap{font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-transform:uppercase;
+        color:var(--warn);text-align:right}
+  /* Three verdicts on ONE spend, side by side.  Policy and consensus disagreeing
+     is the whole point of the carriage result, and three chips show that at a
+     glance where two sentences made the reader hold both answers in their head. */
+  /* The opcode as a drawn badge: the one-line story of the patch is
+     "0xbb: OP_SUCCESS became lattice verification", which is a picture of a
+     before/after, not a sentence. */
+  .opbadge{display:flex;align-items:center;gap:10px}
+  .opbadge .op{font-family:var(--mono);font-size:26px;font-weight:800;color:var(--ink-ad);
+               background:var(--adaptor-soft);border:2px solid var(--mark-ad);border-radius:9px;padding:4px 12px}
+  .opbadge .tr{font-family:var(--mono);font-size:13.5px;color:var(--muted);line-height:1.35}
+  .opbadge .tr b{color:var(--ink)}
+  /* THE MOTIVATION, DRAWN.  Wang, 2026-08-21: the motivation slide explained what an
+     atomic swap is but never why a POST-QUANTUM EXOTIC signature is worth implementing --
+     that argument sat in a two-line grey footnote, the smallest text on the slide, while
+     it is the whole reason the project exists.  It is now the spine: what runs today,
+     what breaks it, and the gap that leaves -- with the third box marked as this work. */
+  .why3{display:flex;align-items:stretch;gap:8px}
+  .wstep{flex:1;min-width:0;border:1.6px solid var(--line);border-radius:9px;background:var(--card);
+         padding:9px 12px;font-size:15px;line-height:1.34;color:var(--muted)}
+  .wstep b.t{display:block;font-family:var(--mono);font-size:13px;letter-spacing:.1em;
+             text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .wstep.brk{border-color:var(--warn);background:var(--warn-soft)}
+  .wstep.brk b.t{color:var(--warn)}
+  .wstep.gap{border-color:var(--mark-ad);background:var(--adaptor-soft);color:var(--ink)}
+  .wstep.gap b.t{color:var(--ink-ad)}
+  .wstep em{display:block;margin-top:5px;font-style:normal;font-weight:800;color:var(--ink-ad)}
+  .warrow{align-self:center;color:var(--muted);font-size:16px;flex:none}
+  .vstrip{display:flex;gap:6px}
+  .vchip{flex:1;min-width:0;border-radius:7px;padding:6px 8px;text-align:center;
+         border:1.6px solid var(--line);background:var(--wash);line-height:1.25}
+  .vchip b{display:block;font-family:var(--mono);font-size:15px;font-weight:800}
+  .vchip span{display:block;font-size:14px;color:var(--muted)}
+  .vchip.ok{border-color:var(--base);background:var(--base-soft)}
+  .vchip.ok b{color:var(--base)}
+  .vchip.ad{border-color:var(--mark-ad);background:var(--adaptor-soft)}
+  .vchip.ad b{color:var(--ink-ad)}
+  .vchip.bad{border-color:var(--warn);background:var(--warn-soft)}
+  .vchip.bad b{color:var(--warn)}
+  /* The two-leg settlement as a chain of steps rather than a sentence: this is
+     the method, and the method is what the examiner said was not coming across. */
+  .pipe{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+  .pstep{font-family:var(--mono);font-size:13.5px;font-weight:700;padding:4px 7px;border-radius:5px;
+         background:var(--adaptor-soft);color:var(--ink-ad);border:1.4px solid var(--mark-ad);white-space:nowrap}
+  .pstep.chain{background:var(--base-soft);color:var(--base);border-color:var(--mark-b)}
+  .parrow{color:var(--muted);font-size:14px;flex:none}
+  /* The three functions, as boxes: two are new work, one is untouched upstream. */
+  .fnrow{display:flex;gap:5px;flex-wrap:wrap}
+  .fnbox{font-family:var(--mono);font-size:14px;font-weight:700;padding:4px 7px;border-radius:6px;
+         border:1.6px solid var(--mark-ad);color:var(--ink-ad);background:var(--adaptor-soft)}
+  .fnbox.keep{border-color:var(--reused);color:var(--ink);background:var(--reused-soft)}
+  .legend{display:flex;gap:20px;font-size:14.5px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:block;flex:none}
+
+  /* ---- layered architecture diagram (the method slide) — not a chart ---- */
+  .stack{display:flex;flex-direction:column;gap:7px}
+  .stack div{border-radius:8px;padding:9px 13px;font-size:14.5px;line-height:1.28;
+             border:1px solid var(--line);border-left-width:5px;color:var(--ink)}
+  .stack .new{background:var(--adaptor-soft);border-left-color:var(--mark-ad)}
+  .stack .old{background:var(--wash);border-left-color:var(--muted)}
+
+  /* ---- DEMO A: the swap, stepped INSIDE the deck ------------------------
+     A slide carrying data-sub="n" consumes the forward key n times before the
+     deck advances, so the demonstration runs in the same fullscreen deck as
+     everything else -- no window switch, no screen capture, nothing to cut in.
+     Four declarative rules drive it, so no per-slide script exists:
+       [data-w=N]      -> .on  once the beat index reaches N
+       [data-only=N]   -> .on  only while the beat index IS N
+       [data-until=N]  -> .on  only while the beat index is below N
+       [data-settle=N] -> .settled once the beat index reaches N            */
+  .walk{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;flex:1;min-height:0}
+  .wparty{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;
+          box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-height:0}
+  .wparty h4{margin:0;font-size:18px;font-weight:750;display:flex;gap:9px;align-items:baseline}
+  .wparty h4 span{font-size:14px;font-weight:400;color:var(--muted)}
+  .wobjs{display:flex;flex-wrap:wrap;gap:6px}
+  .wobj{font-family:var(--mono);font-size:14px;border:1px solid var(--line);border-radius:7px;
+        padding:4px 9px;color:var(--muted);background:var(--wash);opacity:.3;
+        transition:opacity .4s ease,color .4s ease,border-color .4s ease}
+  .wobj.on{opacity:1;color:var(--ink);border-color:var(--mark-b)}
+  .wobj.sec.on{border-color:var(--mark-ad);color:var(--ink-ad);font-weight:700}
+  .wsay{margin-top:auto;font-size:15px;line-height:1.36;color:var(--muted);
+        opacity:0;transform:translateY(5px);transition:opacity .4s,transform .4s}
+  .wsay.on{opacity:1;transform:none}
+  .wsay b{color:var(--ink)}
+  .wsay .eq{font-family:var(--mono);font-size:14px;color:var(--ink-ad);display:block;margin-top:4px}
+  .wmid{display:flex;flex-direction:column;gap:12px;justify-content:center;position:relative}
+  .wchain{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:11px 14px;
+          box-shadow:var(--shadow);transition:background .45s ease,border-color .45s ease}
+  .wchain .ct{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .wchain .ct em{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:13px;
+                 color:var(--muted);font-weight:400}
+  .wchain .cb{font-family:var(--mono);font-size:14px;color:var(--muted);margin-top:5px;line-height:1.3}
+  .wchain [data-w],.wchain [data-until]{display:none}
+  .wchain [data-w].on,.wchain [data-until].on{display:block}
+  .wchain.settled{background:var(--reused-soft);border-color:var(--reused)}
+  .wchain.settled .cb,.wchain.settled .ct em{color:var(--ink)}
+  .wstamp{position:absolute;left:50%;top:50%;z-index:3;
+          transform:translate(-50%,-50%) rotate(-6deg) scale(.92);
+          border:3px solid var(--warn);color:var(--warn);background:var(--warn-soft);
+          border-radius:12px;padding:9px 20px;font-size:25px;font-weight:800;letter-spacing:.05em;
+          opacity:0;visibility:hidden;transition:opacity .3s,transform .3s,visibility 0s .3s}
+  .wstamp.on{opacity:1;visibility:visible;transform:translate(-50%,-50%) rotate(-6deg) scale(1);
+             transition:opacity .3s,transform .3s}
+  .wrail{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:none}
+  .wrail div{border-top:3px solid var(--line);padding-top:8px;font-size:14px;line-height:1.32;
+             color:var(--muted);transition:border-color .35s,color .35s}
+  .wrail div b{display:block;font-family:var(--mono);font-size:13.5px;letter-spacing:.1em;
+               text-transform:uppercase;margin-bottom:4px}
+  .wrail div.done{border-top-color:var(--reused)}
+  .wrail div.now{border-top-color:var(--adaptor);color:var(--ink)}
+  .wrail div.now b{color:var(--adaptor)}
+  /* All four explanations used to be readable from beat 1 -- a wall of text AND a
+     spoiler for a demo that is meant to step.  The JS already marks the current
+     item .now; only the CSS was missing.  Opacity, not display, so the strip keeps
+     its height and nothing on the slide moves while recording. */
+  .wrail div .railsay{display:block;opacity:0;transition:opacity .35s ease}
+  .wrail div.now .railsay{opacity:1}
+
+  /* ---- DEMO B: the node differential, DRAWN rather than screen-captured.
+     One spend, two clients, two verdict columns: the contrast is the argument,
+     and a terminal transcript shows only that a run happened, not what it showed. */
+  .diff{display:flex;flex-direction:column;gap:9px;flex:1;min-height:0}
+  .dspend{border:1px solid var(--line);border-radius:11px;background:var(--card);box-shadow:var(--shadow);
+          padding:10px 14px;font-size:14px;line-height:1.32;color:var(--muted);text-align:center}
+  .dspend b{color:var(--ink)}
+  .dfork{width:100%;height:24px;flex:none;color:var(--line);display:block}
+  .dnodes{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;min-height:0}
+  .dnode{border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow);
+         padding:11px 13px;display:flex;flex-direction:column;gap:8px}
+  .dnode.patched{border-color:color-mix(in srgb,var(--adaptor) 45%,var(--line))}
+  .dnode .dh{font-size:14.5px;font-weight:750;line-height:1.24}
+  .dnode .dh span{font-family:var(--mono);font-size:14px;color:var(--muted);font-weight:400;
+                  display:block;margin-top:3px}
+  .dv{font-size:14.5px;line-height:1.3;border-radius:8px;padding:7px 10px}
+  .dv .k{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.05em;display:block}
+  .dv.ok{background:var(--reused-soft)} .dv.ok .k{color:var(--reused)}
+  .dv.bad{background:var(--warn-soft)} .dv.bad .k{color:var(--warn)}
+  .dv[data-w]{opacity:0;transform:translateY(6px);transition:opacity .45s ease,transform .45s ease}
+  .dv[data-w].on{opacity:1;transform:none}
+  .dfoot{font-size:14.5px;line-height:1.34;color:var(--muted);text-align:center;flex:none}
+  .dfoot b{color:var(--ink)}
+
+  /* ---- title slide ---- */
+  .title{justify-content:center;gap:22px;padding-left:70px}
+  /* the template's Title Slide separator: a dotted purple rule under the
+     title, not the deck's old short orange bar */
+  .title .rule{width:100%;max-width:1040px;height:0;border-top:3px dotted var(--uom-rule);
+               border-radius:0;background:none}
+  .title .meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:16px;color:var(--muted)}
+
+  /* ---- chrome ---- */
+  #bar{position:absolute;left:0;top:0;height:4px;background:var(--uom);width:0;transition:width .3s ease;z-index:5}
+  /* "where are we" stepper: four parts of the talk, the current one lit.  A
+     progress bar says how far, not where -- and an audience that cannot place
+     the slide in the argument has to hold the structure in their head. */
+  #parts{position:absolute;right:56px;top:38px;z-index:5;display:flex;gap:2px;
+         font-family:var(--mono);font-size:13px;letter-spacing:.13em;text-transform:uppercase;
+         color:var(--muted);visibility:hidden}
+  /* Each pill carries the part name over a plain-language gloss: the name alone
+     says where we are in MY structure, the gloss says what that part is FOR --
+     which is the orientation a non-specialist examiner actually needs. */
+  #parts span{padding:4px 11px;border-radius:999px;white-space:nowrap}
+  #parts span.on{color:var(--ink-ad);background:var(--adaptor-soft);font-weight:700}
+  #foot{position:absolute;left:56px;right:56px;bottom:18px;display:flex;align-items:center;
+        gap:14px;font-family:var(--mono);font-size:12.5px;color:var(--muted);z-index:5}
+  #foot .ttl{color:var(--ink);font-weight:600}
+  #foot .sp{margin-left:auto}
+  #clock{font-variant-numeric:tabular-nums}
+  #clock.over{color:var(--warn);font-weight:700}
+  #safe{position:absolute;right:24px;bottom:34px;width:300px;height:169px;border:2px dashed var(--base);
+        border-radius:10px;display:none;align-items:flex-end;justify-content:center;padding-bottom:6px;
+        font-family:var(--mono);font-size:11px;color:var(--base);z-index:4}
+  #safe.on{display:flex}
+
+  /* ---- notes panel (rehearsal only — turn OFF before recording) ---- */
+  #notes{position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;z-index:20;
+         background:var(--card);color:var(--ink);border-top:2px solid var(--adaptor);
+         padding:16px 22px;display:none;font-size:15px;line-height:1.5}
+  #notes.on{display:block}
+  #notes .hd{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+             color:var(--muted);margin-bottom:6px;display:flex;gap:16px}
+  #notes .hd b{color:var(--adaptor)}
+  #help{position:fixed;right:12px;top:10px;z-index:20;font-family:var(--mono);font-size:11.5px;
+        color:#8ea0bd;background:rgba(10,17,32,.72);border:1px solid #26324a;border-radius:8px;padding:6px 10px}
+  #help.off{display:none}
+
+  /* ---- overview grid ---- */
+  #frame.grid #stage{display:none}
+  #grid{position:fixed;inset:0;z-index:15;background:var(--paper);padding:24px;overflow:auto;display:none;
+        grid-template-columns:repeat(4,1fr);gap:14px;align-content:start}
+  #grid.on{display:grid}
+  #grid button{all:unset;cursor:pointer;background:var(--card);border:1px solid var(--line);border-radius:10px;
+               padding:12px 14px;display:flex;flex-direction:column;gap:5px}
+  #grid button:hover{border-color:var(--adaptor)}
+  #grid .gn{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  #grid .gt{font-size:14px;font-weight:650;line-height:1.25}
+  #grid .gd{font-family:var(--mono);font-size:11px;color:var(--adaptor)}
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="stage">
+    <div id="bar"></div>
+    <img id="uomlogo" src="{{UOM_LOGO}}" alt="The University of Manchester">
+    <div id="parts">
+      <span data-part="why">Why</span><span data-part="method">Method</span><span data-part="results">Results</span><span data-part="implications">Implications</span>
+    </div>
+
+    <!-- ============================ 1 ============================ -->
+    <section class="slide title" data-title="Title" data-time="0:10" data-notes="Post-quantum secure exotic signature schemes in blockchains. I implemented LAS, a lattice-based adaptor signature, on top of the CRYSTALS-Dilithium reference implementation, and measured what it actually costs — as a standalone signature, and inside a working cross-chain atomic swap.">
+      <div class="eyebrow">MSc Cybersecurity · University of Manchester · COMP66060</div>
+      <h1 class="headline big">Implementing Post-Quantum Secure<br>Exotic Signature Schemes in Blockchains</h1>
+      <div class="rule"></div>
+      <p class="dek" style="font-size:21px;max-width:74ch">LAS — a lattice adaptor signature built on CRYSTALS-Dilithium primitives:
+      implemented twice, benchmarked against two baselines, and demonstrated end-to-end in a post-quantum atomic swap.</p>
+      <div class="meta"><span><b>Royce Steven</b></span><span>Supervisor: Dr Zhipeng Wang</span><span class="num">evidence run {{benchRunId}}</span></div>
+    </section>
+
+    <!-- MOTIVATION, FIRST AND WITH THE URGENCY (Wang, 2026-08-21): "why are we
+         using this expensive exotic PQ signature, what is the urgency -- start
+         with the background of quantum computers".  Three dated resource
+         ESTIMATES, each cited, and the caveat that they are estimates for
+         hardware nobody has built: what has fallen is the estimated cost of the
+         attack, not the calendar.  The NIST row quoted is the >=128-bit one --
+         secp256k1 sits there, NOT in the 112-bit row whose 2030 deprecation is
+         the figure usually quoted second-hand. -->
+    <!-- ============================ 2 ============================ -->
+    <section class="slide" data-part="why" data-title="Why now — the quantum clock" data-time="0:38" data-notes="Start with why this is urgent at all. Bitcoin and Ethereum authorise every transaction with a signature over the elliptic curve secp256k1, and its security is the difficulty of the discrete logarithm problem. Shor's algorithm solves that problem on a quantum computer — so the question has only ever been how big a machine, and for how long. Watch what has happened to that answer. In 2019 Gidney and Ekerå estimated twenty million noisy qubits and eight hours to break RSA-2048. In 2025 Gidney put the same target under one million qubits and under a week. And this year a Google Quantum AI team with Justin Drake and Dan Boneh estimated the curve that Bitcoin and Ethereum actually sign with — secp256k1 — at around twelve to fifteen hundred logical qubits, fewer than half a million physical ones, running in minutes. Be precise about what that is: these are resource estimates for hardware that does not exist yet. Nobody has built this machine. Held to one fixed target, RSA-2048, the estimate fell more than twentyfold in six years. What falls is the estimated cost of the attack, not the calendar. But a blockchain cannot treat that as somebody else's problem for two structural reasons. First, it is a permanent public record: every signature and every exposed public key stays readable forever, so a break applies retroactively to coins sitting under keys that are already visible. Second, changing how a chain verifies signatures is a consensus change — years of coordination, not a software update. And the clock is already written down: NIST's transition report puts quantum-vulnerable signatures at 128-bit strength — which is where secp256k1 sits — as disallowed after 2035. So the question is not whether these signatures get replaced. It is whether the replacement covers what chains actually use.">
+      <div class="eyebrow">Motivation &#183; 1 of 3 &#183; why now, and why it is worth paying for</div>
+      <h1 class="headline">The estimated cost of breaking <strong class="hi">secp256k1</strong> keeps falling &mdash; and a chain is <strong class="hb">permanent</strong></h1>
+      <div class="scene" style="flex:none;height:196px">
+        <svg viewBox="0 0 1160 196" role="img"
+             aria-label="A timeline of three published resource estimates for running Shor's algorithm: 2019, twenty million noisy qubits and eight hours for RSA-2048; 2025, under one million qubits and under a week for the same target; 2026, under half a million physical qubits and minutes for secp256k1">
+          <g font-family="inherit" fill="var(--ink)">
+            <g class="st st1">
+              <path d="M40 74 H 1120" stroke="var(--line)" stroke-width="2"/>
+              <text x="40" y="30" font-size="15" font-weight="700" fill="var(--muted)">Published resource estimates for running Shor&#8217;s algorithm &#8212; each figure carries its target and its year</text>
+            </g>
+            <g class="st st2">
+              <circle cx="140" cy="74" r="9" fill="var(--mark-b)"/>
+              <text x="140" y="112" font-size="19" font-weight="800" text-anchor="middle">2019</text>
+              <text x="140" y="136" font-size="15" text-anchor="middle">20,000,000 noisy qubits</text>
+              <text x="140" y="156" font-size="15" text-anchor="middle" fill="var(--muted)">8 hours &#183; RSA-2048</text>
+              <text x="140" y="178" font-size="13" text-anchor="middle" fill="var(--muted)">Gidney &amp; Eker&#229;</text>
+            </g>
+            <g class="st st3">
+              <circle cx="560" cy="74" r="9" fill="var(--mark-b)"/>
+              <text x="560" y="112" font-size="19" font-weight="800" text-anchor="middle">2025</text>
+              <text x="560" y="136" font-size="15" text-anchor="middle">&lt; 1,000,000 noisy qubits</text>
+              <text x="560" y="156" font-size="15" text-anchor="middle" fill="var(--muted)">&lt; 1 week &#183; RSA-2048</text>
+              <text x="560" y="178" font-size="13" text-anchor="middle" fill="var(--muted)">Gidney</text>
+            </g>
+            <g class="st st4">
+              <circle cx="980" cy="74" r="11" fill="var(--mark-ad)"/>
+              <rect x="856" y="46" width="248" height="24" rx="12" fill="var(--adaptor-soft)" stroke="var(--mark-ad)" stroke-width="1.4"/>
+              <text x="980" y="63" font-size="13.5" font-weight="800" text-anchor="middle" fill="var(--ink-ad)">Bitcoin and Ethereum&#8217;s curve</text>
+              <text x="980" y="112" font-size="19" font-weight="800" text-anchor="middle" fill="var(--ink-ad)">2026</text>
+              <text x="980" y="136" font-size="15" font-weight="700" text-anchor="middle">&lt; 500,000 physical qubits</text>
+              <text x="980" y="156" font-size="15" text-anchor="middle" fill="var(--muted)">minutes &#183; secp256k1</text>
+              <text x="980" y="178" font-size="13" text-anchor="middle" fill="var(--muted)">Babbush et&#160;al. &#8212; Google Quantum AI, Drake, Boneh</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="cols c2 tight" style="flex:none">
+        <div class="card tint-warn">
+          <h3>Why a chain cannot wait for the machine</h3>
+          <ul class="imp">
+            <li><b>The record is permanent.</b> Every signature and every revealed public key stays readable forever &#8212; a break applies <b>retroactively</b> to coins already sitting under exposed keys.</li>
+            <li><b>Changing it is a consensus change</b>, coordinated across a whole network &#8212; years, not a software update.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>The retirement date is already written down</h3>
+          <p class="bigv">disallowed<br>after <span class="hi">2035</span></p>
+          <p class="vsub"><span class="wt c">cited</span> NIST IR 8547 ipd (Nov 2024), Table 2 &#8212; quantum-vulnerable signatures at <b>&#8805;128-bit</b> strength, which is where secp256k1 sits</p>
+        </div>
+      </div>
+      <p class="caveat"><b>Estimates for hardware that does not exist.</b> At one fixed target &#8212; RSA-2048 &#8212; they fell <b>20&#215;</b> in six years: the cost falls, <b>not</b> the calendar.</p>
+      <p class="src">Gidney &amp; Eker&#229;, <em>Quantum</em>&#160;5:433 (2021) &#183; Gidney, arXiv:2505.15917 (2025) &#183; Babbush&#160;et&#160;al., IACR ePrint 2026/625 &#183; NIST IR&#160;8547&#160;ipd (2024).</p>
+    </section>
+
+    <!-- ============================ 3 ============================ -->
+    <section class="slide" data-part="why" data-title="Why this matters" data-time="0:28" data-notes="Start with why this work exists at all, and that starts with what it is for. Two people want to trade assets across two blockchains, with no centralised exchange and no trusted intermediary. An ATOMIC SWAP makes that safe: either both transfers happen or neither does. The same primitive also underpins payment channels, one way blockchain payments scale. What makes it work is an ADAPTOR SIGNATURE: only the party holding a secret can complete the first payment, and publishing it necessarily reveals that secret — which is what releases the other leg. The amounts on this picture are the real market rate, not a cartoon: one bitcoin against 32.37 ether, value-matched at spot this morning, and the source and the time are printed underneath — that is the standard every number in this talk is held to. Now the question that motivates the project: all of this runs today on an elliptic-curve signature. So why build a new one?">
+      <div class="eyebrow">Motivation &#183; 2 of 3 &#183; what it protects</div>
+      <h1 class="headline">Two strangers, two chains, <strong class="hb">no trusted middleman</strong></h1>
+      <div class="scene">
+        <!-- Entity references inside every SVG block are NUMERIC, matching the
+             method diagram: the deck is parsed as HTML, so a named
+             entity would render, but it stops the extracted SVG being checkable
+             as XML.  The two chain hues are literal hex on purpose -- they are
+             recognised marks, and the deck's accent tokens already mean "basic
+             signature" and "adaptor layer".
+             The caption is ASYMMETRIC on purpose: only the witness holder can
+             complete the FIRST payment, and the leak runs from that publication
+             to the second leg.  "Publishing either payment reveals the secret"
+             reads as symmetric and misdescribes the flow DEMO A walks.
+             ⚠ THE COINS DO NOT MOVE BETWEEN CHAINS (Wang, Meeting 11, laboured
+             twice): the old card-to-card arrows read as a coin crossing from
+             Alice's chain to Bob's.  Each payment is now drawn as a TRANSACTION
+             BOX that settles ON its own chain -- the arrow runs from the chain
+             into its transaction, never across the middle -- and the only thing
+             crossing the middle is the shared secret.  Do not reintroduce a
+             chain-to-chain arrow. -->
+        <svg viewBox="0 0 1160 380" role="img"
+             aria-label="Alice holds bitcoin on chain one and Bob holds ether on chain two; each payment settles as a transaction on its own chain, and one shared secret links the two — no coin moves between chains">
+          <g font-family="inherit" fill="var(--ink)">
+            <g class="st st1">
+              <rect x="1" y="44" width="266" height="252" rx="14" fill="var(--card)"
+                    stroke="var(--line)" stroke-width="1.5"/>
+              <text x="26" y="86" font-size="23" font-weight="750">Alice</text>
+              <text x="26" y="110" font-size="15" fill="var(--muted)">has bitcoin, wants ether</text>
+              <!-- The two coin marks are the currencies' own: an orange disc
+                   carrying the rotated Bitcoin sign, and the Ethereum diamond
+                   on its blue disc, drawn as paths so they re-scale with the
+                   stage and need no external asset.  These two hexes (#f7931a,
+                   #627eea) are the marks' own colours and are the one place in
+                   the deck where a literal hex is not a token -- the semantic
+                   accents mean "basic signature" and "adaptor layer" and must
+                   not be spent on branding. -->
+              <circle cx="66" cy="178" r="33" fill="#f7931a"/>
+              <g transform="rotate(14 66 178)" fill="#ffffff">
+                <rect x="55.5" y="146" width="5" height="64" rx="2"/>
+                <rect x="67" y="146" width="5" height="64" rx="2"/>
+                <text x="66" y="178" font-size="52" font-weight="800" text-anchor="middle"
+                      dominant-baseline="central" font-family="Arial,Helvetica,sans-serif">B</text>
+              </g>
+              <text x="66" y="234" font-size="17" font-weight="800" text-anchor="middle">1 BTC</text>
+              <text x="66" y="252" font-size="12.5" fill="var(--muted)" text-anchor="middle">&#8776; US$76,834</text>
+              <rect x="118" y="152" width="126" height="52" rx="11" fill="var(--wash)" stroke="var(--line)"/>
+              <text x="134" y="174" font-size="14" font-weight="700">Bitcoin</text>
+              <text x="134" y="193" font-size="12.5" fill="var(--muted)">chain 1</text>
+              <text x="26" y="280" font-size="13" fill="var(--muted)">spendable only by her own key</text>
+
+              <rect x="893" y="44" width="266" height="252" rx="14" fill="var(--card)"
+                    stroke="var(--line)" stroke-width="1.5"/>
+              <text x="917" y="86" font-size="23" font-weight="750">Bob</text>
+              <text x="917" y="110" font-size="15" fill="var(--muted)">has ether, wants bitcoin</text>
+              <circle cx="1094" cy="178" r="33" fill="#627eea"/>
+              <g transform="translate(1094 178) scale(2.06) translate(-16.5 -16)" fill="#ffffff">
+                <path fill-opacity=".602" d="M16.498 4v8.87l7.497 3.35z"/>
+                <path d="M16.498 4L9 16.22l7.498-3.35z"/>
+                <path fill-opacity=".602" d="M16.498 21.968v6.027L24 17.616z"/>
+                <path d="M16.498 27.995v-6.028L9 17.616z"/>
+                <path fill-opacity=".2" d="M16.498 20.573l7.497-4.353-7.497-3.348z"/>
+                <path fill-opacity=".602" d="M9 16.22l7.498 4.353v-7.701z"/>
+              </g>
+              <text x="1094" y="234" font-size="17" font-weight="800" text-anchor="middle">32.37 ETH</text>
+              <text x="1094" y="252" font-size="12.5" fill="var(--muted)" text-anchor="middle">&#8776; US$76,837</text>
+              <rect x="917" y="152" width="126" height="52" rx="11" fill="var(--wash)" stroke="var(--line)"/>
+              <text x="933" y="174" font-size="14" font-weight="700">Ethereum</text>
+              <text x="933" y="193" font-size="12.5" fill="var(--muted)">chain 2</text>
+              <text x="917" y="280" font-size="13" fill="var(--muted)">spendable only by his own key</text>
+            </g>
+
+            <g class="st st2">
+              <path d="M254 168 C 302 168, 300 88, 344 88" stroke="#f7931a" stroke-width="4" fill="none"/>
+              <polygon points="360,88 338,79 338,97" fill="#f7931a"/>
+              <rect x="362" y="60" width="436" height="56" rx="11" fill="var(--card)" stroke="#f7931a" stroke-width="2"/>
+              <text x="382" y="84" font-size="15.5" font-weight="750">tx&#8321; &#8212; settles <tspan fill="#b26a08">on Bitcoin</tspan>, like any payment</text>
+              <text x="382" y="104" font-size="13" fill="var(--muted)">Alice&#8217;s 1 BTC &#8594; an address Bob owns on chain 1</text>
+              <path d="M906 188 C 858 188, 860 292, 816 292" stroke="#627eea" stroke-width="4" fill="none"/>
+              <polygon points="800,292 822,283 822,301" fill="#627eea"/>
+              <rect x="362" y="264" width="436" height="56" rx="11" fill="var(--card)" stroke="#627eea" stroke-width="2"/>
+              <text x="382" y="288" font-size="15.5" font-weight="750">tx&#8322; &#8212; settles <tspan fill="#4a5fd0">on Ethereum</tspan>, like any payment</text>
+              <text x="382" y="308" font-size="13" fill="var(--muted)">Bob&#8217;s 32.37 ETH &#8594; an address Alice owns on chain 2</text>
+            </g>
+
+            <g class="st st3">
+              <path d="M580 154 V 120" stroke="var(--mark-ad)" stroke-width="2" stroke-dasharray="4 4"/>
+              <path d="M580 222 V 260" stroke="var(--mark-ad)" stroke-width="2" stroke-dasharray="4 4"/>
+              <rect x="452" y="154" width="256" height="68" rx="14" fill="var(--adaptor-soft)"
+                    stroke="var(--mark-ad)" stroke-width="1.8"/>
+              <path d="M483 187 h20 v15 h-20 z M486 187 v-7 a7 7 0 0 1 14 0 v7" fill="none"
+                    stroke="var(--ink-ad)" stroke-width="2.4" stroke-linejoin="round"/>
+              <text x="518" y="186" font-size="15.5" font-weight="750" fill="var(--ink-ad)">one shared secret</text>
+              <text x="518" y="206" font-size="13.5" fill="var(--ink-ad)">is the only link between them</text>
+            </g>
+
+            <g class="st st4">
+              <text x="580" y="342" font-size="18" font-weight="700" text-anchor="middle">Neither coin ever leaves its chain &#8212; each transaction settles on its own ledger; the secret is what links them.</text>
+              <text x="580" y="368" font-size="15" fill="var(--muted)" text-anchor="middle">Only the secret&#8217;s holder can complete the first payment, and publishing it reveals the secret &#8212; releasing the other: both settle, or neither.</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <p class="kicker" style="font-size:19.5px">All of this runs today on an <strong class="hi">elliptic-curve</strong> signature. <strong class="hb">So why build a new one?</strong></p>
+      <!-- The prices are a CITED claim, so they travel with their source and the
+           instant they were read, exactly as a measured figure travels with its
+           evidence run.  Two independent sources are quoted because the legs are
+           value-matched: the ratio is the thing being asserted, and one exchange
+           quoting itself cannot corroborate it.  Re-read both before recording if
+           the take is on another day -- a stale price is a wrong number, not a
+           rounding. -->
+      <p class="src">Amounts are <b>value-matched at spot</b>, not illustrative &#183; BTC/USD 76,834 &#183; ETH/USD 2,373.71 &#183; CoinGecko API, retrieved 2026-08-21 11:57&#8239;UTC &#183; Coinbase spot at the same instant gives the same 1&#8239;:&#8239;32.4 ratio to within 0.04%.</p>
+    </section>
+
+    <!-- A slide of its own for the motivation (Wang, 2026-08-21): the swap picture
+         says what an adaptor signature is FOR; this says why a POST-QUANTUM one is
+         worth building.  Three panels, one argument: what runs today, what breaks
+         it, and the gap that leaves.  The third panel is the thesis -- "basic is
+         standardised, exotic is not" -- and it keeps "multi-signatures are being
+         built", which is the softening Meeting 10 ordered, not decoration. -->
+    <!-- ============================ 4 ============================ -->
+    <section class="slide" data-part="why" data-title="Why post-quantum, and why exotic" data-time="0:26" data-notes="Third piece of the motivation, and it is the picture on the left. A blockchain does not run on one signature — it runs on a STACK of them. At the bottom, the elliptic-curve signatures chains use today, the ones Shor breaks. Step one of the fix is already happening: organisations are migrating to the standardised post-quantum BASIC signature, NIST FIPS 204. But look where that arrow stops. A basic signature only authenticates a message. Everything a chain actually does with signatures — scalable consensus, multi-party authorisation, atomic swaps, payment channels — lives in the EXOTIC layer built on top, an exotic scheme being a basic scheme plus extra functions. And that layer is where post-quantum coverage is uneven: multi-signatures are actively being built; the adaptor case, the one atomic swaps and payment channels depend on, is this project. Now the right-hand picture, because the fair question is: why pay for an expensive exotic scheme at all, when a hash-time-locked contract does a swap without one? Because the hash lock SHOWS. It needs a script on both chains, it prints the SAME hash on both chains — so anyone watching can link the two legs — and those scripts enlarge both transactions. An adaptor signature moves the lock inside the signature itself: both settlements become ordinary payments, and nothing on either chain connects them. That privacy and that footprint are what we are paying for. So the three questions this talk answers: can we build one, what does it cost, and will a real chain take it?">
+      <div class="eyebrow">Motivation &#183; 3 of 3 &#183; why the EXOTIC layer, and why pay for it</div>
+      <h1 class="headline">Post-quantum is <strong class="hb">standardised</strong> for basic signatures &mdash; <strong class="hi">not</strong> for the exotic ones</h1>
+      <div class="cols c2 stretch">
+        <!-- LEFT: the signature stack with the migration arrow drawn INTO it.
+             The picture carries three facts at once: exotic = basic + extra
+             functions (stacking), migration is under way (the solid arrow into
+             the basic tier, FIPS 204), and standardisation STOPS below the
+             exotic tier (the dashed arrow that does not arrive).  Prose said
+             all three before; now the geometry does. -->
+        <div class="card">
+          <h3>A chain runs on a <b>stack</b> of signatures &#8212; migration covers the bottom tier</h3>
+          <div class="scene">
+          <svg viewBox="0 0 520 322" role="img"
+               aria-label="A stack: elliptic-curve signatures today at the bottom, the standardised basic post-quantum tier above it, and the exotic layer on top; a solid migration arrow reaches the basic tier, a dashed arrow stops before the exotic layer">
+            <g font-family="inherit" fill="var(--ink)">
+              <g class="st st1">
+                <rect x="8" y="268" width="504" height="46" rx="10" fill="var(--wash)" stroke="var(--line)" stroke-width="1.5"/>
+                <text x="26" y="290" font-size="14.5" font-weight="700">elliptic-curve signatures</text>
+                <text x="26" y="307" font-size="12.5" fill="var(--muted)">what chains run today &#8212; broken by Shor</text>
+              </g>
+              <g class="st st2">
+                <path d="M120 266 V 232" stroke="var(--mark-b)" stroke-width="3"/>
+                <polygon points="120,222 112,238 128,238" fill="var(--mark-b)"/>
+                <text x="140" y="242" font-size="12.5" font-weight="750" fill="var(--base)">STEP 1 &#183; migration under way</text>
+                <text x="140" y="258" font-size="12" fill="var(--muted)">NIST FIPS 204 (2024) &#8212; companies are moving now</text>
+                <rect x="8" y="158" width="504" height="62" rx="10" fill="var(--reused-soft)" stroke="var(--reused)" stroke-width="1.7"/>
+                <text x="26" y="184" font-size="14.5" font-weight="750">BASIC post-quantum signature <tspan fill="var(--reused)">&#8212; standardised</tspan></text>
+                <text x="26" y="203" font-size="12.5" fill="var(--muted)">authenticates a message &#8212; and nothing more</text>
+              </g>
+              <g class="st st3">
+                <path d="M120 156 V 122" stroke="var(--mark-ad)" stroke-width="3" stroke-dasharray="6 5"/>
+                <text x="140" y="132" font-size="12.5" font-weight="750" fill="var(--ink-ad)">standardisation stops here</text>
+                <text x="140" y="148" font-size="12" fill="var(--muted)">basic alone is not enough &#8212; a chain needs the layer above</text>
+              </g>
+              <g class="st st4">
+                <rect x="8" y="8" width="504" height="104" rx="10" fill="var(--adaptor-soft)" stroke="var(--mark-ad)" stroke-width="1.7"/>
+                <text x="26" y="34" font-size="14.5" font-weight="750" fill="var(--ink-ad)">EXOTIC layer <tspan fill="var(--muted)" font-weight="400">= basic + extra functions, built on top</tspan></text>
+                <g font-size="12.5" font-family="var(--mono)">
+                  <rect x="26" y="48" width="118" height="26" rx="13" fill="var(--card)" stroke="var(--line)"/>
+                  <text x="85" y="65" text-anchor="middle" fill="var(--muted)">multi-signature</text>
+                  <rect x="152" y="48" width="86" height="26" rx="13" fill="var(--card)" stroke="var(--line)"/>
+                  <text x="195" y="65" text-anchor="middle" fill="var(--muted)">threshold</text>
+                  <rect x="246" y="48" width="86" height="26" rx="13" fill="var(--card)" stroke="var(--line)"/>
+                  <text x="289" y="65" text-anchor="middle" fill="var(--muted)">aggregate</text>
+                  <rect x="340" y="48" width="80" height="26" rx="13" fill="var(--card)" stroke="var(--ink-ad)" stroke-width="1.6"/>
+                  <text x="380" y="65" text-anchor="middle" font-weight="700" fill="var(--ink-ad)">adaptor</text>
+                  <text x="428" y="65" font-size="12" font-weight="750" fill="var(--ink-ad)">&#8592; this project</text>
+                </g>
+                <text x="26" y="96" font-size="12.5" fill="var(--ink)">consensus &#183; multi-party authorisation &#183; <tspan font-weight="750">atomic swaps &#183; payment channels</tspan></text>
+              </g>
+            </g>
+          </svg>
+          </div>
+        </div>
+        <!-- RIGHT: why PAY for the exotic one -- the alternative, drawn.  The
+             HTLC's defect is visible (the same H printed on both chains, linked
+             by a dashed line anyone can follow); the adaptor row shows two
+             ordinary payments with the lock INSIDE the signature and no line
+             between the chains.  The contrast IS the argument. -->
+        <div class="card">
+          <h3>Why pay for it? The alternative <b>shows on chain</b></h3>
+          <div class="scene">
+          <svg viewBox="0 0 520 322" role="img"
+               aria-label="A hash-time-locked contract prints the same hash in a script on both chains, publicly linking the legs; an adaptor signature makes both legs ordinary payments with the lock inside the signature and no visible link">
+            <g font-family="inherit" fill="var(--ink)">
+              <g class="st st1">
+                <text x="10" y="22" font-size="12.5" font-weight="750" letter-spacing="1" fill="var(--warn)">WITHOUT ONE &#183; HASH-TIME-LOCKED CONTRACT</text>
+                <rect x="10" y="34" width="216" height="74" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>
+                <text x="26" y="56" font-size="12.5" fill="var(--muted)">chain 1 &#183; needs a script</text>
+                <rect x="26" y="66" width="184" height="30" rx="7" fill="var(--warn-soft)" stroke="var(--warn)"/>
+                <text x="38" y="86" font-size="13" font-family="var(--mono)">IF preimage of <tspan font-weight="800" fill="var(--warn)">H</tspan> &#8230;</text>
+                <rect x="294" y="34" width="216" height="74" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>
+                <text x="310" y="56" font-size="12.5" fill="var(--muted)">chain 2 &#183; needs a script</text>
+                <rect x="310" y="66" width="184" height="30" rx="7" fill="var(--warn-soft)" stroke="var(--warn)"/>
+                <text x="322" y="86" font-size="13" font-family="var(--mono)">IF preimage of <tspan font-weight="800" fill="var(--warn)">H</tspan> &#8230;</text>
+              </g>
+              <g class="st st2">
+                <path d="M226 81 H 294" stroke="var(--warn)" stroke-width="2.2" stroke-dasharray="5 4"/>
+                <circle cx="260" cy="81" r="13" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.6"/>
+                <text x="260" y="86" font-size="13" font-weight="800" text-anchor="middle" fill="var(--warn)">=</text>
+                <text x="260" y="128" font-size="12.5" font-weight="700" text-anchor="middle" fill="var(--warn)">the SAME hash, public on both chains &#8212; anyone can link the legs</text>
+                <text x="260" y="146" font-size="12" text-anchor="middle" fill="var(--muted)">and the scripts enlarge both transactions</text>
+              </g>
+              <g class="st st3">
+                <text x="10" y="182" font-size="12.5" font-weight="750" letter-spacing="1" fill="var(--reused)">WITH AN ADAPTOR SIGNATURE</text>
+                <rect x="10" y="194" width="216" height="74" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>
+                <text x="26" y="216" font-size="12.5" fill="var(--muted)">chain 1 &#183; ordinary payment</text>
+                <rect x="26" y="226" width="120" height="30" rx="7" fill="var(--base-soft)" stroke="var(--mark-b)"/>
+                <text x="40" y="246" font-size="13" font-family="var(--mono)">&#963; &#183; signature</text>
+                <path d="M160 244 h9 v7 h-9 z M161.5 244 v-3.2 a3.2 3.2 0 0 1 6.4 0 v3.2" fill="none" stroke="var(--ink-ad)" stroke-width="1.7" stroke-linejoin="round"/>
+                <text x="176" y="250" font-size="11.5" fill="var(--ink-ad)">lock inside</text>
+                <rect x="294" y="194" width="216" height="74" rx="10" fill="var(--card)" stroke="var(--line)" stroke-width="1.5"/>
+                <text x="310" y="216" font-size="12.5" fill="var(--muted)">chain 2 &#183; ordinary payment</text>
+                <rect x="310" y="226" width="120" height="30" rx="7" fill="var(--base-soft)" stroke="var(--mark-b)"/>
+                <text x="324" y="246" font-size="13" font-family="var(--mono)">&#963; &#183; signature</text>
+                <path d="M444 244 h9 v7 h-9 z M445.5 244 v-3.2 a3.2 3.2 0 0 1 6.4 0 v3.2" fill="none" stroke="var(--ink-ad)" stroke-width="1.7" stroke-linejoin="round"/>
+                <text x="460" y="250" font-size="11.5" fill="var(--ink-ad)">lock inside</text>
+              </g>
+              <g class="st st4">
+                <text x="260" y="292" font-size="12.5" font-weight="700" text-anchor="middle">no script &#183; no shared hash &#183; <tspan fill="var(--reused)">nothing on either chain links the legs</tspan></text>
+                <text x="260" y="310" font-size="12" text-anchor="middle" fill="var(--muted)">the lock moves into the signature &#8212; settlement is indistinguishable from an ordinary payment</text>
+              </g>
+            </g>
+          </svg>
+          </div>
+        </div>
+      </div>
+      <p class="kicker">So: <strong class="hi">can we build one</strong> &mdash; <strong class="hi">what does it cost</strong> &mdash; and <strong class="hi">will a real chain take it?</strong></p>
+    </section>
+
+    <!-- ============================ 5 ============================ -->
+    <section class="slide" data-part="method" data-title="What an adaptor signature does" data-time="0:34" data-notes="Here is the whole mechanism in four steps. One: PreSign produces a pre-signature that verifies against a statement Y, but is NOT a valid signature — you cannot spend with it. Two: anyone who knows the secret witness for Y can Adapt it into an ordinary signature. Three: that signature gets published on chain, and it looks exactly like a normal payment — no script, nothing unusual. Four — and this is the trick — the counterparty subtracts the pre-signature it already holds from the published signature, and out falls the witness. Publishing to claim one leg is what unlocks the other. Either both legs settle, or neither does.">
+      <div class="eyebrow">The mechanism · four functions added to a plain signature</div>
+      <h1 class="headline">Publishing a signature <strong class="hi">leaks a secret</strong> — that is what makes a swap atomic</h1>
+      <div class="scene">
+        <!-- The four functions drawn as one flow, built in four timed stages.
+             PreVerify is NAMED in stage 1 on purpose: it is one of the four, and
+             "accepted by PreVerify, rejected by Verify" is the whole point of a
+             pre-signature -- the second half is asserted twice through the byte
+             interface in test/test_serde.c, not merely by design argument.
+             Ext takes the STATEMENT as well as the two signatures (the recovered
+             witness is accepted only if it satisfies the relation), so stage 4
+             says "checked against Y" rather than showing a bare subtraction.
+             "No shared hash lock" is the precise removal: a refund path still
+             needs a timelock; only the hash lock leaves the chains. -->
+        <!-- viewBox starts at y=46: the drawing is width-limited, so cropping its
+             own empty top margin is the only way to close the gap under the
+             headline without shrinking the boxes. -->
+        <svg viewBox="0 46 1160 354" role="img"
+             aria-label="PreSign yields a pre-signature accepted by PreVerify but rejected by Verify; Adapt completes it with the witness; the signature is published; Extract recovers the witness, which settles the other leg">
+          <g font-family="inherit" fill="var(--ink)">
+            <g class="st st1">
+              <rect x="1" y="56" width="318" height="152" rx="13" fill="var(--card)" stroke="var(--mark-ad)"
+                    stroke-width="1.6" stroke-dasharray="7 4"/>
+              <text x="21" y="86" font-size="12" font-weight="700" letter-spacing="1.4" fill="var(--mark-ad)">1 &#183; PRESIGN</text>
+              <text x="21" y="116" font-size="18" font-weight="750">a signature with a lock on it</text>
+              <text x="21" y="140" font-size="13.5" fill="var(--muted)">&#963;&#770; = (c, z&#770;) &#183; accepted by PreVerify against Y</text>
+              <rect x="21" y="158" width="278" height="36" rx="9" fill="var(--warn-soft)" stroke="var(--warn)"/>
+              <text x="35" y="181" font-size="13" font-weight="700" fill="var(--warn)">not spendable &#8212; Verify rejects it</text>
+            </g>
+
+            <g class="st st2">
+              <text x="365" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="var(--ink-ad)">+ witness y</text>
+              <path d="M323 140 H 396" stroke="var(--muted)" stroke-width="2.5" fill="none"/>
+              <polygon points="410,140 392,132 392,148" fill="var(--muted)"/>
+              <rect x="411" y="56" width="318" height="152" rx="13" fill="var(--card)" stroke="var(--mark-b)" stroke-width="1.6"/>
+              <text x="431" y="86" font-size="12" font-weight="700" letter-spacing="1.4" fill="var(--mark-b)">2 &#183; ADAPT</text>
+              <text x="431" y="116" font-size="18" font-weight="750">the secret opens the lock</text>
+              <text x="431" y="140" font-size="13.5" fill="var(--muted)">z = z&#770; + y &#183; only the secret&#8217;s holder can do it</text>
+              <rect x="431" y="158" width="278" height="36" rx="9" fill="var(--reused-soft)" stroke="var(--reused)"/>
+              <text x="445" y="181" font-size="13" font-weight="700" fill="var(--reused)">now an ordinary signature</text>
+            </g>
+
+            <g class="st st3">
+              <text x="775" y="122" font-size="13" text-anchor="middle" fill="var(--muted)">publish</text>
+              <path d="M733 140 H 806" stroke="var(--muted)" stroke-width="2.5" fill="none"/>
+              <polygon points="820,140 802,132 802,148" fill="var(--muted)"/>
+              <rect x="821" y="56" width="318" height="152" rx="13" fill="var(--wash)" stroke="var(--line)" stroke-width="1.6"/>
+              <text x="841" y="86" font-size="12" font-weight="700" letter-spacing="1.4" fill="var(--muted)">3 &#183; ON CHAIN</text>
+              <text x="841" y="116" font-size="18" font-weight="750">it spends like any payment</text>
+              <text x="841" y="142" font-size="13.5" fill="var(--muted)">&#963; goes on chain &#183; no script, no hash lock,</text>
+              <text x="841" y="164" font-size="13.5" fill="var(--muted)">nothing on either chain to link the legs</text>
+            </g>
+
+            <g class="st st4">
+              <path d="M980 208 V 236 H 170 V 252" stroke="var(--mark-ad)" stroke-width="2.5" fill="none"/>
+              <polygon points="170,264 162,244 178,244" fill="var(--mark-ad)"/>
+              <text x="600" y="228" font-size="13" fill="var(--muted)" text-anchor="middle">&#963; is public &#8212; and the counterparty already holds its own &#963;&#770;</text>
+              <rect x="1" y="264" width="538" height="128" rx="13" fill="var(--adaptor-soft)" stroke="var(--mark-ad)" stroke-width="1.6"/>
+              <text x="21" y="294" font-size="12" font-weight="700" letter-spacing="1.4" fill="var(--ink-ad)">4 &#183; EXTRACT</text>
+              <text x="21" y="324" font-size="18" font-weight="750">publishing hands over the secret</text>
+              <text x="21" y="350" font-size="13.5">y = z &#8722; z&#770; &#8212; subtract the pre-signature it already holds;</text>
+              <text x="21" y="372" font-size="13.5">the recovered y is checked against Y before it is used</text>
+              <path d="M543 328 H 586" stroke="var(--reused)" stroke-width="2.5" fill="none"/>
+              <polygon points="600,328 582,320 582,336" fill="var(--reused)"/>
+              <rect x="601" y="264" width="538" height="128" rx="13" fill="var(--reused-soft)" stroke="var(--reused)" stroke-width="1.6"/>
+              <text x="621" y="294" font-size="12" font-weight="700" letter-spacing="1.4" fill="var(--reused)">THE OTHER LEG</text>
+              <text x="621" y="326" font-size="17" font-weight="700">settles with the same secret</text>
+              <text x="621" y="352" font-size="13.5">y adapts the matching pre-signature,</text>
+              <text x="621" y="374" font-size="13.5">which is then published on the other chain</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <p class="kicker"><strong class="hb">Both legs settle, or neither does</strong> — no trusted third party, and no shared hash lock tying the chains together.</p>
+    </section>
+
+    <!-- ============================ 6 ============================ -->
+    <section class="slide" data-part="method" data-title="The method" data-time="0:30" data-notes="So how do you turn a basic signature into an adaptor signature? This is the whole method in one picture. At the bottom, the CRYSTALS-Dilithium reference primitives — the number-theoretic transform, polynomial arithmetic, SHAKE, sampling — reused with ZERO upstream functions modified, and a two-branch diff makes that auditable rather than something I assert. On top of that sits the simplified base signature. On top of THAT sit the four functions LAS adds. And on the right is the one change that makes the difference: the base signature hashes the commitment w to get its challenge, while PreSign hashes w PLUS the statement Y. That single substitution is what binds the signature to a secret, and everything else — the tripwire that stops a pre-signature being spent, the adaptation, the witness falling out on publication — follows from it. Then I built the whole thing a second time, independently, in Rust, and the two agree byte for byte on a pinned known-answer digest.">
+      <div class="eyebrow">The method &middot; how a basic signature becomes an adaptor signature</div>
+      <h1 class="headline">One substitution in the challenge hash &mdash; <strong class="hi">the lattice core is reused</strong></h1>
+      <div class="scene">
+        <!-- Landscape so the architecture reads at presentation distance: three
+             layers on the left, the ONE substitution on the right, joined by a
+             connector so it is visibly a property of the added layer.
+             The challenge is shown in BOTH registers, and they must not be
+             merged (CLAUDE.md: four drafts failed this).  H : {0,1}* -> C is the
+             paper's map and returns the challenge POLYNOMIAL c, so "c~ = H(...)"
+             is forbidden -- it retypes H.  What is shown instead is H's
+             INSTANTIATION in two steps, which is what the code does:
+             shake256_squeeze -> c_tilde, then b_poly_challenge(&c, c_tilde)
+             (basesig.c:556, Rust b_sample_in_ball at basesig.rs:756).  That also
+             answers the question Wang put to the report's challenge figure --
+             where does c come from -- inside the picture. -->
+        <svg viewBox="0 0 1160 300" role="img"
+             aria-label="Three reused layers with the four LAS functions added on top; on the right, the single substitution that folds the statement into the challenge hash, and the two steps that instantiate it: a SHAKE256 digest, then SampleInBall">
+          <g font-family="inherit" fill="var(--ink)">
+            <g class="st st1">
+              <rect x="1" y="10" width="700" height="80" rx="9"
+                    fill="var(--mark-ad)" fill-opacity="0.20" stroke="var(--mark-ad)" stroke-width="1.8"/>
+              <text x="22" y="34" font-size="12" font-weight="700" letter-spacing="1.2" fill="var(--mark-ad)">NEW &#8212; THE ADAPTOR LAYER</text>
+              <text x="22" y="60" font-size="18" font-weight="700">PreSign &#183; PreVerify &#183; Adapt &#183; Extract</text>
+              <text x="22" y="80" font-size="13" fill="var(--muted)">+ byte-level wire encoding, the tests, and the atomic-swap application</text>
+            </g>
+            <g class="st st2">
+              <rect x="1" y="102" width="700" height="70" rx="9"
+                    fill="var(--mark-b)" fill-opacity="0.18" stroke="var(--mark-b)" stroke-width="1.8"/>
+              <text x="22" y="126" font-size="12" font-weight="700" letter-spacing="1.2" fill="var(--mark-b)">SIMPLIFIED BASE SIGNATURE</text>
+              <text x="22" y="152" font-size="18" font-weight="700">KeyGen &#183; Sign &#183; Verify</text>
+            </g>
+            <g class="st st3">
+              <rect x="1" y="184" width="700" height="70" rx="9"
+                    fill="var(--ink)" fill-opacity="0.07" stroke="var(--ink)" stroke-opacity="0.35" stroke-width="1.5"/>
+              <text x="22" y="208" font-size="12" font-weight="700" letter-spacing="1.2" fill="var(--muted)">REUSED UNCHANGED &#8212; CRYSTALS-Dilithium reference</text>
+              <text x="22" y="234" font-size="18" font-weight="700">NTT &#183; polynomial arithmetic &#183; SHAKE &#183; sampling</text>
+              <text x="22" y="282" font-size="13.5" fill="var(--muted)">zero upstream functions modified &#8212; shown by a two-branch diff, not asserted</text>
+            </g>
+
+            <g class="st st4">
+              <path d="M756 50 H 716" stroke="var(--mark-ad)" stroke-width="2.5" fill="none"/>
+              <polygon points="702,50 720,42 720,58" fill="var(--mark-ad)"/>
+              <rect x="757" y="10" width="402" height="244" rx="11"
+                    fill="var(--mark-ad)" fill-opacity="0.09" stroke="var(--mark-ad)" stroke-width="1.6" stroke-dasharray="6 4"/>
+              <text x="779" y="36" font-size="12" font-weight="700" letter-spacing="1.2" fill="var(--ink-ad)">THE ONE SUBSTITUTION</text>
+              <text x="779" y="70" font-size="14.5" font-family="var(--mono)" fill="var(--muted)">Sign</text>
+              <text x="852" y="70" font-size="14.5" font-family="var(--mono)">c = H(pk, <tspan font-weight="700">w</tspan>, M)</text>
+              <text x="779" y="96" font-size="14.5" font-family="var(--mono)" fill="var(--muted)">PreSign</text>
+              <text x="852" y="96" font-size="14.5" font-family="var(--mono)">c = H(pk, <tspan font-weight="700">w + Y</tspan>, M)</text>
+              <text x="852" y="118" font-size="12.5" font-weight="700" fill="var(--ink-ad)">&#8593; the statement, folded into the challenge</text>
+              <path d="M779 136 H 1137" stroke="var(--mark-ad)" stroke-opacity="0.45" stroke-width="1"/>
+              <text x="779" y="160" font-size="13" fill="var(--muted)">H is instantiated in two steps:</text>
+              <text x="779" y="190" font-size="14.5" font-family="var(--mono)">c&#771; = SHAKE256(pk, w [+ Y], M)</text>
+              <text x="779" y="216" font-size="14.5" font-family="var(--mono)">c<tspan opacity="0">~</tspan> = SampleInBall(c&#771;)</text>
+              <text x="779" y="240" font-size="12.5" fill="var(--muted)">the digest c&#771; is what travels on the wire</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="cols c2" style="flex:none">
+        <div class="card tint-ok" style="gap:6px">
+          <h3>Built a second time, independently</h3>
+          <p class="on">C and Rust agree <b>byte for byte</b> on a pinned known-answer digest: <span class="num">{{katDigestHead}}&hellip;{{katDigestTail}}</span></p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;min-height:0">
+          <p class="caveat">The digest binds packed <b>outputs</b> over four fixed vectors, not internals; PreVerify and Extract are asserted per vector, not hashed.</p>
+          <div class="chipline">
+            <span class="chip ok">functional &middot; 1000 iterations &times; 3 parameter sets</span>
+            <span class="chip ok">tamper &middot; every one of {{tamperFlips}} signature bytes</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 7 ============================ -->
+    <section class="slide" data-part="results" data-title="DEMO A — walking the swap" data-time="0:44" data-sub="3" data-notes="Rather than describe the protocol, let me walk it — and one scope note first: what is implemented and measured here swaps a UTXO coin with a UTXO coin, across two UTXO ledgers, which is the setting the LAS paper itself assumes. Bitcoin-with-Ethereum is the motivating scenario, not the artefact — it is doable, and the only thing that changes is where verification happens. The exchange has already happened here: Alice sent the statement, the proof and its pre-signature, Bob checked both and sent its own back. Watch four things. One, the abort gate — Bob committed nothing until both the proof and Alice's pre-signature verified, and at this instant neither pre-signature is spendable by anyone; nobody has risked a coin. Two, the tripwire: Bob holds Alice's pre-signature and tries to spend it — ordinary verification refuses it, because a pre-signature is not a signature. That is the property the whole construction rests on. Three, Alice knows the witness, so it completes Bob's pre-signature and publishes; on chain that is an ordinary payment, with no script and no hash lock. And four, the leak — and note that Bob needs nothing further from Alice here. It reads the published signature off chain two, combines it with the statement and the pre-signature it made itself, and the witness falls out; it then uses that extracted value to complete Alice's pre-signature and publishes, taking the other coin. Publishing to claim one leg is what unlocks the other: either both settle or neither does.">
+      <div class="eyebrow">Demonstration 1 of 2 · the measured swap — two UTXO ledgers · run {{stageTwoRunId}}</div>
+      <h1 class="headline">Step it, <strong class="hi">break it</strong>, and watch the secret fall out</h1>
+      <div class="walk">
+        <div class="wparty">
+          <h4>Alice <span>holds the witness</span></h4>
+          <div class="wobjs">
+            <span class="wobj on">her key sk₁</span>
+            <span class="wobj sec on">the secret y</span>
+            <span class="wobj on">the public lock Y · {{cfgThreeMsgY}} B</span>
+            <span class="wobj on">Bob’s locked signature σ̂₂ · {{cfgThreeMsgPreSigB}} B</span>
+            <span class="wobj" data-w="2">unlocked signature σ₂</span>
+          </div>
+          <div class="wsay" data-w="2">Knows y, so it completes Bob's pre-signature and publishes. <b>It takes Bob's coin.</b>
+            <span class="eq">σ₂ ← Adapt((Y, y), pk₂, σ̂₂, m₂)</span></div>
+        </div>
+        <div class="wmid">
+          <div class="wchain" data-settle="2">
+            <div class="ct">chain 2 <em><span data-until="2" class="on">unspent</span><span data-w="2">SETTLED — Alice claimed</span></em></div>
+            <div class="cb"><span data-until="2" class="on">c₂ · Bob's coin, spendable only by Bob's key</span><span data-w="2">tx₂ + σ₂ · {{cfgThreeMsgChainB}} B published — pays Alice</span></div>
+          </div>
+          <div class="wchain" data-settle="3">
+            <div class="ct">chain 1 <em><span data-until="3" class="on">unspent</span><span data-w="3">SETTLED — Bob claimed</span></em></div>
+            <div class="cb"><span data-until="3" class="on">c₁ · Alice's coin, spendable only by Alice's key</span><span data-w="3">tx₁ + σ₁ · {{cfgThreeMsgChainA}} B published — pays Bob</span></div>
+          </div>
+          <div class="wstamp" data-only="1">REJECTED</div>
+        </div>
+        <div class="wparty">
+          <h4>Bob <span>learns the witness</span></h4>
+          <div class="wobjs">
+            <span class="wobj on">his key sk₂</span>
+            <span class="wobj on">the public lock Y</span>
+            <span class="wobj on">the proof π · {{cfgThreeMsgPi}} B</span>
+            <span class="wobj on">Alice’s locked signature σ̂₁ · {{cfgThreeMsgPreSigA}} B</span>
+            <span class="wobj on">the locked signature it made itself</span>
+            <span class="wobj sec" data-w="3">the secret y′, extracted</span>
+          </div>
+          <div class="wsay" data-only="1">Tries to spend the pre-signature it is holding — <b>ordinary Verify refuses it</b>.
+            <span class="eq">Verify(σ̂₁, m₁, pk₁) → ⊥</span></div>
+          <div class="wsay" data-w="3">Needs <b>nothing further from Alice</b>: it reads σ₂ off chain 2, combines it with the σ̂₂ it made itself, then adapts σ̂₁ with what came out and publishes.
+            <span class="eq">y′ ← Ext(Y, σ₂, σ̂₂) = z₂ − ẑ₂</span>
+            <span class="eq">σ₁ ← Adapt((Y, y′), pk₁, σ̂₁, m₁) → chain 1</span></div>
+        </div>
+      </div>
+      <div class="wrail">
+        <div><b>1 · abort gate</b><span class="railsay">Bob pre-signed only after π <em>and</em> PreVerify(σ̂₁) passed. Neither pre-signature is spendable by anyone.</span></div>
+        <div><b>2 · the tripwire</b><span class="railsay">A pre-signature is not a signature — that is what stops Bob claiming early.</span></div>
+        <div><b>3 · publish</b><span class="railsay">On chain it is an ordinary payment: no script, no hash lock, nothing to see.</span></div>
+        <div><b>4 · leak, then claim</b><span class="railsay">Ext returns y′; Bob adapts σ̂₁ with <em>that</em> value and publishes. Both settle, or neither does.</span></div>
+      </div>
+    </section>
+
+    <!-- ============================ 8 ============================ -->
+    <!-- ---- WHICH STEP IS THE COST ON?  (Wang, 2026-08-21) --------------------
+         "The adaptor layer is nearly free" was read as a comparison against
+         Bitcoin's ECDSA, where it is emphatically NOT free.  The migration has
+         two steps and this slide separates them: step 1 is classical -> post-
+         quantum basic, which costs bytes and is the step organisations are
+         already taking; step 2 is post-quantum basic -> post-quantum adaptor,
+         which is what the project measured, against THE SAME base signature at
+         identical parameters and primitives.
+         The classical figure beside it is the SAME step charged the same way --
+         the ECDSA adaptor's own PreSign over its own Sign -- so the two are
+         comparable as adaptor layers.  It is DERIVED from the classical
+         harness's single mixed native-API tier, which is why the LAS byte-tier
+         figure is quoted next to it: the claim has to survive the conservative
+         pairing, and at +{{packedOvPreSign}}% against x{{clOvPreSignX}} it does.
+         Never let this slide imply LAS is FASTER than ECDSA in absolute time --
+         it is not, and that cost belongs to step 1. -->
+    <section class="slide" data-part="results" data-title="Cost in time" data-time="0:44" data-notes="Now the cost, and the first thing to fix is what it is measured against. There are two steps here, not one. Step one is classical to post-quantum: replacing ECDSA with a lattice signature. That step is expensive — here the signature goes from 64 bytes to about {{sigBytesTwo}}, some {{clRatioSig}} times larger, and that is this build’s simplified base; on the standardised FIPS 204 path it is smaller, which slide twelve measures — and in absolute time a lattice operation costs hundreds of microseconds where an elliptic-curve one costs tens. But that is the step organisations are already taking, on NIST's timetable, and it buys quantum resistance and nothing else. Step two is the one this project measures: from a post-quantum BASIC signature to a post-quantum ADAPTOR signature. And the comparison is against its own base — same algorithm, same parameters, same primitives, every adaptor operation paired and interleaved with the basic one it mirrors. On that basis: PreSign {{ovPreSign}} percent, PreVerify {{ovPreVerify}}, Adapt {{ovAdapt}}, and Extract, which has no basic analogue, is the cheapest of the four. Now compare that to doing the same step classically. An ECDSA adaptor pre-signature costs {{clOvPreSignX}} times a plain ECDSA signature, because it has to carry a discrete-logarithm-equality proof. Ours costs single-digit percent — and even charged at the byte tier, where every adaptor operation decodes the public-key-sized statement, it is {{packedOvPreSign}} percent. So: post-quantum is the expensive step, and it is the one being taken anyway; the atomic-swap layer on top of it is close to free, which is not true classically. One methodological note: the rejection rate is counted, never inferred from a timing ratio — inferring it produced a materially wrong figure early on, so every run now aborts unless the count matches theory within five standard errors. And at the application level the signature is not the bottleneck at all: the zero-knowledge proof takes {{cfgThreeProofPct}} percent of a whole swap.">
+      <div class="eyebrow">Cost in time &#183; two steps &#183; each measured against its own base</div>
+      <h1 class="headline">Post-quantum is the expensive step. The <strong class="hi">adaptor layer</strong> on top is not.</h1>
+      <div class="cols c2 stretch">
+        <div style="display:flex;flex-direction:column;gap:9px;min-height:0">
+          <div class="lad">
+            <div class="rung">
+              <span class="n">today</span>
+              <span class="t"><b>ECDSA</b> &#8212; what Bitcoin and Ethereum sign with</span>
+              <span class="c">{{clSigBytes}} B</span>
+            </div>
+            <div class="ladarrow">&#8595; step 1 &#183; <b>already being taken</b> &#8212; buys quantum resistance, nothing else</div>
+            <div class="rung s1">
+              <span class="n">step 1</span>
+              <span class="t"><b>post-quantum BASIC signature</b> &#8212; the expensive step, and it is paid in <b>bytes</b></span>
+              <span class="c">&#215;{{clRatioSig}}</span>
+            </div>
+            <div class="ladarrow">&#8595; step 2 &#183; <b>what this project measured</b> &#8212; against that same base</div>
+            <div class="rung s2">
+              <span class="n">step 2</span>
+              <span class="t"><b>post-quantum ADAPTOR (LAS)</b> &#8212; PreSign +{{ovPreSign}}% &#183; PreVerify +{{ovPreVerify}}% &#183; Adapt +{{ovAdapt}}% &#183; Extract has no basic analogue</span>
+              <span class="c">+{{ovMaxAll}}%<br>at worst</span>
+            </div>
+          </div>
+          <div class="card tint-base" style="gap:7px;flex:none">
+            <h3>The same step, done classically &#8212; one shared scale</h3>
+            <!-- All three bars encode ONE quantity: the adaptor layer's
+                 PreSign overhead over its own scheme's Sign.  The classical
+                 label prints its macro as the ratio it is; the width converts
+                 it to the shared percent scale in gen_slides.py, so the
+                 geometry and the label cannot drift apart. -->
+            <div class="bars mini">
+              <div class="bar" title="ECDSA adaptor PreSign over plain ECDSA Sign: {{clOvPreSignX}} times — it carries a DLEQ proof">
+                <div class="lab">ECDSA adaptor<br>&#8776; the DLEQ proof</div>
+                <div class="track"><div class="fill b" style="--w:{{wClAdLayer}}%"></div></div>
+                <div class="val">&#215;{{clOvPreSignX}} its own Sign</div></div>
+              <div class="bar" title="LAS PreSign over Sign at the byte tier: +{{packedOvPreSign}} percent">
+                <div class="lab">LAS &#183; byte tier</div>
+                <div class="track"><div class="fill ad" style="--w:{{wLasAdPacked}}%"></div></div>
+                <div class="val">+{{packedOvPreSign}}%</div></div>
+              <div class="bar" title="LAS PreSign over Sign at the core tier: +{{ovPreSign}} percent">
+                <div class="lab">LAS &#183; core</div>
+                <div class="track"><div class="fill ad" style="--w:{{wLasAdCore}}%"></div></div>
+                <div class="val">+{{ovPreSign}}%</div></div>
+            </div>
+          </div>
+          <p class="caveat">Step 2 is <b>paired and interleaved</b> against LAS&#8217;s own base at identical parameters; the classical ratio is <b>derived</b> from that harness&#8217;s means. Step&#160;1&#8217;s <b>&#215;{{clRatioSig}}</b> is <b>this build&#8217;s</b> simplified base (smaller on the FIPS&#160;204 path), and in <b>absolute</b> time a lattice operation is dearer &#8212; still under a millisecond.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;min-height:0">
+          <div class="figbox" style="flex:1"><img alt="Per-operation adaptor overhead: basic signature versus LAS" src="{{FIG_TIMING}}"></div>
+          <p class="src">Rejection attempts are <b>counted</b>, never inferred from timing: {{rejAttBase}} per Sign against {{rejAttLas}} per PreSign, and the run aborts unless every timed call matches theory within 5&#963;.</p>
+          <div class="meter" style="flex:none">
+            <div class="mrow"><span class="mlab">one whole swap</span>
+              <div class="mtrack"><div class="mfill" style="width:{{cfgThreeProofPct}}%">the proof &#183; {{cfgThreeProofPct}}%</div></div></div>
+            <div class="mcap">the sliver left is everything else &#8212; signature included</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 9 ============================ -->
+    <section class="slide" data-part="results" data-title="Cost in bytes" data-time="0:30" data-notes="Second result, and it is the sharp one. The price of post-quantum here is not computation, it is communication. Against a classical ECDSA adaptor signature at comparable dimensions, the LAS signature is about {{clRatioSig}} times larger and the public key about {{clRatioPk}} times larger — while every operation still runs in well under a millisecond. And the signature is almost entirely one object: the response vector z is {{zPctTarget}} percent of it, because the challenge travels only as a short digest. On top of that, an adaptor swap transmits one extra public object a basic signature does not — the statement Y, which is public-key sized. So any optimisation of LAS is an optimisation of z and Y.">
+      <div class="eyebrow">Result 2 · communication · the price of post-quantum</div>
+      <h1 class="headline">The cost is not adaptor computation — it is <strong class="hi">bytes on the wire</strong></h1>
+      <div class="legend">
+        <span><b>STEP 1 · going post-quantum</b></span>
+        <span><i style="background:var(--mark-b)"></i>classical ECDSA adaptor</span>
+        <span><i style="background:var(--mark-ad)"></i>LAS</span>
+        <span>one shared byte scale · Simplified Dilithium-II</span>
+      </div>
+      <div class="bars">
+        <div class="bar" title="classical ECDSA adaptor signature: {{clSigBytes}} bytes">
+          <div class="lab">classical<br>signature</div>
+          <div class="track"><div class="fill b" style="--w:{{wClSig}}%"></div></div>
+          <div class="val">{{clSigBytes}} B</div></div>
+        <div class="bar" title="LAS signature at Simplified Dilithium-II: {{sigBytesTwo}} bytes">
+          <div class="lab">LAS<br>signature</div>
+          <div class="track"><div class="fill ad" style="--w:{{wLasSig}}%"></div></div>
+          <div class="val">{{sigBytesTwo}} B <em>≈ {{clRatioSig}}× classical</em></div></div>
+        <div class="bar" title="classical public key: {{clPkBytes}} bytes">
+          <div class="lab">classical<br>public key</div>
+          <div class="track"><div class="fill b" style="--w:{{wClPk}}%"></div></div>
+          <div class="val">{{clPkBytes}} B</div></div>
+        <div class="bar" title="LAS public key at Simplified Dilithium-II: {{pkBytesTwo}} bytes">
+          <div class="lab">LAS<br>public key</div>
+          <div class="track"><div class="fill ad" style="--w:{{wLasPk}}%"></div></div>
+          <div class="val">{{pkBytesTwo}} B <em>≈ {{clRatioPk}}× classical</em></div></div>
+      </div>
+      <div class="cols c2 tight" style="flex:none">
+        <div class="card">
+          <h3>Inside a LAS signature ({{sigBytesTarget}} B at the target set)</h3>
+          <div class="strip" title="response z {{zPctTarget}}% · challenge digest {{zRestPct}}%">
+            <div style="background:var(--mark-ad);flex:{{zPctTarget}}"></div>
+            <div style="background:var(--mark-b);flex:{{zRestPct}}"></div></div>
+          <div class="legend">
+            <span><i style="background:var(--mark-ad)"></i>response z — {{zPctTarget}}%</span>
+            <span><i style="background:var(--mark-b)"></i>challenge digest c̃ — {{zRestPct}}%</span></div>
+          <p>The challenge travels only as its digest, so <b>optimising LAS means optimising z</b>.</p>
+        </div>
+        <div class="card tint-ad">
+          <h3><span class="wt" style="color:var(--ink-ad);border-color:var(--ink-ad)">step 2</span> What the adaptor layer adds</h3>
+          <div class="wire">
+            <div class="wrow"><span class="wlab">basic<br>signature</span>
+              <div class="wireobjs">
+                <div class="wo b" style="flex:{{sigBytesTarget}}">&#963; &#183; {{sigBytesTarget}} B</div>
+                <div class="wo ghost" style="flex:{{stmtBytesTarget}}">&#8212;</div>
+                <div class="wo ghost" style="flex:{{sigBytesTarget}}">&#8212;</div>
+              </div></div>
+            <div class="wrow"><span class="wlab">adaptor<br>swap</span>
+              <div class="wireobjs">
+                <div class="wo b" style="flex:{{sigBytesTarget}}">&#963; &#183; {{sigBytesTarget}} B</div>
+                <div class="wo ad" style="flex:{{stmtBytesTarget}}">Y &#183; {{stmtBytesTarget}} B</div>
+                <div class="wo ad" style="flex:{{sigBytesTarget}}">&#963;&#770; &#183; {{sigBytesTarget}} B</div>
+              </div></div>
+          </div>
+          <p>Two extra objects, both public: the statement <b>Y</b> is exactly public-key sized, the pre-signature exactly signature sized.</p>
+        </div>
+      </div>
+      <p class="caveat"><b>Fairness:</b> the classical baseline is a functionality-matched ECDSA <em>adaptor</em> signature (not plain ECDSA), compared at Simplified Dilithium-II — an engineering match to ≈128-bit, <b>not</b> a formal security-equivalence claim.</p>
+    </section>
+
+
+    <!-- ---- what actually goes on chain: BOTH venues, field by field ----
+         The objects are the measured ones, dropped into the slots the two
+         serializations actually give them.  Two things must survive any edit
+         here: (1) the adaptor layer adds NO on-chain field on either venue --
+         Y, the pre-signature, the proof and the witness are off-chain, which is
+         the scriptless-script property and the reason the on-chain difference
+         is attributable to the SIGNATURE SCHEME alone; (2) the two venues put
+         the lattice signature in structurally different places -- Bitcoin in
+         the slot consensus itself checks, Ethereum in payload consensus never
+         inspects.  That asymmetry is the practical lesson, and it is NOT a
+         timeline: "Bitcoin is behind" is the framing this project bans.
+         Bitcoin sizes are a PROJECTION of measured object sizes onto the wire
+         format (derived, self-checked against two published vB figures); the
+         Ethereum figure is a real client's receipt (measured).  The tags say
+         which, because the two are different kinds of claim. -->
+    <!-- ============================ 10 ============================ -->
+    <section class="slide" data-part="results" data-title="What actually goes on chain" data-time="0:44" data-notes="So what does this actually look like on a chain? Left, Bitcoin. The transaction is an ordinary one: version, one input, one output, locktime — {{btcThreeBase}} bytes of base data — and then the witness, which carries the adapted signature and the public key. That is the whole structure. There is no extra field, no script, no hash lock: the adaptor signature sits in exactly the slot an ordinary signature sits in, and the statement, the pre-signature, the proof and the secret witness never touch the chain at all. What changes is the size of one slot: {{btcThreeSig}} bytes of signature instead of about seventy, giving {{btcThreeVsize}} virtual bytes — {{btcThreePctStd}} percent of the standardness ceiling, and about {{btcVsizeRatio}} times a classical spend. Right, Ethereum, and the difference is structural rather than a matter of maturity — smart contracts make it the more flexible venue, and Bitcoin is the more restricted one, because its transaction fields cannot be modified. Concretely: an Ethereum transaction is still authorised by a secp256k1 ECDSA signature — that field is fixed, and consensus checks it. The lattice signature is not in that field at all: it rides inside the input data, as an argument to the escrow contract, and the contract compiles down to opcodes the Ethereum Virtual Machine executes — that is exactly why new verification is something you can deploy there. Bitcoin has no such machine: miners verify directly against the transaction content, field by field, so the lattice signature has to occupy the slot the consensus rules themselves check, and nothing in Script can verify it — which is why it needs a new rule. One is a gas bill — the measured receipt is {{gasOptCapPct}} percent of the per-transaction cap. The other is a consensus rule. And if the question is throughput: the honest per-block statement is a size bound. Bitcoin’s four-million weight-unit block ceiling admits at most {{btcThreePerBlock}} of these settlements per block, against {{btcOnePerBlock}} classical ones, ignoring competing transactions. That is ledger capacity — not a transactions-per-second figure, because a rate would also depend on propagation, relay policy and the fee market, and this project measures none of those.">
+      <div class="eyebrow">In practice &#183; the two venues&#8217; real transaction structures, same swap</div>
+      <h1 class="headline">Same fields. <strong class="hi">One bigger slot</strong>. No new field.</h1>
+      <div class="cols c2 stretch" style="flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:9px;min-height:0">
+          <div class="tx">
+            <div class="th"><span>Bitcoin &#183; settled swap leg</span><b>BIP141/144 &#183; Taproot-shaped</b></div>
+            <div class="tf"><span class="k">version &#183; input (outpoint, sequence) &#183; output (value, scriptPubKey) &#183; locktime</span><span class="v">{{btcThreeBase}} B</span></div>
+            <div class="tf big"><span class="k">witness [1] &#8212; &#963; adapted signature <em style="font-style:normal;font-weight:400">&#8592; where an ordinary signature goes</em></span><span class="v">{{btcThreeSig}} B</span></div>
+            <div class="tf big"><span class="k">witness [2] &#8212; pk public key <em style="font-style:normal;font-weight:400">&#8592; the output committed only to its hash</em></span><span class="v">{{btcThreePk}} B</span></div>
+            <div class="tf ghost"><span class="k">statement Y &#183; pre-signature &#963;&#770; &#183; proof &#960; &#183; witness y</span><span class="v">never on chain</span></div>
+            <div class="tot"><span class="wt d">derived</span>{{btcThreeTotal}} B total &#183; {{btcThreeWeight}} WU &#183; <b>{{btcThreeVsize}} vB</b> = {{btcThreePctStd}}% of the {{btcMaxStdWeight}} WU standardness ceiling &#183; &#215;{{btcVsizeRatio}} a classical P2WPKH spend ({{btcOneVsize}} vB)</div>
+            <!-- Meeting-11 throughput intent, resolved by Royce 2026-08-21 as
+                 "satisfy the intent": the per-block figure is the report's own
+                 sanctioned ledger-capacity bound (03-results, block-weight
+                 ceiling), quoted as a SIZE bound with its negative stated on
+                 the slide.  BITCOIN ONLY -- an EVM per-block figure would be
+                 the retracted claims-per-block reading of EIP-7825.  Never
+                 divide this by the block interval: that manufactures a TPS. -->
+            <div class="tot"><span class="wt d">derived</span>the {{btcMaxBlockWeight}} WU block ceiling admits <b>&#8804; {{btcThreePerBlock}}</b> such settlements per block (classical: {{btcOnePerBlock}}) &#8212; a <b>size bound</b>, not a throughput</div>
+          </div>
+          <p class="txsay">Identical in shape to an ordinary payment &#8212; so every on-chain byte of difference belongs to the <b>signature scheme</b>, not to the adaptor.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;min-height:0">
+          <div class="tx">
+            <div class="th"><span>Ethereum &#183; the claim transaction</span><b>EIP-1559 type-2 &#183; RLP</b></div>
+            <div class="tf"><span class="k">chain_id &#183; nonce &#183; fees &#183; gas_limit &#183; <b>to = escrow contract</b> &#183; value</span><span class="v">envelope</span></div>
+            <div class="tf ec"><span class="k">signature (y_parity, r, s) &#8212; <b>still secp256k1</b>; consensus checks <em style="font-style:normal">this</em> one</span><span class="v">65 B</span></div>
+            <div class="tf big"><span class="k">data &#8212; claimLASVerifiedOpt(id, &#963;, t, &#194;&#8242;, m) <em style="font-style:normal;font-weight:400">&#8592; consensus never inspects it; the contract verifies it</em></span><span class="v">&#963; {{sigBytesTarget}} B<br>t {{pkBytesTarget}} B</span></div>
+            <div class="tf ghost"><span class="k">statement Y &#183; pre-signature &#963;&#770; &#183; proof &#960; &#183; witness y</span><span class="v">never on chain</span></div>
+            <div class="tf"><span class="k">the escrow bound keccak256(A&#8242;, t, m) <b>when it was funded</b> &#8212; the claimer cannot swap in its own key</span><span class="v">fund time</span></div>
+            <div class="tot"><span class="wt m">measured</span>real client receipt {{gasOptReceipt}} gas = <b>{{gasOptCapPct}}%</b> of the 16,777,216 per-transaction cap</div>
+          </div>
+          <p class="txsay">The lattice signature is <b>payload</b>, not a consensus field &#8212; so this venue needs <b>no rule change</b>, and pays in gas instead.</p>
+        </div>
+      </div>
+      <p class="kicker" style="font-size:19.5px">Bitcoin is <strong class="hi">more restricted</strong> &#8212; fixed fields, so &#963; needs a <strong class="hi">consensus rule</strong>. Ethereum is <strong class="hb">more flexible</strong> &#8212; contracts, so &#963; needs a <strong class="hb">deploy and gas</strong>.</p>
+      <p class="src">Bitcoin: measured object sizes projected onto the BIP141/144/341 wire format, self-checked against two published vB figures &#183; Ethereum: one real client&#8217;s receipt, charged per EIP-7623 against the EIP-7825 cap &#183; both at Simplified Dilithium-III, one signature instance.</p>
+    </section>
+
+    <!-- ============================ 11 ============================ -->
+    <section class="slide" data-part="results" data-title="DEMO B — a real Bitcoin client" data-time="0:44" data-sub="1" data-notes="Second demonstration, and this is the part the report can only describe. One LAS settlement transaction weighs {{btcThreeWeight}} weight units — about {{btcThreePctStd}} percent of the {{btcMaxStdWeight}} weight-unit standardness ceiling — so it fits that size limit with room to spare. Fitting a size ceiling is not the same as being relayed, and neither is the same as being verified, so I put it to a real client in two stages. First, carriage: on a stock Bitcoin Core {{btcNodeTag}} node the spend is refused by default relay policy — its witness chunks are nonstandard — yet it is consensus-valid and gets mined. Second, verification: I defined one of the reserved OP_SUCCESS opcodes as a lattice verification opcode, and a spend carrying NO elliptic-curve signature at all was accepted and mined. On that patched client I then settled a whole two-leg swap across two separate chains — pre-sign both legs, adapt and mine the first, read the adapted signature back out of the mined transaction, recover the secret from it with Extract, and use that to adapt and settle the second leg on the other chain. Now the control, which is what makes that meaningful. A stock node of the same release still treats that opcode as OP_SUCCESS, so it accepts every one of these variants regardless of the signature — it cannot be reacting to the signature at all: {{btcLasControls}} negative controls — a changed amount, a changed recipient, a foreign signature — are refused by the patched node and accepted by the stock one. The difference between those two columns is the new rule and nothing else. And the honest caveat: a patched node is not Bitcoin, and I have not analysed the security of the rule I added.">
+      <div class="eyebrow">Demonstration 2 of 2 · a real Bitcoin Core {{btcNodeTag}} node, on regtest</div>
+      <h1 class="headline">It <strong class="hb">fits</strong> the size limits. It fails the <strong class="hi">verification rules</strong> — so I changed one.</h1>
+      <div class="cols stretch c52" style="flex:1;min-height:0">
+        <div class="tight" style="display:flex;flex-direction:column;gap:8px;min-height:0">
+          <div class="card tint-base">
+            <h3>1 · Carriage — stock node</h3>
+            <div class="vstrip">
+              <div class="vchip bad"><b>REFUSED</b><span>relay policy<br>{{btcMeasCarriagePolicy}}</span></div>
+              <div class="vchip ok"><b>VALID</b><span>consensus<br>{{btcMeasCarriageVsize}} vB</span></div>
+              <div class="vchip ok"><b>MINED</b><span>in a block</span></div>
+            </div>
+          </div>
+          <div class="card tint-ok">
+            <h3>2 · Verification, patched node</h3>
+            <div class="opbadge"><span class="op">{{btcLasOpcode}}</span><span class="tr">OP_SUCCESS &#8594; <b>lattice verification</b></span></div>
+            <div class="mcap" style="text-align:left">the two-leg swap &#8212; settled by consensus</div>
+            <div class="pipe">
+              <span class="pstep">PreSign both legs</span><span class="parrow">▸</span>
+              <span class="pstep">Adapt B</span><span class="parrow">▸</span>
+              <span class="pstep chain">mine B</span><span class="parrow">▸</span>
+              <span class="pstep chain">read σ&#8322; off chain</span><span class="parrow">▸</span>
+              <span class="pstep">Extract y</span><span class="parrow">▸</span>
+              <span class="pstep">Adapt A</span><span class="parrow">▸</span>
+              <span class="pstep chain">mine A</span>
+            </div>
+            
+          </div>
+          <p class="caveat">A patched node is <b>not</b> Bitcoin &#183; the rule&rsquo;s security is <b>not</b> analysed.</p>
+        </div>
+        <div class="diff">
+          <div class="dspend"><b>one spend</b> &#183; <b>{{btcLasVsize}} vB</b> &#183; <b>no elliptic-curve signature</b> &#8595; two clients, same release</div>
+          <svg class="dfork" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 1 V9 H25 V19" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+            <path d="M50 1 V9 H75 V19" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <div class="dnodes">
+            <div class="dnode patched">
+              <div class="dh">patched Core {{btcNodeTag}}<span>{{btcLasOpcode}} verifies the LAS signature</span></div>
+              <div class="dv ok"><span class="k">ACCEPTED · MINED</span>the valid spend</div>
+              <div class="dv bad" data-w="1"><span class="k">REJECTED ×{{btcLasControls}}</span>every negative control</div>
+            </div>
+            <div class="dnode">
+              <div class="dh">stock Core {{btcNodeTag}}<span>{{btcLasOpcode}} is still OP_SUCCESS</span></div>
+              <div class="dv ok"><span class="k">ACCEPTED</span>the valid spend — same block</div>
+              <div class="dv ok" data-w="1"><span class="k">ACCEPTED ×{{btcLasControls}}</span>every negative control</div>
+            </div>
+          </div>
+          <div class="dfoot"><b>The difference between the columns is the new rule — nothing else.</b></div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- ============================ 12 ============================ -->
+    <section class="slide" data-part="results" data-title="Settled by measurement" data-time="0:36" data-notes="Third question: will a real chain take it? Three things were settled by measurement rather than argument. Does full verification fit in one transaction? At Dilithium-3 a real client mined a whole claim — verification plus the escrow release — at {{gasOptCapPct}} percent of the per-transaction cap; one set down, verification on its own is charged at {{gasDTwoCapPct}} percent. Does the adaptor need a simplified base signature? No — built a third time on the full FIPS 204 ML-DSA path, PreSign and PreVerify are genuinely new algorithms, but Verify is not: the stock verifier accepts every adapted signature, two hundred out of two hundred. The statement Y is unchanged by that route, so it is the dominant remaining size target. And two optimisations that could have been left as future-work suggestions were run and closed instead — truncating the statement is invisible to the adaptor and fatal at Extract at every depth tested, and a succinct post-quantum proof loses to the prover already deployed at this relation size, because succinctness is asymptotic and one instance of this relation is far too small. An untested suggestion costs nothing to write and tells a reader nothing.">
+      <div class="eyebrow">Evaluation &#183; on-chain fit &#183; the ML-DSA route &#183; two optimisations</div>
+      <!-- The headline counts what the slide actually shows: TWO beliefs that
+           measurement overturned, and TWO suggestions closed by running them --
+           a different kind of claim, which is why they are counted separately.
+           It said "three suggestions" until 2026-08-20, left over from the
+           batching experiment that was removed on 2026-08-19 while the card
+           below it already said "Two".
+           "the full FIPS 204 ML-DSA path", never "unmodified FIPS 204": the
+           upstream functions are unmodified and the final judge is the stock
+           verifier, but PreSign and PreVerify are new adaptor algorithms, which
+           the next clause says outright. -->
+      <h1 class="headline">Settled by <strong class="hi">measurement</strong>, not by argument</h1>
+      <div class="cols c2 stretch">
+        <div class="tight" style="display:flex;flex-direction:column;gap:7px;min-height:0">
+          <div class="card tint-ok" style="flex:1;gap:9px;justify-content:center">
+            <h3>Does full verification fit in one transaction?</h3>
+            <div class="meter">
+              <div class="mrow"><span class="mlab">D3 · whole claim</span>
+                <div class="mtrack"><div class="mfill" style="width:{{gasOptCapPct}}%">{{gasOptCapPct}}%</div></div></div>
+              <div class="mrow"><span class="mlab">D2 · verification only</span>
+                <div class="mtrack"><div class="mfill b" style="width:{{gasDTwoCapPct}}%">{{gasDTwoCapPct}}%</div></div></div>
+              <div class="mcap">track = EIP-7825 per-transaction cap</div>
+            </div>
+          </div>
+          <div class="card" style="flex:1;gap:9px;justify-content:center">
+            <h3>Could these wait as future work? — <b>run and closed</b> instead</h3>
+            <div class="chipline">
+              <span class="chip ad">statement truncation — fails at Extract, every depth tested</span>
+              <span class="chip ad">succinct proof — loses to the deployed prover at this relation size</span>
+            </div>
+          </div>
+        </div>
+        <div class="tight" style="display:flex;flex-direction:column;gap:7px;min-height:0">
+          <div class="card tint-ok" style="flex:1;gap:9px;justify-content:center">
+            <h3>Does the adaptor need a simplified base?</h3>
+            <div class="fnrow">
+              <span class="fnbox">PreSign — new</span>
+              <span class="fnbox">PreVerify — new</span>
+              <span class="fnbox keep">Verify — unchanged</span>
+            </div>
+            <p class="on"><b>No</b> — on the <b>full FIPS&nbsp;204 ML-DSA path</b> the stock verifier accepts <b>{{mldsaRepairedP}}/{{mldsaIters}}</b> adapted signatures.</p>
+            <table class="minitab">
+              <thead><tr><th></th><th>simplified</th><th>on ML-DSA</th></tr></thead>
+              <tbody>
+                <tr><td>attempts per PreSign</td><td>{{mldsaAttemptsSimp}}</td><td>{{mldsaAttempts}}</td></tr>
+                <tr><td>signature</td><td>{{mldsaSigBytesSimp}} B</td><td>{{mldsaSigBytes}} B</td></tr>
+                <tr><td>statement Y</td><td>{{mldsaStmtBytes}} B</td><td>{{mldsaStmtBytes}} B</td></tr>
+              </tbody>
+            </table>
+            <p><b>Y</b> is unchanged, so it is the <b>dominant remaining size target</b>.</p>
+          </div>
+        </div>
+      </div>
+      <p class="caveat">Gas: <b>one signature instance</b> per set. ML-DSA build: <b>functional</b> only — security not analysed.</p>
+    </section>
+
+    <!-- ---- the close: the three opening questions answered, then the verdict
+         and what it means for the people who build chains (Wang, 2026-08-21:
+         "is LAS good or not... what is the implication to bitcoin developers or
+         blockchain communities").  The answers strip closes the loop the
+         motivation opened; the three cards are consequences for a NAMED
+         audience, each carrying its warrant tag and its own scope on the same
+         card -- a caveat exiled to a footnote stops qualifying anything.
+         The verdict is a JUDGEMENT built on those facts, not a measurement, and
+         the wording says what stops deployment: an unanalysed parameter set, an
+         unanalysed consensus rule, and no live network -- never performance. -->
+    <!-- ============================ 13 ============================ -->
+    <section class="slide" data-part="implications" data-title="Verdict — and what it means in practice" data-time="0:45" data-notes="Back to the three questions I opened with, then the answer that matters to you. Can we build one? Yes — twice, in two languages, agreeing byte for byte. What does it cost? At most {{ovMaxAll}} percent in adaptor computation, but seventy-two times the bytes, and inside a whole swap it is the proof, not the signature, that dominates. Will a real chain take it? Ethereum: deploy a contract. Bitcoin: change a rule. So is LAS good? For the adaptor layer, yes — adding it to a lattice signature is nearly free, and it settles end to end on real clients of both venues. As something to deploy, not yet, and the reasons are not performance. Here is what that means concretely. If you build Bitcoin: carriage is not your problem — a stock node already mines these transactions. Verification is, and it is a consensus rule, not engineering; when I added one, it cost {{btcLasVerifyUs}} microseconds per input, about {{btcLasRatioSchnorr}} times a Schnorr check — and that ratio overstates it, because the levels are not matched. What is missing is the security analysis of that rule, not more code. If you build on the EVM: this is deployable now, with almost no margin — a real client mined the whole claim at {{gasOptCapPct}} percent of the per-transaction cap, for one signature instance and a 32-byte message. Feasibility is settled; cost is not. And if you are designing the protocol: budget bytes, not adaptor computation, and budget the proof above all — it is {{cfgThreeProofPct}} percent of a swap. Optimise the proof and the statement, not the adaptor functions. What stays open is specific: a relation whose statement is small by construction, a proof system succinct at this scale, and the security of both the ML-DSA variant and the consensus rule. Thank you.">
+      <div class="eyebrow">Conclusion &#183; the answers, the verdict, and who each one is for</div>
+      <h1 class="headline">Good enough to <strong class="hb">build on</strong> &mdash; what stops <strong class="hi">deployment</strong> is not performance</h1>
+      <div class="vstrip ansstrip" style="flex:none">
+        <div class="vchip ok"><b>CAN WE BUILD ONE? &#8212; YES, TWICE</b><span>C &#8646; Rust, byte-identical &#183; zero upstream functions modified</span></div>
+        <div class="vchip ad"><b>WHAT DOES IT COST? &#8212; TIME +{{ovMaxAll}}%, BYTES &#215;{{clRatioSig}}</b><span>and in a whole swap the proof takes {{cfgThreeProofPct}}%</span></div>
+        <div class="vchip"><b>WILL A CHAIN TAKE IT? &#8212; ETHEREUM: DEPLOY &#183; BITCOIN: NEW RULE</b><span>contracts are more flexible &#183; Bitcoin is more restricted, its fields cannot be modified &#8212; structural, not a timeline</span></div>
+      </div>
+      <div class="cols c3 stretch tight closing" style="flex:1;min-height:0">
+        <div class="card tint-base">
+          <h3><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="vertical-align:-4px">
+            <circle cx="11" cy="11" r="10" fill="#f7931a"/>
+            <g transform="rotate(14 11 11)" fill="#ffffff">
+              <rect x="7.6" y="4.6" width="1.6" height="12.8" rx="0.8"/>
+              <rect x="11.4" y="4.6" width="1.6" height="12.8" rx="0.8"/>
+              <text x="11" y="11" font-size="13" font-weight="800" text-anchor="middle" dominant-baseline="central" font-family="Arial,Helvetica,sans-serif">B</text>
+            </g>
+          </svg> If you build <b>Bitcoin</b></h3>
+          <p class="on">Carriage is not the problem. <b>Verification is a consensus rule</b>, not engineering.</p>
+          <ul class="imp">
+            <li><span class="wt m">measured</span> a stock Core {{btcNodeTag}} node already <b>mines</b> these spends &#8212; nonstandard to relay, but consensus-valid</li>
+            <li><span class="wt m">measured</span> add one rule and a <b>whole two-leg swap settles</b>, against {{btcLasControls}} negative controls</li>
+            <li><span class="wt m">measured</span> the rule costs <b>{{btcLasVerifyUs}}&#8239;&#181;s</b> per input &#8212; {{btcLasRatioSchnorr}}&#215; a Schnorr check</li>
+            <li class="cav">levels unmatched, so that ratio <b>overstates</b> &#183; the rule is <b>unanalysed</b> &#8212; what is missing is analysis, not code</li>
+          </ul>
+        </div>
+        <div class="card tint-ok">
+          <h3><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="vertical-align:-4px">
+            <circle cx="11" cy="11" r="10" fill="#627eea"/>
+            <g transform="translate(11 11) scale(0.62) translate(-16.5 -16)" fill="#ffffff">
+              <path fill-opacity=".602" d="M16.498 4v8.87l7.497 3.35z"/>
+              <path d="M16.498 4L9 16.22l7.498-3.35z"/>
+              <path fill-opacity=".602" d="M16.498 21.968v6.027L24 17.616z"/>
+              <path d="M16.498 27.995v-6.028L9 17.616z"/>
+              <path fill-opacity=".2" d="M16.498 20.573l7.497-4.353-7.497-3.348z"/>
+              <path fill-opacity=".602" d="M9 16.22l7.498 4.353v-7.701z"/>
+            </g>
+          </svg> If you build on the <b>EVM</b></h3>
+          <p class="on">Deployable <b>today</b>, with almost no margin &#8212; and no protocol change.</p>
+          <ul class="imp">
+            <li><span class="wt m">measured</span> a real client mined the <b>whole claim</b> in one transaction &#8212; <b>{{gasOptCapPct}}%</b> of the per-transaction cap</li>
+            <li><span class="wt m">measured</span> one set down, verification alone is charged {{gasDTwoCapPct}}%</li>
+            <li><span class="wt d">derived</span> at the largest set one transaction is <b>exceeded</b> &#8212; arithmetic, never a measured total</li>
+            <li class="cav">one signature instance, 32-byte message &#183; <b>feasibility is settled, cost is not</b></li>
+          </ul>
+        </div>
+        <div class="card tint-ad">
+          <h3><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="vertical-align:-4px">
+            <circle cx="11" cy="11" r="10" fill="var(--mark-ad)" fill-opacity="0.18" stroke="var(--mark-ad)" stroke-width="1.6"/>
+            <path d="M6.5 7 h9 M6.5 10.5 h9 M6.5 14 h5" fill="none" stroke="var(--ink-ad)" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M14 13.2 l2.6 2.6 M16.6 13.2 l-2.6 2.6" stroke="var(--ink-ad)" stroke-width="1.8" stroke-linecap="round"/>
+          </svg> If you <b>design the protocol</b></h3>
+          <p class="on">Budget <b>bytes</b>, not adaptor computation &#8212; and budget the <b>proof</b> first.</p>
+          <ul class="imp">
+            <li><span class="wt m">measured</span> the adaptor layer adds at most <b>+{{ovMaxAll}}%</b> over the base signature</li>
+            <li><span class="wt m">measured</span> but its objects are <b>&#215;{{clRatioSig}}</b> the classical ones on the wire</li>
+            <li><span class="wt m">measured</span> and the <b>proof</b> takes {{cfgThreeProofPct}}% of a whole swap &#8212; not the signature</li>
+            <li class="cav">so the work is <b>&#960; and the statement Y</b> &#8212; and a relation whose statement is small <em>by construction</em></li>
+          </ul>
+        </div>
+      </div>
+      <p class="src">Every figure says which warrant it carries &#8212; <b>measured</b> (run {{benchRunId}}, paired and interleaved, rejection counted and gated to 5&#963;, C&#160;&#8646;&#160;Rust byte-identical on digest {{katDigestHead}}&#8230;{{katDigestTail}}), <b>derived</b>, or <b>cited</b>. Anything else is an open question, and is said to be one.</p>
+    </section>
+
+    <div id="safe">talking-head safe area</div>
+    <div id="foot">
+      <span class="ttl" id="ftitle"></span>
+      <span id="fnum"></span>
+      <span id="fbeat"></span>
+      <span class="sp"></span>
+      <span id="fplan"></span>
+      <span id="clock">0:00</span>
+    </div>
+  </div>
+</div>
+
+<div id="grid"></div>
+<div id="notes"><div class="hd"><span id="nnum"></span><b id="ntime"></b><span>press N to hide — turn this OFF before recording</span></div><div id="ntext"></div></div>
+<!-- default OFF: this overlay is drawn over the page, so it would appear in a
+     recording.  Press H to bring it up while rehearsing. -->
+<div id="help" class="off">→ ← navigate · N notes · T timer · S safe area · G grid · F fullscreen · H this</div>
+
+<script>
+(function(){
+  var stage=document.getElementById('stage'),frame=document.getElementById('frame');
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var i=0,sub=0,started=false,t0=0,tick=null,budget=0;
+
+  slides.forEach(function(s){ budget+=toSec(s.dataset.time||'0:00'); });
+
+  function toSec(v){var p=v.split(':');return (+p[0])*60+(+p[1]);}
+  function fmt(s){var m=Math.floor(s/60);var r=s%60;return m+':'+(r<10?'0':'')+r;}
+
+  function fit(){
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    stage.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  /* Beats WITHIN a slide: a slide with data-sub="n" consumes the forward key n
+     times before the deck advances, so a demonstration runs inside the deck. The
+     four attribute rules below are the whole engine -- no slide has its own code,
+     so a new beat is markup, never script. */
+  function subMax(){ return +(slides[i].dataset.sub||0); }
+  function applySub(){
+    var s=slides[i];
+    [].forEach.call(s.querySelectorAll('[data-w]'),function(e){
+      e.classList.toggle('on', sub>=+e.dataset.w); });
+    [].forEach.call(s.querySelectorAll('[data-only]'),function(e){
+      e.classList.toggle('on', sub===+e.dataset.only); });
+    [].forEach.call(s.querySelectorAll('[data-until]'),function(e){
+      e.classList.toggle('on', sub<+e.dataset.until); });
+    [].forEach.call(s.querySelectorAll('[data-settle]'),function(e){
+      e.classList.toggle('settled', sub>=+e.dataset.settle); });
+    [].forEach.call(s.querySelectorAll('.wrail div'),function(e,k){
+      e.classList.toggle('now', k===sub);
+      e.classList.toggle('done', k<sub); });
+    var m=subMax();
+    document.getElementById('fbeat').textContent = m ? '· beat '+(sub+1)+'/'+(m+1) : '';
+  }
+
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    sub=0;
+    if(location.hash!=='#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+    slides.forEach(function(s,k){ s.classList.toggle('active',k===i); });
+    applySub();
+    var s=slides[i];
+    var pt=document.getElementById('parts'),p=s.dataset.part||'';
+    pt.style.visibility=p?'visible':'hidden';
+    [].forEach.call(pt.children,function(e){ e.classList.toggle('on',e.dataset.part===p); });
+    document.getElementById('ftitle').textContent=s.dataset.title||'';
+    document.getElementById('fnum').textContent='· '+(i+1)+'/'+slides.length;
+    document.getElementById('fplan').textContent='planned '+(s.dataset.time||'')+' · deck '+fmt(budget);
+    document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+    document.getElementById('nnum').textContent='SLIDE '+(i+1)+' — '+(s.dataset.title||'');
+    document.getElementById('ntime').textContent='planned '+(s.dataset.time||'');
+    document.getElementById('ntext').textContent=s.dataset.notes||'';
+  }
+
+  function startClock(){
+    if(started) return; started=true; t0=Date.now();
+    tick=setInterval(function(){
+      var e=Math.floor((Date.now()-t0)/1000);
+      var c=document.getElementById('clock');
+      c.textContent=fmt(e);
+      c.classList.toggle('over', e>480);   /* 8:00 hard ceiling */
+    },500);
+  }
+
+  function advance(){ if(sub<subMax()){ sub++; applySub(); } else { show(i+1); } }
+  function retreat(){ if(sub>0){ sub--; applySub(); } else { show(i-1); } }
+
+  document.addEventListener('keydown',function(e){
+    var k=e.key;
+    if(k==='ArrowRight'||k===' '||k==='PageDown'){ startClock(); advance(); e.preventDefault(); }
+    else if(k==='ArrowLeft'||k==='PageUp'){ retreat(); e.preventDefault(); }
+    else if(k==='Home'){ show(0); }
+    else if(k==='End'){ show(slides.length-1); }
+    else if(k==='n'||k==='N'){ document.getElementById('notes').classList.toggle('on'); }
+    else if(k==='s'||k==='S'){ document.getElementById('safe').classList.toggle('on'); }
+    else if(k==='t'||k==='T'){ startClock(); }
+    else if(k==='g'||k==='G'){ document.getElementById('grid').classList.toggle('on'); }
+    else if(k==='h'||k==='H'){ document.getElementById('help').classList.toggle('off'); }
+    else if(k==='f'||k==='F'){ if(document.fullscreenElement){document.exitFullscreen();} else {document.documentElement.requestFullscreen();} }
+  });
+  stage.addEventListener('click',function(){ startClock(); advance(); });
+
+  var g=document.getElementById('grid');
+  slides.forEach(function(s,k){
+    var b=document.createElement('button');
+    b.innerHTML='<span class="gn">'+(k+1)+'</span><span class="gt"></span><span class="gd">'+(s.dataset.time||'')+'</span>';
+    b.querySelector('.gt').textContent=s.dataset.title||'';
+    b.onclick=function(){ g.classList.remove('on'); show(k); };
+    g.appendChild(b);
+  });
+
+  /* deep link: video_deck.html#7 opens on slide 7 (handy for rehearsing one beat) */
+  var start=parseInt((location.hash||'').slice(1),10);
+  show(isFinite(start)&&start>0 ? start-1 : 0);
+  window.addEventListener('hashchange',function(){
+    var n=parseInt((location.hash||'').slice(1),10);
+    if(isFinite(n)&&n>0&&n-1!==i) show(n-1);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+error code: -25
+error message:
+TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 036d76c8e5af639d5380f48231599231dec72ffe1da2ff7624fc612f0b42bf03 (wtxid 4f7882590baf769956b7079b8c88a29a91424554ef6d8cf2d36babb1f3221aea), spending bd9c8c39383ad33f103795ae33f2604d435b379248e16f0e19645c4780e73ae4:1

@@ -1,0 +1,38 @@
+==========================================================================
+MEASURED
+==========================================================================
+  D3 client receipt        : 16413275 gas   (evidence/onchain_onetx/latest)
+  EIP-7825 cap             : 16777216   headroom 363941
+  D3 calldata              : 50148 B (11309 zero / 38839 non-zero), tokens 166665, charge 666660
+  D3 execution (recovered) : 15725615
+  D3 SampleInBall stage    : 154229   [data-dependent -> subtracted whole]
+  D3 decode-z stage        : 577760   [data-dependent -> subtracted whole]
+
+==========================================================================
+DERIVED — D5 calldata pushed the way that FAVOURS fitting
+==========================================================================
+  ABI padding D3 -> D5     : 16 -> 0 B
+  D5 calldata              : 83300 B (+33152 vs D3, every added byte assumed ZERO)
+  D5 calldata charge       : 799268 (+132608)
+  total with execution FROZEN at D3: 16545883  -> 231333 gas UNDER the cap
+
+  absorbPad growth needed to close it:
+      deltaAbsorb  >=  slack 231333 + SampleInBall 154229 + decodeZ 577760
+      deltaAbsorb  >=  963322
+
+==========================================================================
+MEASURED absorbPad GROWTH  (exact difference of two absorbPad calls — see script header)
+==========================================================================
+  deltaAbsorb (D5 - D3)    : 3383185   [fixed arena: memory expansion cancels, tail path measured]
+  cross-check 30 x permute : 3279840   (permute 109328 gas/call)
+
+  execution(D5) lower bound: 18376811
+  total(D5) lower bound    : 19197079  vs cap 16777216  (+2419863)
+
+==========================================================================
+VERDICT: D5 DOES NOT FIT — derived, on a measured lower bound.
+==========================================================================
+  Measured absorbPad growth 3383185 clears the 963322 needed, by 2419863 gas (3.5x).
+  Wording that is supported: 'derived from measured quantities, one transaction
+  is exceeded at Dilithium-V'. NOT supported: calling it measured at D5, or
+  quoting a D5 gas total — only a lower bound was established, not a value.

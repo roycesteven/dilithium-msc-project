@@ -1,0 +1,8 @@
+run_id=20260730_165134
+git=4aef1f7
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+rustc=rustc 1.96.0 (ac68faa20 2026-05-25)
+benchmark=Algorithm 2 - LAS adaptor signature/PreSign
+criterion_run_mtime=2026-07-29 18:31:24
+reused_existing_run=yes

@@ -13,7 +13,11 @@
 % review folds into the Introduction, as the assessment rubric requires.
 %
 % Use `singlespace` ONLY for drafts; remove before submission.
-\documentclass[12pt,MSc]{muthesis}
+% The `wordcount` option prints the count from word.count under the table of
+% contents (muthesis.cls: "A word count now (Sep 17) seems to be required").
+% Regenerate word.count first:
+%   texcount -1 -sum -relaxed -inc report.tex > word.count
+\documentclass[12pt,MSc,wordcount,anon]{muthesis}
 
 % ---- packages (keep minimal; add as needed) ----
 \usepackage[T1]{fontenc}
@@ -24,10 +28,11 @@
 \usepackage{booktabs}        % \toprule \midrule \bottomrule
 \usepackage{array}           % ragged-right fixed-width columns (see \newcolumntype L below)
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned wrapping column
+\usepackage{longtable}       % page-breaking tables (tab:challenges is taller than a page)
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,positioning,calc}
 \usepackage{listings}        % code snippets (appendix only)
 \usepackage[hidelinks]{hyperref}
 \usepackage{cleveref}        % \cref / \Cref — load AFTER hyperref
@@ -40,10 +45,54 @@
 % a lightweight TODO marker so gaps are visible while drafting
 \newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 
+% \textcite for the numeric plain style: renders as a plain \cite.
+% (biblatex-style name+cite is unavailable under \bibliographystyle{plain}.)
+\providecommand{\textcite}[1]{\cite{#1}}
+
 % consistent maths shorthands used across chapters
 \newcommand{\Rq}{R_q}
 \newcommand{\vecz}{\mathbf{z}}
 \newcommand{\inftynorm}[1]{\lVert #1 \rVert_\infty}
+
+% Measured benchmark numbers -- AUTO-GENERATED from the latest evidence run by
+% scripts/gen_report_data.py (via scripts/sync_report.sh). Chapters must cite
+% measured values ONLY through these macros (and the generated/tab_*.tex
+% tables), never as hand-typed literals, so the report always reflects the
+% latest run.
+\input{generated/benchmacros}
+
+% Stage-2 (UTXO atomic swap) measurements -- AUTO-GENERATED from the captured
+% bench_swap log by scripts/gen_stage2_data.py. Same rule as above: chapters
+% cite these macros, never hand-typed literals.
+\input{generated/stage2macros}
+
+% Bitcoin wire-format projection of the settled swap transaction -- AUTO-GENERATED
+% by scripts/gen_bitcoin_tx_data.py from the same bench_swap log. Object sizes are
+% measured; the field layout is BIP141/BIP144/BIP341; the arithmetic self-checks
+% against the published 110 vB (P2WPKH) and 111 vB (P2TR) reference spends.
+\input{generated/btcmacros}
+\input{generated/btcnodemacros}
+\input{generated/btclasbenchmacros}
+
+% Float placement. LaTeX's defaults (topfraction 0.7, totalnumber 3, textfraction 0.2)
+% are too conservative for a chapter with this many tables: floats queue up and get
+% flushed to the end of the chapter, pages away from the text that references them.
+% Loosening them keeps each float on or beside its discussion, which is what a reader
+% needs when the text says "see table N".
+%
+% floatpagefraction is the one that decides whether a page may hold floats and
+% NOTHING else. At the default 0.5 -- and still at 0.75 -- two adjacent floats fill
+% enough of a page for LaTeX to give them one of their own, which is how tables 3.1,
+% 3.2, 3.7, 3.8 and figure 3.6 each ended up on a text-free page. At 0.95 LaTeX prefers
+% a top float with text under it, and only a float that fits nowhere else takes a page.
+% Float placement is global: re-check the WHOLE pdf after touching a float or a caption.
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.95}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
 
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,
         columns=fullflexible,showstringspaces=false}
@@ -57,7 +106,7 @@
 \title{Implementing Post-Quantum Secure\\
        Exotic Signature Schemes in Blockchains}
 \author{Royce Steven}
-\stuid{\TODO{student id --- only you can fill this}}
+\stuid{14202489}
 \submitdate{2026}
 
 \beforeabstract          % title page, table of contents, list of tables/figures
@@ -66,7 +115,18 @@
 \input{chapters/00-abstract}
 \afterabstract           % declaration + copyright pages (auto-generated)
 
-% (Acknowledgements, if wanted, go here — out of scope for now)
+% muthesis.cls mandates the preface order: title / contents / abstract /
+% declaration / STATEMENT OF QUALIFICATIONS AND RESEARCH / anything else
+% (acknowledgements). The class documentation states the first \prefacesection
+% after \afterabstract "should be the statement of education and research".
+% These are front matter, so they are excluded from the texcount body count.
+%TC:ignore
+\prefacesection{Statement of qualifications and research}
+The author holds a Bachelor of Informatics from Institut Sains dan Teknologi Terpadu Surabaya, Indonesia, awarded in 2024. As part of this degree, the author completed an undergraduate final project on Indoor People Counter Using Wireless 802.11 Channel State Information.
+
+\prefacesection{Acknowledgements}
+I would like to express my sincere gratitude to my supervisor, Dr. Zhipeng Wang, for his guidance, support, and valuable feedback throughout this project. I am also deeply grateful to the Indonesia Endowment Fund for Education (LPDP) for its financial support and for providing me with the opportunity to pursue my Master’s degree at the University of Manchester
+%TC:endignore
 
 \afterpreface            % begin body; continue page numbering; running headings
 
@@ -78,10 +138,15 @@
 \input{chapters/05-conclusion}
 
 % ---------- back matter ----------
+% The rubric excludes references, appendices and captions from the word count,
+% so the appendix and bibliography are fenced off from texcount here (captions
+% are excluded by the -sum weights in the Makefile's `wordcount` target).
+%TC:ignore
 \appendix
 \input{chapters/A-appendix}
 
 \bibliographystyle{plain}      % numeric [1] style; ships with TeX Live (IEEEtran.bst not installed)
 \bibliography{refs}
+%TC:endignore
 
 \end{document}

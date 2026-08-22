@@ -1,0 +1,19 @@
+No files changed, compilation skipped
+
+Ran 2 tests for test/LASGasBreakdownD2.t.sol:LASGasBreakdownD2Test
+[PASS] test_d2_golden_instance_fits_in_one_transaction() (gas: 33778887)
+Logs:
+  D2 golden instance one-transaction TOTAL (EIP-7623) 10956784
+
+[PASS] test_d2_golden_instance_total() (gas: 40064779)
+Logs:
+  EIP-7825 per-transaction gas cap 16777216
+  D2 golden instance: calldata bytes / tokens 29572 98584
+  D2 golden instance: exec / EIP-7623 TOTAL 10541448 10956784
+  D2 golden instance: EIP-7623 floor binds (1=yes) 0
+  D2 golden instance: TOTAL as percent of the cap 65
+  D2 golden instance: headroom under the cap 5820432
+
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 133.12ms (251.49ms CPU time)
+
+Ran 1 test suite in 134.17ms (133.12ms CPU time): 2 tests passed, 0 failed, 0 skipped (2 total tests)

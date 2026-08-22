@@ -20,9 +20,12 @@ the table.
 
 | Change | Kind |
 | --- | --- |
-| `src/las.rs` | **new** — LAS scheme (port of `ref/las.c`: deterministic path + randomised `las_keygen`/`las_sign`/`las_presign` wrappers + `LAS_ATTEMPTS` counter + `las_expected_attempts`, the exact restart-rate expectation used by the benchmark rejection gates — instrumentation only, not part of the C port) |
-| `src/las_basesig.rs` | **new** — independent Algorithm-1 base signature (port of `ref/basesig.c`; local `b_*` helper copies + `BASE_ATTEMPTS`) |
-| `src/las_serialize.rs` | **new** — bit-packing + validating decoders + `las_verify_packed` (port of `ref/serialize.c`) |
+| `src/setup.rs` | **new** — shared construction parameters + `PublicParams` (`pp = (A,H)`) + `setup_public_params` (port of `ref/setup.{c,h}`) |
+| `src/las_types.rs` | **new** — the six protocol object types (PublicKey, SecretKey, Signature, Statement, Witness, PreSignature), each re-exported by its owning layer (port of `ref/las_types.h`) |
+| `src/relation.rs` | **new** — hard-relation `Gen` → `(Statement, Witness)` (port of `ref/relation.{c,h}`) |
+| `src/las.rs` | **new** — LAS **Algorithm 2** (port of `ref/las.c`: `presign`/`preverify`/`adapt`/`ext` + deterministic `presign_det` + `LAS_ATTEMPTS` counter + `las_expected_attempts`, the exact restart-rate expectation used by the benchmark rejection gates — instrumentation only, not part of the C port) |
+| `src/basesig.rs` | **new** — independent **Algorithm-1** base signature `keygen`/`sign`/`verify` (port of `ref/basesig.c`; local `b_*` helper copies + `BASE_ATTEMPTS`), plus the packed tier incl. `verify_packed` (C twin `base_verify_packed`) |
+| `src/serialize.rs` | **new** — the wire codec (port of `ref/serialize.c`): six typed pack/unpack pairs, validating pk/sk decoders, wire `c_tilde ‖ BitPack(z)` reusing the crate's `conversion::bit_pack`/`bit_unpack` |
 | `tests/las_kat.rs` | **new** — KAT (port of `ref/test/test_kat.c`, same pinned digest) |
 | `tests/las_stage1.rs` | **new** — cross-module interlock + serde round-trip/tamper tests |
 | `benches/las_bench.rs` | **new** — Criterion.rs statistical micro-benchmark (same harness as upstream's own `benches/benchmark.rs`; custom config 300 samples / 60 s per operation; per-run rejection gate hard-asserting measured attempts/call against the exact theory, see BENCHMARKING.md "Run validity") |
@@ -32,7 +35,7 @@ the table.
 | `bench_las_criterion.log` | **generated** — raw output of the Criterion 0.8.2 run (2026-07-05; baseline `criterion082` saved) |
 | `bench_levels_rust.log` | **generated** — raw output of the protocol-driver run (2026-07-03) |
 | `size_report_rust.log` | **generated** — raw output of the component-size report (2026-07-05) |
-| `src/lib.rs` | **additive edit only** — three `pub mod` registration lines (analogue of the C Makefile's additive targets) |
+| `src/lib.rs` | **additive edit only** — six `pub mod` registration lines (`setup`, `las_types`, `relation`, `serialize`, `basesig`, `las`; analogue of the C Makefile's additive targets) |
 | `Cargo.toml` | **edit** — additive `[[bench]] name = "las_bench"` registration block, plus ONE dev-dependency version bump `criterion 0.4.0 → 0.8.2` (dev-only: building the benches needs a newer toolchain than upstream's MSRV 1.70; the library and its dependencies are untouched) |
 
 Primitives reused as-is from upstream: `ntt::ntt`, `ntt::inv_ntt`,
@@ -44,13 +47,13 @@ crate's existing `sha3` dependency.
 
 Simplified Dilithium-III engineering set `n=6, ell=5, kappa=49` — the set the
 C KAT binary pins (`make test/test_kat3`, `-DLAS_N=6 -DLAS_ELL=5
--DLAS_KAPPA=49`). Packed sizes: pk 4416 B, sk 704 B, sig 6752 B.
+-DLAS_KAPPA=49`). Packed sizes: pk 4416 B, sk 704 B, sig 6720 B (`c_tilde ‖ BitPack(z)`).
 
 ## Reproduce the cross-check and the Stage-1 benchmark
 
 ```sh
 cd rust/fips204-las
-cargo test --test las_kat -- --nocapture      # digest 641a176c…5a19 == C pinned value
+cargo test --test las_kat -- --nocapture      # digest bb6ad0da…260c == C pinned value
 cargo test --lib --tests                       # upstream 34/34 + interlock + serde
 cargo bench --bench las_bench                  # Criterion micro-benchmark (BENCHMARKING.md)
 cargo run --release --example bench_levels     # overhead summary + rejection counters

@@ -1,0 +1,27 @@
+=== Post-quantum atomic swap via LAS ===
+
+Setup: A (chain A: Alice=10 Bob=0) | (chain B: Alice=0 Bob=10)
+Bob generates statement/witness (Y, y) = KeyGen; keeps y secret.
+
+1. Bob -> Alice: statement Y (not the witness y).
+2. Alice pre-signs tx_A bound to Y -> sigma^_A ; sends to Bob.
+   Bob: PreVerify(Y, pkA, sigma^_A, tx_A) = true.
+3. Bob pre-signs tx_B bound to the SAME Y -> sigma^_B ; sends to Alice.
+   Alice: PreVerify(Y, pkB, sigma^_B, tx_B) = true.
+   Neither pre-signature is spendable: ordinary Verify rejects both.
+   (Alice cannot finish sigma^_B yet - she does not know y.)
+
+4. Bob: sigma_A = Adapt((Y,y), sigma^_A); PUBLISH on chain A.
+   Verify(pkA, sigma_A, tx_A) = true  =>  Bob claims Alice's coin.
+   chain A: Alice=0 Bob=10
+
+5. Alice observes sigma_A on chain A and extracts y' = Ext(Y, sigma_A, sigma^_A).
+   Check: A*y' == Y and y' == y (exact recovery).
+
+6. Alice: sigma_B = Adapt((Y,y'), sigma^_B); PUBLISH on chain B.
+   Verify(pkB, sigma_B, tx_B) = true  =>  Alice claims Bob's coin.
+   chain B: Alice=10 Bob=0
+
+=== Swap settled atomically. ===
+Both legs executed; Bob's claim forced the on-chain reveal of y that
+enabled Alice's claim. Either both settle or neither does.

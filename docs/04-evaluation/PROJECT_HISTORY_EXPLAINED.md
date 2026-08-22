@@ -34,7 +34,7 @@ foundation the next step stands on.
 | 1 | `701f97a` | 06-03 | `ref/las.c`, `ref/las.h`, `ref/test/test_las.c` | **the LAS scheme itself** (KeyGen/Sign/Verify + PreSign/PreVerify/Adapt/Ext) | the core deliverable — nothing else matters until this works |
 | 2 | `6746331` | 06-03 | `ref/chain.c`+`.h`, `test_swap.c`, `test_pcn.c`, `bench_las.c`, `bench_compare.c` | a **simulated ledger** + atomic-swap & payment-channel demos + first benchmarks | a signature is only interesting once it *does something* on a chain |
 | 3 | `bac594b` | 06-03 | *(docs: `THEORY_IMPL_BRIDGE.md`)* | paper-equation → code-line mapping | report marks: prove the code *is* the paper |
-| 4 | `3a4c357` | 06-03 | `ref/amhl.c`+`.h`, `test_amhl.c` (+ new fns in `las.c`/`chain.c`) | **multi-hop** payment locks (bonus) | multi-hop is an *extension* of the single-hop swap, so it comes after it |
+| 4 | `3a4c357` | 06-03 | `ref/amhl.c`+`.h`, `test_amhl.c` (+ new fns in `las.c`/`chain.c`) | **multi-hop** payment locks — *dropped 2026-08-03, now dead legacy* | multi-hop is an *extension* of the single-hop swap, so it comes after it |
 | 5 | `5dc1b63` | 06-12 | `ref/serialize.c`+`.h`, `bench_classical.c`, `bench_app.c`, `test_serde.c`, `test_kat.c` (+ deterministic fns in `las.c`) | **byte format** + byte-level verifier + classical baseline + reproducible vectors | to measure *size* and to have the interface a blockchain consumes |
 | 6 | `2ffcca4` | 06-15 | `evm/src/AdaptorSwap.sol`, `evm/test/AdaptorSwap.t.sol`, `ref/test/export_packed.c` | a **real Solidity swap on a local EVM** + gas measurement | graduate from a simulated ledger to a real blockchain |
 | 7 | *(this session, uncommitted)* | 06-18 | `evm/src/LASVerifyCost.sol`, `evm/test/LASVerifyCost.t.sol` | **measured gas of native LAS verification** | replace a hand-waved "exceeds the block limit" claim with a number |
@@ -70,15 +70,15 @@ then the scheme, then the adaptor layer:
    - `sample_Sgamma`, `sample_ternary` — draw the random masks and the ternary
      secret/witness.
 2. **The ordinary signature (built and tested *before* the adaptor part):**
-   - `las_setup`, `las_keygen` — public parameters and a key pair.
-   - `sign_core` → `las_sign`, and `las_verify`.
+   - `setup_public_params`, `base_keygen` — public parameters and a key pair.
+   - `base_sign_internal` → `base_sign`, and `base_verify`.
 3. **The adaptor layer (built last, *on top of* a working Verify):**
-   - `presign_core` → `las_presign`, `las_preverify`.
+   - `las_presign_internal` → `las_presign`, `las_preverify`.
    - `las_adapt` (turns a pre-signature into an ordinary signature), `las_ext`
      (recovers the secret witness — the trick that makes swaps atomic).
 
 **Decision/why this internal order:** `las_adapt`'s whole job is to produce a
-signature that **ordinary `las_verify` accepts**. So `las_verify` must exist and be
+signature that **ordinary `base_verify` accepts**. So `base_verify` must exist and be
 trusted *first*; only then can you build and test `las_adapt`/`las_ext` against it.
 `test_las.c` then hammers all eight functions **1000×** and asserts the key safety
 property (the pre-signature must *not* pass ordinary Verify — the "tripwire").
@@ -104,7 +104,12 @@ complexity of a real EVM. `bench_las.c` (per-operation timings) and `bench_compa
 **Decision/why:** Pure assessment value — examiners want every equation in the paper
 mapped to the exact C function/line. No new scheme code; this is the evidence layer.
 
-### Step 4 — Multi-hop locks: AMHL (`3a4c357`) — *the bonus*
+### Step 4 — Multi-hop locks: AMHL (`3a4c357`) — *later dropped from the project*
+
+> **Not a deliverable (2026-08-03).** This step is recorded because it happened, but
+> multi-hop locks were subsequently dropped: `ref/amhl.{c,h}` is dead legacy that no
+> longer compiles, is deliberately not repaired, and supports no claim in the report,
+> the evaluation, or the future work.
 **New files:** `ref/amhl.c`+`.h`, `ref/test/test_amhl.c`.
 **Also extended existing files:** `las.c`/`las.h` gained `las_presign_k` /
 `las_preverify_k` (a tighter `γ−κ−K` bound for K hops); `chain.c` gained
@@ -119,10 +124,10 @@ optional/bonus at Meeting 2 — done, but it must not displace the core.
 ### Step 5 — Bytes, baselines, reproducibility (`5dc1b63`)
 **New files:** `ref/serialize.c`+`.h`, `ref/test/bench_classical.c`,
 `ref/test/bench_app.c`, `ref/test/test_serde.c`, `ref/test/test_kat.c`.
-**Also extended `las.c`:** a **deterministic** API — `las_keygen_seed`,
-`las_sign_det`, `las_presign_det`, and the shared `det_seed`/`sign_core`/`presign_core`
+**Also extended `las.c`:** a **deterministic** API — `base_keygen_seed`,
+`base_sign_det`, `las_presign_det`, and the shared `det_seed`/`base_sign_internal`/`las_presign_internal`
 refactor — so runs are byte-for-byte reproducible.
-`serialize.h` adds `las_pack_*`/`las_unpack_*` and, crucially, **`las_verify_packed`**
+`serialize.h` adds `pack_*`/`unpack_*` and, crucially, **`base_verify_packed`**
 — verification straight from a byte string (the exact interface an on-chain verifier
 would consume).
 **Decision/why:** Two things become possible only once signatures exist as **bytes**:
@@ -138,16 +143,21 @@ anyone can reproduce identical output.
 **Decision/why:** Now that there is a byte format and a working swap, graduate from
 the simulated ledger to a **real local Ethereum**. The contract settles a swap with
 either a classical or a LAS signature, so a gas report isolates the on-chain "price of
-post-quantum." `export_packed.c` exists so the on-chain test uses a *real* 4672-byte
+post-quantum." `export_packed.c` exists so the on-chain test uses a *real* 6720-byte
 signature, not a fake.
 
 ### Step 7 — The gas experiment (this session, uncommitted)
 **New files:** `evm/src/LASVerifyCost.sol`, `evm/test/LASVerifyCost.t.sol`.
 **Decision/why:** Step 6 left a claim it never proved ("native verification exceeds
 the block gas limit"). Supervisor feedback item 8 demanded an experiment or a
-calculation. The cost probe runs the exact arithmetic op-budget of `las_verify`
-(12 fwd NTT + 8 inv NTT + 20 pointwise) on the EVM, prices it (**~12 M gas**), and
-**corrects** the claim — see `docs/03-results/GAS_LIMIT_INVESTIGATION.md`.
+calculation. The cost probe reproduces the operation count of `base_verify` at the
+D3 parameter set (12 fwd NTT + 12 inv NTT + 36 pointwise + 54 coefficient passes) on
+the EVM, prices it (**13.93 M gas measured**, +2.76 M calculated SHAKE256 ⇒ **≈16.7 M
+total**), and **corrects** the claim — see `docs/03-results/GAS_LIMIT_INVESTIGATION.md`.
+*(Later superseded, 2026-07-23: a complete native Solidity verifier `evm/src/LASVerifier.sol`
+was built and validated end-to-end vs C, wired into `AdaptorSwap.claimLASVerified`, and
+**measured at 56,538,682 gas** — larger than the op-count estimate because it also runs the
+real SHAKE256, z-decode and packing, and it exceeds the EIP-7825 per-transaction gas cap.)*
 
 ---
 
@@ -164,10 +174,10 @@ calculation. The cost probe runs the exact arithmetic op-budget of `las_verify`
         │
         ├── docs: theory↔code bridge                 (evidence, parallel)
         │
-        ├── AMHL multi-hop  (extends PreSign w/ tighter bound)   ← after single-hop
+        ├── AMHL multi-hop  (dropped from the project; dead code) ← after single-hop
         │
         ▼
- Serialization  serialize.c  →  bytes + las_verify_packed
+ Serialization  serialize.c  →  bytes + base_verify_packed
         │   (unlocks SIZE measurement + classical baseline + KATs)
         ▼
  Real EVM  AdaptorSwap.sol  (real gas of a real swap)
@@ -194,7 +204,8 @@ the working tree (nothing pushed, nothing lost). They are listed in `docs/STATUS
 > "I imported the standard Dilithium primitives unchanged, built the LAS adaptor
 > scheme on top (ordinary Sign/Verify first, then the four adaptor functions), proved
 > it with a 1000-iteration test, then demonstrated it on a simulated ledger (atomic
-> swap, payment channels), added the bonus multi-hop construction, gave signatures a
+> swap, payment channels), explored a multi-hop construction that was later dropped,
+> gave signatures a
 > real byte format so I could measure size and verify from bytes, ran it as a real
 > Solidity swap on a local EVM for gas, and finally measured the gas cost of native
 > on-chain verification — which corrected an earlier over-claim. Each step is a

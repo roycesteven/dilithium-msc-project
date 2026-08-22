@@ -8,6 +8,23 @@ Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Kristina
 \newblock In {\em International Conference on the Theory and Application of
   Cryptology and Information Security}, pages 635--664. Springer, 2021.
 
+\bibitem{eip7773}
+Tim Beiko.
+\newblock {EIP-7773}: Hardfork meta --- glamsterdam.
+\newblock Ethereum Improvement Proposals, no.~7773, 2024.
+\newblock Records which proposals are scheduled for, or declined from, the
+  Glamsterdam upgrade. \url{https://eips.ethereum.org/EIPS/eip-7773}.
+
+\bibitem{bitcoincorepolicy}
+{Bitcoin Core developers}.
+\newblock Transaction relay and mining policy limits
+  (\texttt{src/policy/policy.h}).
+\newblock Source code, 2026.
+\newblock
+  \url{https://github.com/bitcoin/bitcoin/blob/master/src/policy/policy.h};
+  \texttt{MAX\_STANDARD\_TX\_WEIGHT},
+  \texttt{MAX\_STANDARD\_P2WSH\_STACK\_ITEM\_SIZE}.
+
 \bibitem{secp256k1zkp}
 {Blockstream Research}.
 \newblock {secp256k1-zkp}: Ecdsa adaptor signature module.
@@ -23,6 +40,18 @@ Maxime Buser, Rafael Dowsley, Muhammed Esgin, Cl{\'e}mentine Gritti, Shabnam
   and research directions.
 \newblock {\em ACM Computing Surveys}, 55(12):1--32, 2023.
 
+\bibitem{pqcrystalsdilithium}
+{CRYSTALS team}.
+\newblock {CRYSTALS-Dilithium} reference implementation.
+\newblock Software repository, 2023.
+\newblock \url{https://github.com/pq-crystals/dilithium}, commit 2374d22.
+
+\bibitem{eip8051}
+Renaud Dubois and Simon Masson.
+\newblock {EIP-8051}: Precompile for {ML-DSA} signature verification.
+\newblock Ethereum Improvement Proposals, no.~8051, October 2025.
+\newblock Draft. \url{https://eips.ethereum.org/EIPS/eip-8051}.
+
 \bibitem{ducas2018crystals}
 L{\'e}o Ducas, Eike Kiltz, Tancrede Lepoint, Vadim Lyubashevsky, Peter Schwabe,
   Gregor Seiler, and Damien Stehl{\'e}.
@@ -36,12 +65,46 @@ Muhammed~F Esgin, O{\u{g}}uzhan Ersoy, and Zekeriya Erkin.
 \newblock In {\em European Symposium on Research in Computer Security}, pages
   378--397. Springer, 2020.
 
+\bibitem{fournier2019adaptor}
+Lloyd Fournier.
+\newblock One-time verifiably encrypted signatures a.k.a.\ adaptor signatures.
+\newblock Manuscript, 2019.
+\newblock \url{https://github.com/LLFourn/one-time-VES}.
+
+\bibitem{criterionrs}
+Brook Heisler, Jorge Aparicio, and contributors.
+\newblock {Criterion.rs}: statistics-driven micro-benchmarking for {Rust}.
+\newblock Software repository, 2025.
+\newblock \url{https://github.com/criterion-rs/criterion.rs}, version 0.8.2.
+
 \bibitem{kysil2025poqeth}
 Ruslan Kysil, Istv{\'a}n~Andr{\'a}s Seres, P{\'e}ter Kutas, and N{\'a}ndor
   Kelecs{\'e}nyi.
 \newblock poqeth: Efficient, post-quantum signature verification on ethereum.
 \newblock In {\em Proceedings of the 20th ACM Asia Conference on Computer and
   Communications Security}, pages 327--343, 2025.
+
+\bibitem{bip144}
+Johnson Lau and Pieter Wuille.
+\newblock {BIP} 144: Segregated witness (peer services).
+\newblock Bitcoin Improvement Proposal, 2015.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki};
+  defines the marker/flag and witness serialisation format.
+
+\bibitem{lazer}
+{Lazer-crypto project}.
+\newblock {LaZer}: a library for lattice-based zero-knowledge proofs.
+\newblock Software library, 2025.
+\newblock \url{https://github.com/lazer-crypto/lazer}; accompanies the CCS 2024
+  paper ``The LaZer Library: Lattice-Based Zero Knowledge and Succinct Proofs
+  for Quantum-Safe Privacy''.
+
+\bibitem{bip141}
+Eric Lombrozo, Johnson Lau, and Pieter Wuille.
+\newblock {BIP} 141: Segregated witness (consensus layer).
+\newblock Bitcoin Improvement Proposal, 2015.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki};
+  defines the witness field, transaction weight and virtual size.
 
 \bibitem{lyubashevsky2012lattice}
 Vadim Lyubashevsky.
@@ -61,8 +124,7 @@ Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
 National~Institute of~Standards, Technology (NIST), Thinh Dang, Jacob
   Lichtinger, Yi-Kai Liu, Carl Miller, Dustin Moody, Rene Peralta, Ray Perlner,
   and Angela Robinson.
-\newblock Module-lattice-based digital signature standard, 2024-08-13 04:08:00
-  2024.
+\newblock Module-lattice-based digital signature standard, August 2024.
 
 \bibitem{poelstra2017}
 Andrew Poelstra.
@@ -70,10 +132,36 @@ Andrew Poelstra.
 \newblock Presentation, Milan Bitcoin meetup / Blockstream, 2017.
 \newblock \url{https://github.com/apoelstra/scriptless-scripts}.
 
+\bibitem{riou2026apples}
+Sebastien Riou, Jong-Yeon Park, Liga Anwar, Axel Poschmann, and Michael Hutter.
+\newblock Apples, oranges, and signatures: Pitfalls and methodology in {ML-DSA}
+  benchmarking.
+\newblock Cryptology ePrint Archive, Paper 2026/1333, 2026.
+\newblock \url{https://eprint.iacr.org/2026/1333}.
+
+\bibitem{fips204crate}
+Eric Schorn.
+\newblock {fips204}: {FIPS} 204 {ML-DSA} in pure {Rust}.
+\newblock Software repository, 2025.
+\newblock \url{https://github.com/integritychain/fips204}, vendored at commit
+  c948882.
+
 \bibitem{shor1999polynomial}
 Peter~W Shor.
 \newblock Polynomial-time algorithms for prime factorization and discrete
   logarithms on a quantum computer.
 \newblock {\em SIAM review}, 41(2):303--332, 1999.
+
+\bibitem{bip341}
+Pieter Wuille, Jonas Nick, and Anthony Towns.
+\newblock {BIP} 341: Taproot: {SegWit} version 1 spending rules.
+\newblock Bitcoin Improvement Proposal, 2020.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki}.
+
+\bibitem{bip342}
+Pieter Wuille, Jonas Nick, and Anthony Towns.
+\newblock {BIP} 342: Validation of taproot scripts.
+\newblock Bitcoin Improvement Proposal, 2020.
+\newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki}.
 
 \end{thebibliography}

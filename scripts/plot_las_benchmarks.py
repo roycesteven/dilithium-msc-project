@@ -157,7 +157,7 @@ def parse_log(path):
     try:
         hdr = _find(lines, "LAS parameter set:")
         m = re.search(
-            r"n=(\d+)\s+ell=(\d+)\s+kappa=(\d+)\s+gamma=(\d+)\s*\(N=(\d+),\s*Q=(\d+)\)",
+            r"n=(\d+)\s+ell=(\d+)\s+kappa=(\d+)\s+gamma=(\d+)\s*\((?:N|d)=(\d+),\s*Q=(\d+)\)",
             hdr,
         )
         if not m:
@@ -234,7 +234,7 @@ def parse_log(path):
         d["sz_Y"] = grab_int(r"Y = t'\s+(\d+)", "Y")
         # Tolerant: matches the current "r'" label and the older "r' = y_witness".
         d["sz_ywit"] = grab_int(r"r'(?:\s*=\s*y_witness)?\s+(\d+)", "witness r'")
-        d["sz_c"] = grab_int(r"^\s*challenge\s+c\s+(\d+)", "c")
+        d["sz_c"] = grab_int(r"^\s*challenge\s+c(?:_tilde)?\s+(\d+)", "c")
         d["sz_z"] = grab_int(r"z \(final\)\s+(\d+)", "z")
         d["sz_zhat"] = grab_int(r"z_hat \(pre-sig\)\s+(\d+)", "z_hat")
         d["sz_sig"] = grab_int(r"^\s*signature\s+\(c, z\)\s+(\d+)", "signature")
@@ -257,13 +257,13 @@ def parse_log(path):
         comp = _section(lines, "--- D. COMPONENT")
         d["c_aprod"] = _mean_sd(_find(comp, "A-product"), "A-product")
         d["c_hash"] = _mean_sd(_find(comp, "challenge hash"), "challenge hash")
-        d["c_cr_one"] = _mean_sd(_find(comp, "(one response"), "c*r one poly")
-        d["c_cr_all"] = _mean_sd(_find(comp, "(all LAS_M"), "c*r all M")
+        d["c_cr_one"] = _mean_sd(_find(comp, "one poly; pointwise"), "c*r one poly")
+        d["c_cr_all"] = _mean_sd(_find(comp, "per attempt (NTT(c)"), "c*r all M")
         d["c_norm"] = _mean_sd(_find(comp, "norm check"), "norm check")
         d["c_wY"] = _mean_sd(_find(comp, "w + t'"), "w + t'")
         d["c_zwit"] = _mean_sd(_find(comp, "z_hat + witness"), "z_hat + witness")
         # verify-side / KeyGen / Ext component attribution (added in bench_levels.c).
-        d["c_ct"] = _mean_sd(_find(comp, "all LAS_N"), "c*t all n")
+        d["c_ct"] = _mean_sd(_find(comp, "per verify (NTT(c)"), "c*t all n")
         d["c_keygen_r"] = _mean_sd(_find(comp, "sample r (n+ell"), "KeyGen sample r")
         d["c_ext_sub"] = _mean_sd(_find(comp, "Ext: s = z"), "Ext s=z-zhat")
         d["c_ext_amul"] = _mean_sd(_find(comp, "Ext: A*s"), "Ext A*s")

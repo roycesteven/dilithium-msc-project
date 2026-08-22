@@ -1,0 +1,6 @@
+# A Bitcoin Core checkout or build tree placed here for convenience. Never committed: the
+# tree is pinned by tag and commit in each run's environment.txt, not by vendoring it.
+core/
+build/
+bin/
+__pycache__/

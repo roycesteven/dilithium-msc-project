@@ -371,7 +371,7 @@ Documentation:
 \def\abstracttitle{%
  {\centering  \singlespacing\large%
    \textsc{\expandafter{\@title}}\\%
-   \@author\\%
+   \ifanon@ Student id: \@stuid\else\@author\fi\\%
    A \expandafter{\@thesis} submitted to The University of Manchester\\%
    for the degree of \degreetitle, \@submitdate\\ \mbox{}}\\%
 }

@@ -1,0 +1,6 @@
+chain 1: block1=1a070a40b46b312be46993bfaf78c0ea284ec5eb7cd6f91cfc6500e95325f6cc tip=61f459c4b7a0eca7e594c1a105847ece179e8473060dd1c758cb3f5b71c39cb3
+chain 2: block1=4c55445262e16c0ed144db07410364c899514eb90eb4854003e7b1c7c274de0d tip=0f158904c5e72ca27862365f32ccdd877f859188b55c7b63927c3a848256a662
+the two chains diverge from height 1 and are never connected to each other
+leg A coin bd9c8c39383ad33f103795ae33f2604d435b379248e16f0e19645c4780e73ae4:1 — present in chain 1's UTXO set, absent from chain 2's
+leg B coin e6d01a7def0062a1317f17f5d5a4616a569bf4ed98b2280461a54fbaf4d317fb:0 — present in chain 2's UTXO set, absent from chain 1's
+asked via gettxout (the UTXO set), so the answer does not depend on -txindex

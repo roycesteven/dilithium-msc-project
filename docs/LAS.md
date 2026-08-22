@@ -3,10 +3,10 @@
 *Design, implementation, correctness, testing, application and benchmarks.*
 
 This document is the technical reference for the implementation in `ref/las.{c,h}`,
-`ref/amhl.{c,h}`, `ref/chain.{c,h}`, `ref/serialize.{c,h}`, and the
-tests/benchmarks under `ref/test/` (`test_las.c`, `test_swap.c`, `test_pcn.c`,
-`test_amhl.c`, `test_serde.c`, `test_kat.c`, `bench_las.c`, `bench_compare.c`,
-`bench_app.c`). It is written to be the source material for the dissertation
+`ref/basesig.{c,h}`, `ref/setup.{c,h}`, `ref/relation.{c,h}`, `ref/serialize.{c,h}`,
+and the tests/benchmarks under `ref/test/` (`test_las.c`, `test_basesig.c`,
+`test_serde.c`, `test_kat.c`, `bench_levels.c`, `bench_las.c`, `bench_compare.c`,
+`bench_classical.c`). It is written to be the source material for the dissertation
 chapter; section numbering maps roughly onto report sections.
 
 ---

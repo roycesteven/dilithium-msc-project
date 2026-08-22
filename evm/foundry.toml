@@ -4,5 +4,16 @@ out = "out"
 test = "test"
 optimizer = true
 optimizer_runs = 200
-# allow the test to read the real packed LAS signature exported from the C side
-fs_permissions = [{ access = "read", path = "./test" }]
+# LASVerifier.verify has many local arrays (NTT/pointwise/pack); the IR pipeline
+# is required to avoid "stack too deep" (also how ZKNox's own verifier builds).
+via_ir = true
+# allow the test to read the real packed LAS signature exported from the C side, and
+# script/OneTxClaim.s.sol to hand the claim calldata to `cast send` (see ./onetx, which
+# is scratch output, regenerated per run and git-ignored)
+fs_permissions = [
+  { access = "read", path = "./test" },
+  { access = "read-write", path = "./onetx" },
+  # script/TwoLeg.s.sol: the two-leg swap's scratch output, one subdirectory per
+  # chain. Scratch, regenerated per run and git-ignored, like ./onetx.
+  { access = "read-write", path = "./twoleg" },
+]

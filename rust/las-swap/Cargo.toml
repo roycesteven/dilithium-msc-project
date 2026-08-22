@@ -1,0 +1,83 @@
+# las-swap — Stage-2 atomic swap on a UTXO chain (eprint 2020/845 Section 4.1, Fig. 1).
+#
+# STANDALONE crate, deliberately NOT a member of the KAT-locked `fips204` package
+# (rust/las-stark takes the same posture). It consumes rust/fips204-las as a plain
+# path dependency, so the LAS port's pinned KAT digest and MSRV are untouched by
+# anything here.
+#
+# Builds and runs OFFLINE with no crates.io fetch: the only dependencies are the
+# LAS port itself and rand_core (already in the workspace lockfile/cache).
+# Configuration 1 (classical) links the VENDORED third_party/secp256k1-zkp C
+# library through hand-written FFI rather than pulling `ecdsa_fun`, keeping the
+# "reuse the vendored library as-is" posture used for the Stage-1 classical
+# baseline (ref/test/bench_classical.c).
+[package]
+name = "las-swap"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Post-quantum atomic swap on a UTXO chain via LAS adaptor signatures (eprint 2020/845 Fig. 1), with a classical ECDSA-adaptor baseline."
+publish = false
+
+[dependencies]
+fips204 = { path = "../fips204-las" }
+rand_core = { version = "0.6.4", default-features = false, features = ["getrandom"] }
+# SHAKE256 for transaction ids. Same crate and same 0.10 line the LAS port
+# already depends on, so no new hash implementation enters the build.
+sha3 = { version = "0.10.2", default-features = false }
+# Configuration 1: Blockstream's official Rust bindings for libsecp256k1-zkp,
+# including the `ecdsa_adaptor` module. Used instead of hand-written FFI so the
+# classical baseline runs maintained, upstream-audited binding code.
+secp256k1-zkp = { version = "0.11.0", optional = true }
+# Configuration 2: Groth16 over BN254, for the role-A proof of
+# `exists r : A r = t and ||r||inf <= 1`. arkworks is the maintained reference
+# implementation; the circuit itself is ours (src/groth16_circuit.rs).
+# Pinned to the 0.4 line, the widely-deployed API this circuit is written
+# against. Note that 0.6 renamed `ark_relations::r1cs` to `gr1cs` (generalized
+# R1CS) and reworked the gadget traits, so this crate does not build against it
+# unmodified.
+ark-bn254 = { version = "0.4.0", optional = true }
+ark-groth16 = { version = "0.4.0", optional = true }
+ark-relations = { version = "0.4.0", optional = true }
+ark-r1cs-std = { version = "0.4.0", optional = true }
+ark-ff = { version = "0.4.2", optional = true }
+ark-snark = { version = "0.4.0", optional = true }
+ark-serialize = { version = "0.4.2", optional = true }
+ark-std = { version = "0.4.0", optional = true }
+
+[features]
+default = []
+
+# Configuration 1: the classical ECDSA adaptor signature, via Blockstream's
+# `secp256k1-zkp` crate (which vendors and builds libsecp256k1-zkp itself).
+secp256k1 = ["dep:secp256k1-zkp"]
+
+# Configuration 3's role-A proof: the Fig. 1 proof of knowledge pi over the
+# vendored LaZer library, reusing the SAME C bridge as the C build.
+relation-zk = ["fips204/relation-zk"]
+
+# Configuration 2's role-A proof: Groth16 over BN254, proving the SAME relation
+# LaZer proves, so that 2 -> 3 isolates the proof system.
+groth16 = [
+  "dep:ark-bn254",
+  "dep:ark-groth16",
+  "dep:ark-relations",
+  "dep:ark-r1cs-std",
+  "dep:ark-ff",
+  "dep:ark-snark",
+  "dep:ark-serialize",
+  "dep:ark-std",
+]
+
+[[bin]]
+name = "bench_swap"
+path = "src/bin/bench_swap.rs"
+
+# Does the role-A proof amortise across swaps? Builds without `groth16` (and
+# then reports that it needs the feature) so `cargo build` stays green.
+[[bin]]
+name = "bench_amortise"
+path = "src/bin/bench_amortise.rs"
+
+[profile.release]
+opt-level = 3

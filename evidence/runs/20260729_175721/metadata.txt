@@ -1,0 +1,308 @@
+# LAS benchmark-suite run metadata
+
+run_id     : 20260729_175721
+timestamp  : Wed Jul 29 17:57:21 BST 2026
+git_commit : b58a7f3054d17e3da7ffa40ec3d348400c94dd36
+git_short  : b58a7f3
+git_branch : report
+git_status :
+## report
+ M .gitignore
+ M "PROGRESS copy.md"
+ M PROGRESS.md
+M  docs/01-introduction/LAS_WALKTHROUGH.md
+ M docs/02-methodology/STAGE2_UTXO_SWAP_PLAN.md
+M  docs/03-results/GAS_LIMIT_INVESTIGATION.md
+M  docs/03-results/LAS-08-performance-measured.md
+M  evm/README.md
+AM evm/src/LASNaysayer.sol
+ M evm/src/LASVerifier.sol
+A  evm/test/LASNaysayer.t.sol
+ M evm/test/vectors/c.bin
+ M evm/test/vectors/sig.bin
+AM evm/test/vectors/sig_digestfault.bin
+AM evm/test/vectors/w_prime_digestfault.bin
+ M evm/test/vectors/z.bin
+M  ref/Makefile
+ M ref/basesig.c
+ M ref/las.c
+ M ref/serialize.h
+ M ref/setup.h
+ M ref/test/bench_criterion3
+ M ref/test/bench_levels.c
+AM ref/test/export_naysayer_vectors.c
+ M ref/test/export_verify_vector
+ M ref/test/export_verify_vector.c
+ M ref/test/test_kat.c
+ M report/latex/Makefile
+ M report/latex/chapters/00-abstract.tex
+ M report/latex/chapters/01-introduction.tex
+ M report/latex/chapters/02-methodology.tex
+ M report/latex/chapters/03-results.tex
+ M report/latex/chapters/04-evaluation.tex
+ M report/latex/chapters/05-conclusion.tex
+ M report/latex/chapters/A-appendix.tex
+ M report/latex/report.aux
+ M report/latex/report.lof
+ M report/latex/report.log
+ M report/latex/report.lot
+ M report/latex/report.out
+ M report/latex/report.pdf
+ M report/latex/report.tex
+ M report/latex/report.toc
+ M report/latex/word.count
+ M rust/fips204-las/src/basesig.rs
+ M rust/fips204-las/src/las.rs
+M  rust/fips204-las/src/relation.rs
+ M rust/fips204-las/src/serialize.rs
+ M rust/fips204-las/src/setup.rs
+ M rust/fips204-las/tests/las_kat.rs
+AM rust/las-stark/Cargo.toml
+AM rust/las-stark/src/params.rs
+A  rust/las-swap/Cargo.lock
+A  rust/las-swap/Cargo.toml
+A  rust/las-swap/README.md
+A  rust/las-swap/build.rs
+A  rust/las-swap/src/backend.rs
+A  rust/las-swap/src/bin/bench_swap.rs
+A  rust/las-swap/src/ecdsa_backend.rs
+A  rust/las-swap/src/groth16_circuit.rs
+A  rust/las-swap/src/las_backend.rs
+A  rust/las-swap/src/lib.rs
+A  rust/las-swap/src/metrics.rs
+A  rust/las-swap/src/protocol.rs
+A  rust/las-swap/src/utxo.rs
+?? .claude/
+?? .vscode/
+?? 2020-845.pdf
+?? 2025-091.pdf
+?? 2026-1124.pdf
+?? 2026-1333.pdf
+?? AUTHORS.md
+?? CONTEXT.md
+?? LICENSE
+?? Lecture5-ResearchWriting-2026-Lin.pdf
+?? NIST.FIPS.204.pdf
+?? REVIEW_GUIDE.md
+?? SHA256SUMS
+?? avx2/
+?? defense/
+?? docs/paper/NIST_FIPS_204.md
+?? evidence/classical.log
+?? evidence/runs/20260627_135247/appendix_package/adaptor_overhead_paper.pdf
+?? evidence/runs/20260627_135247/appendix_package/rejection_sampling_paper.pdf
+?? evidence/runs/20260627_135247/application_package/application_atomic_swap_payload_breakdown.pdf
+?? evidence/runs/20260627_135247/application_package/application_multihop_norm_vs_k.pdf
+?? evidence/runs/20260627_135247/application_package/application_multihop_payload_vs_k.pdf
+?? evidence/runs/20260627_135247/application_package/application_multihop_presign_time_vs_k.pdf
+?? evidence/runs/20260627_135247/debug_figures/acceptance_vs_level.pdf
+?? evidence/runs/20260627_135247/debug_figures/adaptor_overhead_vs_level.pdf
+?? evidence/runs/20260627_135247/debug_figures/adaptor_overhead_vs_level_report.pdf
+?? evidence/runs/20260627_135247/debug_figures/communication_components_clean.pdf
+?? evidence/runs/20260627_135247/debug_figures/communication_components_clean_report.pdf
+?? evidence/runs/20260627_135247/debug_figures/communication_summary_clean.pdf
+?? evidence/runs/20260627_135247/debug_figures/component_scaling_vs_level.pdf
+?? evidence/runs/20260627_135247/debug_figures/computation_component_absolute.pdf
+?? evidence/runs/20260627_135247/debug_figures/parameter_sets.pdf
+?? evidence/runs/20260627_135247/debug_figures/parameter_sets_report.pdf
+?? evidence/runs/20260627_135247/debug_figures/per_operation_timing.pdf
+?? evidence/runs/20260627_135247/debug_figures/per_operation_timing_report.pdf
+?? evidence/runs/20260627_135247/debug_figures/protocol_step_timeline.pdf
+?? evidence/runs/20260627_135247/debug_figures/timing_overhead_clean.pdf
+?? evidence/runs/20260627_135247/debug_figures/timing_timeline_base_vs_las.pdf
+?? evidence/runs/20260627_135247/debug_figures/verify_ext_attribution_vs_level.pdf
+?? evidence/runs/20260627_135247/logs/
+?? evidence/runs/20260627_135247/metadata.txt
+?? evidence/runs/20260627_135247/paper_package/communication_components_paper.pdf
+?? evidence/runs/20260627_135247/paper_package/per_operation_timing_paper.pdf
+?? evidence/runs/20260627_135247/tables/acceptance_vs_level.pdf
+?? evidence/runs/20260627_135247/tables/adaptor_overhead_paper.pdf
+?? evidence/runs/20260627_135247/tables/adaptor_overhead_vs_level.pdf
+?? evidence/runs/20260627_135247/tables/adaptor_overhead_vs_level_report.pdf
+?? evidence/runs/20260627_135247/tables/application_atomic_swap_payload_breakdown.pdf
+?? evidence/runs/20260627_135247/tables/application_multihop_norm_vs_k.pdf
+?? evidence/runs/20260627_135247/tables/application_multihop_payload_vs_k.pdf
+?? evidence/runs/20260627_135247/tables/application_multihop_presign_time_vs_k.pdf
+?? evidence/runs/20260627_135247/tables/communication_components_clean.pdf
+?? evidence/runs/20260627_135247/tables/communication_components_clean_report.pdf
+?? evidence/runs/20260627_135247/tables/communication_components_paper.pdf
+?? evidence/runs/20260627_135247/tables/communication_summary_clean.pdf
+?? evidence/runs/20260627_135247/tables/component_scaling_vs_level.pdf
+?? evidence/runs/20260627_135247/tables/computation_component_absolute.pdf
+?? evidence/runs/20260627_135247/tables/parameter_sets.pdf
+?? evidence/runs/20260627_135247/tables/parameter_sets_report.pdf
+?? evidence/runs/20260627_135247/tables/per_operation_timing.pdf
+?? evidence/runs/20260627_135247/tables/per_operation_timing_paper.pdf
+?? evidence/runs/20260627_135247/tables/per_operation_timing_report.pdf
+?? evidence/runs/20260627_135247/tables/protocol_step_timeline.pdf
+?? evidence/runs/20260627_135247/tables/rejection_sampling_paper.pdf
+?? evidence/runs/20260627_135247/tables/timing_overhead_clean.pdf
+?? evidence/runs/20260627_135247/tables/timing_timeline_base_vs_las.pdf
+?? evidence/runs/20260627_135247/tables/verify_ext_attribution_vs_level.pdf
+?? evidence/runs/20260706_105831/appendix_package/adaptor_overhead_paper.pdf
+?? evidence/runs/20260706_105831/appendix_package/rejection_sampling_paper.pdf
+?? evidence/runs/20260706_105831/application_package/application_atomic_swap_payload_breakdown.pdf
+?? evidence/runs/20260706_105831/application_package/application_multihop_norm_vs_k.pdf
+?? evidence/runs/20260706_105831/application_package/application_multihop_payload_vs_k.pdf
+?? evidence/runs/20260706_105831/application_package/application_multihop_presign_time_vs_k.pdf
+?? evidence/runs/20260706_105831/debug_figures/acceptance_vs_level.pdf
+?? evidence/runs/20260706_105831/debug_figures/adaptor_overhead_vs_level.pdf
+?? evidence/runs/20260706_105831/debug_figures/adaptor_overhead_vs_level_report.pdf
+?? evidence/runs/20260706_105831/debug_figures/communication_components_clean.pdf
+?? evidence/runs/20260706_105831/debug_figures/communication_components_clean_report.pdf
+?? evidence/runs/20260706_105831/debug_figures/communication_summary_clean.pdf
+?? evidence/runs/20260706_105831/debug_figures/component_scaling_vs_level.pdf
+?? evidence/runs/20260706_105831/debug_figures/computation_component_absolute.pdf
+?? evidence/runs/20260706_105831/debug_figures/parameter_sets.pdf
+?? evidence/runs/20260706_105831/debug_figures/parameter_sets_report.pdf
+?? evidence/runs/20260706_105831/debug_figures/per_operation_timing.pdf
+?? evidence/runs/20260706_105831/debug_figures/per_operation_timing_report.pdf
+?? evidence/runs/20260706_105831/debug_figures/protocol_step_timeline.pdf
+?? evidence/runs/20260706_105831/debug_figures/timing_overhead_clean.pdf
+?? evidence/runs/20260706_105831/debug_figures/timing_timeline_base_vs_las.pdf
+?? evidence/runs/20260706_105831/debug_figures/verify_ext_attribution_vs_level.pdf
+?? evidence/runs/20260706_105831/logs/
+?? evidence/runs/20260706_105831/metadata.txt
+?? evidence/runs/20260706_105831/paper_package/communication_components_paper.pdf
+?? evidence/runs/20260706_105831/paper_package/per_operation_timing_paper.pdf
+?? evidence/runs/20260706_110802/appendix_package/adaptor_overhead_paper.pdf
+?? evidence/runs/20260706_110802/appendix_package/rejection_sampling_paper.pdf
+?? evidence/runs/20260706_110802/application_package/application_atomic_swap_payload_breakdown.pdf
+?? evidence/runs/20260706_110802/application_package/application_multihop_norm_vs_k.pdf
+?? evidence/runs/20260706_110802/application_package/application_multihop_payload_vs_k.pdf
+?? evidence/runs/20260706_110802/application_package/application_multihop_presign_time_vs_k.pdf
+?? evidence/runs/20260706_110802/debug_figures/acceptance_vs_level.pdf
+?? evidence/runs/20260706_110802/debug_figures/adaptor_overhead_vs_level.pdf
+?? evidence/runs/20260706_110802/debug_figures/adaptor_overhead_vs_level_report.pdf
+?? evidence/runs/20260706_110802/debug_figures/communication_components_clean.pdf
+?? evidence/runs/20260706_110802/debug_figures/communication_components_clean_report.pdf
+?? evidence/runs/20260706_110802/debug_figures/communication_summary_clean.pdf
+?? evidence/runs/20260706_110802/debug_figures/component_scaling_vs_level.pdf
+?? evidence/runs/20260706_110802/debug_figures/computation_component_absolute.pdf
+?? evidence/runs/20260706_110802/debug_figures/parameter_sets.pdf
+?? evidence/runs/20260706_110802/debug_figures/parameter_sets_report.pdf
+?? evidence/runs/20260706_110802/debug_figures/per_operation_timing.pdf
+?? evidence/runs/20260706_110802/debug_figures/per_operation_timing_report.pdf
+?? evidence/runs/20260706_110802/debug_figures/protocol_step_timeline.pdf
+?? evidence/runs/20260706_110802/debug_figures/timing_overhead_clean.pdf
+?? evidence/runs/20260706_110802/debug_figures/timing_timeline_base_vs_las.pdf
+?? evidence/runs/20260706_110802/debug_figures/verify_ext_attribution_vs_level.pdf
+?? evidence/runs/20260706_110802/logs/
+?? evidence/runs/20260706_110802/metadata.txt
+?? evidence/runs/20260706_110802/paper_package/communication_components_paper.pdf
+?? evidence/runs/20260706_110802/paper_package/per_operation_timing_paper.pdf
+?? evidence/runs/20260706_150850/appendix_package/adaptor_overhead_paper.pdf
+?? evidence/runs/20260706_150850/appendix_package/rejection_sampling_paper.pdf
+?? evidence/runs/20260706_150850/application_package/application_atomic_swap_payload_breakdown.pdf
+?? evidence/runs/20260706_150850/application_package/application_multihop_norm_vs_k.pdf
+?? evidence/runs/20260706_150850/application_package/application_multihop_payload_vs_k.pdf
+?? evidence/runs/20260706_150850/application_package/application_multihop_presign_time_vs_k.pdf
+?? evidence/runs/20260706_150850/debug_figures/acceptance_vs_level.pdf
+?? evidence/runs/20260706_150850/debug_figures/adaptor_overhead_vs_level.pdf
+?? evidence/runs/20260706_150850/debug_figures/adaptor_overhead_vs_level_report.pdf
+?? evidence/runs/20260706_150850/debug_figures/communication_components_clean.pdf
+?? evidence/runs/20260706_150850/debug_figures/communication_components_clean_report.pdf
+?? evidence/runs/20260706_150850/debug_figures/communication_summary_clean.pdf
+?? evidence/runs/20260706_150850/debug_figures/component_scaling_vs_level.pdf
+?? evidence/runs/20260706_150850/debug_figures/computation_component_absolute.pdf
+?? evidence/runs/20260706_150850/debug_figures/parameter_sets.pdf
+?? evidence/runs/20260706_150850/debug_figures/parameter_sets_report.pdf
+?? evidence/runs/20260706_150850/debug_figures/per_operation_timing.pdf
+?? evidence/runs/20260706_150850/debug_figures/per_operation_timing_report.pdf
+?? evidence/runs/20260706_150850/debug_figures/protocol_step_timeline.pdf
+?? evidence/runs/20260706_150850/debug_figures/timing_overhead_clean.pdf
+?? evidence/runs/20260706_150850/debug_figures/timing_timeline_base_vs_las.pdf
+?? evidence/runs/20260706_150850/debug_figures/verify_ext_attribution_vs_level.pdf
+?? evidence/runs/20260706_150850/logs/
+?? evidence/runs/20260706_150850/metadata.txt
+?? evidence/runs/20260706_150850/paper_package/communication_components_paper.pdf
+?? evidence/runs/20260706_150850/paper_package/per_operation_timing_paper.pdf
+?? evidence/runs/20260716_151945/
+?? evidence/runs/20260717_084012/appendix_package/adaptor_overhead_paper.pdf
+?? evidence/runs/20260717_084012/appendix_package/rejection_sampling_paper.pdf
+?? evidence/runs/20260717_084012/debug_figures/acceptance_vs_level.pdf
+?? evidence/runs/20260717_084012/debug_figures/adaptor_overhead_vs_level.pdf
+?? evidence/runs/20260717_084012/debug_figures/adaptor_overhead_vs_level_report.pdf
+?? evidence/runs/20260717_084012/debug_figures/communication_components_clean.pdf
+?? evidence/runs/20260717_084012/debug_figures/communication_components_clean_report.pdf
+?? evidence/runs/20260717_084012/debug_figures/communication_summary_clean.pdf
+?? evidence/runs/20260717_084012/debug_figures/component_scaling_vs_level.pdf
+?? evidence/runs/20260717_084012/debug_figures/computation_component_absolute.pdf
+?? evidence/runs/20260717_084012/debug_figures/parameter_sets.pdf
+?? evidence/runs/20260717_084012/debug_figures/parameter_sets_report.pdf
+?? evidence/runs/20260717_084012/debug_figures/per_operation_timing.pdf
+?? evidence/runs/20260717_084012/debug_figures/per_operation_timing_report.pdf
+?? evidence/runs/20260717_084012/debug_figures/protocol_step_timeline.pdf
+?? evidence/runs/20260717_084012/debug_figures/timing_overhead_clean.pdf
+?? evidence/runs/20260717_084012/debug_figures/timing_timeline_base_vs_las.pdf
+?? evidence/runs/20260717_084012/debug_figures/verify_ext_attribution_vs_level.pdf
+?? evidence/runs/20260717_084012/logs/
+?? evidence/runs/20260717_084012/metadata.txt
+?? evidence/runs/20260717_084012/paper_package/communication_components_paper.pdf
+?? evidence/runs/20260717_084012/paper_package/per_operation_timing_paper.pdf
+?? evidence/runs/20260717_084012/tables/adaptor_overhead_paper.pdf
+?? evidence/runs/20260717_084012/tables/communication_components_paper.pdf
+?? evidence/runs/20260717_084012/tables/per_operation_timing_paper.pdf
+?? evidence/runs/20260717_084012/tables/rejection_attempts_distribution_paper.pdf
+?? evidence/runs/20260717_084012/tables/rejection_sampling_paper.pdf
+?? evidence/runs/20260729_175721/
+?? evidence/stage2/
+?? evidence/stark/
+?? evm/test/TwoLegSwapGas.t.sol
+?? las-context-consolidated.md:Zone.Identifier
+?? meeting7_cleaned_transcript.md
+?? meeting7_original_samsung_transcript.md
+?? meeting7_original_transcript.md
+?? ref/test/export_naysayer_vectors
+?? ref/test/vectors2.txt
+?? research_writing_guide.md
+?? runlcov.sh
+?? runtests.sh
+?? rust/fips204-las/bench_las_criterion.log
+?? rust/fips204-las/bench_levels_rust.log
+?? rust/fips204-las/cargo_gate.log
+?? rust/fips204-las/size_report_rust.log
+?? rust/las-stark/Cargo.lock
+?? rust/las-stark/README.md
+?? rust/las-stark/proof.bin
+?? rust/las-stark/relation_proof.bin
+?? rust/las-stark/src/air.rs
+?? rust/las-stark/src/bin/
+?? rust/las-stark/src/conv_air.rs
+?? rust/las-stark/src/hashing.rs
+?? rust/las-stark/src/lib.rs
+?? rust/las-stark/src/prover.rs
+?? rust/las-stark/src/relation.rs
+?? rust/las-stark/src/relation_air.rs
+?? rust/las-stark/src/vectors.rs
+?? rust/las-stark/target/
+?? rust/las-stark/tests/
+?? scripts/run_stark_bench.sh
+?? texput.log
+?? third_party/
+
+compiler   : cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+os_uname   : Linux LAPTOP-FHA4JR28 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+wsl        : yes  (Linux version 6.18.33.2-microsoft-standard-WSL2 (root@f1bbfb02316b) (gcc (GCC) 13.2.0, GNU ld (GNU Binutils) 2.41) #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026)
+cpu        : AMD Ryzen 7 7745HX with Radeon Graphics
+cpu_cores  : 16
+
+command_list :
+  make test/test_las3        && ./test/test_las3        > logs/functional_tests.log
+  make test/test_contract3   && ./test/test_contract3   > logs/contract.log
+  make test/test_serde3      && ./test/test_serde3      > logs/serialization_tests.log
+  make test/test_kat3        && ./test/test_kat3        > logs/kat.log
+  make test/test_swap3       && ./test/test_swap3       > logs/atomic_swap.log
+  make test/test_pcn3        && ./test/test_pcn3        > logs/pcn.log
+  make REPRO_FLAGS=... test/bench_levels_paper && ./test/bench_levels_paper > logs/fair_paper.log
+  make REPRO_FLAGS=... test/bench_levels2      && ./test/bench_levels2      > logs/fair_l2.log
+  make REPRO_FLAGS=... test/bench_levels3      && ./test/bench_levels3      > logs/fair_l3.log
+  make REPRO_FLAGS=... test/bench_levels5      && ./test/bench_levels5      > logs/fair_l5.log
+  make test/bench_app3       && ./test/bench_app3       > logs/application_benchmark.log
+  make test/bench_classical  && ./test/bench_classical  > logs/classical.log   # only if third_party/secp256k1-zkp present
+  # generated outputs, organised into subfolders (NOT written flat into the run root):
+  python3 scripts/plot_las_benchmarks.py --input-dir <stage> --output-dir <stage>
+  #   -> tables/*.csv (+ report_figure_manifest.csv), debug_figures/*, application_package/*
+  python3 scripts/plot_las_paper_figures.py --input-dir tables --output-dir paper_package --appendix-dir appendix_package
+  #   -> paper_package/* (Table 1 + 3 figures + KEY_FINDINGS.md + paper_figure_manifest.csv)
+  #   -> appendix_package/rejection_sampling_paper.*

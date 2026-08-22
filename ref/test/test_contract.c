@@ -59,8 +59,8 @@ int main(void) {
   randombytes(m, mlen);
 
   las_setup(&pp, ppseed);
-  las_keygen_seed(&pk, &sk, &pp, kseed);     /* deterministic key   */
-  las_keygen_seed(&Y, &y, &pp, yseed);       /* statement/witness   */
+  las_keypair_seed(&pk, &sk, &pp, kseed);     /* deterministic key   */
+  las_keypair_seed(&Y, &y, &pp, yseed);       /* statement/witness   */
 
   printf("=== LAS adaptor-signature correctness contract (mode %d, n=%d ell=%d kappa=%d) ===\n",
          DILITHIUM_MODE, LAS_N, LAS_ELL, LAS_KAPPA);
@@ -96,11 +96,11 @@ int main(void) {
     las_pack_pk(pkb, &pk);
     las_pack_sig(sgb, &sig);
     /* sanity: the clean packed pair verifies */
-    int clean_ok = (las_verify_packed(pkb, sgb, m, mlen, &pp) == 0);
+    int clean_ok = (las_verify_packed(sgb, m, mlen, pkb, &pp) == 0);
     for(i = 0; i < LAS_SIG_BYTES; ++i) {
       for(bit = 0; bit < 8; ++bit) {
         sgb[i] ^= (uint8_t)(1u << bit);
-        if(las_verify_packed(pkb, sgb, m, mlen, &pp) != 0) ++rejected;
+        if(las_verify_packed(sgb, m, mlen, pkb, &pp) != 0) ++rejected;
         sgb[i] ^= (uint8_t)(1u << bit);
       }
     }
@@ -143,13 +143,13 @@ int main(void) {
     uint8_t Ak[LAS_SK_BYTES], Bk[LAS_SK_BYTES];
     int stable = 1;
 
-    las_keygen_seed(&pk_a, &sk_a, &pp, kseed);
-    las_keygen_seed(&pk_b, &sk_b, &pp, kseed);
+    las_keypair_seed(&pk_a, &sk_a, &pp, kseed);
+    las_keypair_seed(&pk_b, &sk_b, &pp, kseed);
     las_pack_sk(Ak, &sk_a); las_pack_sk(Bk, &sk_b);
     if(memcmp(Ak, Bk, LAS_SK_BYTES) != 0) stable = 0;
 
-    las_sign_det(&sg_a, m, mlen, &pk_a, &sk_a, &pp);
-    las_sign_det(&sg_b, m, mlen, &pk_a, &sk_a, &pp);
+    las_signature_det(&sg_a, m, mlen, &pk_a, &sk_a, &pp);
+    las_signature_det(&sg_b, m, mlen, &pk_a, &sk_a, &pp);
     las_pack_sig(A, &sg_a); las_pack_sig(B, &sg_b);
     if(memcmp(A, B, LAS_SIG_BYTES) != 0) stable = 0;
 

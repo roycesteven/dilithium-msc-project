@@ -62,9 +62,9 @@ static void bench_swap(const las_pp *pp) {
 
   randombytes(txA, MLEN);
   randombytes(txB, MLEN);
-  las_keygen(&pkA, &skA, pp);          /* Alice */
-  las_keygen(&pkB, &skB, pp);          /* Bob   */
-  las_keygen(&Y,  &yw,  pp);           /* Bob's fresh statement/witness (Y,y) */
+  las_keypair(&pkA, &skA, pp);          /* Alice */
+  las_keypair(&pkB, &skB, pp);          /* Bob   */
+  las_keypair(&Y,  &yw,  pp);           /* Bob's fresh statement/witness (Y,y) */
 
   att0 = las_attempts;
   t0 = now_us();
@@ -122,7 +122,7 @@ static void bench_amhl(const las_pp *pp) {
   size_t pk_b  = packed_pk_bytes();
 
   randombytes(msg, MLEN);
-  las_keygen(&pkP, &skP, pp);          /* one payer key reused across hops (cost-equivalent) */
+  las_keypair(&pkP, &skP, pp);          /* one payer key reused across hops (cost-equivalent) */
 
   printf("\n--- (2) Multi-hop AMHL payment: cost as a function of path length K ---\n");
   printf("  (each route: K distinct cumulative statements Y_j=A*s_j; PreSign bound g-k-K)\n\n");

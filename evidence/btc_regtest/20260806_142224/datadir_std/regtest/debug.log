@@ -1,0 +1,633 @@
+
+
+
+
+
+2026-08-06T13:22:24Z Bitcoin Core version v31.1.0 (release build)
+2026-08-06T13:22:24Z parameter interaction: -bind set -> setting -listen=1
+2026-08-06T13:22:24Z Log output may contain privacy-sensitive information. Be cautious when sharing logs.
+2026-08-06T13:22:24Z Using the 'x86_shani(1way;2way)' SHA256 implementation
+2026-08-06T13:22:24Z Using RdSeed as an additional entropy source
+2026-08-06T13:22:24Z Using RdRand as an additional entropy source
+2026-08-06T13:22:24Z Default data directory /home/melly/.bitcoin
+2026-08-06T13:22:24Z Using data directory /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest
+2026-08-06T13:22:24Z Config file: /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/bitcoin.conf (not found, skipping)
+2026-08-06T13:22:24Z Command-line arg: bind="127.0.0.1"
+2026-08-06T13:22:24Z Command-line arg: daemonwait=""
+2026-08-06T13:22:24Z Command-line arg: datadir="/home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std"
+2026-08-06T13:22:24Z Command-line arg: debug="mempool"
+2026-08-06T13:22:24Z Command-line arg: fallbackfee="0.0002"
+2026-08-06T13:22:24Z Command-line arg: port="18565"
+2026-08-06T13:22:24Z Command-line arg: regtest=""
+2026-08-06T13:22:24Z Command-line arg: rpcport="18555"
+2026-08-06T13:22:24Z Using at most 125 automatic connections (1048576 file descriptors available)
+2026-08-06T13:22:24Z scheduler thread start
+2026-08-06T13:22:24Z Binding RPC on address ::1 port 18555
+2026-08-06T13:22:24Z Binding RPC on address 127.0.0.1 port 18555
+2026-08-06T13:22:24Z Generated RPC authentication cookie /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/.cookie
+2026-08-06T13:22:24Z Permissions used for cookie: rw-------
+2026-08-06T13:22:24Z Using random cookie authentication.
+2026-08-06T13:22:24Z Starting HTTP server with 16 worker threads
+2026-08-06T13:22:24Z http_pool_0 thread start
+2026-08-06T13:22:24Z http_pool_1 thread start
+2026-08-06T13:22:24Z http_pool_3 thread start
+2026-08-06T13:22:24Z http_pool_2 thread start
+2026-08-06T13:22:24Z http_pool_4 thread start
+2026-08-06T13:22:24Z http_pool_5 thread start
+2026-08-06T13:22:24Z http_pool_6 thread start
+2026-08-06T13:22:24Z http_pool_7 thread start
+2026-08-06T13:22:24Z http_pool_8 thread start
+2026-08-06T13:22:24Z http_pool_9 thread start
+2026-08-06T13:22:24Z http_pool_10 thread start
+2026-08-06T13:22:24Z http_pool_11 thread start
+2026-08-06T13:22:24Z http_pool_12 thread start
+2026-08-06T13:22:24Z http_pool_13 thread start
+2026-08-06T13:22:24Z http_pool_14 thread start
+2026-08-06T13:22:24Z http_pool_15 thread start
+2026-08-06T13:22:24Z Using wallet directory /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/wallets
+2026-08-06T13:22:24Z Using SQLite Version 3.50.4
+2026-08-06T13:22:24Z init message: Verifying wallet(s)…
+2026-08-06T13:22:24Z Using /16 prefix for IP bucketing
+2026-08-06T13:22:24Z init message: Loading P2P addresses…
+2026-08-06T13:22:24Z Creating peers.dat because the file was not found ("/home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/peers.dat")
+2026-08-06T13:22:24Z init message: Loading banlist…
+2026-08-06T13:22:24Z Recreating the banlist database
+2026-08-06T13:22:24Z SetNetworkActive: true
+2026-08-06T13:22:24Z /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/fee_estimates.dat is not found. Continue anyway.
+2026-08-06T13:22:24Z Cache configuration:
+2026-08-06T13:22:24Z * Using 2.0 MiB for block index database
+2026-08-06T13:22:24Z * Using 8.0 MiB for chain state database
+2026-08-06T13:22:24Z * Using 1014.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2026-08-06T13:22:24Z Script verification uses 15 additional threads
+2026-08-06T13:22:24Z Using obfuscation key for blocksdir *.dat files (/home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/blocks): '07efe08f48323355'
+2026-08-06T13:22:24Z Opening LevelDB in /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/blocks/index
+2026-08-06T13:22:25Z Opened LevelDB successfully
+2026-08-06T13:22:25Z Using obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/blocks/index: 0000000000000000
+2026-08-06T13:22:25Z Using 16 MiB out of 16 MiB requested for signature cache, able to store 524288 elements
+2026-08-06T13:22:25Z Using 16 MiB out of 16 MiB requested for script execution cache, able to store 524288 elements
+2026-08-06T13:22:25Z init message: Loading block index…
+2026-08-06T13:22:25Z Validating signatures for all blocks.
+2026-08-06T13:22:25Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2026-08-06T13:22:25Z Loading block index db: last block file = 0
+2026-08-06T13:22:25Z Loading block index db: last block file info: CBlockFileInfo(blocks=0, size=0, heights=0...0, time=1970-01-01...1970-01-01)
+2026-08-06T13:22:25Z Checking all blk files are present...
+2026-08-06T13:22:25Z Initializing chainstate Chainstate [ibd] @ height -1 (null)
+2026-08-06T13:22:25Z Opening LevelDB in /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/chainstate
+2026-08-06T13:22:25Z Opened LevelDB successfully
+2026-08-06T13:22:25Z Wrote new obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/chainstate: d6b31920f5b6b07e
+2026-08-06T13:22:25Z Using obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_regtest/20260806_142224/datadir_std/regtest/chainstate: d6b31920f5b6b07e
+2026-08-06T13:22:25Z init message: Verifying blocks…
+2026-08-06T13:22:25Z Block index and chainstate loaded
+2026-08-06T13:22:25Z Setting NODE_NETWORK in non-prune mode
+2026-08-06T13:22:25Z initload thread start
+2026-08-06T13:22:25Z UpdateTip: new best=0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206 height=0 version=0x00000001 log2_work=1.000000 tx=1 date='2011-02-02T23:16:42Z' progress=0.000002 cache=0.3MiB(0txo)
+2026-08-06T13:22:25Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:25Z Failed to open mempool file. Continuing anyway.
+2026-08-06T13:22:25Z initload thread exit
+2026-08-06T13:22:25Z block tree size = 1
+2026-08-06T13:22:25Z nBestHeight = 0
+2026-08-06T13:22:25Z mapport thread start
+2026-08-06T13:22:25Z torcontrol thread start
+2026-08-06T13:22:25Z Bound to 127.0.0.1:18565
+2026-08-06T13:22:25Z 0 block-relay-only anchors will be tried for connections.
+2026-08-06T13:22:25Z init message: Starting network threads…
+2026-08-06T13:22:25Z net thread start
+2026-08-06T13:22:25Z dnsseed thread start
+2026-08-06T13:22:25Z Loading addresses from DNS seed dummySeed.invalid.
+2026-08-06T13:22:25Z addcon thread start
+2026-08-06T13:22:25Z opencon thread start
+2026-08-06T13:22:25Z init message: Done loading
+2026-08-06T13:22:25Z msghand thread start
+2026-08-06T13:22:25Z 0 addresses found from DNS seeds
+2026-08-06T13:22:25Z dnsseed thread exit
+2026-08-06T13:22:25Z init message: Creating wallet…
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = 89d2f0000566a43d107d8fb55f24420a924e7e66fa3e6d2168499c5cdb5d95ce, type = legacy, internal = false
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = deafe863e73ce68f05768f2794d791fe8d7fc7f9e905287c6eab8ad62962ce24, type = p2sh-segwit, internal = false
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = 18e9936e71b7ede5f246aa72a9ffa9cf85bb8d142bd9ad3094feeebab05c4820, type = bech32, internal = false
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = d3f449aecbdce8bcc7cb6525ed299887548bf628b1db0970444b800c7d3edefc, type = bech32m, internal = false
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = 0beb22fe038adbee562fee55bd194b003a367487ef895b2cb7c1c54bf0ac01d5, type = legacy, internal = true
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = d289aaacf0b14ecfbe1c9dbb64e7d1131771120c174e5850d1778e9d32a74701, type = p2sh-segwit, internal = true
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = 5993f2356cd23eca2d60522853f37e2ee517dc34ed92e3f7cc51da23a7c8e7da, type = bech32, internal = true
+2026-08-06T13:22:25Z [carriage] Setting spkMan to active: id = 8709cc4814beecbf667927e77b3f531ffed7af706e33196ac18fd9a915d4a9fd, type = bech32m, internal = true
+2026-08-06T13:22:25Z [carriage] Wallet completed creation in             456ms
+2026-08-06T13:22:25Z [carriage] setKeyPool.size() = 8000
+2026-08-06T13:22:25Z [carriage] mapWallet.size() = 0
+2026-08-06T13:22:25Z [carriage] m_address_book.size() = 0
+2026-08-06T13:22:26Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:26Z Enabling script verification at block #1 (b37c29aea0f5322130cdc3e58aa05a2a0f0186d01509327765d5513a61cc0f52): assumevalid=0 (always verify).
+2026-08-06T13:22:26Z Leaving InitialBlockDownload (latching to false)
+2026-08-06T13:22:26Z UpdateTip: new best=01499b92e3eb36abc42cdca177f530989f8238b94ac2e938c30c0d918ac631d8 height=1 version=0x20000000 log2_work=2.000000 tx=2 date='2026-08-06T13:22:26Z' progress=1.000000 cache=0.3MiB(1txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:26Z UpdateTip: new best=7f12d8f2ec500f5a1d52b5d72dfebc6e069138916d690fc2b48c83baab4745d2 height=2 version=0x20000000 log2_work=2.584963 tx=3 date='2026-08-06T13:22:27Z' progress=1.000000 cache=0.3MiB(2txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:26Z UpdateTip: new best=2ef740d8e0f57a5c8e1bda1176364f2b79ea4562d81b267d6c1550b22e75cf99 height=3 version=0x20000000 log2_work=3.000000 tx=4 date='2026-08-06T13:22:27Z' progress=1.000000 cache=0.3MiB(3txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:26Z UpdateTip: new best=3011e6d8dea31935e73c53a2946a5516e57e399e7830184f0295a294890a7ecf height=4 version=0x20000000 log2_work=3.321928 tx=5 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(4txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:26Z UpdateTip: new best=773d1652933c884fa4bc4e8798131e16030af6cca00191c6e53f450b49130c4f height=5 version=0x20000000 log2_work=3.584963 tx=6 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(5txo)
+2026-08-06T13:22:26Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:26Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:26Z [carriage] AddToWallet cbc014515b9299ba5bdd47a9a55a6747522c4876d477ff9f908376d060ebd926  new Confirmed (block=01499b92e3eb36abc42cdca177f530989f8238b94ac2e938c30c0d918ac631d8, height=1, index=0)
+2026-08-06T13:22:26Z [carriage] AddToWallet b316476290fb8cf625a390d9f822d2625cc0b99cbee199150496f2c4b724688e  new Confirmed (block=7f12d8f2ec500f5a1d52b5d72dfebc6e069138916d690fc2b48c83baab4745d2, height=2, index=0)
+2026-08-06T13:22:26Z [carriage] AddToWallet c4d872a490d2fb2ad271b98f58762dee3659a090a81070fdf90ae9dd429be15e  new Confirmed (block=2ef740d8e0f57a5c8e1bda1176364f2b79ea4562d81b267d6c1550b22e75cf99, height=3, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet 853585af4607c4352dddb40a8cb2c826a363ab343dfa3e486dc067a4d4748d92  new Confirmed (block=3011e6d8dea31935e73c53a2946a5516e57e399e7830184f0295a294890a7ecf, height=4, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet 9ec91326c84748d93a624340d74d869eb5a6ed9377273f86c97ddb21ecf58e21  new Confirmed (block=773d1652933c884fa4bc4e8798131e16030af6cca00191c6e53f450b49130c4f, height=5, index=0)
+2026-08-06T13:22:27Z UpdateTip: new best=698eaf77bbfde97d9f1a5f5d929f13f732a9c62cccebfcd862f67662f24cec45 height=6 version=0x20000000 log2_work=3.807355 tx=7 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(6txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=26edc9c236410461bc8e5cfacac37a76a45c7b8f553561b7b4f7186868f803ab height=7 version=0x20000000 log2_work=4.000000 tx=8 date='2026-08-06T13:22:28Z' progress=1.000000 cache=0.3MiB(7txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=6bd89e638f0a859443ae85a8cb9ba44e9136ba37ad782cf6d52e993aa46d65ea height=8 version=0x20000000 log2_work=4.169925 tx=9 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(8txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=046ea7ea93c1a83e21ee84d2cea71108b12b236d7a5f122e12ed398f69c53d07 height=9 version=0x20000000 log2_work=4.321928 tx=10 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(9txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=22afb2ef0393540f0187e31e59061bd48d37b4c6e58e3dd927f540e7a297c74c height=10 version=0x20000000 log2_work=4.459432 tx=11 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(10txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z [carriage] AddToWallet e758d9ecebed1d71a74af07e4b47978a90b2e848f8a0b6f2e8593abda5392c19  new Confirmed (block=698eaf77bbfde97d9f1a5f5d929f13f732a9c62cccebfcd862f67662f24cec45, height=6, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet 82dcbbaea414528c6a8e2de76501774dc25c646b0a9c9410c28f259d86e58ff0  new Confirmed (block=26edc9c236410461bc8e5cfacac37a76a45c7b8f553561b7b4f7186868f803ab, height=7, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet e91d1dacf1765956e68b3748287bd995595028ac5883e3b111e2de4632405fea  new Confirmed (block=6bd89e638f0a859443ae85a8cb9ba44e9136ba37ad782cf6d52e993aa46d65ea, height=8, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet a77bb3e0ef8952889003160a17d27363e2ef80d6397422c79d0426330094f377  new Confirmed (block=046ea7ea93c1a83e21ee84d2cea71108b12b236d7a5f122e12ed398f69c53d07, height=9, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet 337cd42f8e4e460300972276e3c18e034d04ff5ee929c18c0e040fa8c9ff6aba  new Confirmed (block=22afb2ef0393540f0187e31e59061bd48d37b4c6e58e3dd927f540e7a297c74c, height=10, index=0)
+2026-08-06T13:22:27Z UpdateTip: new best=7c05ea7052f15fa314d8b345ba47f0d4f19947b99f900e781e5089d7a923b5f4 height=11 version=0x20000000 log2_work=4.584963 tx=12 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(11txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=5b982618f4112f1af6a5e59268bb2cb1c18010d6ae2759905c79e88cb9183fed height=12 version=0x20000000 log2_work=4.700440 tx=13 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(12txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=5d419e18a34e9da2657cbe173033bc8ce9437c69b2526e9dd0eb57ae539a3f96 height=13 version=0x20000000 log2_work=4.807355 tx=14 date='2026-08-06T13:22:29Z' progress=1.000000 cache=0.3MiB(13txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=07ed52c6a5aed4dc98fb5583ae966fe13ae542eabc8ecf2cd3086d206b25af4f height=14 version=0x20000000 log2_work=4.906891 tx=15 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(14txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z UpdateTip: new best=495b4ec447b18a5d8ea18357bb16f3c848721903da8256d32901f18787a8f3ca height=15 version=0x20000000 log2_work=5.000000 tx=16 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(15txo)
+2026-08-06T13:22:27Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:27Z CreateNewBlock(): block weight: 884 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:27Z [carriage] AddToWallet de08d3e37a0e3a1e2e334ccb87d571885dd6325ca5e1a1a4e419d26e1ee9ac2f  new Confirmed (block=7c05ea7052f15fa314d8b345ba47f0d4f19947b99f900e781e5089d7a923b5f4, height=11, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet 2c63836befd66cf82f35c9ae768da6037a4e2ef73cdeda6f333aae5c130e737b  new Confirmed (block=5b982618f4112f1af6a5e59268bb2cb1c18010d6ae2759905c79e88cb9183fed, height=12, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet d5cf97d735b5b06714b3640e4a54c78d8f5852ee15f1d5268796db26898f418a  new Confirmed (block=5d419e18a34e9da2657cbe173033bc8ce9437c69b2526e9dd0eb57ae539a3f96, height=13, index=0)
+2026-08-06T13:22:27Z [carriage] AddToWallet bcd27a449a3d5e37b196c71f235a76f21e061242d8af5b8191068c4c59c64925  new Confirmed (block=07ed52c6a5aed4dc98fb5583ae966fe13ae542eabc8ecf2cd3086d206b25af4f, height=14, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet c47fc1c6f687abb75d828bcd2b72789cf0485017503f4db223fd134c6fb083e1  new Confirmed (block=495b4ec447b18a5d8ea18357bb16f3c848721903da8256d32901f18787a8f3ca, height=15, index=0)
+2026-08-06T13:22:28Z UpdateTip: new best=18dd51dc0342ac5dc8ed5de4a7dbb7a0b73a56d2c04b4738034abe5d184a038a height=16 version=0x20000000 log2_work=5.087463 tx=17 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(16txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=6623a32f8071d540aca6ae2af7677dc1ce80db30739580f2e511ea99f4fcabda height=17 version=0x20000000 log2_work=5.169925 tx=18 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(17txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=10c2357cab004a1e78da3908bf8f0f4e0665dedf3f01f76173d104b931896ca9 height=18 version=0x20000000 log2_work=5.247928 tx=19 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(18txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=31a91e2b4d5635e2557b8fd897d9f476826e24f679ccd92a0b73fa4e06d5973e height=19 version=0x20000000 log2_work=5.321928 tx=20 date='2026-08-06T13:22:30Z' progress=1.000000 cache=0.3MiB(19txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=4408b3aef441525839324fd13a62c9d674e975f09359c582af73e68f30f13571 height=20 version=0x20000000 log2_work=5.392317 tx=21 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(20txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z [carriage] AddToWallet e23eedba510c34dce1e68fc3ed5797471892d0fccdd94b21575fe7614fcef903  new Confirmed (block=18dd51dc0342ac5dc8ed5de4a7dbb7a0b73a56d2c04b4738034abe5d184a038a, height=16, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet 6432f82b22c803924a224a591ab16a732d91262ffeb4c3cd01a62de156e8244f  new Confirmed (block=6623a32f8071d540aca6ae2af7677dc1ce80db30739580f2e511ea99f4fcabda, height=17, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet e36a79fca24b8695c89045be7c92995963e73f871ffee0f935ac625f271a64d9  new Confirmed (block=10c2357cab004a1e78da3908bf8f0f4e0665dedf3f01f76173d104b931896ca9, height=18, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet 1d52d380dfcf3c3471ab3b04fa9afbfbecc327fff3d4c49065d924c105b172f2  new Confirmed (block=31a91e2b4d5635e2557b8fd897d9f476826e24f679ccd92a0b73fa4e06d5973e, height=19, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet 63ed7cc947d3368cea3f64b132d64d6a0852b98a6b58af230a77aa20119e62d2  new Confirmed (block=4408b3aef441525839324fd13a62c9d674e975f09359c582af73e68f30f13571, height=20, index=0)
+2026-08-06T13:22:28Z UpdateTip: new best=723e839eceffbf1f9d700054c959b611a57391bb9718f25701e5199abaa0cef2 height=21 version=0x20000000 log2_work=5.459432 tx=22 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(21txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=0c17c6d5e714d7fa4a48b13c07aae7f11f0c0894e4f9aedcfcd437fb68228626 height=22 version=0x20000000 log2_work=5.523562 tx=23 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(22txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=266879f394f387b2ab120d6d4221ef239c5f8a67fe78a10c691a75d92dc3e2ff height=23 version=0x20000000 log2_work=5.584963 tx=24 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(23txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=53a1cefc483bf161c074d760b8f76e2e2bf4f3b0aabfa1ea628b04d04632304f height=24 version=0x20000000 log2_work=5.643856 tx=25 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(24txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z UpdateTip: new best=0b73abf647bc79c246a9a43e90c41885860e2f135493fa6dd0b4ba226609a7d1 height=25 version=0x20000000 log2_work=5.700440 tx=26 date='2026-08-06T13:22:31Z' progress=1.000000 cache=0.3MiB(25txo)
+2026-08-06T13:22:28Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:28Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:28Z [carriage] AddToWallet a515ab44b0a3392449f6b71e9e5fc8b351c6cd2d3c0eba98512ee275b7b5b538  new Confirmed (block=723e839eceffbf1f9d700054c959b611a57391bb9718f25701e5199abaa0cef2, height=21, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet 9727efedf105780d700411b7edfb5c4fd10bdc6e0843f9d4701e440fef3bec3a  new Confirmed (block=0c17c6d5e714d7fa4a48b13c07aae7f11f0c0894e4f9aedcfcd437fb68228626, height=22, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet cb5285f85010a590142316e5a724a595b03dfab5ec086737998db0e140fd99ec  new Confirmed (block=266879f394f387b2ab120d6d4221ef239c5f8a67fe78a10c691a75d92dc3e2ff, height=23, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet 8193972f01c6392ef73dfd9abafc0bb424bde021b86cbcd3647204362100bb17  new Confirmed (block=53a1cefc483bf161c074d760b8f76e2e2bf4f3b0aabfa1ea628b04d04632304f, height=24, index=0)
+2026-08-06T13:22:28Z [carriage] AddToWallet c73f848be078a0f5da27729d0c992ef5de7e165c7e8cadcf1c0b06cf55484155  new Confirmed (block=0b73abf647bc79c246a9a43e90c41885860e2f135493fa6dd0b4ba226609a7d1, height=25, index=0)
+2026-08-06T13:22:29Z UpdateTip: new best=3ac1c6331254eb74b834be9bcab1d6dec3a179790f7499303ea0f98684ff59c3 height=26 version=0x20000000 log2_work=5.754888 tx=27 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(26txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=5dcdded376d1e6178ab7187a475c956e599b4ee2a9b411050cc519c74ddc4957 height=27 version=0x20000000 log2_work=5.807355 tx=28 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(27txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=40ced2144d30cc6ec5c335db958ff9cda510027642835aa0675564412fbc7e76 height=28 version=0x20000000 log2_work=5.857981 tx=29 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(28txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=7e94d0c9aee02def7980ddb20e924efa202b7f7ed709f16ded5a9287a9debccf height=29 version=0x20000000 log2_work=5.906891 tx=30 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(29txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=7fc2bf35ecb65827a3de727ee1c8bf820bdaa73c012ec31e09167328844a5a91 height=30 version=0x20000000 log2_work=5.954196 tx=31 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(30txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z [carriage] AddToWallet e94a1d20d5bd8a0dcd804b3a48ce59855cee5a20996209461864cb3e94269b55  new Confirmed (block=3ac1c6331254eb74b834be9bcab1d6dec3a179790f7499303ea0f98684ff59c3, height=26, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 6736cb3436174d01edc891a352f33e222ecbaa64453006482365bdf4def58211  new Confirmed (block=5dcdded376d1e6178ab7187a475c956e599b4ee2a9b411050cc519c74ddc4957, height=27, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 15899bef21811a1e03d98b9a63175c148bfe092c81ec696e706087de440a1d48  new Confirmed (block=40ced2144d30cc6ec5c335db958ff9cda510027642835aa0675564412fbc7e76, height=28, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 392fae25bbf04ae2e4e56727cf44f90f7c798e792be67e04f8cd0ada222b0841  new Confirmed (block=7e94d0c9aee02def7980ddb20e924efa202b7f7ed709f16ded5a9287a9debccf, height=29, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 93eaaf66b33584223b51fbb910f76da7af49047229a0956358ec5a873da114fa  new Confirmed (block=7fc2bf35ecb65827a3de727ee1c8bf820bdaa73c012ec31e09167328844a5a91, height=30, index=0)
+2026-08-06T13:22:29Z UpdateTip: new best=3ca71102f5c10799cbcca083c1d5ca568cba911a9ed080ca110d06a02ec157d4 height=31 version=0x20000000 log2_work=6.000000 tx=32 date='2026-08-06T13:22:32Z' progress=1.000000 cache=0.3MiB(31txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=0a73d20e4091e38b394bb94dc42507e62cfec2b8c31e8ce33ed199420867415a height=32 version=0x20000000 log2_work=6.044394 tx=33 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(32txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=1bcafb05208cb8501622ac4e69402c6cd897be8ec865a9a19694227f97df142d height=33 version=0x20000000 log2_work=6.087463 tx=34 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(33txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=2bebbd824802307715524af43bd28a37e03b416e848ecc07787dd99f43f82651 height=34 version=0x20000000 log2_work=6.129283 tx=35 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(34txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z UpdateTip: new best=152224364d3fe9f04c28a210641194f2b9fe230b4e6d7a95e9da9add57d09c7f height=35 version=0x20000000 log2_work=6.169925 tx=36 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(35txo)
+2026-08-06T13:22:29Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:29Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:29Z [carriage] AddToWallet 001fe0c997d09fd0fb187ef65b28635fe793e8ba101c676e5be6286e7f28f558  new Confirmed (block=3ca71102f5c10799cbcca083c1d5ca568cba911a9ed080ca110d06a02ec157d4, height=31, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 18e9faf7a4c6c9a84d544f677789de72baaa75135fa0a418b9814ff75dc5f9d4  new Confirmed (block=0a73d20e4091e38b394bb94dc42507e62cfec2b8c31e8ce33ed199420867415a, height=32, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 0da7bbca7a3687179c18c5abf64a84fa7fc606383b84b322b853e0ebfc0f0897  new Confirmed (block=1bcafb05208cb8501622ac4e69402c6cd897be8ec865a9a19694227f97df142d, height=33, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet e414a769d44052c7e28073c10e537221b6b632fcb99e88c06f5052456129c84e  new Confirmed (block=2bebbd824802307715524af43bd28a37e03b416e848ecc07787dd99f43f82651, height=34, index=0)
+2026-08-06T13:22:29Z [carriage] AddToWallet 1af0194e77389e8b0fb344da5d2353982a632fca17099594f38853e087eca068  new Confirmed (block=152224364d3fe9f04c28a210641194f2b9fe230b4e6d7a95e9da9add57d09c7f, height=35, index=0)
+2026-08-06T13:22:30Z UpdateTip: new best=7b6e232c70f3654d759226f8471980e2c30e4ca53dd0f24a3dfc836483093d6d height=36 version=0x20000000 log2_work=6.209453 tx=37 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(36txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=245b8dab86d02a4636cfa1f88eb3b6a5ad569724d604601e221b7e470fb32ef2 height=37 version=0x20000000 log2_work=6.247928 tx=38 date='2026-08-06T13:22:33Z' progress=1.000000 cache=0.3MiB(37txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=07f91d97f5fc79c6cb83777346920a6aedca556f163ae2a13e0896bbd3662be5 height=38 version=0x20000000 log2_work=6.285402 tx=39 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(38txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=2a941ef7cd3b4ad11c7a4224315aaf52eac652e345f52def751fe5b98b8f1b40 height=39 version=0x20000000 log2_work=6.321928 tx=40 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(39txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=1fe2929a7434935e8a6b7db2344bb37ec77f386e2c75994c808a683c1646480f height=40 version=0x20000000 log2_work=6.357552 tx=41 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(40txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z [carriage] AddToWallet 59920cfb0bcdd54061b7aba9a1bc562c22343875b16c3147add9b54ae61624af  new Confirmed (block=7b6e232c70f3654d759226f8471980e2c30e4ca53dd0f24a3dfc836483093d6d, height=36, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet 44cd8577de7df08ccccea0e2b3a9b2483ac39de9d4485f6a92bc963f5e25d930  new Confirmed (block=245b8dab86d02a4636cfa1f88eb3b6a5ad569724d604601e221b7e470fb32ef2, height=37, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet 917754f8be705fd925b4f4a36a5310f9b21bfdb2f6e87cb57ecb6598b2b791d2  new Confirmed (block=07f91d97f5fc79c6cb83777346920a6aedca556f163ae2a13e0896bbd3662be5, height=38, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet 4ffab294642c2c89372cc6c39a6e4dddbe266ab40570a8002d94b3b5d8ea4aac  new Confirmed (block=2a941ef7cd3b4ad11c7a4224315aaf52eac652e345f52def751fe5b98b8f1b40, height=39, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet ac3abed8ed32caa9014547583538e1ffd85b3453b315b312e4aab8df516d34ef  new Confirmed (block=1fe2929a7434935e8a6b7db2344bb37ec77f386e2c75994c808a683c1646480f, height=40, index=0)
+2026-08-06T13:22:30Z UpdateTip: new best=5d83fa8ab17f7810ebec62e70746e75ebdf78cc17c593df0b88cce8c33e48419 height=41 version=0x20000000 log2_work=6.392317 tx=42 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(41txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=2ebc20b704284b71cd6f126cbd74dc29e9de82497bac14bfcf6279235ff17199 height=42 version=0x20000000 log2_work=6.426265 tx=43 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(42txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=657cae79dec0624ca9769d2821d7676f20a267aa96a1e37092a6e64f872f38a5 height=43 version=0x20000000 log2_work=6.459432 tx=44 date='2026-08-06T13:22:34Z' progress=1.000000 cache=0.3MiB(43txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=636c6f77e8d47fc01bb8b3a29292c5696cb249ac2d83808a3da5e7b8b728d06e height=44 version=0x20000000 log2_work=6.491853 tx=45 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(44txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=0daaa9bf2b28d38788996cda15c413c817bb2c38c67eddc120c8ebf2731d890d height=45 version=0x20000000 log2_work=6.523562 tx=46 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(45txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z [carriage] AddToWallet ca78616c976eb21abad268eba8a9ddd34cc40388915100bd81f06250a448454c  new Confirmed (block=5d83fa8ab17f7810ebec62e70746e75ebdf78cc17c593df0b88cce8c33e48419, height=41, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet 6bfaba94820caf8a13885a84afc809c18c9a6ad8cf43ec6271d2881ae8f4994d  new Confirmed (block=2ebc20b704284b71cd6f126cbd74dc29e9de82497bac14bfcf6279235ff17199, height=42, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet d9d698ea7dbf8cf8c3fd67a1b4bcada84c35d41d01da88e88130d2d8513dca8c  new Confirmed (block=657cae79dec0624ca9769d2821d7676f20a267aa96a1e37092a6e64f872f38a5, height=43, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet b36422e66a3f7e4abf46759d0636146b344c1cd93b65a4b06674bd344397222d  new Confirmed (block=636c6f77e8d47fc01bb8b3a29292c5696cb249ac2d83808a3da5e7b8b728d06e, height=44, index=0)
+2026-08-06T13:22:30Z [carriage] AddToWallet eb58174735101ec1583258cfe54fc526e3a8edea0cd443a3ed57bf6e714f387b  new Confirmed (block=0daaa9bf2b28d38788996cda15c413c817bb2c38c67eddc120c8ebf2731d890d, height=45, index=0)
+2026-08-06T13:22:30Z UpdateTip: new best=0879647000c1aa81fb91e2d6f341feef87823420d43a5a6aba3d747628e068c4 height=46 version=0x20000000 log2_work=6.554589 tx=47 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(46txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=255381fd98ed608a66419872ced6e836514d890ad9ebcf4726676dbfe23c0abd height=47 version=0x20000000 log2_work=6.584963 tx=48 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(47txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=4c8268dab377c3c63af96e7b92612c7c786200852ada3e73be65dfc0b7ae9422 height=48 version=0x20000000 log2_work=6.614710 tx=49 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(48txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=63f89ef37bfd3c3bffd6dfbd81d654b17d0f105c0b7329227bc78a3545555b84 height=49 version=0x20000000 log2_work=6.643856 tx=50 date='2026-08-06T13:22:35Z' progress=1.000000 cache=0.3MiB(49txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z UpdateTip: new best=4eadb042bfcfe3cc9c93b61025b4a441ef5f6f473014f94f980ddf846202c01c height=50 version=0x20000000 log2_work=6.672425 tx=51 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(50txo)
+2026-08-06T13:22:30Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:30Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:30Z [carriage] AddToWallet c8635ded42582ace7c34f1b1f7e208ef652751d50fb9c092c631d2c182cb7439  new Confirmed (block=0879647000c1aa81fb91e2d6f341feef87823420d43a5a6aba3d747628e068c4, height=46, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet 466afd00aea694fdf5bbc6dfad0add7724d769b9cd20c0986dd9497abe542b9b  new Confirmed (block=255381fd98ed608a66419872ced6e836514d890ad9ebcf4726676dbfe23c0abd, height=47, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet a70ca7a1e09114b074a1cdbd53c3acd87ca833fa5263b1c2297bfd0858db5f05  new Confirmed (block=4c8268dab377c3c63af96e7b92612c7c786200852ada3e73be65dfc0b7ae9422, height=48, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet 53dfbe91a4a80fa5d0fc872796e62859d0d3cf11de3fe51c08efa8db12d8d46f  new Confirmed (block=63f89ef37bfd3c3bffd6dfbd81d654b17d0f105c0b7329227bc78a3545555b84, height=49, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet 64bc28495b7f3a9937fc4fa7e8028e45712ade820d35634967b1caa2a89f494a  new Confirmed (block=4eadb042bfcfe3cc9c93b61025b4a441ef5f6f473014f94f980ddf846202c01c, height=50, index=0)
+2026-08-06T13:22:31Z UpdateTip: new best=7e18b0af96601e9e4ad80bd2bcae478638d75fce84477a5b77c53cdaabc8c952 height=51 version=0x20000000 log2_work=6.700440 tx=52 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(51txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=4c2f1ff90b3aab84b2c316ff57a47bee5c5a2e06fdb359bce7bc7f6057d93fe7 height=52 version=0x20000000 log2_work=6.727920 tx=53 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(52txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=123f768949790914d9465064fd82be16763e4ca27a3ae8ef503b4526f0d59340 height=53 version=0x20000000 log2_work=6.754888 tx=54 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(53txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=67b349023b4992e86b4e8a22441f3db58d76217794fbad655f5e7fabb5927720 height=54 version=0x20000000 log2_work=6.781360 tx=55 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(54txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=1ca02156d6996d35099b06cb19bc66ee1ee153fc98861850e8fe63ba70f6288a height=55 version=0x20000000 log2_work=6.807355 tx=56 date='2026-08-06T13:22:36Z' progress=1.000000 cache=0.3MiB(55txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z [carriage] AddToWallet bbe8b1c9ecb57089bc58b44b4b8fb8228127931d33b294dca3b50715863522ac  new Confirmed (block=7e18b0af96601e9e4ad80bd2bcae478638d75fce84477a5b77c53cdaabc8c952, height=51, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet 4e305d47f151b74d26af8b8c51b28809838b7539165117950b564013726bfe1a  new Confirmed (block=4c2f1ff90b3aab84b2c316ff57a47bee5c5a2e06fdb359bce7bc7f6057d93fe7, height=52, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet 39dce7691874b24544110750a27a8313c75c411ba44d265e692cd0d454c92e66  new Confirmed (block=123f768949790914d9465064fd82be16763e4ca27a3ae8ef503b4526f0d59340, height=53, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet 94d27fe62db42359c091a13d19881ac985830d6d2e7f6cb743023f00222e4e7e  new Confirmed (block=67b349023b4992e86b4e8a22441f3db58d76217794fbad655f5e7fabb5927720, height=54, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet e5f97ebdc0b97fabbfc2da598ddfaee17f743d3ee8555291f1361045b6d6dcc5  new Confirmed (block=1ca02156d6996d35099b06cb19bc66ee1ee153fc98861850e8fe63ba70f6288a, height=55, index=0)
+2026-08-06T13:22:31Z UpdateTip: new best=0edf3765ce2cef2619a5ef30785e49cb93f4552665908784674616332931515f height=56 version=0x20000000 log2_work=6.832890 tx=57 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(56txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=3886f5d3c6effee4deb388ea9d7833ba25f883c3dd49f0f0d5b9354c1be5d243 height=57 version=0x20000000 log2_work=6.857981 tx=58 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(57txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=46ae1cf6287301dd832ca957ab5e476765e83cd2dae79a1a9ad9a6bcd7791cf6 height=58 version=0x20000000 log2_work=6.882643 tx=59 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(58txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=600994c834ef513546878f77466f10fd06a68fb86c50969728e7c7f70195a997 height=59 version=0x20000000 log2_work=6.906891 tx=60 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(59txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z UpdateTip: new best=1b6058ba32a3bf0bb70bd90bcb31805f19ef59005ef81396efb0572ab137d106 height=60 version=0x20000000 log2_work=6.930737 tx=61 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(60txo)
+2026-08-06T13:22:31Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:31Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:31Z [carriage] AddToWallet d3bf80f63a113370fbc0e4007340734ac046c5d6be170db40757e0e4d32b1ab9  new Confirmed (block=0edf3765ce2cef2619a5ef30785e49cb93f4552665908784674616332931515f, height=56, index=0)
+2026-08-06T13:22:31Z [carriage] AddToWallet c01ca97cdb6b8f50e6d5aa92614216bd0337274959b7e8a58ffc8d62745e2e96  new Confirmed (block=3886f5d3c6effee4deb388ea9d7833ba25f883c3dd49f0f0d5b9354c1be5d243, height=57, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet cf46b3490afb0c0d7cf40438e5edc7aaf6f3f830fad2c7f50409b524447bcfdd  new Confirmed (block=46ae1cf6287301dd832ca957ab5e476765e83cd2dae79a1a9ad9a6bcd7791cf6, height=58, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 480a5ffc8aa505c5c61e87636299787e75c5eb082e2ecbe3970fc54c33f943f6  new Confirmed (block=600994c834ef513546878f77466f10fd06a68fb86c50969728e7c7f70195a997, height=59, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 5e87fdbaac57e30e9a4064ac7e0d65606844b3997bb7ab1885feeed9d82a846f  new Confirmed (block=1b6058ba32a3bf0bb70bd90bcb31805f19ef59005ef81396efb0572ab137d106, height=60, index=0)
+2026-08-06T13:22:32Z UpdateTip: new best=13ee5d04475e6e01154a1f7a19a5b7e7b4ba7d006d86efb860664e3094b2f776 height=61 version=0x20000000 log2_work=6.954196 tx=62 date='2026-08-06T13:22:37Z' progress=1.000000 cache=0.3MiB(61txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=5addbb20cd1c5dfa0e5e4557f0769bff4cbb8c4808b971de634e3e36e9f27dea height=62 version=0x20000000 log2_work=6.977280 tx=63 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(62txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=1794f13a099817369cae66373cdf9d55783fb2a0ed7c2f6828494178dc2f7669 height=63 version=0x20000000 log2_work=7.000000 tx=64 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(63txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=46d0c3b4f24e903d4f1fdf817494ca558f9aa394e9400c7ea7842c52182edc68 height=64 version=0x20000000 log2_work=7.022368 tx=65 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(64txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=4a06f83118af8cc4a2dcd56f1479c761cd4ec9617a8062ecb1daff99a4477ee6 height=65 version=0x20000000 log2_work=7.044394 tx=66 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(65txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z [carriage] AddToWallet f4c07b22a26611c0df4af96cb78685e77043b1a585e805c72f45a4f095c2c314  new Confirmed (block=13ee5d04475e6e01154a1f7a19a5b7e7b4ba7d006d86efb860664e3094b2f776, height=61, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 8a387bd0b9ff32db69091625dcc28280dff05485adcc2578fbbe6c8c6ea06a74  new Confirmed (block=5addbb20cd1c5dfa0e5e4557f0769bff4cbb8c4808b971de634e3e36e9f27dea, height=62, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 0b0d0043901a6ca2cfe5a4a98630ca4cdaebf23d71ee01d58d97a2a162ec12bd  new Confirmed (block=1794f13a099817369cae66373cdf9d55783fb2a0ed7c2f6828494178dc2f7669, height=63, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet ce66b0026212b999d21eb3c80adef0590140501ed20b8808bd6f95aac731da53  new Confirmed (block=46d0c3b4f24e903d4f1fdf817494ca558f9aa394e9400c7ea7842c52182edc68, height=64, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 4e8ff353664269612881e6c7637b5301bd5b68d601cb8925b243672410f2e4fa  new Confirmed (block=4a06f83118af8cc4a2dcd56f1479c761cd4ec9617a8062ecb1daff99a4477ee6, height=65, index=0)
+2026-08-06T13:22:32Z UpdateTip: new best=70ec974e24f9514b2b9b15e4a68de0a59609f7802145887f80ccfa122bdab6f0 height=66 version=0x20000000 log2_work=7.066089 tx=67 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(66txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=1a00087b68292e438b235024edb956dbba4cc5bc9af2c604d0293fce0966f643 height=67 version=0x20000000 log2_work=7.087463 tx=68 date='2026-08-06T13:22:38Z' progress=1.000000 cache=0.3MiB(67txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=10f9a5c44b494844a255081c5046d68f7e68c48abe8d1f297540064c74eff359 height=68 version=0x20000000 log2_work=7.108524 tx=69 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(68txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=6f94048fce2d467f3cc9dae31ed31cc38647efb38ca243894a8591fdd91cffd1 height=69 version=0x20000000 log2_work=7.129283 tx=70 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(69txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z UpdateTip: new best=205fe3b10996dc1914e6d863670c8976deea25fc5ca9e5a6c9789b7303516dd9 height=70 version=0x20000000 log2_work=7.149747 tx=71 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(70txo)
+2026-08-06T13:22:32Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:32Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:32Z [carriage] AddToWallet fac4d23f37684632519e106cfb8da0d9d8151b764f9f807fcbd15ba940e1396c  new Confirmed (block=70ec974e24f9514b2b9b15e4a68de0a59609f7802145887f80ccfa122bdab6f0, height=66, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 721946dcb2659b3b6163ec897b4b432eb092e1542e0ad54d03f64597ca492164  new Confirmed (block=1a00087b68292e438b235024edb956dbba4cc5bc9af2c604d0293fce0966f643, height=67, index=0)
+2026-08-06T13:22:32Z [carriage] AddToWallet 53f3e408f729e4c2f065ed08f0839d27429a411c54aabc3536c8191cb324c265  new Confirmed (block=10f9a5c44b494844a255081c5046d68f7e68c48abe8d1f297540064c74eff359, height=68, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 3d0d81cf941a8fdb9f924b42738fa4c6fa2e4a63cf7f9c422a7c76f2aacb6b34  new Confirmed (block=6f94048fce2d467f3cc9dae31ed31cc38647efb38ca243894a8591fdd91cffd1, height=69, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 046ce1327c38f10ca4e9c3381ce05eda9f8345c2e957b17981d7af77114c3a16  new Confirmed (block=205fe3b10996dc1914e6d863670c8976deea25fc5ca9e5a6c9789b7303516dd9, height=70, index=0)
+2026-08-06T13:22:33Z UpdateTip: new best=2f75520b0bee9045c86e5da4be9b88fd16c874176929f5980fafb9e21781bff6 height=71 version=0x20000000 log2_work=7.169925 tx=72 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(71txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=78e2035eb74d91b5586fe4b8685a0279ad07a895788e81128475150b9bf5cbf8 height=72 version=0x20000000 log2_work=7.189825 tx=73 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(72txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=454d3577bcfbc09925b7a2a70dbb54cfca9e4aaf63be83150399e11eaecbdce5 height=73 version=0x20000000 log2_work=7.209453 tx=74 date='2026-08-06T13:22:39Z' progress=1.000000 cache=0.3MiB(73txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=24704279e35ed8db02abbc1d8a5a8e3d2e7366048dc22be6f76d69adb5645fe9 height=74 version=0x20000000 log2_work=7.228819 tx=75 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(74txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=5bcfb107f9e1f4253594fbe2edd29af9193d27278de78e4cb0c83ee50c223121 height=75 version=0x20000000 log2_work=7.247928 tx=76 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(75txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z [carriage] AddToWallet 666f718a63896fd1038af9f201276062fc34204aee50a59d13aef2f31145ed71  new Confirmed (block=2f75520b0bee9045c86e5da4be9b88fd16c874176929f5980fafb9e21781bff6, height=71, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 1c0c8e5fcf31a1c6a9e679bf5476ad1dc40ede799bfc26ce0dcc1061a231a0b9  new Confirmed (block=78e2035eb74d91b5586fe4b8685a0279ad07a895788e81128475150b9bf5cbf8, height=72, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet ecc8db2e193851714e61d9280e27bde45a4df0d1bb15314806e6d37f79360bd4  new Confirmed (block=454d3577bcfbc09925b7a2a70dbb54cfca9e4aaf63be83150399e11eaecbdce5, height=73, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 5a8d7d9f3c8a56801298ce057f96f0db546b1ef5b6ce0e969a0a765caa67ba7f  new Confirmed (block=24704279e35ed8db02abbc1d8a5a8e3d2e7366048dc22be6f76d69adb5645fe9, height=74, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 231f01d48809b58e6c7c8c60c38284c07444754e7c8704f9eb55a3db9602a5fd  new Confirmed (block=5bcfb107f9e1f4253594fbe2edd29af9193d27278de78e4cb0c83ee50c223121, height=75, index=0)
+2026-08-06T13:22:33Z UpdateTip: new best=24878fcaa66568edd12c8c1785a946b99ad9c7748a133f3096cd71cddd1fdc11 height=76 version=0x20000000 log2_work=7.266787 tx=77 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(76txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=2c988cdf9aeca2115690e34d0d816b8a05536941e545f8fd3afaf46a437aa89d height=77 version=0x20000000 log2_work=7.285402 tx=78 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(77txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=1f5f1ce3a92772fa40a28a6bb9a8cea4eae3df1b2f4c477de582fb751cdd49d8 height=78 version=0x20000000 log2_work=7.303781 tx=79 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(78txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=178e4a35ce6625a4f4bc4bd71d816a1e128c0bf19fac390e60824819509076d7 height=79 version=0x20000000 log2_work=7.321928 tx=80 date='2026-08-06T13:22:40Z' progress=1.000000 cache=0.3MiB(79txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z UpdateTip: new best=1aca529a849ac2c0968e13d1ab7b3e2943fc34be2845b0c26b1bb371e893a913 height=80 version=0x20000000 log2_work=7.339850 tx=81 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(80txo)
+2026-08-06T13:22:33Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:33Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:33Z [carriage] AddToWallet cdef004a3210d2ee611f2b174cc2533ee4bec7fd585c27dd8813180569e2c13b  new Confirmed (block=24878fcaa66568edd12c8c1785a946b99ad9c7748a133f3096cd71cddd1fdc11, height=76, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 1f97e9e01f216b73de93dc4ca5bded7af9d6056cd6201442780a23beadd03f76  new Confirmed (block=2c988cdf9aeca2115690e34d0d816b8a05536941e545f8fd3afaf46a437aa89d, height=77, index=0)
+2026-08-06T13:22:33Z [carriage] AddToWallet 1f3072d67168547dfb6fde218e49ad1807585c46911ea74b3e94d73aa8d5f7d8  new Confirmed (block=1f5f1ce3a92772fa40a28a6bb9a8cea4eae3df1b2f4c477de582fb751cdd49d8, height=78, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet 0de5d193505470ae9952586efe93faa186d1e1d0b5a5386c19b924ca52fa4552  new Confirmed (block=178e4a35ce6625a4f4bc4bd71d816a1e128c0bf19fac390e60824819509076d7, height=79, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet ff3b73dfac45fcfbade3eca222285bdc323f78ea56db6a9bd5115f98667d8aa5  new Confirmed (block=1aca529a849ac2c0968e13d1ab7b3e2943fc34be2845b0c26b1bb371e893a913, height=80, index=0)
+2026-08-06T13:22:34Z UpdateTip: new best=67eec5ebfcc59c32a0316d951eac7a960c9d6846e9da911b4769aa101499fb0a height=81 version=0x20000000 log2_work=7.357552 tx=82 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(81txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=7cd13d6730e988d58e12005b535d083b78be2ef8b122be4ac222c64e282278f2 height=82 version=0x20000000 log2_work=7.375039 tx=83 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(82txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=154c5ef66c2317af65d9d73dc77ce88c59aa1dd4bd583cf0638fae25d6414937 height=83 version=0x20000000 log2_work=7.392317 tx=84 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(83txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=4bd4c9c1b212893f2a82987ad3cee8000d1e95b574378443a57d999436b07e9f height=84 version=0x20000000 log2_work=7.409391 tx=85 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(84txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=3885399fe3e7554ef19ca54eb7af3b46ad5458a5a8c39596ded9c89db5e9a0c0 height=85 version=0x20000000 log2_work=7.426265 tx=86 date='2026-08-06T13:22:41Z' progress=1.000000 cache=0.3MiB(85txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z [carriage] AddToWallet 25b1593409eb651f351ab3ff4bccd3c1a05907dc1f34b78ad31a1445cc353cde  new Confirmed (block=67eec5ebfcc59c32a0316d951eac7a960c9d6846e9da911b4769aa101499fb0a, height=81, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet ca898c24b81ba3298a5a4d8bfeb242c03569cdbbc4f23451273aad83a9c37390  new Confirmed (block=7cd13d6730e988d58e12005b535d083b78be2ef8b122be4ac222c64e282278f2, height=82, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet 0589242c9354da5beb24be23589f2bb8d35c12a567a37189fed755be9657ee5e  new Confirmed (block=154c5ef66c2317af65d9d73dc77ce88c59aa1dd4bd583cf0638fae25d6414937, height=83, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet 3d83f23b8cb0e619578a01428cf4cbcc5a3c249f8817c10b423708d3474b5fc6  new Confirmed (block=4bd4c9c1b212893f2a82987ad3cee8000d1e95b574378443a57d999436b07e9f, height=84, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet 6273a57ae1c7c5c0913e589099d52c7d215543765193584162d071ee9a1014db  new Confirmed (block=3885399fe3e7554ef19ca54eb7af3b46ad5458a5a8c39596ded9c89db5e9a0c0, height=85, index=0)
+2026-08-06T13:22:34Z UpdateTip: new best=161115e9b55c0da7689dbb3346f1b4e72b86f9d904e46fc25c6754553849a740 height=86 version=0x20000000 log2_work=7.442943 tx=87 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(86txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=21bc40b2990532f3bc4beb05a9c1ebd56310c710883abc5fdd70e3ec53d438aa height=87 version=0x20000000 log2_work=7.459432 tx=88 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(87txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=2e226430574b00b3d6a59b71d18d55c1140b900d5bd23ec9b4ee17a6b2088526 height=88 version=0x20000000 log2_work=7.475733 tx=89 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(88txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=3afa23d40a32446f71f7d00229885a8f2a53e6f4fed7f28426de8fa367adb06f height=89 version=0x20000000 log2_work=7.491853 tx=90 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(89txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z UpdateTip: new best=05e7dc6e23407339bc971b5d034447699ea9fc8f0059637a8484f8b970cbd2a4 height=90 version=0x20000000 log2_work=7.507795 tx=91 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(90txo)
+2026-08-06T13:22:34Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:34Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:34Z [carriage] AddToWallet 7e7ee18b3a1554fea9b3a9fcc60816ad9761c3b4f7181f4c20d71533689bb9bd  new Confirmed (block=161115e9b55c0da7689dbb3346f1b4e72b86f9d904e46fc25c6754553849a740, height=86, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet be4ffd30f4ab43bf7d6acfcb70d7f250e83c2b39b8ceb074cb58edd22e14fe6c  new Confirmed (block=21bc40b2990532f3bc4beb05a9c1ebd56310c710883abc5fdd70e3ec53d438aa, height=87, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet dc38d79fa476756067b0a3147fdc4169b503d6a9ae317d0a348ac158b98ae7df  new Confirmed (block=2e226430574b00b3d6a59b71d18d55c1140b900d5bd23ec9b4ee17a6b2088526, height=88, index=0)
+2026-08-06T13:22:34Z [carriage] AddToWallet b737ab2d8cf5a3e35eebc0b9dc5641aea443900e90d265e4824545084a8973aa  new Confirmed (block=3afa23d40a32446f71f7d00229885a8f2a53e6f4fed7f28426de8fa367adb06f, height=89, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet ef7b4286843acc6511fec1affda05f5644c4e482caf24db76c0050d0a3962e9d  new Confirmed (block=05e7dc6e23407339bc971b5d034447699ea9fc8f0059637a8484f8b970cbd2a4, height=90, index=0)
+2026-08-06T13:22:35Z UpdateTip: new best=5738143538d3b769cbbe96dd3924f3de7b2d56678f7a3c1219c3aa1a4c657340 height=91 version=0x20000000 log2_work=7.523562 tx=92 date='2026-08-06T13:22:42Z' progress=1.000000 cache=0.3MiB(91txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=680cda8c95ae875ce7a2fd19cf9155b73e5465098ddb020070d0f56eb5274ffc height=92 version=0x20000000 log2_work=7.539159 tx=93 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(92txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=55d12a75a0bb0d0e31c88d0a10638ea97943c9847b7a0d7019d6fd176d4cf42c height=93 version=0x20000000 log2_work=7.554589 tx=94 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(93txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=7f30305d6cdad841a347dce094e011eeee21f669b4b1dfd8812cb6ddaf793174 height=94 version=0x20000000 log2_work=7.569856 tx=95 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(94txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=15141efcb70f046d33b7f04229f64079450d057d01aae673c327983233580440 height=95 version=0x20000000 log2_work=7.584963 tx=96 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(95txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z [carriage] AddToWallet ac8698e4949f646970d94b8778b62843ac46e6b1b964a181c651c7c90a32cf4f  new Confirmed (block=5738143538d3b769cbbe96dd3924f3de7b2d56678f7a3c1219c3aa1a4c657340, height=91, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet 3104a83966b669b139b87424b8e058807dacaf6e12ec3878062e98870f2495fe  new Confirmed (block=680cda8c95ae875ce7a2fd19cf9155b73e5465098ddb020070d0f56eb5274ffc, height=92, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet 500dfd9e9ddf2df954fbc2141c49eece647ca9318d241084d5f2aa968e066408  new Confirmed (block=55d12a75a0bb0d0e31c88d0a10638ea97943c9847b7a0d7019d6fd176d4cf42c, height=93, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet 8b356c4d75ae266bbcb69306248abb9a431b72b2e0a516bdd5ad7e06db143873  new Confirmed (block=7f30305d6cdad841a347dce094e011eeee21f669b4b1dfd8812cb6ddaf793174, height=94, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet c10a727689b5594399414ebe10674bd4328123913b297dbda55019f7f0c28653  new Confirmed (block=15141efcb70f046d33b7f04229f64079450d057d01aae673c327983233580440, height=95, index=0)
+2026-08-06T13:22:35Z UpdateTip: new best=312d029699c4ad1319bf5d74ea6532bdf48fb6ad4a1a30aa5355b3bbeabf7245 height=96 version=0x20000000 log2_work=7.599913 tx=97 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(96txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=48345850da1ee76dd5ab9709ff00a3e6b3c27c9fc9486706f67046cb2962bd14 height=97 version=0x20000000 log2_work=7.614710 tx=98 date='2026-08-06T13:22:43Z' progress=1.000000 cache=0.3MiB(97txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=64f2dfb4a8bb2e5df4e2d387158842b8b41fccbaaa8c3b09d698a751bfa2ec57 height=98 version=0x20000000 log2_work=7.629357 tx=99 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(98txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=574c5daef01f0c91becf76f86ba00fa53201377f9df8c8d4be24c33578e37d53 height=99 version=0x20000000 log2_work=7.643856 tx=100 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(99txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z UpdateTip: new best=18f68cecd9b3f70dfea6b16cd46aa269a2c5e72365d885b70e50a68b47f769c5 height=100 version=0x20000000 log2_work=7.658211 tx=101 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(100txo)
+2026-08-06T13:22:35Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:35Z CreateNewBlock(): block weight: 888 txs: 0 fees: 0 sigops 400
+2026-08-06T13:22:35Z [carriage] AddToWallet cfeb3e4747e101c358811da672fa4fb461383391278dd375729b14c5bf7fcf20  new Confirmed (block=312d029699c4ad1319bf5d74ea6532bdf48fb6ad4a1a30aa5355b3bbeabf7245, height=96, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet 31f5fce84f9038562b3a652ac2861c80cb4eb7a0062dc40a75bd54fb580b8f6e  new Confirmed (block=48345850da1ee76dd5ab9709ff00a3e6b3c27c9fc9486706f67046cb2962bd14, height=97, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet 4e555e8e5a2cbc36cbbd34909cec9ba50710bb6aa6c128b39d923635f932566e  new Confirmed (block=64f2dfb4a8bb2e5df4e2d387158842b8b41fccbaaa8c3b09d698a751bfa2ec57, height=98, index=0)
+2026-08-06T13:22:35Z [carriage] AddToWallet eab60cc5ec813f4c701248fda10a6ad2d18b5cd62a17fae0057b09866df7d4a1  new Confirmed (block=574c5daef01f0c91becf76f86ba00fa53201377f9df8c8d4be24c33578e37d53, height=99, index=0)
+2026-08-06T13:22:36Z [carriage] AddToWallet 7f0aa0bdcbfc7407f434e1bd8bcac676bb2b823f3b4f3b9b14fbab28750fc5ea  new Confirmed (block=18f68cecd9b3f70dfea6b16cd46aa269a2c5e72365d885b70e50a68b47f769c5, height=100, index=0)
+2026-08-06T13:22:36Z UpdateTip: new best=734b8fabd283c7290ff18d3ad87c6bb0081c9a65f8d024b6e8e5d8ad90bac620 height=101 version=0x20000000 log2_work=7.672425 tx=102 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(101txo)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z [carriage] AddToWallet 44d908024314283c422eb127584dad4a151df60426b94eaccaa122f9313cce5f  new Confirmed (block=734b8fabd283c7290ff18d3ad87c6bb0081c9a65f8d024b6e8e5d8ad90bac620, height=101, index=0)
+2026-08-06T13:22:36Z [carriage] Coin Selection: Algorithm:knapsack, Waste Metric Score:1980
+2026-08-06T13:22:36Z [carriage] Fee Calculation: Fee:2820 Bytes:141 Tgt:0 (requested 6) Reason:"Fallback fee" Decay 0.00000: Estimation: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out)
+2026-08-06T13:22:36Z [carriage] Coin Selection: Algorithm:knapsack, Waste Metric Score:1980
+2026-08-06T13:22:36Z [carriage] Fee Calculation: Fee:2820 Bytes:141 Tgt:0 (requested 6) Reason:"Fallback fee" Decay 0.00000: Estimation: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out)
+2026-08-06T13:22:36Z [carriage] Fee non-grouped = 2820, grouped = 2820, using grouped
+2026-08-06T13:22:36Z [carriage] CommitTransaction:
+CTransaction(hash=45b17f12e1, ver=2, vin.size=1, vout.size=2, nLockTime=101)
+    CTxIn(COutPoint(cbc014515b, 0), scriptSig=, nSequence=4294967293)
+    CScriptWitness(30440220327d1f277f18b6fac0c3199db21f450d05cb9ca70b16262885c5fa0d029558fc022046d763814187435078e76d34fd7e7536c0c60468c6f6aade6e9896980f1db2f501, 03c698a5de21118954db00afed3a71305efb906fa98b05032f1482f964ef9c7b03)
+    CTxOut(nValue=48.99997180, scriptPubKey=001486abb9fa0afccfa68291caef69)
+    CTxOut(nValue=1.00000000, scriptPubKey=00141cb1d21a377df9023a6c431bdd)
+2026-08-06T13:22:36Z [carriage] AddToWallet 45b17f12e14e45f7f38ea9d0187722067f9930e760f1424f934bcf661b2f6039  newupdate Inactive (abandoned=0)
+2026-08-06T13:22:36Z [carriage] Submitting wtx 45b17f12e14e45f7f38ea9d0187722067f9930e760f1424f934bcf661b2f6039 to mempool and for broadcast to peers
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z [mempool] Checking mempool with 1 transactions and 1 inputs
+2026-08-06T13:22:36Z [carriage] AddToWallet 45b17f12e14e45f7f38ea9d0187722067f9930e760f1424f934bcf661b2f6039   InMempool
+2026-08-06T13:22:36Z CreateNewBlock(): block weight: 1449 txs: 1 fees: 2820 sigops 401
+2026-08-06T13:22:36Z [mempool] Removed 45b17f12e14e45f7f38ea9d0187722067f9930e760f1424f934bcf661b2f6039 from set of unbroadcast txns before confirmation that txn was sent out
+2026-08-06T13:22:36Z UpdateTip: new best=688dd7d2b556a116fc711e47fc569b90912e1933e19e89a5026304af7682a4ca height=102 version=0x20000000 log2_work=7.686501 tx=104 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(104txo)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:36Z [carriage] AddToWallet c57ce7733abd1c6296c941905d480da04d9238cabc0d45e1f4567459ace7252b  new Confirmed (block=688dd7d2b556a116fc711e47fc569b90912e1933e19e89a5026304af7682a4ca, height=102, index=0)
+2026-08-06T13:22:36Z [carriage] AddToWallet 45b17f12e14e45f7f38ea9d0187722067f9930e760f1424f934bcf661b2f6039  update Confirmed (block=688dd7d2b556a116fc711e47fc569b90912e1933e19e89a5026304af7682a4ca, height=102, index=1)
+2026-08-06T13:22:36Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z Saw new header hash=4d52eeabc13b2d9202fe43bb197a6bd75c255f22f3e5181e18a21ba1cdce14e0 height=103 peer=0
+2026-08-06T13:22:37Z UpdateTip: new best=4d52eeabc13b2d9202fe43bb197a6bd75c255f22f3e5181e18a21ba1cdce14e0 height=103 version=0x20000000 log2_work=7.700440 tx=106 date='2026-08-06T13:22:44Z' progress=1.000000 cache=0.3MiB(105txo)
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [carriage] AddToWallet f553daf307a04bfad5f4b253e7995fa64349f71a038fb84902fabe679969491f  new Confirmed (block=4d52eeabc13b2d9202fe43bb197a6bd75c255f22f3e5181e18a21ba1cdce14e0, height=103, index=1)
+2026-08-06T13:22:37Z [carriage] Coin Selection: Algorithm:knapsack, Waste Metric Score:2120
+2026-08-06T13:22:37Z [carriage] Fee Calculation: Fee:3300 Bytes:165 Tgt:0 (requested 6) Reason:"Fallback fee" Decay 0.00000: Estimation: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out)
+2026-08-06T13:22:37Z [carriage] Coin Selection: Algorithm:knapsack, Waste Metric Score:2120
+2026-08-06T13:22:37Z [carriage] Fee Calculation: Fee:3300 Bytes:165 Tgt:0 (requested 6) Reason:"Fallback fee" Decay 0.00000: Estimation: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out)
+2026-08-06T13:22:37Z [carriage] Fee non-grouped = 3300, grouped = 3300, using grouped
+2026-08-06T13:22:37Z [carriage] CommitTransaction:
+CTransaction(hash=639e10621e, ver=2, vin.size=1, vout.size=2, nLockTime=103)
+    CTxIn(COutPoint(45b17f12e1, 0), scriptSig=, nSequence=4294967293)
+    CScriptWitness(304402203e4f1981bfe9aacabf8a099fee04d5f6f31437eeb8108a82dbb5b94b8633ebb90220565185c469cf4f6eb5b21a7dafd63b79b051a37fd5380868d437a4ce87eda92901, 02c2c8b063f39d25a1c3fa81b51bebcf8cbd7c4218629c69c21e77342bfaad6e7d)
+    CTxOut(nValue=1.00000000, scriptPubKey=5120ca9d8413a1ae5815f385bbba6d)
+    CTxOut(nValue=47.99993880, scriptPubKey=5120d43b78ca98223acf79cc6f3b34)
+2026-08-06T13:22:37Z [carriage] AddToWallet 639e10621e881b1d2bfe305d40146c68ecb598b22f99603a371d8048037eca6f  newupdate Inactive (abandoned=0)
+2026-08-06T13:22:37Z [carriage] Submitting wtx 639e10621e881b1d2bfe305d40146c68ecb598b22f99603a371d8048037eca6f to mempool and for broadcast to peers
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [mempool] Checking mempool with 1 transactions and 1 inputs
+2026-08-06T13:22:37Z [carriage] AddToWallet 639e10621e881b1d2bfe305d40146c68ecb598b22f99603a371d8048037eca6f   InMempool
+2026-08-06T13:22:37Z CreateNewBlock(): block weight: 1545 txs: 1 fees: 3300 sigops 401
+2026-08-06T13:22:37Z [mempool] Removed 639e10621e881b1d2bfe305d40146c68ecb598b22f99603a371d8048037eca6f from set of unbroadcast txns before confirmation that txn was sent out
+2026-08-06T13:22:37Z UpdateTip: new best=0e6f06ef467fead78c38c8e36ae6ecdff0a210c4bd37c8d0933ce40092cbd30c height=104 version=0x20000000 log2_work=7.714246 tx=108 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(107txo)
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z [carriage] AddToWallet ae5041e6ed0d19350a5074831faa9b7c037fb91effff6ed2cbf837230da395ac  new Confirmed (block=0e6f06ef467fead78c38c8e36ae6ecdff0a210c4bd37c8d0933ce40092cbd30c, height=104, index=0)
+2026-08-06T13:22:37Z [carriage] AddToWallet 639e10621e881b1d2bfe305d40146c68ecb598b22f99603a371d8048037eca6f  update Confirmed (block=0e6f06ef467fead78c38c8e36ae6ecdff0a210c4bd37c8d0933ce40092cbd30c, height=104, index=1)
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:37Z Saw new cmpctblock header hash=79e7ee39e1dd76108de9c1f3488d2a737ce7fd6c61b7c12938d3f73c26752e4d height=105 peer=0
+2026-08-06T13:22:37Z UpdateTip: new best=79e7ee39e1dd76108de9c1f3488d2a737ce7fd6c61b7c12938d3f73c26752e4d height=105 version=0x20000000 log2_work=7.727920 tx=110 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(108txo)
+2026-08-06T13:22:37Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [carriage] AddToWallet 20508c424bc3f6eb0224974a136c9dd0db46c1f57416859b5f539fdbde8735d8  new Confirmed (block=79e7ee39e1dd76108de9c1f3488d2a737ce7fd6c61b7c12938d3f73c26752e4d, height=105, index=1)
+2026-08-06T13:22:38Z [carriage] Coin Selection: Algorithm:knapsack, Waste Metric Score:2020
+2026-08-06T13:22:38Z [carriage] Fee Calculation: Fee:3100 Bytes:155 Tgt:1 (requested 6) Reason:"Fallback fee" Decay 0.00000: Estimation: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out)
+2026-08-06T13:22:38Z [carriage] Coin Selection: Algorithm:knapsack, Waste Metric Score:2020
+2026-08-06T13:22:38Z [carriage] Fee Calculation: Fee:3100 Bytes:155 Tgt:1 (requested 6) Reason:"Fallback fee" Decay 0.00000: Estimation: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out)
+2026-08-06T13:22:38Z [carriage] Fee non-grouped = 3100, grouped = 3100, using grouped
+2026-08-06T13:22:38Z [carriage] CommitTransaction:
+CTransaction(hash=e9c1c0f4a7, ver=2, vin.size=1, vout.size=2, nLockTime=105)
+    CTxIn(COutPoint(639e10621e, 1), scriptSig=, nSequence=4294967293)
+    CScriptWitness(1744f76973da113f8e15632b798cf2e03a694bd431ece66dd2db6e73714c948cd2ecacc57401488b8a343befd28635059b8fda8c95c0e85cc025ddc9e69534de)
+    CTxOut(nValue=1.00000000, scriptPubKey=5120fb18a7691e88a9b4e4b132cf6f)
+    CTxOut(nValue=46.99990780, scriptPubKey=5120ef8abe210df77bfa2a2bdb7d4e)
+2026-08-06T13:22:38Z [carriage] AddToWallet e9c1c0f4a7a385183ace9720af55da8769ef8814f124483b817b98fa1f471a1c  newupdate Inactive (abandoned=0)
+2026-08-06T13:22:38Z [carriage] Submitting wtx e9c1c0f4a7a385183ace9720af55da8769ef8814f124483b817b98fa1f471a1c to mempool and for broadcast to peers
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [mempool] Checking mempool with 1 transactions and 1 inputs
+2026-08-06T13:22:38Z [carriage] AddToWallet e9c1c0f4a7a385183ace9720af55da8769ef8814f124483b817b98fa1f471a1c   InMempool
+2026-08-06T13:22:38Z CreateNewBlock(): block weight: 1504 txs: 1 fees: 3100 sigops 400
+2026-08-06T13:22:38Z [mempool] Removed e9c1c0f4a7a385183ace9720af55da8769ef8814f124483b817b98fa1f471a1c from set of unbroadcast txns before confirmation that txn was sent out
+2026-08-06T13:22:38Z UpdateTip: new best=5004bf8770ea590ff9c138ed221647ee6a9ca8705d5fd0ce854b8a8d76f68e58 height=106 version=0x20000000 log2_work=7.741467 tx=112 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(110txo)
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z [carriage] AddToWallet 1ff7ae893d3759cb960812dc369321950bb5f8ed656f8a48452332c71dc39b77  new Confirmed (block=5004bf8770ea590ff9c138ed221647ee6a9ca8705d5fd0ce854b8a8d76f68e58, height=106, index=0)
+2026-08-06T13:22:38Z [carriage] AddToWallet e9c1c0f4a7a385183ace9720af55da8769ef8814f124483b817b98fa1f471a1c  update Confirmed (block=5004bf8770ea590ff9c138ed221647ee6a9ca8705d5fd0ce854b8a8d76f68e58, height=106, index=1)
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z Saw new cmpctblock header hash=05051fa8e82f47979b2a03f7968e0e1e8002be570f68c0adf4fca888ed12fe9d height=107 peer=0
+2026-08-06T13:22:38Z UpdateTip: new best=05051fa8e82f47979b2a03f7968e0e1e8002be570f68c0adf4fca888ed12fe9d height=107 version=0x20000000 log2_work=7.754888 tx=114 date='2026-08-06T13:22:45Z' progress=1.000000 cache=0.3MiB(111txo)
+2026-08-06T13:22:38Z [mempool] Checking mempool with 0 transactions and 0 inputs
+2026-08-06T13:22:38Z http_pool_9 thread exit
+2026-08-06T13:22:38Z http_pool_11 thread exit
+2026-08-06T13:22:38Z http_pool_12 thread exit
+2026-08-06T13:22:38Z http_pool_10 thread exit
+2026-08-06T13:22:38Z http_pool_14 thread exit
+2026-08-06T13:22:38Z http_pool_13 thread exit
+2026-08-06T13:22:38Z http_pool_0 thread exit
+2026-08-06T13:22:38Z http_pool_3 thread exit
+2026-08-06T13:22:38Z http_pool_1 thread exit
+2026-08-06T13:22:38Z http_pool_15 thread exit
+2026-08-06T13:22:38Z http_pool_5 thread exit
+2026-08-06T13:22:38Z http_pool_2 thread exit
+2026-08-06T13:22:38Z http_pool_8 thread exit
+2026-08-06T13:22:38Z http_pool_7 thread exit
+2026-08-06T13:22:38Z tor: Thread interrupt
+2026-08-06T13:22:38Z http_pool_4 thread exit
+2026-08-06T13:22:38Z mapport thread exit
+2026-08-06T13:22:38Z Shutdown in progress...
+2026-08-06T13:22:38Z torcontrol thread exit
+2026-08-06T13:22:38Z http_pool_6 thread exit
+2026-08-06T13:22:38Z addcon thread exit
+2026-08-06T13:22:38Z opencon thread exit
+2026-08-06T13:22:38Z net thread exit
+2026-08-06T13:22:38Z msghand thread exit
+2026-08-06T13:22:38Z [carriage] Releasing wallet carriage..
+2026-08-06T13:22:38Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat started
+2026-08-06T13:22:38Z DumpAnchors: Flush 0 outbound block-relay-only peer addresses to anchors.dat completed (0.01s)
+2026-08-06T13:22:38Z scheduler thread exit
+2026-08-06T13:22:38Z Writing 0 mempool transactions to file...
+2026-08-06T13:22:38Z Writing 0 unbroadcast transactions to file.
+2026-08-06T13:22:38Z Dumped mempool: 0.000s to copy, 0.009s to dump, 27 bytes dumped to file
+2026-08-06T13:22:38Z Shutdown done

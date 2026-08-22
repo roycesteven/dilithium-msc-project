@@ -606,6 +606,41 @@ Okay, thank you.
 
 ---
 
+## Addendum (2026-07-20) — content omitted by the ChatGPT cleaning
+
+Audited against `meeting2_transcript_original.md` (840 lines → 616 in the cleaned version). The cleaning is largely faithful; the following were dropped:
+
+### A.1 Dropped: the video question first appears HERE, not in Meeting 6 (37:32)
+
+**Royce (37:32)** — *dropped entirely:*
+> Because I still don't have an idea — what should I explain in the video?
+
+(Wang deferred it; the concrete guidance — highlight only the most important points, detail on slides — came in Meeting 6.) The record should show the video deliverable was raised this early.
+
+### A.2 Dropped/garbled: "add a high-level diagram to show the whole design" (36:38–37:19)
+
+**Wang (36:38)** — the cleaned version kept "show the overall design" but dropped the *diagram* instruction (ASR: "add some high level time again" ≈ "add some high-level **diagram**"):
+> Imagine your report will have an external examiner review — they might not check your detailed code, so it would be better to add a **high-level diagram** to show the whole design, what you modified, and then report your major results.
+
+This is the earliest request for what later became the architecture/data-flow figures.
+
+### A.3 Dropped fragment: Royce mentioned Ethereum's "Lean" post-quantum work (35:57–36:09)
+
+**Royce (35:57)** — *dropped; ASR garbled ("lean ethium or line PM"):*
+> …they have something like "Lean Ethereum"… I think it's very hard.
+
+Kept here as a flagged-unclear aside (likely Ethereum's post-quantum "lean" initiative); Wang did not pick it up.
+
+### A.4 Note: ASR hallucinations correctly discarded
+
+The original contains obvious speech-recognition hallucinations from background noise — e.g. "The Olympic Olympic Games in the Milano Cortina, 2026" (21:29, 35:57) and one garbled profanity (12:24). The cleaned version rightly dropped these; they carried no meeting content.
+
+### A.5 Minor specificity: the coursework analogy (17:44)
+
+Wang's black-box analogy referenced a specific course — "similar to the Security & Privacy of AI coursework, where you were required to code some components without understanding every internal detail." The cleaned version generalised this to "coursework".
+
+---
+
 ## Bottom-line interpretation
 
 Your supervisor is steering the project toward a **practical, staged implementation**:

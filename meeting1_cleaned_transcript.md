@@ -497,6 +497,16 @@ Okay, so we do not need ethical approval. Thank you so much.
 
 ---
 
+## D2. Addendum (2026-07-20) — audit against the original
+
+Audited against `meeting1_transcript_original.md` (498 lines → 509 in the cleaned version). **Verdict: this cleaning is faithful — no substantive exchange was dropped.** Three notes for the record:
+
+1. **(29:36)** Wang's fallback for the classical comparison — *"if you cannot implement the classical comparison, you can do a simple calculation or estimation based on existing results from the literature"* — is present in the cleaned version and worth highlighting: it pre-authorises a literature-based classical baseline if implementation had proved infeasible (in the end it was implemented: `bench_classical`).
+2. **(31:20–31:37)** The grading ladder is stated slightly more strongly in the original: basic = PQ exotic signature + basic blockchain application; better = plus classical benchmark; *"much better"* = plus additional signature schemes. The cleaned version has all three rungs.
+3. Several genuinely unintelligible fragments (e.g. 05:04 "desk box", 09:16–09:19 letter salad) were rightly summarised rather than invented.
+
+---
+
 ## D. Key meaning, in plain words
 
 Your supervisor is **not** saying “just use poqeth.” He is saying:

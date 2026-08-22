@@ -1,120 +1,177 @@
 /*
- * Post-quantum atomic swap demonstration using LAS (eprint 2020/845).
+ * Post-quantum atomic swap via LAS -- eprint 2020/845 Section 4.1, Fig. 1,
+ * implemented VERBATIM: message order, role of the witness holder, the proof
+ * of knowledge pi (ref/relation_zk.{c,h} over the vendored LaZer library),
+ * and the abort conditions.  Two parties, two toy ledgers, no scripts.
  *
- * Two parties (Alice, Bob), two ledgers ("chain A", "chain B"), no trusted third
- * party and no on-chain scripts.  The swap is made atomic by a single shared
- * statement Y: Bob can only claim Alice's coin by publishing an adapted signature,
- * which reveals the witness y that Alice needs to claim Bob's coin.
+ *   u1 = Alice: holds coin c1 on chain 1, generates (Y, y) and pi
+ *   u2 = Bob  : holds coin c2 on chain 2
  *
- * Prints a narrative and hard-asserts every step (returns non-zero on failure).
+ *   u1 -> u2 : { Y, pi, sigma_hat_1, tx1 }     (pre-signs her OWN coin first)
+ *   u2 -> u1 : { sigma_hat_2, tx2 }            (only after pi and sigma_hat_1 verify)
+ *   u1       : sigma_2 = Adapt((Y,y), sigma_hat_2); publish on chain 2 -> claims c2
+ *   u2       : y' = Ext(Y, sigma_2, sigma_hat_2);
+ *              sigma_1 = Adapt((Y,y'), sigma_hat_1); publish on chain 1 -> claims c1
+ *
+ * pi is load-bearing (Section 4.1): it proves knowledge of a TERNARY witness,
+ * so by the M-SIS uniqueness argument the y' u2 extracts equals y, hence
+ * ||y'||inf <= 1 and u2's Adapt is GUARANTEED to clear the Verify bound.  The
+ * demo asserts exactly that after Ext.  Fig. 1 shows the happy path only;
+ * the timeout/refund half lives in the chain-level test (test_pcn.c).
+ *
+ * Prints a narrative and hard-asserts every step (non-zero exit on failure).
  */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "../randombytes.h"
+#include "../relation.h"
+#include "../relation_zk.h"
+#include "../basesig.h"
 #include "../las.h"
-#include "../params.h"
+#include "../serialize.h"
 
-static int witness_equal(const las_sk *a, const las_sk *b) {
+static int witness_equal(const witness *a, const witness *b) {
   unsigned int j, k;
-  for(j = 0; j < LAS_M; ++j)
-    for(k = 0; k < N; ++k)
-      if(a->s[j].coeffs[k] != b->s[j].coeffs[k])
+  for(j = 0; j < N_PLUS_ELL; ++j)
+    for(k = 0; k < LAS_D; ++k)
+      if(a->value[j].coeffs[k] != b->value[j].coeffs[k])
+        return 0;
+  return 1;
+}
+
+static int witness_infnorm_leq1(const witness *a) {
+  unsigned int j, k;
+  for(j = 0; j < N_PLUS_ELL; ++j)
+    for(k = 0; k < LAS_D; ++k)
+      if(a->value[j].coeffs[k] < -1 || a->value[j].coeffs[k] > 1)
         return 0;
   return 1;
 }
 
 #define FAIL(msg) do { fprintf(stderr, "  [FAIL] %s\n", msg); return 1; } while(0)
 
+static uint8_t pi[PI_PROOF_MAX_BYTES];
+static uint8_t wire[PRE_SIGNATURE_BYTES];
+
 int main(void) {
   uint8_t ppseed[LAS_SEEDBYTES];
-  las_pp pp;
-  las_pk pkA, pkB, Y;
-  las_sk skA, skB, y, yext;
-  las_sig presig_A, presig_B, sig_A, sig_B;
+  public_params pp;
+  public_key pk1, pk2;
+  secret_key sk1, sk2;
+  statement Y;
+  witness y, y_ext;
+  pre_signature presig1, presig2;
+  signature sig1, sig2, forged;
+  size_t pilen = 0;
 
-  /* messages = the two transactions being swapped */
-  const uint8_t *txA = (const uint8_t *)"tx_A: Alice -> Bob, 10 coins on chain A";
-  const uint8_t *txB = (const uint8_t *)"tx_B: Bob -> Alice, 10 coins on chain B";
-  size_t lenA = strlen((const char *)txA);
-  size_t lenB = strlen((const char *)txB);
+  /* messages = the two transactions being swapped (Fig. 1's tx1, tx2) */
+  const uint8_t *tx1 = (const uint8_t *)"tx1: Alice -> Bob, 10 coins on chain 1";
+  const uint8_t *tx2 = (const uint8_t *)"tx2: Bob -> Alice, 10 coins on chain 2";
+  size_t len1 = strlen((const char *)tx1);
+  size_t len2 = strlen((const char *)tx2);
 
   /* toy ledgers */
-  int A_alice = 10, A_bob = 0;     /* chain A balances */
-  int B_alice = 0,  B_bob = 10;    /* chain B balances */
+  int c1_alice = 10, c1_bob = 0;   /* chain 1 balances */
+  int c2_alice = 0,  c2_bob = 10;  /* chain 2 balances */
 
-  printf("=== Post-quantum atomic swap via LAS ===\n\n");
+  printf("=== Post-quantum atomic swap via LAS (Fig. 1, with pi) ===\n\n");
 
-  /* ---- Setup ---- */
+  /* ---- Setup: pp and both key pairs (Algorithm 1 KeyGen) ---- */
   randombytes(ppseed, LAS_SEEDBYTES);
-  las_setup(&pp, ppseed);
-  las_keygen(&pkA, &skA, &pp);
-  las_keygen(&pkB, &skB, &pp);
-  las_keygen(&Y, &y, &pp);          /* Bob draws the statement/witness (Y, y) */
-  printf("Setup: A (chain A: Alice=%d Bob=%d) | (chain B: Alice=%d Bob=%d)\n",
-         A_alice, A_bob, B_alice, B_bob);
-  printf("Bob generates statement/witness (Y, y) = KeyGen; keeps y secret.\n\n");
+  setup_public_params(&pp, ppseed);
+  base_keygen(&pk1, &sk1, &pp);
+  base_keygen(&pk2, &sk2, &pp);
+  printf("Setup: chain 1: Alice=%d Bob=%d | chain 2: Alice=%d Bob=%d\n\n",
+         c1_alice, c1_bob, c2_alice, c2_bob);
 
-  /* ---- 1. Bob sends Y to Alice (statement only) ---- */
-  printf("1. Bob -> Alice: statement Y (not the witness y).\n");
+  /* ---- u1 (Alice): (Y, y) <- Gen(); pi <- P((t'; r'), ...); PreSign tx1 ---- */
+  relation_gen(&Y, &y, &pp);
+  if(relation_prove(pi, &pilen, &Y, &y, &pp) != 0)
+    FAIL("Alice's relation_prove");
+  las_presign(&presig1, tx1, len1, &Y, &pk1, &sk1, &pp);
+  printf("1. Alice: (Y,y) = Gen(); pi = PoK{r': A r' = Y, ||r'||inf <= 1} (%zu bytes);\n", pilen);
+  printf("   sigma^_1 = PreSign(sk1, Y, tx1).\n");
+  printf("   Alice -> Bob : { Y, pi, sigma^_1, tx1 }   (off-chain)\n\n");
 
-  /* ---- 2. Alice pre-signs tx_A bound to Y; Bob pre-verifies ---- */
-  las_presign(&presig_A, txA, lenA, &Y, &pkA, &skA, &pp);
-  printf("2. Alice pre-signs tx_A bound to Y -> sigma^_A ; sends to Bob.\n");
-  if(las_preverify(&presig_A, txA, lenA, &Y, &pkA, &pp) != 0)
-    FAIL("Bob's PreVerify of sigma^_A");
-  printf("   Bob: PreVerify(Y, pkA, sigma^_A, tx_A) = true.\n");
+  /* ---- u2 (Bob): "If verif. of pi or sigma^_1 fails, Abort" (Fig. 1) ---- */
+  if(relation_proof_verify(pi, pilen, &Y, &pp) != 0)
+    FAIL("Bob's verification of pi");
+  if(las_preverify(&presig1, tx1, len1, &Y, &pk1, &pp) != 0)
+    FAIL("Bob's PreVerify of sigma^_1");
+  printf("2. Bob: pi verifies (Y really has a ternary preimage) and\n");
+  printf("   PreVerify(Y, pk1, sigma^_1, tx1) = true.\n");
 
-  /* ---- 3. Bob pre-signs tx_B bound to the same Y; Alice pre-verifies ---- */
-  las_presign(&presig_B, txB, lenB, &Y, &pkB, &skB, &pp);
-  printf("3. Bob pre-signs tx_B bound to the SAME Y -> sigma^_B ; sends to Alice.\n");
-  if(las_preverify(&presig_B, txB, lenB, &Y, &pkB, &pp) != 0)
-    FAIL("Alice's PreVerify of sigma^_B");
-  printf("   Alice: PreVerify(Y, pkB, sigma^_B, tx_B) = true.\n");
+  /* a proof must not transfer to a statement it was not made for */
+  {
+    statement Y_evil;
+    witness y_evil;
+    relation_gen(&Y_evil, &y_evil, &pp);
+    if(relation_proof_verify(pi, pilen, &Y_evil, &pp) == 0)
+      FAIL("pi for Y wrongly accepted for a different statement");
+    printf("   (pi is rejected against any other statement Y'.)\n");
+  }
 
-  /* Neither pre-signature is spendable on its own (the tripwire). */
-  if(las_verify(&presig_A, txA, lenA, &pkA, &pp) == 0)
-    FAIL("sigma^_A wrongly accepted by ordinary Verify");
-  if(las_verify(&presig_B, txB, lenB, &pkB, &pp) == 0)
-    FAIL("sigma^_B wrongly accepted by ordinary Verify");
-  printf("   Neither pre-signature is spendable: ordinary Verify rejects both.\n");
-  printf("   (Alice cannot finish sigma^_B yet - she does not know y.)\n\n");
+  /* ---- u2 (Bob): PreSign tx2 under the SAME Y ---- */
+  las_presign(&presig2, tx2, len2, &Y, &pk2, &sk2, &pp);
+  if(las_preverify(&presig2, tx2, len2, &Y, &pk2, &pp) != 0)
+    FAIL("Alice's PreVerify of sigma^_2");
+  printf("3. Bob: sigma^_2 = PreSign(sk2, Y, tx2).\n");
+  printf("   Bob -> Alice : { sigma^_2, tx2 }   (off-chain; Alice pre-verifies)\n\n");
 
-  /* ---- 4. Bob adapts with y and publishes on chain A ---- */
-  if(las_adapt(&sig_A, &presig_A, txA, lenA, &Y, &y, &pkA, &pp) != 0)
-    FAIL("Bob's Adapt of sigma^_A");
-  if(las_verify(&sig_A, txA, lenA, &pkA, &pp) != 0)
-    FAIL("published sigma_A failed ordinary Verify");
-  A_alice -= 10; A_bob += 10;        /* tx_A executes */
-  printf("4. Bob: sigma_A = Adapt((Y,y), sigma^_A); PUBLISH on chain A.\n");
-  printf("   Verify(pkA, sigma_A, tx_A) = true  =>  Bob claims Alice's coin.\n");
-  printf("   chain A: Alice=%d Bob=%d\n\n", A_alice, A_bob);
+  /* Neither pre-signature is spendable on its own: an adversary submitting
+   * the raw pre-signature bytes as a signature is rejected by the ordinary
+   * verifier (the byte route is the only one -- the type system already
+   * forbids passing a pre_signature to base_verify). */
+  pack_pre_signature(wire, &presig1);
+  unpack_signature(&forged, wire);
+  if(base_verify(&forged, tx1, len1, &pk1, &pp) == 0)
+    FAIL("sigma^_1 bytes wrongly spendable as a signature");
+  pack_pre_signature(wire, &presig2);
+  unpack_signature(&forged, wire);
+  if(base_verify(&forged, tx2, len2, &pk2, &pp) == 0)
+    FAIL("sigma^_2 bytes wrongly spendable as a signature");
+  printf("   Tripwire: both raw pre-signatures are rejected by ordinary Verify.\n");
+  printf("   (Bob cannot claim c1 yet; Alice cannot claim c2 without adapting.)\n\n");
 
-  /* ---- 5. Alice observes sigma_A and extracts the witness ---- */
-  if(las_ext(&yext, &sig_A, &presig_A, &Y, &pp) != 0)
-    FAIL("Alice's Ext (A*y' != Y)");
-  if(!witness_equal(&yext, &y))
-    FAIL("extracted witness y' != y");
-  printf("5. Alice observes sigma_A on chain A and extracts y' = Ext(Y, sigma_A, sigma^_A).\n");
-  printf("   Check: A*y' == Y and y' == y (exact recovery).\n\n");
+  /* ---- u1 (Alice): sigma_2 = Adapt((Y,y), sigma^_2); abort on bottom;
+   * publish on chain 2 => Alice claims c2 ---- */
+  if(las_adapt(&sig2, &presig2, tx2, len2, &Y, &y, &pk2, &pp) != 0)
+    FAIL("Alice's Adapt of sigma^_2");
+  if(base_verify(&sig2, tx2, len2, &pk2, &pp) != 0)
+    FAIL("published sigma_2 failed ordinary Verify");
+  c2_bob -= 10; c2_alice += 10;
+  printf("4. Alice: sigma_2 = Adapt((Y,y), sigma^_2); PUBLISH on chain 2.\n");
+  printf("   Verify(pk2, sigma_2, tx2) = true  =>  Alice claims Bob's coin c2.\n");
+  printf("   chain 2: Alice=%d Bob=%d\n\n", c2_alice, c2_bob);
 
-  /* ---- 6. Alice adapts sigma^_B with the extracted witness, publishes on chain B ---- */
-  if(las_adapt(&sig_B, &presig_B, txB, lenB, &Y, &yext, &pkB, &pp) != 0)
-    FAIL("Alice's Adapt of sigma^_B with extracted witness");
-  if(las_verify(&sig_B, txB, lenB, &pkB, &pp) != 0)
-    FAIL("published sigma_B failed ordinary Verify");
-  B_bob -= 10; B_alice += 10;        /* tx_B executes */
-  printf("6. Alice: sigma_B = Adapt((Y,y'), sigma^_B); PUBLISH on chain B.\n");
-  printf("   Verify(pkB, sigma_B, tx_B) = true  =>  Alice claims Bob's coin.\n");
-  printf("   chain B: Alice=%d Bob=%d\n\n", B_alice, B_bob);
+  /* ---- u2 (Bob): y' = Ext(Y, sigma_2, sigma^_2);
+   * sigma_1 = Adapt((Y,y'), sigma^_1); publish on chain 1 => Bob claims c1 ---- */
+  if(las_ext(&y_ext, &sig2, &presig2, &Y, &pp) != 0)
+    FAIL("Bob's Ext (A*y' != Y)");
+  if(!witness_infnorm_leq1(&y_ext))
+    FAIL("extracted y' not ternary -- exactly what pi rules out (Section 4.1)");
+  if(!witness_equal(&y_ext, &y))
+    FAIL("extracted y' != y (M-SIS uniqueness argument violated)");
+  printf("5. Bob: y' = Ext(Y, sigma_2, sigma^_2) from the PUBLIC chain-2 data.\n");
+  printf("   ||y'||inf <= 1 and y' == y: the guarantee pi bought (Section 4.1).\n");
 
-  /* ---- atomicity check ---- */
-  if(!(A_alice == 0 && A_bob == 10 && B_alice == 10 && B_bob == 0))
+  if(las_adapt(&sig1, &presig1, tx1, len1, &Y, &y_ext, &pk1, &pp) != 0)
+    FAIL("Bob's Adapt of sigma^_1 with the extracted witness");
+  if(base_verify(&sig1, tx1, len1, &pk1, &pp) != 0)
+    FAIL("published sigma_1 failed ordinary Verify");
+  c1_alice -= 10; c1_bob += 10;
+  printf("6. Bob: sigma_1 = Adapt((Y,y'), sigma^_1); PUBLISH on chain 1.\n");
+  printf("   Verify(pk1, sigma_1, tx1) = true  =>  Bob claims Alice's coin c1.\n");
+  printf("   chain 1: Alice=%d Bob=%d\n\n", c1_alice, c1_bob);
+
+  /* ---- atomicity ---- */
+  if(!(c1_alice == 0 && c1_bob == 10 && c2_alice == 10 && c2_bob == 0))
     FAIL("final balances inconsistent");
 
   printf("=== Swap settled atomically. ===\n");
-  printf("Both legs executed; Bob's claim forced the on-chain reveal of y that\n");
-  printf("enabled Alice's claim. Either both settle or neither does.\n");
+  printf("Alice's on-chain claim leaked exactly the witness Bob needed; pi\n");
+  printf("guaranteed in advance that the leaked witness would be usable.\n");
   return 0;
 }

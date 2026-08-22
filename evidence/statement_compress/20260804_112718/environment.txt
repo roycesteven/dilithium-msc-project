@@ -1,0 +1,10 @@
+run_id=20260804_112718
+git=aa71cbf
+branch=report
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+sets=2 3 5
+sources=ref/test/test_statement_compress.c
+scheme=UNMODIFIED: the candidates change only which statement is put on the wire
+note=functional admissibility only; no security analysis of any candidate

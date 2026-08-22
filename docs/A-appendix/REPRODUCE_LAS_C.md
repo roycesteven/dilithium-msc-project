@@ -6,7 +6,7 @@ Stage-1 benchmark: **ordinary lattice-based signature (Algorithm 1) vs LAS adapt
 signature (Algorithm 2)** at matched parameters.
 
 **Scope — deliberately excluded from this guide.** No application layer: no atomic
-swap, no payment-channel / AMHL, no `las_presign_k` (K-hop bound), no classical
+swap, no payment-channel / AMHL (out of project scope), no classical
 ECDSA-adaptor baseline, no EVM/gas measurement. The guide stops at the Algorithm 1
 vs Algorithm 2 comparison; the application tier is only started once the signature
 implementation and its benchmark are airtight.
@@ -125,11 +125,13 @@ typedef struct { poly c; poly z[LAS_M]; } las_sig;       /* (pre-)signature (c, 
    `poly_caddq`) and serialise 4 LE bytes/coeff. *Everything hashed goes through
    this*, which is what makes the scheme (and any later port) byte-reproducible.
 2. **`las_Amul`** — `w = A·v = v_top + A′·v_bot` with `A = [I_n | A′]`.
-   `A′` is sampled **directly in the NTT domain** (Dilithium's trick): `las_setup`
+   `A′` is sampled **directly in the NTT domain** (Dilithium's trick): `setup_public_params`
    fills `pp->mat[i][j] = poly_uniform(seed, (i<<8)+j)` and `las_Amul` uses it
    straight in `poly_pointwise_montgomery`. Output is canonical `[0,Q)`.
-3. **`polymul`** — full NTT product for `c·r` and `c·t`
-   (`ntt → pointwise → invntt_tomont → reduce`).
+3. **`polymul_prehat`** — the pointwise-multiply + inverse-NTT tail of the
+   `c·r` / `c·t` product (`pointwise → invntt_tomont → reduce`); the two forward
+   NTTs are hoisted by the callers exactly as `ref/sign.c` does (`NTT(s)` once
+   per call, `NTT(c)` once per attempt / per verify, `NTT(t_j)` per verify).
 4. **`chknorm_vec`** — `poly_chknorm` across the `LAS_M`-vector.
 
 ## Step 5 — Implement the samplers and the challenge
@@ -154,7 +156,7 @@ target different distributions — `η`, `γ₁` bit-packed — and are not appl
 
 Two implementations exist, on purpose:
 
-- **In `las.c`:** `las_keygen(_seed)`, `las_sign` (`sign_core`), `las_verify` —
+- **In `las.c`:** `base_keygen(_seed)`, `base_sign` (`base_sign_internal`), `base_verify` —
   the scheme's own Sign/Verify, `c = H(pk, w, M)`:
 
   ```text
@@ -177,7 +179,7 @@ never estimated from timing ratios.
 ## Step 7 — Algorithm 2: the LAS adaptor signature
 
 The whole adaptor layer is one change plus three small functions
-(`presign_core`, `las_preverify`, `las_adapt`, `las_ext`):
+(`las_presign_internal`, `las_preverify`, `las_adapt`, `las_ext`):
 
 ```text
 PreSign  : y ← S_γ^{n+ℓ}; w = A·y; c = H(pk, w + Y, M); ẑ = y + c·r;
@@ -200,8 +202,8 @@ The statement/witness pair is literally another key pair (`Gen` = `KeyGen`).
 To make the implementation reproducible (and portable to other languages),
 add seeded/deterministic variants sharing the same cores:
 
-- `las_keygen_seed(pk, sk, pp, seed32)`
-- `las_sign_det` / `las_presign_det` — mask seed = `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)`
+- `base_keygen_seed(pk, sk, pp, seed32)`
+- `base_sign_det` / `las_presign_det` — mask seed = `SHAKE256(tag ‖ sk ‖ [Y] ‖ M)`
   (tag 0 = sign, 1 = presign; `sk` absorbed 1 byte/coeff with
   `(uint8_t)(int8_t)` semantics; `Y` absorbed canonically).
 
@@ -211,7 +213,7 @@ seeds and 33-byte messages), asserts the full adaptor contract + determinism, pa
 SHAKE256 digest, pinned in the source:
 
 ```text
-641a176c 3eb21250 98fdbb7a d16bfa38 fb5744b5 2dd9696b eeb7d07b e1445a19
+bb6ad0da b998c1f9 0ca4d3cc 0f5d3dfa 723e89f7 9aff18fc e2698a08 c96e260c
 ```
 
 > **Important:** the KAT binary builds at the **Simplified Dilithium-III set**
@@ -227,7 +229,7 @@ codes, out-of-band z):
 | --- | --- | --- | --- |
 | public key / statement Y | 23 bits/coeff, canonical | 2944 B | 4416 B |
 | secret key / witness | 2 bits/coeff, ternary | 512 B | 704 B |
-| signature (c, z) | c 2-bit ternary + z offset-encoded, width `⌈log₂(2(γ−κ)+1)⌉` (18 or 19 bits) | 4672 B | 6752 B |
+| signature (c, z) | `c_tilde` 32-byte challenge digest + `BitPack(z)` (FIPS Alg. 17), z width `⌈log₂(2(γ−κ)+1)⌉` (18 or 19 bits) | 4640 B | 6720 B |
 
 The z width is derived from the actual parameters at compile time, so every set
 packs losslessly. Ordinary, pre- and adapted signatures all share one size —
@@ -291,7 +293,7 @@ bash scripts/run_benchmark_suite.sh     # → evidence/runs/YYYYMMDD_HHMMSS/, ev
    (no Algorithm-1 analogue). The two paths share algorithm, parameters and
    primitives, so the difference is purely the adaptor layer.
 3. **Sizes:** the adapted signature is byte-identical in size to the ordinary one
-   (6752 B at the headline setting); the only extra communicated object is the
+   (6720 B at the headline setting); the only extra communicated object is the
    statement `Y` (4416 B = one public key).
 4. **Rejection rate** is read directly off `base_attempts`/`las_attempts`:
    acceptance ≈ 1/e ≈ 37% per attempt (≈ 2.7 attempts/signature), matching the
@@ -318,9 +320,9 @@ git clone <repo> && cd dilithium-msc-project/ref
 make test/test_las3     && ./test/test_las3        # contract
 make test/test_basesig3 && ./test/test_basesig3    # Algorithm-1 baseline
 make test/test_serde3   && ./test/test_serde3      # bytes
-make test/test_kat3     && ./test/test_kat3        # pinned digest 641a176c…5a19
+make test/test_kat3     && ./test/test_kat3        # pinned digest bb6ad0da…260c
 cd .. && bash scripts/run_benchmark_suite.sh       # Algorithm 1 vs 2 benchmark + evidence
 ```
 
-Stop here. Atomic swap, PCN/AMHL, `las_presign_k`, the classical-adaptor baseline
+Stop here. Atomic swap, the classical-adaptor baseline
 and EVM gas are all later-stage work, out of scope for this document.

@@ -1,44 +1,122 @@
 \chapter{Methodology}
 \label{ch:methodology}
 
-This chapter explains how the project work was done: the construction implemented,
-the reuse-based implementation strategy, the testing regime, and --- importantly for
-a fair evaluation --- the benchmarking methodology and the parameter choices that
-make the comparisons defensible. The atomic-swap demonstration and its simulated-ledger
-model are methodologically light and are described together with their results in
-\cref{sec:res-app}.
-
 \section{The LAS construction}
 \label{sec:construction}
 
 LAS is a lattice adaptor signature whose base is a simplified, Dilithium-style
-Fiat--Shamir-with-aborts signature \cite{esgin2020post,ducas2018crystals}. All objects live in
-the ring $\Rq = \mathbb{Z}_q[X]/(X^d+1)$. The public matrix has the form
-$A = [\,I_n \mid A'\,] \in \Rq^{\,n\times(n+\ell)}$. A key pair is a short secret
-$r$ and its image $t = A\cdot r$; the hard relation $(Y,y)$ reuses exactly the same
-structure, so a statement is ``just another public key'' and recovering its witness
-is a Module-SIS/LWE problem. Crucially, \emph{key generation is shared}: LAS reuses
-the basic signature's KeyGen unchanged, and the statement/witness pair $(Y,y)$ is
-produced by that very same generator. LAS is therefore exactly the basic signature
---- KeyGen, Sign, Verify --- plus the four adaptor operations below, which is why
-every comparison in this report pairs a LAS operation with the basic operation it
-extends.
+Fiat--Shamir-with-aborts signature \cite{esgin2020post,ducas2018crystals}. All objects
+live in $\Rq = \mathbb{Z}_q[X]/(X^d+1)$, the public matrix has the form
+$A = [\,I_n \mid A'\,] \in \Rq^{\,n\times(n+\ell)}$, and a key pair is a short secret $r$
+with its image $t = A\cdot r$. The hard relation $(Y,y)$ reuses exactly that structure,
+so a statement is ``just another public key'': recovering its witness means finding a
+short preimage of $Y$ under $A$, a Module-SIS problem, while Module-LWE keeps the witness
+hidden \cite{esgin2020post}. \emph{Key generation is shared} --- LAS reuses the base
+KeyGen unchanged --- so LAS is exactly the base signature plus four adaptor
+operations.
 
-The base signature samples a masked commitment $w$, forms a challenge
-$c = H(\mathit{pk}, w, M)$, computes a response, and rejects when
-$\inftynorm{\vecz} > \gamma-\kappa$ (\cref{eq:signbound}). The adaptor extension
-\cite{esgin2020post} adds four operations relative to a statement $Y$:
-\begin{itemize}
-  \item \textsc{PreSign} folds the statement into the hash,
-        $c = H(\mathit{pk}, w + Y, M)$, and rejects at the \emph{tighter} bound
-        $\gamma-\kappa-1$;
-  \item \textsc{PreVerify} recomputes $w' = A\vecz - c\,t$ and checks
-        $c = H(\mathit{pk}, w'+Y, M)$;
-  \item \textsc{Adapt} adds the witness, $\vecz \leftarrow \vecz + y$, producing a
-        signature that the basic verifier accepts;
-  \item \textsc{Extract} recovers $y = \vecz - \hat{\vecz}$ from a signature and its
-        pre-signature.
-\end{itemize}
+The base signature commits to a mask $y$ as $w = A\,y$, forms a challenge
+$c = H(\mathit{pk}, w, M)$, computes the response $\vecz = y + c\,r$ and rejects when
+$\inftynorm{\vecz} > \gamma-\kappa$. Relative to a statement $Y$, the adaptor extension
+\cite{esgin2020post} adds \textsc{PreSign}, which folds the statement into the hash,
+$c = H(\mathit{pk}, w + Y, M)$, keeps the response $\hat{\vecz} = y + c\,r$, and rejects at
+the \emph{tighter} bound
+$\gamma-\kappa-1$; \textsc{PreVerify}, which recomputes $w' = A\hat{\vecz} - c\,t$ and checks
+$c = H(\mathit{pk}, w'+Y, M)$; \textsc{Adapt}, which adds the witness $r' := y$,
+$\vecz \leftarrow \hat{\vecz} + r'$, producing a signature the base verifier accepts; and
+\textsc{Extract}, which recovers $s = \vecz - \hat{\vecz}$ (\cref{fig:lasfuncs}).
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize,
+      ttl/.style={draw, rounded corners, fill=orange!15, text width=29mm,
+                  align=center, inner xsep=1.5mm, inner ysep=1.2mm,
+                  anchor=north, font=\scriptsize\bfseries},
+      pan/.style={draw, rounded corners, text width=29mm, align=left,
+                  inner xsep=1.5mm, inner ysep=1.5mm, anchor=north},
+      io/.style={text width=31mm, align=center, font=\scriptsize\itshape,
+                 inner xsep=0pt, inner ysep=1mm, anchor=north},
+      note/.style={text width=140mm, align=center, font=\scriptsize,
+                   inner ysep=0pt, anchor=south}]
+
+    %% Preamble: H keeps the paper's type (onto the challenge set); the digest
+    %% c-tilde is an artefact of how this implementation realises it, not H's output.
+    \node[note] at (55.5mm, 2.5mm) {The random oracle of Esgin et al.\ \cite{esgin2020post},
+        $H:\{0,1\}^{*}\!\to C$, returns the challenge polynomial $c$. This implementation
+        realises it in the two stages FIPS~204 uses --- SHAKE256 emits a short digest
+        $\tilde c$, then $c=\textsf{SampleInBall}(\tilde c)$ --- and stores or transmits
+        only $\tilde c$, so each consumer re-derives $c$ before using it.};
+
+    %% Four independent panels, one per added function: in / computes / out.
+    %% Column pitch 37mm at a 29mm text width keeps the picture inside the
+    %% 145mm text block.
+    %% ---------------- (a) PreSign ----------------
+    \node[ttl] (ta) at (0mm,0)     {(a) \textsc{PreSign}};
+    \node[io]  (ia) at (ta.south)  {in: secret $r$, statement $Y$, message $M$};
+    %% Both stages shown, so the digest is defined before it appears in `out:` --- the
+    %% derivation must be IN the panel, not left to the note (supervisor, Meeting 10).
+    %% Chained equality, not a second assignment: H returns the polynomial c, and this
+    %% implementation reaches it via the digest. Never write \tilde c = H(...).
+    %% The response line is Algorithm 2 Step 5 of Esgin et al. and must stay: without it
+    %% the panel names an output it never computes. `y` here is that algorithm's MASK
+    %% (Step 2); the witness of the pair (Y, y) is written r' in (c)/(d), as Step 24
+    %% parses it --- the paper's own device for its overloading of `y`.
+    \node[pan] (pa) at (ia.south)  {mask $y$, $w = A\,y$\\[1pt]
+        $c = H(\mathit{pk},\,w+Y,\,M)$\\[1pt]
+        $\phantom{c} = \textsf{SampleInBall}(\tilde c)$\\[1pt]
+        $\hat{\vecz} = y + c\,r$\\[1pt]
+        restart while\\
+        $\inftynorm{\hat{\vecz}} > \gamma-\kappa-1$};
+    \node[io]  (oa) at (pa.south)  {out: $\hat{\sigma} = (\tilde c,\hat{\vecz})$};
+
+    %% ---------------- (b) PreVerify ----------------
+    \node[ttl] (tb) at (37mm,0)    {(b) \textsc{PreVerify}};
+    \node[io]  (ib) at (tb.south)  {in: $Y$, key $t$, $\hat{\sigma}$, $M$};
+    \node[pan] (pb) at (ib.south)  {$c = \textsf{SampleInBall}(\tilde c)$\\[1pt]
+        $w' = A\hat{\vecz} - c\,t$\\[1pt]
+        accept iff\\
+        $c = H(\mathit{pk},\,w'+Y,\,M)$\\[1pt]
+        and $\inftynorm{\hat{\vecz}} \le \gamma-\kappa-1$};
+    \node[io]  (ob) at (pb.south)  {out: accept / reject};
+
+    %% ---------------- (c) Adapt ----------------
+    \node[ttl] (tc) at (74mm,0)    {(c) \textsc{Adapt}};
+    \node[io]  (ic) at (tc.south)  {in: $Y$, key $t$, $\hat{\sigma}$, $M$, witness
+        $r' := y$};
+    \node[pan] (pc) at (ic.south)  {\emph{runs (b) first}\\[1pt]
+        $\vecz \leftarrow \hat{\vecz} + r'$\\[1pt]
+        $\inftynorm{r'} \le 1$, so\\
+        $\inftynorm{\vecz} \le \gamma-\kappa$};
+    \node[io]  (oc) at (pc.south)  {out: $\sigma = (\tilde c,\vecz)$, an ordinary
+        signature};
+
+    %% ---------------- (d) Extract ----------------
+    \node[ttl] (td) at (111mm,0)   {(d) \textsc{Extract}};
+    \node[io]  (id) at (td.south)  {in: $\sigma$, $\hat{\sigma}$, $Y$};
+    \node[pan] (pd) at (id.south)  {$s \leftarrow \vecz - \hat{\vecz}$\\[1pt]
+        return $s$ iff $A\,s = Y$\\[1pt]
+        \emph{needs only public data}};
+    \node[io]  (od) at (pd.south)  {out: the extracted witness $s$};
+  \end{tikzpicture}
+  \caption[The four functions LAS adds to the base signature]{The four functions LAS
+  adds to the base signature, one panel each: what goes in, what the function computes,
+  and what comes out. \textsc{KeyGen}, \textsc{Sign} and \textsc{Verify} are reused
+  unchanged and are not shown. Two asymmetries are the whole construction. Only (a) and
+  (b) fold the statement $Y$ into the challenge hash --- which is why the adaptor layer
+  inherits the base scheme's arithmetic rather than replacing it, (d) using $Y$ only to
+  check the recovered witness;
+  only (c) and (d) touch the witness, and they are the two functions a basic
+  signature has no counterpart for. Each panel's arithmetic is that of Algorithm~2 of
+  \cite{esgin2020post}, including its symbols: $y$ is the \emph{mask} \textsc{PreSign}
+  samples, so the response it returns is $\hat{\vecz} = y + c\,r$ under the secret $r$;
+  the witness of the pair $(Y,y)$ is written $r'$ from the point where it enters the
+  arithmetic, as that algorithm's \textsc{Adapt} step parses it; and \textsc{Extract}
+  returns $s$, which is $r'$ on an honest run but in general only a witness of the
+  extended relation (\cref{tab:configs}). How the four compose, and why publishing
+  $\sigma$ is what makes a swap atomic, is \cref{fig:flow}.}
+  \label{fig:lasfuncs}
+\end{figure}
 
 \begin{equation}
   \label{eq:signbound}
@@ -46,16 +124,13 @@ $\inftynorm{\vecz} > \gamma-\kappa$ (\cref{eq:signbound}). The adaptor extension
   \qquad \gamma = \kappa\, d\,(n+\ell).
 \end{equation}
 
-The single subtle design point is the bound budget. \textsc{PreSign} must reject at
-the tighter bound $\gamma-\kappa-1$. The witness is ternary, so $\inftynorm{y}\le 1$,
-and after \textsc{Adapt} adds it the response satisfies $\inftynorm{\vecz}\le
-\gamma-\kappa$ and clears \cref{eq:signbound}. Loosening \textsc{PreSign} to
-$\gamma-\kappa$ would let adapted signatures exceed the bound, and basic verify
-would then reject every adapted signature. \Cref{fig:flow} shows the four-operation data
-flow and, crucially, where the statement $Y$ enters and where the witness $y$ is
-revealed.
+The subtle design point is the bound budget. An \emph{honest} witness is ternary, so
+$\inftynorm{r'}\le 1$, and because \textsc{PreSign} rejects at $\gamma-\kappa-1$ the response
+after \textsc{Adapt} clears \cref{eq:signbound}; loosening it to $\gamma-\kappa$ would let
+adapted signatures exceed the bound and be rejected.
+\Cref{fig:flow} shows the data flow.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
   \centering
   \begin{tikzpicture}[
       node distance=6mm and 9mm,
@@ -63,11 +138,11 @@ revealed.
                   inner sep=3pt, font=\small},
       ann/.style={font=\footnotesize\itshape, align=center},
       >={Stealth[]}]
-    \node[box] (ps)  {PreSign\\$\hat{\sigma}=(c,\hat{z})$};
+    \node[box] (ps)  {PreSign\\$\hat{\vecz}=y+c\,r$\\$\hat{\sigma}=(\tilde c,\hat{\vecz})$};
     \node[box, right=of ps] (pv) {PreVerify};
-    \node[box, right=of pv] (ad) {Adapt\\$z=\hat{z}+y$};
+    \node[box, right=of pv] (ad) {Adapt\\$\vecz=\hat{\vecz}+r'$};
     \node[box, right=of ad] (vf) {Verify /\\Publish $\sigma$};
-    \node[box, right=of vf] (ex) {Extract\\$y=z-\hat{z}$};
+    \node[box, right=of vf] (ex) {Extract\\$s=\vecz-\hat{\vecz}$};
     \draw[->] (ps) -- (pv);
     \draw[->] (pv) -- (ad);
     \draw[->] (ad) -- (vf);
@@ -77,15 +152,17 @@ revealed.
     \draw[->, dashed] (Y) -- (ps);
     \draw[->, dashed] (Y) -| (pv);
     % witness y enters at Adapt; is revealed by Extract
-    \node[ann, below=of ad] (y) {witness $y$\\(secret)};
+    \node[ann, below=of ad] (y) {witness $r'$\\(secret)};
     \draw[->, dashed] (y) -- (ad);
-    \node[ann, below=of ex] (yo) {$y$ recovered\\(now public)};
+    \node[ann, below=of ex] (yo) {witness recovered\\(now public)};
     \draw[->, dashed] (ex) -- (yo);
   \end{tikzpicture}
-  \caption[The LAS adaptor data flow]{The LAS adaptor data flow. The statement $Y$ is folded into the challenge
-  hash during PreSign and PreVerify; the witness $y$ is added by Adapt to turn the
-  pre-signature into a basic signature; and publishing that signature lets anyone
-  holding the pre-signature run Extract to recover $y$. This last step is what makes an
+  \caption[The LAS adaptor data flow]{The LAS adaptor data flow, in the symbols of
+  \cref{fig:lasfuncs}: $y$ is PreSign's mask, $r'$ the honest witness, $s$ what Extract
+  recovers. The statement $Y$ is folded into the challenge
+  hash during PreSign and PreVerify; the witness is added by Adapt to turn the
+  pre-signature into a base signature; and publishing that signature lets anyone
+  holding the pre-signature run Extract to recover it. This last step is what makes an
   atomic swap atomic.}
   \label{fig:flow}
 \end{figure}
@@ -93,190 +170,213 @@ revealed.
 \section{Implementation strategy: reuse, do not reinvent}
 \label{sec:impl}
 
-The guiding principle is that an exotic scheme equals a basic scheme plus extra
-functions, so the lattice arithmetic should be \emph{reused}, not rewritten. The
-implementation is therefore built additively on the CRYSTALS-Dilithium C reference.
+The guiding principle is that an exotic scheme equals a basic scheme plus extra functions,
+so the lattice arithmetic should be \emph{reused}, not rewritten. The implementation is
+built additively on the upstream CRYSTALS-Dilithium reference
+\cite{ducas2018crystals,pqcrystalsdilithium} at a pinned commit, and the same strategy is
+applied again in Rust (\cref{sec:rustport}). Neither is itself ``the reference'': both are
+\emph{modified, simplified} ML-DSA-style bases carrying the LAS layer of
+\textcite{esgin2020post}.
 
-\begin{table}[t]
-  \centering
-  \caption[Source files: reused, modified, and added]{Source files of the implementation, classified by how the reference is
-  used. The lattice core is reused unchanged; the only modified file is the
-  \texttt{Makefile}; the scheme, serialization, application, and evaluation are new.}
-  \label{tab:reuse}
-  \small
-  \begin{tabular}{@{}lll@{}}
-    \toprule
-    Category & Files & Role \\
-    \midrule
-    Reused unchanged & \texttt{poly/polyvec/ntt/reduce/rounding}, & the entire \\
-                     & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
-    Modified         & \texttt{Makefile} & compile new targets \\
-    Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
-                     & \texttt{amhl}, \texttt{chain}, tests, benchmarks & \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\Cref{tab:reuse} summarises the classification: no upstream source function is
-modified, so the security-critical lattice arithmetic is exactly the audited reference
-code, and every line specific to the adaptor scheme is new and isolated. This both
-reduces the surface for implementation error and makes the boundary between reused and
-new code unambiguous.
+Classifying every source file by how the reference is used (\cref{tab:reuse}) yields a
+clean split: the entire lattice core is reused unchanged, the only modified file is the
+\texttt{Makefile}, and the scheme, serialization, application and evaluation are new. No upstream function is modified, so the security-critical arithmetic is exactly
+the published reference code and every adaptor-specific line is isolated. The vendored
+\texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer \cite{lazer} are unmodified too, the
+latter behind a dedicated bridge.
 
 \paragraph{Data types and the matrix product.}
-LAS is a self-contained module (\texttt{las.\{c,h\}}) over the reference's degree-$d$
-polynomial type. A key pair is a ternary secret $r$ of $n+\ell$ polynomials and its image
-$t=A\,r$ of $n$ polynomials; a (pre-)signature is a challenge $c$ and a response
-$\vecz$ of $n+\ell$ polynomials; a statement/witness $(Y,y)$ has exactly the key-pair
-shape. The public matrix has the form $A=[\,I_n\mid A'\,]$, so the product
-$A\,v = v_{\text{top}} + A' v_{\text{bot}}$ adds the identity block directly and
-multiplies only $A'$ in the NTT domain. This both saves work and matches exactly how
-the reference computes $A s_1$ in key generation.
+LAS is a self-contained module over the reference's degree-$d$ polynomial type. Because
+$A=[\,I_n\mid A'\,]$, the product $A\,v = v_{\text{top}} + A' v_{\text{bot}}$ multiplies only
+$A'$.
 
 \paragraph{Hash, challenge, and samplers.}
-The random oracle $H$ is built from SHAKE256: it absorbs a canonical encoding of the
-public key, then the commitment ($w$ for Sign, $w+Y$ for PreSign), then the message,
-and squeezes a seed. The challenge sampler is the reference's \texttt{SampleInBall}
-with weight $\kappa$ (\cref{tab:params}; e.g.\ 60 at the LAS-2020/845 reference set, 49 at the target
-Simplified Dilithium-III), which guarantees $\lVert c\rVert_1=\kappa$ and
-$\inftynorm{c}=1$. Two samplers are added: a ternary sampler for secrets and witnesses
-(two bits per coefficient), and a uniform sampler over $[-\gamma,\gamma]$ for the
-mask (an 18-bit rejection sampler). The infinity-norm rejection checks reuse the
-reference's \texttt{poly\_chknorm} directly.
+The random oracle $H$ is built from SHAKE256, absorbing a canonical encoding of the public
+key, then the commitment ($w$ for Sign, $w+Y$ for PreSign), then the message. The challenge
+sampler is the reference's \texttt{SampleInBall} at weight $\kappa$, giving
+$\lVert c\rVert_1=\kappa$ and $\inftynorm{c}=1$. Two samplers are added: a ternary one for
+secrets and witnesses, and a rejection sampler uniform on $[-\gamma,\gamma]$ for the mask
+(\cref{app:methoddetail}).
 
-\paragraph{Simplifications relative to the full Dilithium scheme.}
-Following the LAS construction \cite{esgin2020post}, the base signature omits the
-optimisations of the full Dilithium scheme --- the hint vector, Power2Round, and
-high/low-bit decomposition --- and hashes the full commitment $w$ rather than its high
-bits. This keeps the algebra transparent at the cost of larger keys and signatures
-(quantified in \cref{ch:results}). The module depends on no mode-specific constant, so
-the same code runs at any of the parameter sets used in the evaluation.
-
-\paragraph{Modulus (a deliberate deviation).}
-The original construction specifies $q\approx 2^{24}$. Reusing the reference NTT fixes
-the root-of-unity table to $q=8\,380\,417\approx 2^{23}$, so this implementation uses
-that modulus. Since $q>2\gamma$, every intermediate value is represented faithfully and
-correctness is unaffected; only the concrete Module-SIS/LWE security margin differs
-from the larger-modulus parameter set. Migrating to $q\approx 2^{24}$ would require a
-new NTT table and is treated as future work (\cref{sec:future}).
+\paragraph{Simplifications, and the modulus.}
+Following \cite{esgin2020post}, the base signature omits Dilithium's hint vector,
+Power2Round and high/low-bit decomposition, hashing the full commitment $w$ rather
+than its high bits. This keeps the exact identity $A\vecz - c\,t = w$ available, at the cost of larger keys and
+signatures. Whether those optimisations can coexist with an adaptor layer was not assumed
+but \emph{tested} (\cref{sec:res-mldsa}). The modulus is reused too: the reference NTT fixes
+$q=8\,380\,417\approx 2^{23}$, FIPS~204's own modulus \cite{1274601}, rather than the
+$q\approx 2^{24}$ of \cite{esgin2020post} --- correctness is unaffected since
+$q>2\gamma$, and only the Module-SIS/LWE margin differs. No module depends on a
+mode-specific constant, so identical code runs at every parameter set.
 
 \section{Serialization and the on-chain interface}
 \label{sec:serialize}
 
-A deployable scheme exchanges \emph{bytes}, not in-memory structs. A bit-packed wire
-encoding and a \emph{validating} decoder were implemented, together with a
-verify-from-bytes entry point (\texttt{las\_verify\_packed}) that an on-chain verifier
-would consume. The packed field widths (used for the size analysis in
-\cref{ch:results}) are: public key / statement at 23 bits/coefficient, ternary secret
-/ witness at 2 bits/coefficient, and the response $z$ at 18 bits/coefficient.
-
-A verifier cannot trust its input, so the decoder is \emph{defensive}: it rejects a
-public-key coefficient $\ge q$, the invalid ternary code, and any response field
-outside the 18-bit band. The encoder is symmetric, rejecting a non-ternary secret or
-a response exceeding $\gamma-\kappa$. This is the realistic interface a
-Solidity, precompile, or zero-knowledge-circuit verifier would expose, and it is the
-object the tamper test in \cref{sec:res-correctness} attacks.
+A deployable scheme exchanges \emph{bytes}, not in-memory structs, so a bit-packed wire
+encoding, a typed codec and a verify-from-bytes entry point were implemented.
+Two decisions matter. Validation is \emph{asymmetric}: keys and witnesses are checked on
+decode, a signature is not, so a tampered response is caught by Verify --- the entry
+point the tamper test attacks. And, following FIPS~204
+\cite{1274601}, a signature carries not the challenge polynomial $c$ but the digest
+$\tilde c$ from which every consumer re-derives it, under the standard's $\lambda/4$ rule
+(\cref{app:serialize}).
 
 \section{Testing methodology}
 \label{sec:testing}
 
-Correctness and robustness were established with four test types.
+Four test types cover progressively weaker assumptions about the environment, stated in
+full in \cref{tab:tests}. Functional tests assume an honest caller and assert the whole
+adaptor cycle, including the \emph{tripwire} clause --- a pre-signature must \emph{fail}
+basic verification --- which is what distinguishes an adaptor signature from a signature.
+Serialization and tamper tests assume a hostile caller; the known-answer test assumes a
+different machine, and its digest is what the second implementation is checked against
+(\cref{sec:rustport}).
 
-\begin{enumerate}
-  \item \textbf{Functional tests} run 1000 iterations per Dilithium mode (2, 3, and
-        5), each with fresh public parameters, keys, and message. Every iteration
-        runs the full adaptor cycle and asserts: the pre-signature pre-verifies; the
-        pre-signature \emph{fails} basic verify (the statement-binding tripwire);
-        the adapted signature verifies; and the extracted witness equals the original
-        \emph{exactly}. A basic sign/verify round-trip and a one-bit-forgery
-        rejection are also checked. Passing all 1000 iterations at every mode is the
-        bar for functional correctness.
-  \item \textbf{Serialization tests} exercise the byte encoding over 256 random
-        instances, asserting exact round-trip for keys and all signature variants.
-  \item \textbf{A tamper test} flips every one of the 4672 bytes of a valid packed
-        signature, one at a time, and asserts that all 4672 flips break verification;
-        it also checks that the validating decoder rejects malformed bytes.
-  \item \textbf{Known-answer tests} fix all inputs, run the deterministic application
-        programming interface (API), fold
-        the packed bytes of every object into a single SHAKE256 digest, and compare it
-        against a pinned 32-byte value. Any unintended change to key generation,
-        signing, the adaptor algebra, or the serialization flips the digest. The
-        digest is stable across machines and compilers, so an independent on-chain
-        verifier can be cross-checked against it.
-\end{enumerate}
+\section{An independent second implementation: the Rust port}
+\label{sec:rustport}
 
-All tests pass, and the implementation compiles with no warnings under a strict set of
-compiler diagnostics.
+The complete scheme was implemented a second time in Rust on the same reuse principle,
+layered on a fixed version of the \texttt{fips204} crate \cite{fips204crate}, with the LAS
+layer added as new modules. The wire format is byte-identical to the C encoder's by
+construction (\cref{fig:repostructure}).
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\footnotesize,
+      lay/.style={draw, rounded corners, align=center, inner sep=4pt,
+                  minimum width=5.2cm, minimum height=9mm},
+      new/.style={lay, fill=orange!15},
+      old/.style={lay, fill=blue!8},
+      note/.style={font=\scriptsize\itshape, align=center},
+      >={Stealth[]}]
+    \node[note] (chead) {C implementation (\texttt{ref/})\\ base: CRYSTALS-Dilithium reference};
+    \node[new, below=2mm of chead] (capp) {tests $\cdot$ benchmarks $\cdot$ swap demo\\ \texttt{ref/test/*} (new)};
+    \node[new, below=2.5mm of capp] (clas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ las\_types $\cdot$ relation}\\ \texttt{basesig $\cdot$ las $\cdot$ serialize}};
+    \node[old, below=2.5mm of clas] (cprim) {\textbf{reused primitives (unchanged)}\\ NTT $\cdot$ polynomial arithmetic\\ SHAKE/FIPS-202 $\cdot$ \texttt{randombytes}};
+    \node[note, right=16mm of chead] (rhead) {Rust implementation (\texttt{rust/fips204-las/})\\ base: \texttt{fips204} crate (ML-DSA)};
+    \node[new, below=2mm of rhead] (rapp) {KAT $\cdot$ Criterion $\cdot$ protocol drivers\\ \texttt{tests/ benches/ examples/} (new)};
+    \node[new, below=2.5mm of rapp] (rlas) {\textbf{LAS layer (new)}\\ \texttt{setup $\cdot$ las\_types $\cdot$ relation}\\ \texttt{basesig $\cdot$ las $\cdot$ serialize}};
+    \node[old, below=2.5mm of rlas] (rprim) {\textbf{reused primitives (unchanged)}\\ NTT $\cdot$ polynomial arithmetic\\ SHAKE $\cdot$ sampling};
+    \draw[->] (capp) -- (clas);
+    \draw[->] (clas) -- (cprim);
+    \draw[->] (rapp) -- (rlas);
+    \draw[->] (rlas) -- (rprim);
+    \draw[<->, dashed] (clas.east) -- (rlas.west);
+    \node[note, anchor=north] (tie)
+      at ($(cprim.south)!0.5!(rprim.south)+(0,-3.5mm)$)
+      {dashed link: same six modules $\cdot$ byte-identical packed KAT objects};
+  \end{tikzpicture}
+  \caption[Implementation structure and C/Rust correspondence]{Implementation structure.
+  The two implementations follow the same layering: a new, self-contained LAS layer
+  (orange) --- the same six modules under the same names --- built on an
+  \emph{unmodified} base of reused lattice primitives (blue), with the tests and
+  benchmarks on top. The dashed link is checked rather than asserted: both encoders are
+  anchored to the same packed sizes at compile time, and the packed known-answer objects
+  are byte-identical, which is what the shared pinned digest
+  (\texttt{\katDigestHead\ldots\katDigestTail}) records. This is the high-level map for
+  reading the code; the per-file classification is \cref{tab:reuse}.}
+  \label{fig:repostructure}
+\end{figure}
+
+The port serves three purposes. \emph{Cross-validation}: short of a formal proof, the
+strongest practical argument that a cryptographic implementation is correct is a second one
+written against the specification and agreeing on pinned vectors. \emph{An independent
+benchmark methodology}: Criterion.rs \cite{criterionrs} shares no timing code with the C
+harness, so agreement defends the C numbers against harness artefacts. \emph{Deployment
+realism}: a memory-safe language is the plausible production vehicle.
+
+To make the timings comparable the two protocol drivers mirror each other exactly ---
+same repetition scheme, fixed seed, fixed message, success-path gating and rejection
+statistics. One caveat qualifies the port's independence: where \cite{esgin2020post} leaves
+an engineering choice open, Rust adopts the C implementation's, concretely an early-abort
+rejection check. Sharing that is what makes the two languages time the same algorithm, but
+it is established by inspecting the two norm checks rather than by the automated evidence,
+which constrains outputs and rejection rates, not the work profile of a rejected attempt
+(\cref{app:methoddetail}).
 
 \section{Benchmarking methodology and fair comparison}
 \label{sec:benchmethod}
 
-The evaluation separates two distinct costs and never conflates them:
-\emph{computation} cost (wall-clock time per operation) and \emph{communication}
-cost (bytes transmitted or stored). Each is measured as follows.
+The evaluation separates \emph{computation} cost (wall-clock time per operation) from
+\emph{communication} cost (bytes transmitted or stored).
 
-\paragraph{Repeatability and machine of record.}
-Every timing is the mean over ten independent runs, each of one thousand iterations,
-single-threaded, compiled at \texttt{-O3}. Results are reported as mean $\pm$ sample
-standard deviation so that machine and scheduling noise are visible. All measurements
-were taken on one machine: an AMD Ryzen~7 7745HX (8 cores, 16 threads) with
-about 7.4\,GB of RAM visible to the Linux environment, running Ubuntu 24.04.3 LTS
-(long-term support; kernel~6.6) under the Windows Subsystem for Linux (WSL2) on
-Windows, with the GNU Compiler Collection (GCC)~13.3.0 and GNU~Make~4.3. The reference
-implementation and the classical baseline library are used at fixed versions, and each
-reported table lists the exact command that produces it (\cref{app:repro}).
+\paragraph{Measurement boundaries.}
+Undocumented boundaries are a recognised benchmarking pitfall for lattice signatures
+\cite{riou2026apples}, so every timing belongs to one of the three declared boundaries of
+\cref{tab:tiers}: a \emph{core tier} isolating the adaptor algebra from encoding, a
+\emph{packed tier} giving what an on-chain consumer pays, and, for the classical baseline
+alone, the \emph{hybrid} boundary its library exposes. Comparisons are made only within one
+boundary, and every base-versus-LAS comparison shows \emph{both}.
+
+
+\paragraph{Implementation of record, repeatability, and machine.}
+Unless a caption says otherwise, timings are the C implementation's, with the Rust results
+reported separately and never averaged with them (\cref{tab:rust}). Every timing is a mean
+$\pm$ sample standard deviation over the repetition scheme its caption states. All
+non-random inputs are fixed, so variability comes only from rejection sampling and machine
+noise, never from input selection \cite{riou2026apples}. Toolchain, hardware and per-table
+commands: \cref{app:repro}.
 
 \paragraph{Per-operation reporting, not cumulative.}
-Every operation is timed and reported \emph{independently} --- KeyGen, Sign, Verify,
-PreSign, PreVerify, Adapt, and Extract --- rather than as a single cumulative
-end-to-end time. The reason is that the operations are split across parties and
-machines: in a swap, one party signs or pre-signs, another verifies and later adapts,
-and a third may extract, so a combined figure would average over costs that are never
-actually paid together by one party. Per-operation timing also exposes the adaptor
-overhead operation by operation, which a cumulative number would hide. This is the
-primary timing result (\cref{tab:timing}); an end-to-end figure adds nothing the
-per-operation breakdown does not already give.
+Every operation is timed independently: they are split across parties, so a combined figure
+would average over costs never paid together and hide the per-operation overhead.
 
-\paragraph{Primary (fair) comparison: LAS vs.\ its own simplified base.}
-LAS is defined over a simplified Dilithium-style base signature (Fiat--Shamir with
-aborts, ternary secrets, no hint vector); LAS is exactly that base plus the four
-adaptor operations, built on the same code, the same parameters, and the same
-primitives. The primary comparison therefore holds everything fixed except the
-adaptor layer, and measures its \emph{overhead}: this is the only same-algorithm,
-same-parameter, same-primitive comparison, so any difference it shows is genuinely the
-cost of adding adaptor functionality. Each adaptor operation is paired with the base
-operation it mirrors algorithmically:
-\begin{itemize}
-  \item \textsc{PreSign} against the base \textsc{Sign} --- both sample a masked
-        commitment, hash, and respond under rejection sampling; PreSign only folds the
-        statement $Y$ into the commitment and uses a tighter rejection bound;
-  \item \textsc{PreVerify} against the base \textsc{Verify} --- both recompute the same
-        commitment shape, PreVerify with the extra $+Y$;
-  \item \textsc{Adapt} against the base \textsc{Verify} --- Adapt runs a PreVerify and
-        then adds the witness;
-  \item \textsc{Extract} is reported separately, having no base-operation analogue.
-\end{itemize}
+\paragraph{The primary comparison: LAS against its own simplified base.}
+LAS is exactly its base signature plus four operations on the same code, parameters and
+primitives, so every comparison holds all three fixed and varies only the adaptor layer
+(justified in \cref{sec:eval-strategy}). Each adaptor operation is paired with the base
+operation it mirrors --- \textsc{Adapt} against \textsc{Verify}, since it runs a
+PreVerify before adding the witness --- and \textsc{Extract}, having no base analogue, is
+reported separately.
 
-\paragraph{Parameter sensitivity.}
-To test whether the adaptor overhead depends on the security level, the same base/adaptor
-comparison is repeated at several parameter sets. The module dimensions for these sets
-are taken from the standard Dilithium parameter choices at NIST levels~2, 3, and~5 ---
-used here purely as established, well-studied lattice dimensions to scale the scheme
-across --- together with the dimensions of the original LAS construction
-(\cref{tab:params}). Setting the row count $n$ and extra columns $\ell$ to a level's
-$(K,L)$, and the challenge weight $\kappa$ to its $\tau$, fixes the public-key, secret,
-and challenge dimensions. The implementation's parameters are compile-time constants, so
-the identical code runs at every set; the bound $\gamma=\kappa\,d\,(n+\ell)$ and the
-sampler widths follow from them. The concrete bit-security of each set is not formally
-claimed, as security proofs are beyond the scope of this work.
+\paragraph{Rejection sampling: the expected attempt count.}
+Sign-class operations restart until the response passes its norm bound, so no timing claim
+is meaningful without the attempt statistics. Each coefficient is accepted with probability
+$\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$ \emph{independently of the secret} --- why the
+response is simulatable (\cref{app:methoddetail}) --- and an attempt succeeds only if all
+$(n+\ell)\,d$ pass:
+\begin{equation}
+  \label{eq:rejacc}
+  p_{\mathrm{acc}}
+  = \left(\frac{2(\gamma-\kappa)+1}{2\gamma+1}\right)^{(n+\ell)d}
+  \approx \left(1-\frac{\kappa}{\gamma}\right)^{(n+\ell)d}
+  \approx e^{-\kappa (n+\ell) d/\gamma} = e^{-1}\approx 36.8\%,
+\end{equation}
+the last step using the design choice $\gamma=\kappa\,d\,(n+\ell)$ from
+\cite{esgin2020post}, made exactly so the expected number of restarts is ``about $e<3$''.
+Expected attempts are $1/p_{\mathrm{acc}}$, and PreSign's bound being tighter by one, it is
+\emph{expected} to restart slightly more often before any adaptor arithmetic is counted.
 
-\begin{table}[t]
+\paragraph{Rejection sampling: the run-validity gate.}
+Because the attempt count is geometric, per-call timings are heavy-tailed and averages
+over too few calls can drift several percent on rejection luck alone
+\cite{riou2026apples}. The drivers therefore treat the attempt statistics as a
+\emph{validity gate}: measured mean attempts must match the closed-form expectation within
+five standard errors, and a failing run aborts instead of producing evidence. This is a
+consistency check on the rejection rate, not a proof of sampler correctness
+(\cref{app:methoddetail,app:benchalg}). A second gate precedes every timing: the
+correctness contract is asserted on the objects about to be timed, so no failure path is
+ever measured.
+
+\paragraph{Parameter sensitivity and component sizes.}
+To test whether the adaptor overhead scales with the lattice dimensions, the same
+comparison is repeated at the four parameter sets of \cref{tab:params} (symbols in
+\cref{tab:notation}). Each key and signature is decomposed into components, so the
+\emph{cause} of a size difference can be identified, not merely its total stated.
+
+\begin{table}[htbp]
   \centering
   \caption[Parameter sets used in the evaluation]{Parameter sets used in the evaluation. The \emph{LAS-2020/845 reference}
-  set is the original paper's parameter set; the \emph{Simplified Dilithium-II/III/V}
-  sets reuse the dimensions of Dilithium modes~2/3/5 (so the public-key, secret, and
-  challenge dimensions line up with NIST levels~2/3/5) and are engineering benchmark
-  settings, \emph{not} formal NIST/ML-DSA security-equivalence claims. All lattice sets
+  set is the parameter set proposed in \cite{esgin2020post}, a historical
+  paper-parameter reference point corresponding to no ML-DSA set; the \emph{Simplified
+  Dilithium-II/III/V} sets reuse the dimensions of Dilithium modes~2/3/5, aligning the
+  reusable ML-DSA primitives and the challenge-digest strength $\lvert\tilde c\rvert$
+  with ML-DSA-44/65/87 while retaining LAS's own ternary secret distribution, rejection
+  bounds, exact hint-free relation and unoptimised serialization. They are engineering
+  benchmark settings, \emph{not} formal NIST/ML-DSA security-equivalence claims: a
+  matched dimension is not a claim that LAS \emph{is} the corresponding ML-DSA parameter
+  set or inherits its security category. All lattice sets
   share the ring degree $d=256$ and modulus $q=8\,380\,417\approx 2^{23}$ inherited from
   the reused Dilithium NTT; \emph{Simplified Dilithium-III} is the project's target set.
   The classical secp256k1 ECDSA adaptor is a functionality-matched baseline at
@@ -299,46 +399,157 @@ claimed, as security proofs are beyond the scope of this work.
   \end{tabular}
 \end{table}
 
-\begin{table}[t]
+
+\paragraph{The classical baseline: functionality-matched, not security-matched.}
+The second baseline is the \texttt{secp256k1-zkp} library's \texttt{ecdsa\_adaptor}
+module \cite{secp256k1zkp}, implementing Fournier's construction
+\cite{fournier2019adaptor}, unmodified at a pinned commit. It is a functionality-matched
+``price of post-quantum'' baseline, not a same-security one; plain ECDSA is excluded, the
+fair counterpart of an adaptor signature being another adaptor signature.
+
+\section{Application methodology: the UTXO swap study}
+\label{sec:stage2method}
+
+The narrated demonstration of \cref{sec:res-app} shows that the two-party atomic-swap
+protocol of Esgin, Ersoy and Erkin \cite{esgin2020post} --- Figure~1 of that paper, set out
+in \cref{app:swapdemo} and called \emph{the swap protocol} here --- \emph{runs}. A second
+study measures what it \emph{costs}, and its conclusions depend on what is held fixed.
+
+\paragraph{The venue, and why it is modelled.}
+The construction \cite{esgin2020post} states its applications over ``a UTXO-based
+blockchain like Bitcoin \emph{where the signature algorithm is replaced with a
+lattice-based signature scheme}''. That sentence is implemented literally: a UTXO ledger
+was built in which \emph{the signature algorithm is a parameter}, so one ledger serves
+every configuration and any measured difference is the cryptography, not the ledger. It is
+a model, not a node; the boundary is set out in \cref{app:utxomodel}.
+
+\paragraph{What a settled transaction contains, and what the adaptor layer changes.}
+Because the venue is a transaction rather than a contract, which \emph{components} the
+construction touches has a precise answer, and \cref{fig:txstruct} gives it field by
+field. Of the objects the swap protocol defines, exactly one reaches a ledger: the adapted
+signature $\sigma$, in the slot an ordinary signature already occupies --- since SegWit
+\cite{bip141}, a segregated \emph{witness} field. Everything else is an off-chain message,
+and the witness $y$ is never transmitted at all, $u_2$ deriving it from the published
+$\sigma$. The adaptor layer thus adds \emph{no on-chain field} --- which is what
+\emph{scriptless} means --- so every on-chain byte by which the post-quantum swap exceeds
+the classical one is attributable to the signature scheme alone
+(\cref{sec:res-txstruct}).
+
+One notational point matters once the venue is a real ledger. The swap protocol writes the
+signed object as $\mathit{tx}_i$, but a transaction is not a message: a signature commits to
+its \emph{signature hash}. Three objects are therefore kept distinct --- the unsigned
+template exchanged off-chain, its signature hash (the message passed to \textsc{PreSign}),
+and the settled transaction --- since conflating them would misreport communication cost.
+
+\begin{figure}[htbp]
   \centering
-  \caption[Security and scheme parameter notation]{Security and scheme parameters: the symbol, its meaning, and the value(s)
-  it takes across the parameter sets, \emph{listed in the row order of}
-  \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
-  notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and this
-  build runs at $d=256$, the ring degree of the reused Dilithium NTT. The figure and table
-  captions in \cref{ch:results} refer back to these names and values.}
-  \label{tab:notation}
+  \begin{tikzpicture}[
+      font=\scriptsize,
+      fld/.style={draw, text width=48mm, minimum height=6.5mm, inner xsep=2mm,
+                  inner ysep=1.2mm, align=left, anchor=north},
+      chg/.style={fld, fill=black!12, very thick},
+      hdr/.style={font=\footnotesize\bfseries, align=center, text width=52mm},
+      note/.style={font=\scriptsize, align=center, text width=52mm},
+      off/.style={draw, dashed, rounded corners, align=left, inner sep=5pt,
+                  font=\scriptsize, text width=106mm}]
+
+    %% Stacks start at a fixed depth so a wrapping header cannot shift the rows
+    %% out of alignment between the two columns.
+    %% ---------------- left: an ordinary payment ----------------
+    \node[hdr, anchor=north] (h1) at (0,0) {(a) Standard payment};
+    \node[fld] (a1) at (0,-6mm) {\texttt{version}\hfill 4\,B};
+    \node[fld] (a2) at (a1.south) {inputs: outpoint, \texttt{sequence}\hfill 41\,B};
+    \node[fld] (a3) at (a2.south) {outputs: value, \texttt{scriptPubKey}\hfill 31\,B};
+    \node[fld] (a4) at (a3.south) {\texttt{locktime}\hfill 4\,B};
+    \node[chg] (a5) at (a4.south) {\textbf{witness:} $\sigma$, $\mathit{pk}$\hfill
+                                   \btcOneWitness\,B};
+    \node[note] (a6) at ([yshift=-2.5mm]a5.south)
+      {total \btcOneTotal\,B \;$=$\; \btcOneVsize\,vB};
+
+    %% ---------------- right: the swap settlement ----------------
+    \node[hdr, anchor=north] (h2) at (60mm,0) {(b) Adaptor swap settlement};
+    \node[fld] (b1) at (60mm,-6mm) {\texttt{version}\hfill 4\,B};
+    \node[fld] (b2) at (b1.south) {inputs: outpoint, \texttt{sequence}\hfill 41\,B};
+    \node[fld] (b3) at (b2.south) {outputs: value, \texttt{scriptPubKey}\hfill 43\,B};
+    \node[fld] (b4) at (b3.south) {\texttt{locktime}\hfill 4\,B};
+    \node[chg] (b5) at (b4.south) {\textbf{witness:} $\sigma$, $\mathit{pk}$\hfill
+                                   \btcThreeWitness\,B};
+    \node[note] (b6) at ([yshift=-2.5mm]b5.south)
+      {total \btcThreeTotal\,B \;$=$\; \btcThreeVsize\,vB};
+
+    %% ---------------- what never appears on chain ----------------
+    \node[off, anchor=north] at (30mm,-53mm)
+      {\textbf{Never on chain:} statement $Y$ (\cfgThreeMsgY\,B), proof $\pi$, both
+       pre-signatures $\hat{\sigma}_1,\hat{\sigma}_2$ --- exchanged off-chain only.
+       \textbf{Never transmitted at all:} the witness $y$, which $u_2$ derives from the
+       published $\sigma$ and its own $\hat{\sigma}_2$ via \textsc{Ext}.};
+  \end{tikzpicture}
+  \caption[Standard payment versus adaptor swap settlement]{The transaction before and
+  after the construction is applied. \textbf{No field is added, removed or reordered}:
+  the adaptor layer is invisible on chain, which is what \emph{scriptless} means. Only
+  the two shaded quantities differ, and they differ because the signature scheme changed
+  --- the witness grows from \btcOneWitness\,B to \btcThreeWitness\,B, and the output
+  script from 31\,B to 43\,B because it commits to a 32-byte hash of a lattice key
+  rather than a 20-byte hash of an elliptic-curve one. Sizes are the measured objects
+  laid out in the witness serialisation of \cite{bip144}, with the output forms of
+  \cite{bip141,bip341}; \cref{tab:btctx} breaks them down field by field.}
+  \label{fig:txstruct}
+\end{figure}
+
+\paragraph{Three configurations, and what is controlled.}
+The three configurations of \cref{tab:configs} each run the swap protocol end-to-end
+across two ledgers. The \emph{role-A} proof is the proof of knowledge $\pi$ the protocol
+places on the wire immediately after $Y$, claiming a witness to $Y$ exists and is short.
+Only the $2\to3$ step is controlled: both LAS configurations share one expansion of the
+public matrix, derive all key material from one pinned seed, and prove the
+\emph{identical} relation
+$\exists\, r' : A r' = t' \wedge \inftynorm{r'} \le 1$ --- the hard relation of the
+statement/witness pair, \emph{not} the signer's key pair, and including the norm bound,
+since proving only $A r' = t'$ would fail to close the knowledge gap. This is verified
+rather than assumed: a configuration whose two halves disagree on a \emph{relation
+binding} each computes independently refuses to run (\cref{app:methoddetail}).
+The $1\to2$ step is not controlled --- it changes the signature scheme, the relation and
+whether a role-A proof exists --- so it is a whole-stack comparison, the signature-only
+question being answered by \cref{sec:res-classical}.
+
+\begin{table}[htbp]
+  \centering
+  \caption[The three measured configurations]{The three configurations. Only the
+  $2\to3$ step is controlled: those two share one public matrix, prove the identical
+  relation, and receive byte-identical inputs from one pinned seed, so their difference
+  is the proof system alone. Configuration~1 carries \emph{no} role-A proof, and this
+  is a finding rather than an omission: LAS needs $\pi$ because of its knowledge gap
+  --- extraction returns a witness of the extended relation, which need not be ternary,
+  so without $\pi$ a malicious $u_1$ could claim and leave $u_2$ holding an unadaptable
+  pre-signature --- whereas an ECDSA adaptor has no such gap, since extraction recovers
+  the discrete logarithm exactly. Deployed classical swaps accordingly carry no $\pi$,
+  and adding one would have benchmarked a construction nobody runs. The DLEQ proof
+  carried \emph{inside} a \texttt{secp256k1-zkp} pre-signature is a different object
+  and is not counted as $\pi$: its author is the pre-signer, and its claim is
+  pre-signature well-formedness, not knowledge of the role-A statement witness $r'$.
+  Its cost is reported in the bytes by which a pre-signature exceeds a signature.}
+  \label{tab:configs}
   \small
-  \begin{tabular}{@{}l L{0.45\linewidth} L{0.31\linewidth}@{}}
+  \begin{tabular}{@{}lL{0.27\linewidth}L{0.30\linewidth}cc@{}}
     \toprule
-    Symbol & Meaning & Value(s): LAS-2020/845 reference, Simplified Dilithium-II/III/V \\
+    \# & Signature & Role-A proof $\pi$ & Setup & Fully PQ \\
     \midrule
-    $n$        & module rank: rows of $A$, length of public key $t$                 & 4, 4, 6, 8 \\
-    $\ell$     & extra columns of $A'$ (secret-vector extension)                    & 4, 4, 5, 7 \\
-    $M=n+\ell$ & response dimension (number of polynomials in $z,\hat z,y$)         & 8, 8, 11, 15 \\
-    $\kappa$   & challenge Hamming weight (number of $\pm1$ in $c$; Dilithium $\tau$) & 60, 39, 49, 60 \\
-    $\gamma$   & rejection / masking bound, $\gamma=\kappa\,d\,(n+\ell)$            & 122\,880,\ 79\,872,\ 137\,984,\ 230\,400 \\
-    $d$        & ring degree ($X^{d}+1$)                                            & 256 (all sets) \\
-    $q$        & modulus from the reused NTT, $q\approx 2^{23}$                     & 8\,380\,417 (all sets) \\
+    1 & \cfgOneSigName{}   & \cfgOnePiName{}   & ---         & \cfgOneFullyPQ{} \\
+    2 & \cfgTwoSigName{}   & \cfgTwoPiName{}   & trusted     & \cfgTwoFullyPQ{} \\
+    3 & \cfgThreeSigName{} & \cfgThreePiName{} & transparent & \cfgThreeFullyPQ{} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\paragraph{Component-level size analysis.}
-Rather than reporting only total object sizes, each key and signature is decomposed
-into its components (challenge $c$, response $z$, statement $Y$, witness $y$,
-pre-signature) so that the \emph{cause} of any size difference can be identified.
-This breakdown is presented in \cref{ch:results}.
+\paragraph{The Groth16 circuit.}
+No pairing-based proof of this lattice statement was available to reuse, so the circuit is
+new, and cheaper than the statement suggests: $r' \mapsto A r'$ is \emph{linear with public
+coefficients}, needing no witness--witness multiplication, the expensive ingredient in a
+rank-one constraint system (\cref{app:methoddetail}).
 
-\paragraph{Classical baseline (functionality-matched, not security-matched).}
-The second baseline is a classical secp256k1 ECDSA adaptor signature
-\cite{secp256k1zkp}. This is \emph{not} a same-security post-quantum comparison:
-secp256k1 provides approximately 128-bit \emph{classical} security, is not
-quantum-resistant, and therefore has no corresponding NIST post-quantum level.
-Instead it is a functionality-matched ``price of post-quantum'' baseline: both schemes
-provide adaptor-signature functionality for blockchain-style atomic swaps, but they
-rely on different hardness assumptions and different algebra (classical discrete-log
-versus post-quantum lattice). LAS is evaluated as the post-quantum adaptor
-construction; the ECDSA adaptor represents the compact, widely deployed classical
-alternative. Plain ECDSA is excluded: the fair counterpart of an adaptor signature is
-another adaptor signature, not a basic one.
+\paragraph{Measurement.}
+Because gas does not exist on this venue, the axes are execution time and communication
+cost, the latter counting \emph{off-chain} protocol messages, not only what reaches a
+ledger. Sizes are observed from the transmitted buffers rather than computed, and these
+timings sit at the \textbf{packed tier}, so they are not comparable with core-tier figures
+elsewhere. One-time costs are excluded and reported separately (\cref{app:methoddetail}).

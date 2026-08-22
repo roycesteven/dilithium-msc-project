@@ -1,0 +1,39 @@
+las-stark benchmark of record
+  protocol              : 3 s discarded warm-up, then 5 timed repetitions,
+                          mean +/- sample (n-1) SD, one machine, one process
+  golden vector         : ../../evm/test/vectors
+  measured ||z||inf     : 137893  (bound B = 137935)
+  witness z             : 2816 coefficients
+
+A. NormAir -- constraint (1) only: ||z||inf <= B
+   trace   : 4096 rows x 39 columns (single segment)
+   proof   : 53292 bytes
+   warm-up : 27 discarded iterations
+  phase                                mean (ms)    SD (ms)   (n = 5)
+  prove TOTAL (trace+setup+prove)        110.033      0.418
+  verify                                   0.470      0.043
+
+B. RelationAir -- constraints (1) + (3) at d = 256, all n outputs, shared z
+   trace   : 4096 rows x 135 main + 15 aux columns
+   public  : 11008 field elements (A', t, c, w')
+   proof   : 98384 bytes
+   warm-up : 7 discarded iterations
+  phase                                mean (ms)    SD (ms)   (n = 5)
+  prove TOTAL (the like-for-like span)     435.651      7.421
+    .. quotient witness build              1.911      0.013
+    .. main trace build                    1.396      0.142
+    .. prover construction                 0.011      0.003
+    .. Winterfell prove()                432.332      7.291
+  verify                                   1.259      0.044
+
+C. Cost of proving (1)+(3) rather than (1) alone  [same protocol, same process]
+   prove TOTAL : 3.96x   (110.0 ms -> 435.7 ms)
+   verify      : 2.68x   (0.47 ms -> 1.26 ms)
+   proof size  : 1.85x   (53292 B -> 98384 B)
+
+SCOPE: this proves the ARITHMETIC of base_verify only. Constraints (2)
+  SampleInBall and (4) the SHAKE256 challenge are NOT in the AIR: c and w'
+  are public inputs, so z is bound to (A', t, c, w') and NOT to (c_tilde, M).
+  'Winterfell prove()' is the whole prover -- trace low-degree extension,
+  Merkle commitments, constraint evaluation, DEEP composition AND FRI --
+  not FRI alone. No gas figure is claimed: none has been measured.

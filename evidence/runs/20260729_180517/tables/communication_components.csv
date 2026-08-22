@@ -1,0 +1,41 @@
+level,component,bytes,pct_of_signature
+paper,pk = t,2944,63.45
+paper,sk = r,512,11.03
+paper,Y = t',2944,63.45
+paper,r',512,11.03
+paper,c,32,0.69
+paper,z,4608,99.31
+paper,z_hat,4608,99.31
+paper,"signature (c,z)",4640,100.0
+paper,"pre-signature (c,z_hat)",4640,100.0
+paper,"final adapted sig (c,z)",4640,100.0
+L2,pk = t,2944,63.45
+L2,sk = r,512,11.03
+L2,Y = t',2944,63.45
+L2,r',512,11.03
+L2,c,32,0.69
+L2,z,4608,99.31
+L2,z_hat,4608,99.31
+L2,"signature (c,z)",4640,100.0
+L2,"pre-signature (c,z_hat)",4640,100.0
+L2,"final adapted sig (c,z)",4640,100.0
+L3,pk = t,4416,65.56
+L3,sk = r,704,10.45
+L3,Y = t',4416,65.56
+L3,r',704,10.45
+L3,c,48,0.71
+L3,z,6688,99.29
+L3,z_hat,6688,99.29
+L3,"signature (c,z)",6736,100.0
+L3,"pre-signature (c,z_hat)",6736,100.0
+L3,"final adapted sig (c,z)",6736,100.0
+L5,pk = t,5888,64.11
+L5,sk = r,960,10.45
+L5,Y = t',5888,64.11
+L5,r',960,10.45
+L5,c,64,0.7
+L5,z,9120,99.3
+L5,z_hat,9120,99.3
+L5,"signature (c,z)",9184,100.0
+L5,"pre-signature (c,z_hat)",9184,100.0
+L5,"final adapted sig (c,z)",9184,100.0

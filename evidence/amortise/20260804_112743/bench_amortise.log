@@ -1,0 +1,56 @@
+=== Does the role-A proof amortise across swaps? ===
+
+Master seed   : 6c61732d737761702f657072696e742d323032302d3834352f666967312f7631
+Seed source   : pinned default
+Proof system  : Groth16 over BN254
+Relation      : exists r : A r = t and ||r||inf <= 1   (per instance)
+Public input  : 1536 field elements per instance
+Repetitions   : 5 per batch size (statistical floor 5)
+
+  measured k = 1
+  measured k = 2
+  measured k = 4
+  measured k = 8
+
+--- Cost of ONE proof covering k statements (totals) ---
+
+    k          setup (ms)          prove (ms)       verify (us)   proof (B)
+    1       673.5 +- 22.0       591.1 +- 29.8   12571.2 +- 311.8         128
+    2      1447.6 +- 111.9      1166.3 +- 140.7   24374.4 +- 505.5         128
+    4      3083.0 +- 261.4      2668.1 +- 173.2   47583.9 +- 1251.7         128
+    8      6379.2 +- 547.3      5140.0 +- 210.7   96260.8 +- 12375.9         128
+
+--- Amortised PER SWAP (total / k) ---
+
+    k      prove (ms)     verify (us)       proof (B)      proof vs k=1
+    1           591.1         12571.2           128.0             1.00x
+    2           583.1         12187.2            64.0             0.50x
+    4           667.0         11896.0            32.0             0.25x
+    8           642.5         12032.6            16.0             0.12x
+
+--- What this shows ---
+
+Proof size is the only column that amortises, and it amortises perfectly:
+one Groth16 proof is three group elements regardless of how many instances
+it covers, so k = 8 carries the same 128 B as k = 1 and the per-swap share
+falls to 16.0 B.
+
+Proving does not amortise: per-swap proving went from 591.1 ms at k = 1 to
+642.5 ms at k = 8. The constraint system grows with the batch, so the work
+is paid per instance either way -- batching moves it, it does not remove it.
+
+Verification does not amortise either: the public input is 1536 field
+elements per instance, so a verifier of a k-batch reads k times as much.
+
+The practical reading: batching helps exactly where the swap is
+communication-bound and not where it is compute-bound. The swap study found
+the proof dominant in BOTH, so batching addresses one half of the problem
+and leaves the other untouched. It also changes the protocol: a batch must
+be proved before any of its statements is used, so a party has to know its
+next k swaps in advance, and every counterparty verifies the whole batch to
+use one statement of it.
+
+SCOPE: Groth16 only, and Groth16 is not post-quantum -- it is configuration
+2's prover, kept as the controlled comparison against LaZer. Nothing here
+measures LaZer, whose proof grows with the relation, and nothing here is a
+security claim about batching.
