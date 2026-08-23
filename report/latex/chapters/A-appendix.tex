@@ -318,6 +318,14 @@ ledger by anyone, which is exactly how the witness leaks. An output carries an a
 plus a spending condition: a signature check under a public key, with an optional
 timelocked refund branch.
 
+One boundary belongs with the atomicity claim. In the measured swap each coin is funded
+to an output that its own holder's key controls, and no conflicting spend of a funded
+outpoint is modelled. What the runs establish is therefore that the honest ordering
+settles both legs and that the witness leaks as the protocol requires --- not that a
+party who has already claimed is unable to race to respend its own funded outpoint.
+Figure~1 of \cite{esgin2020post} does not specify a funding or locking step, so
+adversarial funding races lie outside both the figure and this experiment.
+
 Deploying instead on a real Bitcoin node is not a matter of effort. Bitcoin Script
 cannot verify a lattice signature, so configurations~2 and~3 could not settle there
 without a consensus change --- which is precisely the assumption \cite{esgin2020post}
@@ -399,12 +407,12 @@ than the proof bytes observed on the wire in \cref{tab:stage2-comm} and not to b
 conflated with them --- with proving and verifying each completing
 well under a second. A dedicated test suite asserts completeness, rejection of every
 sampled single-byte tamper, rejection against a wrong statement, and that the prover
-refuses a non-ternary witness. A small ledger abstraction --- accounts with balances, a
-block height, and adaptor-locked contracts, the scriptless analogue of a
-hash-time-locked contract with the hash lock replaced by the statement $Y$ and the time
-lock by a timeout height --- additionally carries two asserted scenarios: the
-cross-chain happy path, and a timeout/refund in which a premature refund is rejected and
-the funder recovers its coin.
+refuses a non-ternary witness. The modelled ledger of \cref{app:utxomodel} additionally
+tests a separate timeout/refund edge case that Figure~1 of \cite{esgin2020post} omits. In
+this one-chain test, a coin is funded to an output claimable by the counterparty and
+refundable by its funder after a timeout; the counterparty never responds, an early
+refund is rejected as a \emph{timing} failure rather than a cryptographic one, and after
+the timeout the funder recovers its coin.
 
 \section{The six implementation challenges}
 \label{app:challenges}
@@ -658,8 +666,13 @@ modified'' an auditable statement rather than an assertion.
 \begin{table}[h]
   \centering
   \caption[Source files: reused, modified, and added]{Source files of the implementation, classified by how the reference is
-  used. The lattice core is reused unchanged; the only modified file is the
-  \texttt{Makefile}; the scheme, serialization, application, and evaluation are new.}
+  used. The lattice core is reused unchanged; inside the reference tree the only modified
+  files are \texttt{ref/Makefile}, which adds targets, and \texttt{ref/test/.gitignore},
+  which lists the new test binaries. The branch diff also shows one deletion,
+  \texttt{ref/sign copy.c} --- an annotated copy of \texttt{ref/sign.c} carried in the
+  pinned baseline, differing from it by comment blocks only, named by no build rule, and
+  removed here. The adaptor scheme, serialization, application integration, and evaluation
+  harnesses are project-specific additions.}
   \label{tab:reuse}
   \small
   \begin{tabular}{@{}lll@{}}
@@ -668,7 +681,8 @@ modified'' an auditable statement rather than an assertion.
     \midrule
     Reused unchanged & \texttt{poly/polyvec/ntt/reduce/rounding}, & the entire \\
                      & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
-    Modified         & \texttt{Makefile} & compile new targets \\
+    Modified         & \texttt{Makefile}, & new targets; \\
+                     & \texttt{test/.gitignore} & built artefacts \\
     Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
                      & \texttt{relation\_zk.\{c,h\}} (+ LaZer bridge), & \\
                      & \texttt{basesig}, \texttt{setup}, \texttt{relation}, & \\
@@ -739,7 +753,7 @@ Against an unmodified Bitcoin Core \btcNodeTag{} regtest node (source commit
 framework, offered to two nodes differing only in relay policy, broadcast and mined.
 
 \begin{center}\small
-\begin{tabular}{lrrl}
+\begin{tabular}{L{0.26\textwidth}rrl}
 \toprule
 transaction & vsize (vB) & weight (WU) & default relay policy \\
 \midrule
