@@ -8,7 +8,12 @@ Public blockchains commonly authorise transactions with the Elliptic Curve Digit
 Signature Algorithm (ECDSA) or Schnorr. Their security relies on the hardness of the
 elliptic-curve discrete logarithm problem, which Shor's algorithm solves in polynomial
 time on a sufficiently large quantum computer \cite{shor1999polynomial}, allowing an
-adversary to forge signatures and spend other users' funds. ``Post-quantum'' (PQ) cryptography replaces this assumption with
+adversary to forge signatures and spend other users' funds. Published resource estimates
+have fallen sharply for comparable targets (\cref{fig:whynow}). A
+chain cannot treat that as distant: its record is permanent, so a break reaches keys
+already exposed, and changing how it verifies signatures requires a coordinated
+consensus-rule change, not merely a local software update. ``Post-quantum'' (PQ)
+cryptography replaces this assumption with
 problems believed hard even for quantum computers, such as those over lattices.
 
 The U.S. National Institute of Standards and Technology (NIST) has standardised
@@ -25,12 +30,76 @@ in blockchain settings \cite{buser2023survey}. Closing that gap --- turning pape
 into tested, measured, blockchain-facing artefacts --- is the problem this project
 addresses.
 
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize,
+      ttl/.style={font=\footnotesize\bfseries, anchor=west},
+      est/.style={align=center, font=\scriptsize, anchor=north, text width=45mm},
+      tier/.style={draw, rounded corners=2pt, align=left, text width=132mm,
+                   inner xsep=2mm, inner ysep=1.4mm, anchor=north},
+      gap/.style={font=\scriptsize\itshape, anchor=north, align=center,
+                  text width=132mm}]
+
+    %% ---- (a) the ESTIMATED cost of the attack, each figure at its own target ----
+    %% Only the 2019 and 2025 rows share a target (RSA-2048) and may be read as a
+    %% fall; the 2026 row is a DIFFERENT target and is here because it is the curve
+    %% the chains in question actually sign with.  Dividing one by the other would be
+    %% a ratio across targets, not a trend.
+    \node[ttl] at (0mm,0) {(a) What the attack is estimated to cost --- each figure at
+        its own target};
+    \draw[line width=0.6pt, black!40] (3mm,-6mm) -- (142mm,-6mm);
+    \foreach \x in {24,72.5,121} \fill[black!55] (\x mm,-6mm) circle (0.8mm);
+    \node[est] at (24mm,-7.5mm)   {\textbf{2019}\\ 20{,}000{,}000 noisy qubits\\
+        8 hours, RSA-2048 \cite{gidney2021factoring}};
+    \node[est] at (72.5mm,-7.5mm) {\textbf{2025}\\ under 1{,}000{,}000 noisy qubits\\
+        under a week, RSA-2048 \cite{gidney2025factoring}};
+    \node[est] at (121mm,-7.5mm)  {\textbf{2026}\\ under 500{,}000 physical qubits\\
+        minutes, \textbf{secp256k1} \cite{babbush2026securing}};
+
+    %% ---- (b) a standardised basic layer, an uneven exotic one ----
+    %% NOT "standardisation stops": the cited claim is about the availability of
+    %% practical IMPLEMENTATIONS, and multi-signatures are actively being built.
+    \node[ttl] at (0mm,-26mm) {(b) A standardised basic layer, an uneven exotic one};
+    \node[tier, fill=red!5, draw=red!50!black] (ex) at (6.5mm,-31mm)
+      {\textbf{Exotic signatures} --- multi-signature, threshold, \textbf{adaptor}:
+       what atomic swaps and payment channels are built from. Post-quantum coverage
+       here is uneven \cite{buser2023survey}; multi-signatures are actively being
+       implemented, and the adaptor case is \emph{this project}.};
+    \node[gap, red!50!black] (gp) at ([yshift=-1mm]ex.south)
+      {--- post-quantum: standardised below, uneven above ---};
+    \node[tier, fill=blue!5, draw=blue!50!black] (ba) at ([yshift=-1mm]gp.south)
+      {\textbf{Basic post-quantum signature} --- ML-DSA, FIPS~204 \cite{1274601}:
+       standardised, and being adopted now. Authenticates a message and nothing more.};
+    \node[tier, fill=black!5, draw=black!45] (ec) at ([yshift=-2mm]ba.south)
+      {\textbf{Elliptic-curve signatures} --- ECDSA, Schnorr: what chains authorise
+       with today, and what Shor's algorithm breaks.};
+  \end{tikzpicture}
+  \caption[Why now, and where the gap is]{Why the problem is timely, and where this
+  project sits within it. \textbf{(a)} Published resource estimates for running Shor's
+  algorithm. These are estimates for hardware nobody has built, so what falls is the
+  \emph{estimated cost of the attack}, not a calendar; and only the 2019 and 2025
+  figures share a target, RSA-2048, so only that pair may be read as a fall --- more
+  than twentyfold in six years. (That estimate was first circulated in 2019 and
+  published in \emph{Quantum} in 2021.) The 2026 figure is a different and more
+  directly relevant target: secp256k1 itself, the curve Bitcoin and Ethereum sign with.
+  Independently of any of them, NIST's transition schedule already places
+  quantum-vulnerable signatures at $\ge 128$ bits of security strength --- where
+  secp256k1 sits --- as disallowed after 2035 \cite{nistir8547}. \textbf{(b)} A
+  blockchain does not rest on one signature but on a stack of them. The basic layer,
+  which authenticates a message and nothing more, is standardised and being adopted;
+  the functionality chains actually depend on lives in the exotic layer above it, where
+  practical post-quantum coverage is uneven. This dissertation addresses one scheme in
+  that layer, the adaptor signature.}
+  \label{fig:whynow}
+\end{figure}
+
 This dissertation focuses on the \emph{adaptor signature}, which ties the act of
 publishing a valid signature to the simultaneous revelation of a secret witness
 \cite{poelstra2017,aumayr2021generalized}. That single primitive underpins
 ``scriptless'' atomic swaps and payment-channel networks: it lets two parties exchange
 assets, even across different chains, so that either both transfers happen or neither
-does, without trusted intermediaries or heavy on-chain scripts. Classically these
+does. Classically these
 constructions are mature and deployed; post-quantum, the implementation gap above makes the
 adaptor signature a representative, high-value exotic scheme.
 
@@ -91,8 +160,7 @@ security parameters explicitly so the comparison is fair (\cref{ch:methodology})
 
 \paragraph{Category.}
 This is a \emph{systems implementation and evaluation} project grounded in existing
-research, not a proposal of a new cryptographic protocol: its emphasis is practical
-implementation and benchmarking.
+research, not a proposal of a new cryptographic protocol.
 
 \paragraph{Aim.}
 To implement and evaluate a post-quantum exotic signature scheme --- a lattice-based
@@ -113,7 +181,7 @@ in a post-quantum blockchain atomic-swap application.
         parameters and a classical ECDSA-adaptor baseline, separating computation from
         communication cost across the five standard signature metrics.
   \item Demonstrate an end-to-end post-quantum atomic swap using the implementation
-        --- following the protocol of \cite{esgin2020post} verbatim, including its
+        --- following the protocol of \cite{esgin2020post}, including its
         zero-knowledge proof of knowledge $\pi$ --- and discuss its feasibility.
 \end{enumerate}
 

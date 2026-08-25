@@ -316,7 +316,14 @@ differences.
   column is \emph{tier-matched} --- each LAS row taken at whichever of its two tiers
   corresponds to the classical library's boundary for that operation. Why that matching is
   necessary, the boundaries themselves, the repetition counts, and the object-level
-  differences behind the size rows are set out in \cref{app:methoddetail}.}
+  differences behind the size rows are set out in \cref{app:methoddetail}. The two
+  classical adaptor-layer ratios quoted in the text are each taken over \emph{their own}
+  base operation --- PreSign over plain Sign ($\clOvPreSignX\times$), PreVerify over
+  plain Verify ($\clOvPreVerifyX\times$) --- and are \emph{derived} from this library's
+  single mixed native-API tier, not a paired, interleaved measurement of the kind
+  \cref{sec:res-compute} reports for LAS. The corresponding LAS figures are the
+  byte-tier ones, $+\packedOvPreSign\%$ for PreSign and $+\packedOvPreVerify\%$ for
+  PreVerify, that tier being the more conservative of the two reported for LAS.}
   \label{tab:classical}
   \small
   \input{generated/tab_classical}
@@ -337,9 +344,11 @@ two at \clAdaptMatchedUs\,$\mu$s against \lasAdaptPackedUs\,$\mu$s ---
 $\clRatioAdaptMatched\times$, not $\clRatioTimeMax\times$: a property of the two
 \emph{interfaces}, not of lattice arithmetic. Second, \textbf{the two schemes pay their
 adaptor overhead in opposite ways}. The classical adaptor must attach a
-discrete-logarithm-equality proof \cite{fournier2019adaptor}, making its PreSign and
-PreVerify several times its own base operations, whereas LAS folds the statement into a
-hash it already computes. The lattice adaptor layer is the cheaper one to add.
+discrete-logarithm-equality proof \cite{fournier2019adaptor}, charging its own PreSign
+and PreVerify $\clOvPreSignX\times$ and $\clOvPreVerifyX\times$ their base operations,
+whereas LAS folds the statement into a hash it already computes. Relative to each
+scheme's own base operations, the lattice adaptor layer adds less computational
+overhead.
 
 \section{Testing the simplification: the adaptor on unmodified ML-DSA}
 \label{sec:res-mldsa}
@@ -391,7 +400,7 @@ exactly the kind of claim \cref{sec:eval-limitations} declares out of scope.
 
 
 The implementation drives an end-to-end post-quantum atomic swap following the swap
-protocol \cite{esgin2020post} \emph{verbatim}, including its proof of knowledge $\pi$
+protocol of \cite{esgin2020post}, including its proof of knowledge $\pi$
 (\cref{fig:swapidea,fig:swapflow}). Two results matter. First, the protocol runs and
 every step is
 asserted, including the counterfactuals that a pre-adaptation signature fails basic
@@ -770,13 +779,60 @@ limit --- \btcThreePctStd\,\% of it --- and the \btcMaxBlockWeight{}\,WU block l
 admits an upper bound of \btcThreePerBlock{} settlements per block against
 \btcOnePerBlock{} classical ones, ignoring competing transactions. A UTXO chain does
 impose a limit, then, but a weight limit rather than a gas limit, and one swap sits well
-inside it --- the contrast with the EVM, where the first native verifier exceeded the
-transaction gas cap outright.
+inside it.
+
+% The Ethereum counterpart of fig:txstruct, which is Bitcoin-only. The point is
+% STRUCTURAL and must not be drawn as a timeline ("Bitcoin is behind"): the lattice
+% signature is in the field consensus itself checks on Bitcoin, and in a payload
+% consensus does not treat as a signature field on the EVM. Sizes: the calldata count is
+% the real client's MEASURED figure, from the same run tab:onchain reports.
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize,
+      fld/.style={draw, fill=black!4, text width=88mm, align=left, inner xsep=1.6mm,
+                  inner ysep=1.2mm, anchor=north},
+      fix/.style={fld, fill=blue!7, draw=blue!45!black},
+      chg/.style={fld, fill=orange!13, draw=orange!55!black},
+      off/.style={draw, dashed, rounded corners, fill=black!3, text width=88mm,
+                  align=left, inner xsep=1.6mm, inner ysep=1.2mm, anchor=north}]
+
+    \node[fld] (e1) at (0mm,0)
+      {\texttt{chain\_id}, \texttt{nonce}, fees, \texttt{to} $=$ the escrow contract,
+       \texttt{value}};
+    \node[fix] (e2) at (e1.south)
+      {\textbf{signature} --- still secp256k1 ECDSA: the field consensus itself checks
+       \hfill 65\,B};
+    \node[chg] (e3) at (e2.south)
+      {\textbf{\texttt{data}} --- the adapted signature $\sigma$ and the verifier's
+       inputs, read by the contract \hfill \gasOptCalldata\,B};
+    \node[off] (e4) at ([yshift=-2.2mm]e3.south)
+      {\textbf{Never on chain:} the statement $Y$, the proof $\pi$, both
+       pre-signatures, the witness};
+  \end{tikzpicture}
+  \caption[The claim transaction on the EVM]{The same settlement on the other venue: the
+  claim transaction of the client run in \cref{tab:onchain}, field by field, to be read
+  against its Bitcoin counterpart in \cref{fig:txstruct}. Neither venue gains a field
+  from the adaptor layer --- $Y$, $\pi$, the pre-signatures and the witness stay
+  off-chain in both, which is what \emph{scriptless} means --- but the lattice signature
+  lands in structurally different places. On Bitcoin it must occupy the slot the
+  consensus rules themselves check, and nothing in Script can verify it, which is why
+  that venue needs a new consensus rule. On the EVM the authorising signature field is
+  still secp256k1 and is unchanged; the lattice signature rides in \texttt{data} as an
+  argument to a contract, which consensus does not treat as a native signature field, so
+  verification is something that can be deployed. The difference is one of
+  \emph{structure}, not of maturity: contracts make the EVM the more flexible venue, and
+  Bitcoin the more restricted one, because its transaction fields cannot be modified.
+  The \gasOptCalldata\,B is \emph{measured}, from that same client receipt, and is the
+  whole calldata payload rather than the signature alone; the Bitcoin sizes of
+  \cref{tab:btctx} are \emph{derived}, by projection onto the wire format.}
+  \label{fig:evmtx}
+\end{figure}
 
 Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
 verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340
 Schnorr and nothing else, so configurations 2 and 3 could not settle on Bitcoin as it
-stands; \cite{esgin2020post} assumes only the venue, a UTXO chain ``where the signature
+stands (\cref{fig:evmtx}); \cite{esgin2020post} assumes only the venue, a UTXO chain ``where the signature
 algorithm is replaced with a lattice-based signature scheme'', and this study takes no
 position on which consensus route would deliver it. Separately, the objects collide with
 limits that exist regardless: the signature is \btcSigOverElement$\times$ over the 520\,B

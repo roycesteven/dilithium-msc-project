@@ -123,6 +123,44 @@ session that repeats one of these has failed even when its output looks right.
    under "execution can only grow"— but calldata **byte content** was a second free variable,
    and pushing it the other way (all added bytes zero) flips D5 from 74,331 over the cap to
    231,333 under it. Naming one assumption does not make the others disappear. → EVIDENCE-OR-SILENCE
+   **2026-08-25 — NINE points relayed, ALL NINE RIGHT, and they are ONE defect: the ABSOLUTE
+   WORD.** Not eight lessons — one, worth naming because it recurs: a small intensifier
+   ("verbatim", "no", "nothing", "not", "stops", "years") silently converts a true scoped claim
+   into a false universal, and it survives review because the sentence around it is correct.
+   Settled replacements, in report AND deck, **do not drift back**: the swap follows the paper
+   **step for step, realised over a model ledger** (never *verbatim* — the ledger, the proof
+   instantiation and the sighash mapping are ours); **no *swap* script** (Bitcoin outputs always
+   have a scriptPubKey — *scriptless* = no swap-specific script); **no shared hash or
+   adaptor-specific on-chain marker** (never "nothing links the legs" — the report's own §1.1
+   already says timing and amounts still correlate them); **a coordinated consensus-rule change,
+   not merely a local software update** (never "not an upgrade" — a consensus change *ships* as
+   one — and never "years", which is uncited); **how systems prepare for that transition** (never
+   "the question is not whether they get replaced" — NIST's schedule does not bind a chain);
+   **standardised basic layer / uneven exotic layer** (never "standardisation stops" — the cited
+   warrant is about *implementations*, and M10 ordered that claim softened); and adaptor cost is
+   **less overhead relative to each scheme's own base** (never "the cheaper one to add" — LAS is
+   dearer in absolute time and bytes); and the closing verdict may exempt only **the adaptor
+   layer** — *"what stops deployment is not the adaptor layer"*, **never "not performance"**,
+   which contradicted `sec:reflection-shortfalls`' own *"what remains unsolved is cost"*.
+   ⚠️ Two of the nine were defects *this file* had licensed and one was encoded as a
+   design comment in the deck; two were live report↔deck contradictions — so grep the DECK too
+   whenever a report wording is scoped, and vice versa. ⚠️ **And fix the SLIDE, not only the
+   NOTES**: a first pass scoped four wordings in `data-notes` and left the same claims standing
+   in the visible headline, card and divider — purge-is-not-done-until-re-grepped applies
+   *within* a slide. → EVIDENCE-OR-SILENCE, FOCUS
+   ⚠️ **THE NOTES ARE THE SPOKEN SCRIPT, SO THEY HAVE A WORD BUDGET (2026-08-25).** They had
+   grown to **3,558 words against a 7:33 plan — 471 wpm, unspeakable**, because script and
+   backup detail were fused. Every slide's `data-notes` is now **`SPOKEN: …  || BACKUP: …`**;
+   only the SPOKEN half is delivered, and `data-time` is **derived from it at 150 wpm** rather
+   than guessed. Keep SPOKEN ≈ **1,100–1,200 words total**, and re-derive `data-time` after any
+   notes edit — a `data-time` that no longer matches its script is a stale number.
+   ⚠️ **`data-time` is a PLANNING BUDGET, never duration evidence**: it is a derivation from a
+   word count at an *assumed* pace, so pauses, demo beats and transitions can still push the
+   recording past 8:00. The gate is a **timed full rehearsal inside 6–8 minutes** — quoting the
+   derived total as the video's length is the derived-as-measured error. A caveat may move to
+   BACKUP **only if it is VISIBLE on the slide** (the 2026-08-22 must-be-visual vs
+   narration-suffices split); the base-naming and the UTXO-with-UTXO scope note stay SPOKEN
+   because nothing on screen carries them.
 6. **Merge into the section that owns the subject** — never a second block on one topic.
    → HOW TO WRITE IN THIS FILE
 7. **Never claim more than a gate proves** — no gadget described as a complete proof, no
@@ -191,10 +229,14 @@ the base signature.** Results/evaluation must lead with this
   = basic → **adaptor**, which is what `\ovPreSign` & co. measure, against the *same* base at
   identical parameters. The comparator that makes step 2 meaningful is **the same step charged
   the same way on the classical side**: `\clOvPreSignX` / `\clOvPreVerifyX` (new 2026-08-21,
-  `gen_report_data.py`) = the ECDSA adaptor's own PreSign ÷ its own Sign = **×4.6 / ×4.0**.
+  `gen_report_data.py`) = the ECDSA adaptor's PreSign ÷ **its own Sign** and PreVerify ÷
+  **its own Verify** — ⚠️ **each over ITS OWN base, never both over Sign**: this line said
+  "both ÷ Sign" until 2026-08-25 and was wrong; `gen_report_data.py:531-532` is the authority.
   ⚠️ Those two are **DERIVED from the classical harness's single mixed native-API tier**, not
   the paired interleaved measurement — never call them a paired overhead, and quote the
-  **packed** LAS figure beside them so the comparison survives the conservative pairing.
+  **packed** LAS figures beside them so the comparison survives the conservative pairing —
+  **both** of them (`\packedOvPreSign`, `\packedOvPreVerify`): two classical operations need
+  two LAS ones. Report home = `tab:classical`'s caption + `sec:res-classical` (2026-08-25).
   ⚠️ Never let it imply LAS is *faster* than ECDSA in absolute time (it is not — that is step 1),
   and never state step 1's `\clRatioSig` flatly as "the cost of post-quantum": it is **this
   build's simplified base**, and the FIPS 204 ML-DSA route measures a smaller signature.
@@ -209,6 +251,18 @@ the base signature.** Results/evaluation must lead with this
   the body**, never collected at a chapter end or in the appendix (Meeting 8, overrides the
   older figures-to-appendix habit); group the four LAS function figures side by side; avoid
   single-figure pages; no abbreviations of scheme/level names in tables or figures.
+- **⚠️ DECK ⊆ REPORT — the difference is PRESENTATION, not content (Royce, 2026-08-25).** No
+  slide may assert what the report does not; a claim added to the deck is added to the report
+  in the same edit, or it does not go on the slide. (Rubric 3.2.2's "additional aspects" is
+  satisfied by the **demos** — work the project did that text cannot show — never by extra
+  claims.) Two report figures exist because of this rule: **`fig:whynow`** (§1.1 — the quantum
+  estimates + the basic/exotic layers; the rubric 3.1.2 figure the Introduction had none of,
+  and the home of the four deck citations) and **`fig:evmtx`** (§res-txstruct — the EVM claim
+  transaction field by field, the Ethereum half of Wang's M11 both-venues ask; `fig:txstruct`
+  is Bitcoin-only). ⚠️ Captions are excluded from the count by the `-sum` weights; the TikZ
+  *bodies* measured zero for these two, but confirm any new one against a regenerated count
+  rather than assuming. Placement is global: **re-check the whole PDF** — neither figure has
+  been rendered yet.
 - **⚠️ NO PAGE MAY CONTAIN ONLY FLOATS (Royce, 2026-08-12).** LaTeX gives queued floats a page
   of their own as soon as they fill `\floatpagefraction`; at the old 0.75 that stranded five
   of Ch. 3's floats on text-free pages. `report.tex` now sets it **0.95** under `topfraction`
@@ -260,18 +314,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-23 18:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-25 16:22 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD 39d684f · 2026-08-21 · after meeting 11 21_08 15:27
-- Working tree: 17 modified tracked file(s), 53 untracked path(s) · no upstream tracking branch
+- Branch **`main`** · HEAD 661e9cf · 2026-08-25 · Merge branch 'report'
+- Working tree: 17 modified tracked file(s), 40 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
 - Recent commits:
+  - `661e9cf 2026-08-25 Merge branch 'report'`
+  - `2029564 2026-08-23 report deck 23_08 18:51`
+  - `3c47c6a 2026-08-22 Merge pull request #5 from roycesteven/report`
   - `39d684f 2026-08-21 after meeting 11 21_08 15:27`
   - `ad257d1 2026-08-20 report dan deck 19_08 19_00`
-  - `3b40c3c 2026-08-19 throughput scalability proposal unfinished`
-  - `0f6c914 2026-08-19  mcr deck`
-  - `ea09bdf 2026-08-18 report deck btc full two leg update`
 
 ### Target parameter set — anchors parsed from source
 
@@ -282,12 +336,12 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Latest measured evidence (pointers only — never retype a number)
 
-- Stage-1 benchmark suite: `evidence/latest` → `runs/20260804_101750` (dir mtime 2026-08-04)
-- Stage-2 UTXO swap: `evidence/stage2/latest` → `20260730_162109` (dir mtime 2026-07-30)
-- On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
-- Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
-- las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8955** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Stage-1 benchmark suite: `evidence/latest` → `latest` (dir mtime 2026-08-25)
+- Stage-2 UTXO swap: `evidence/stage2/latest` → `latest` (dir mtime 2026-08-25)
+- On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
+- Criterion micro-bench: `evidence/criterion/latest` → `latest` (dir mtime 2026-08-25)
+- las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
+- Report word count: **8976** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -304,8 +358,8 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Freshness tripwires
 
-- ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-23.
+- ⚠ Source newer than Stage-1 evidence: `rust/las-swap/src/ecdsa_backend.rs` (2026-08-25 13:18) > `evidence/latest` (2026-08-25 13:18). Numbers in the report may predate the code — re-run the suite before quoting them.
+- `CLAUDE.md` hand-written sections last touched 2026-08-25.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -862,10 +916,15 @@ any of it.
    (20 M → <1 M qubits) may only be quoted **at ONE fixed target** (RSA-2048) — dividing the 2019
    RSA figure by the 2026 secp256k1 figure is a ratio across targets, not a trend — and the NIST
    row is the **≥128-bit** one, *disallowed after 2035*, **never** the 112-bit "deprecated after
-   2030" row that second-hand sources quote, which is not where secp256k1 sits. ⚠ These four
-   citations are **deck-only, not in the report** — the one substantive divergence between the two
-   artefacts; putting them in the report needs a sentence in §1.1 and four `refs.bib` entries, and
-   that is Royce's call against the 9,000-word ceiling.
+   2030" row that second-hand sources quote, which is not where secp256k1 sits. ✅ **SETTLED
+   2026-08-25 (Royce): the deck may carry NO content the report lacks** — "the difference is
+   presentation, not content". All four citations are now **in the report** (`refs.bib`:
+   `gidney2021factoring`, `gidney2025factoring`, `babbush2026securing`, `nistir8547`; §1.1 +
+   `fig:whynow`), so the divergence is closed — supersedes the old "deck-only, Royce's call"
+   note. Two traps that survive the move: the 2019 estimate is **published 2021** (Quantum
+   5:433) so the marker year and the citation year differ *by design*, and a body sentence must
+   scope the fall (**"for comparable targets"**) — "estimates keep falling" unscoped re-opens
+   the across-targets trap the caption exists to prevent.
    ⚠ **RENDER, NEVER REASON, ABOUT LAYOUT (2026-08-17)** — the previous session shipped voids and a
    clipped table that were invisible from the markup. Windows Chrome is reachable from WSL and
    screenshots any slide by deep link; the working command is in `VIDEO_PLAN.md` §3. A layout claim

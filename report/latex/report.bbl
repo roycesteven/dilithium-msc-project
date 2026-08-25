@@ -8,6 +8,14 @@ Lukas Aumayr, Oguzhan Ersoy, Andreas Erwig, Sebastian Faust, Kristina
 \newblock In {\em International Conference on the Theory and Application of
   Cryptology and Information Security}, pages 635--664. Springer, 2021.
 
+\bibitem{babbush2026securing}
+Ryan Babbush, Adam Zalcman, Craig Gidney, Michael Broughton, Tanuj Khattar,
+  Hartmut Neven, Thiago Bergamaschi, Justin Drake, and Dan Boneh.
+\newblock Securing elliptic curve cryptocurrencies against quantum
+  vulnerabilities: Resource estimates and mitigations.
+\newblock Cryptology ePrint Archive, Paper 2026/625, 2026.
+\newblock \url{https://eprint.iacr.org/2026/625}.
+
 \bibitem{eip7773}
 Tim Beiko.
 \newblock {EIP-7773}: Hardfork meta --- glamsterdam.
@@ -71,6 +79,21 @@ Lloyd Fournier.
 \newblock Manuscript, 2019.
 \newblock \url{https://github.com/LLFourn/one-time-VES}.
 
+\bibitem{gidney2025factoring}
+Craig Gidney.
+\newblock How to factor 2048 bit {RSA} integers with less than a million noisy
+  qubits.
+\newblock arXiv:2505.15917, 2025.
+\newblock \url{https://arxiv.org/abs/2505.15917}.
+
+\bibitem{gidney2021factoring}
+Craig Gidney and Martin Eker{\aa}.
+\newblock How to factor 2048 bit {RSA} integers in 8 hours using 20 million
+  noisy qubits.
+\newblock {\em Quantum}, 5:433, 2021.
+\newblock First circulated as arXiv:1905.09749 in 2019, which is the year this
+  estimate is dated to in the text.
+
 \bibitem{criterionrs}
 Brook Heisler, Jorge Aparicio, and contributors.
 \newblock {Criterion.rs}: statistics-driven micro-benchmarking for {Rust}.
@@ -119,6 +142,13 @@ Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
   interoperability.
 \newblock In {\em 26th Annual Network and Distributed System Security
   Symposium, NDSS 2019}, 2019.
+
+\bibitem{nistir8547}
+Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, and David
+  Cooper.
+\newblock Transition to post-quantum cryptography standards.
+\newblock NIST Internal Report 8547, initial public draft, November 2024.
+\newblock \url{https://csrc.nist.gov/pubs/ir/8547/ipd}.
 
 \bibitem{1274601}
 National~Institute of~Standards, Technology (NIST), Thinh Dang, Jacob

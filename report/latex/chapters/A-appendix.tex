@@ -380,8 +380,10 @@ security category.
 \label{app:swapdemo}
 
 The narrated demonstration referenced in \cref{sec:res-app} follows the swap protocol
---- Figure~1 of \cite{esgin2020post} --- \emph{verbatim}. Two parties swap coins across two ledgers with no
-trusted third party and no on-chain scripts. Alice, the witness holder, commits first:
+--- Figure~1 of \cite{esgin2020post} --- step for step, realised over the model ledger
+of \cref{app:utxomodel}. Two parties swap coins across two ledgers with no
+trusted third party and no swap-specific on-chain script --- ordinary output scripts
+remain, which is what \emph{scriptless} means here. Alice, the witness holder, commits first:
 she draws a fresh statement/witness pair $(Y,y)$, produces a zero-knowledge proof $\pi$
 that $Y$ has a \emph{ternary} preimage
 ($\exists\, r' : \mathbf{A}r' = Y \wedge \inftynorm{r'} \le 1$), pre-signs the
