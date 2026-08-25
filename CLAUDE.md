@@ -97,6 +97,27 @@ session that repeats one of these has failed even when its output looks right.
    `2(γ−κ)`). Pattern worth naming: **introducing a distinction retroactively widens every
    earlier sentence that used the old, merged word** — re-read the neighbours after any symbol
    split, not just the line being edited.
+   **2026-08-22 — both points RIGHT, and one IMPROVED the finding** (Royce reaffirmed the standing
+   verify-first instruction): (a) **"only in the narration" is NOT a failure** — the deck's
+   `data-notes` IS the spoken script, hidden on screen but *delivered* and marked, and Wang named
+   speech as the channel for the base-naming (*"you should **say** something like this"*); the
+   split is must-be-VISUAL vs claim-where-narration-suffices, not slide-vs-notes. (b) a stale
+   price is wrong only when **presented as current** — the slide stamps its own retrieval instant,
+   so the exposure is the narration's "this morning". → spec §19A.4.
+   **2026-08-23 — three RIGHT, one WRONG, one BARRED, and the VERIFIER was wrong once.**
+   Standing, from Royce: **a relayed ChatGPT GRADE ESTIMATE is an OPTIMISTIC UPPER BOUND, never
+   a prediction** — past ones always overestimated; quote it as a ceiling or not at all.
+   ⚠️ **Check "which branch did it read" against `origin/<branch>`, NEVER the local branch of
+   the same name** — local `main` was many commits behind while `origin/main` already carried the
+   merge of `report` (identical blob SHAs), so a false provenance accusation was raised and had to
+   be retracted. A local ref is not the remote; nor is a stale build artefact the source —
+   `word.count`/`report.log` were 2026-08-19 against 2026-08-21 chapters, making both its
+   "19 words of headroom" and its overfull-hbox figure stale (→ WORD COUNT rule 3).
+   ⚠️ **A proposal can be BARRED by a ruling, and "tidy the appendix" is void as a word-budget
+   move**: moving the two negative experiments into Results contradicts M9 (compression belongs
+   in the **critical reflection**, spec §18) and risks M9's ban on LaBRADOR figures; and appendix
+   words are **not counted** while Wang repeatedly sent detail *into* the appendix, so trimming it
+   saves nothing. Signal-to-noise is a **body** edit.
    ⚠️ **A "worst case" is only a bound if EVERY free variable is pushed the adverse way**
    (2026-08-15, cost a retracted draft). A D5-vs-gas-cap derivation was written as *proved*
    under "execution can only grow"— but calldata **byte content** was a second free variable,
@@ -239,18 +260,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-21 15:04 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-23 18:41 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`report`** · HEAD ad257d1 · 2026-08-20 · report dan deck 19_08 19_00
-- Working tree: 359 modified tracked file(s), 49 untracked path(s) · no upstream tracking branch
+- Branch **`report`** · HEAD 39d684f · 2026-08-21 · after meeting 11 21_08 15:27
+- Working tree: 17 modified tracked file(s), 53 untracked path(s) · no upstream tracking branch
 - Recent commits:
+  - `39d684f 2026-08-21 after meeting 11 21_08 15:27`
   - `ad257d1 2026-08-20 report dan deck 19_08 19_00`
   - `3b40c3c 2026-08-19 throughput scalability proposal unfinished`
   - `0f6c914 2026-08-19  mcr deck`
   - `ea09bdf 2026-08-18 report deck btc full two leg update`
-  - `3800bda 2026-08-18 d2 d3 d5 evm polish report deck not checked`
 
 ### Target parameter set — anchors parsed from source
 
@@ -266,7 +287,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260805_174829` (dir mtime 2026-08-05)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260730_165134` (dir mtime 2026-07-30)
 - las-stark: `evidence/stark/latest` → `20260729_175637` (dir mtime 2026-07-29)
-- Report word count: **8981** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8955** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -284,7 +305,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `ref/relation_zk_labrador.h` (2026-08-10 11:31) > `evidence/latest` (2026-08-04 10:19). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-21.
+- `CLAUDE.md` hand-written sections last touched 2026-08-23.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -382,6 +403,11 @@ KAT-locked to C byte-for-byte.
   `test_contract.c`** — dead by design. ⚠️ `tab:contract`'s caption used to credit it; fixed
   2026-08-12 to the tests the evidence run actually contains (`test_las` 1–4/5a, `test_serde`
   5b/6, `test_kat` 7) — `evidence/latest/logs/` has no `contract.log`, which is the proof.
+  ⚠️ **SECOND INSTANCE 2026-08-23, so the rule now has teeth: before describing any artefact,
+  check the target is actually BUILT.** `app:swapdemo` credited a happy-path/refund demo to
+  `ref/chain.c` + `test_pcn.c` (both dead); rewritten to the live Rust `run_refund` — a
+  **separate one-chain** test: `run_swap` funds with `pay_to`, `run_refund` with `swap`, and
+  the two output forms must never be conflated.
 - Serialization `ref/serialize.{c,h}` — **codec ONLY**, six typed pack/unpack pairs. Validation
   is asymmetric and deliberately so: *packing* rejects out-of-range input (e.g. a non-ternary
   secret key), while **`unpack_signature` is PERMISSIVE** (`c_tilde` raw, `z` via FIPS
@@ -817,7 +843,8 @@ any of it.
    not be the report read aloud** — it exploits the medium (motivation, results, evaluation,
    conclusion, implications), or there was no point asking for a video.
    **REWORK DONE 2026-08-17, EXTENDED 2026-08-21** — `video_deck.html` is now
-   **13 slides, planned 7:23**: motivation over slides 2–4 (quantum clock → the application →
+   **13 slides**; planned runtime = the deck's own `data-time` sum, **never retyped here** (three
+   copies had drifted apart by 2026-08-22): motivation over slides 2–4 (quantum clock → the application →
    the exotic gap), the two demos, **"What actually goes on chain"** (both venues field by field),
    and a closing **verdict + one card per audience**. Slides 2–6 are **drawn scenes** (inline
    SVG on the deck tokens, built in four timed `.st1–.st4` stages, no keypress); the stepper's
@@ -1015,11 +1042,10 @@ swap, real logos/prices — all applied). Genuinely new, all applied 2026-08-21:
   UTXO"*; the EVM work may still be reported. **ETH↔USDC is never an example**. BTC↔ETH is
   *doable* ("the only different thing is the verification") and stays the motivating scenario
   only — no artefact may imply it was run. DEMO A now says the scope aloud.
-- ⚠ **TPS/THROUGHPUT — UNRESOLVED, NOT A RULING** (§D action 1): Wang's tx-per-block ÷
-  block-interval walkthrough used improvised numbers (**none citable**) and collides with the
-  EIP-7825 never-claims-per-block rule, the retracted block-limit claim, and the closed
-  throughput deliverable. **Royce chooses** (explain retraction / record override / satisfy
-  the intent from existing per-transaction quantities). Until then: **no TPS figure anywhere**.
+- ✅ **TPS/THROUGHPUT — RESOLVED by Royce 2026-08-21 as "satisfy the intent"** (spec §19A.3): the
+  deck quotes **Bitcoin's block-WEIGHT capacity bound only**, labelled a size bound, **never ÷ the
+  block interval** and **never an EVM per-block figure** (that is the retracted EIP-7825 reading).
+  **No TPS number exists anywhere in the deck, and none may be added.**
 - "You have 10 slides" is recollection, not a ruling — the 13-slide deck stands (§D 10).
 **Nothing in Meeting 11 authorises a new experiment; the M10 freeze stands.** Detail: §19A.
 
@@ -1056,8 +1082,9 @@ stamped "Royce Steven"). Rulings, each mandatory:
   modified Criterion figure, the Bitcoin structure figure. GitHub link **not** required.
   Chapter-header length: no firm ruling. From ≈28:57 the meeting is reviewing the **report**,
   not the deck; do not re-file those comments as slide feedback.
-  ⚠ **Party naming, settled 2026-08-16 — do not "fix" either way.** Deck slide 2 uses **Alice /
-  Bob** outright. The report keeps `u₁`/`u₂` for mathematics, and the new intro figure
+  ⚠ **Party naming, settled 2026-08-16 — do not "fix" either way.** Deck **slides 3 and 7** use
+  **Alice / Bob** outright (numbering shifted when the quantum slide went in — M10's "slide 5" and
+  the older "slide 2" no longer locate it; verified 2026-08-22). The report keeps `u₁`/`u₂` for mathematics, and the new intro figure
   `fig:swapidea` names them **once** as "Alice $(u_1)$" / "Bob $(u_2)$" so the friendly picture
   also teaches the notation the chapter then uses. Alice/Bob is standard crypto convention
   (RSA 1978 onward), so it is not an informality problem at MSc level; the risk was
@@ -1367,3 +1394,48 @@ Be direct, evidence-based, scoped.
   `docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md`.
 - **Assessment:** `MSc_Report_and_Video_Rubric.md` · writing guidance:
   `docs/references/Lecture5_ResearchWriting_2026_Lin.md`, `muthesis_formatting_rules.md`.
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **dilithium-msc-project** (7414 symbols, 12381 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
+- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
+- NEVER commit changes without running `detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/dilithium-msc-project/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/dilithium-msc-project/clusters` | All functional areas |
+| `gitnexus://repo/dilithium-msc-project/processes` | All execution flows |
+| `gitnexus://repo/dilithium-msc-project/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->

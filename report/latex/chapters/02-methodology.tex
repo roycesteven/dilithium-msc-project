@@ -154,7 +154,7 @@ adapted signatures exceed the bound and be rejected.
     % witness y enters at Adapt; is revealed by Extract
     \node[ann, below=of ad] (y) {witness $r'$\\(secret)};
     \draw[->, dashed] (y) -- (ad);
-    \node[ann, below=of ex] (yo) {witness recovered\\(now public)};
+    \node[ann, below=of ex] (yo) {$s$, recovered only with\\the matching pre-signature};
     \draw[->, dashed] (ex) -- (yo);
   \end{tikzpicture}
   \caption[The LAS adaptor data flow]{The LAS adaptor data flow, in the symbols of
@@ -179,8 +179,9 @@ applied again in Rust (\cref{sec:rustport}). Neither is itself ``the reference''
 \textcite{esgin2020post}.
 
 Classifying every source file by how the reference is used (\cref{tab:reuse}) yields a
-clean split: the entire lattice core is reused unchanged, the only modified file is the
-\texttt{Makefile}, and the scheme, serialization, application and evaluation are new. No upstream function is modified, so the security-critical arithmetic is exactly
+clean split: the entire lattice core is reused unchanged, while the adaptor scheme,
+serialization, application integration, and evaluation harnesses are project-specific
+additions. No upstream function is modified, so the security-critical arithmetic is exactly
 the published reference code and every adaptor-specific line is isolated. The vendored
 \texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer \cite{lazer} are unmodified too, the
 latter behind a dedicated bridge.
@@ -481,8 +482,8 @@ and the settled transaction --- since conflating them would misreport communicat
     \node[off, anchor=north] at (30mm,-53mm)
       {\textbf{Never on chain:} statement $Y$ (\cfgThreeMsgY\,B), proof $\pi$, both
        pre-signatures $\hat{\sigma}_1,\hat{\sigma}_2$ --- exchanged off-chain only.
-       \textbf{Never transmitted at all:} the witness $y$, which $u_2$ derives from the
-       published $\sigma$ and its own $\hat{\sigma}_2$ via \textsc{Ext}.};
+       \textbf{Never transmitted at all:} the witness $y$, which $u_2$ recovers as $y'$
+       from the published $\sigma$ and its own $\hat{\sigma}_2$ via \textsc{Ext}.};
   \end{tikzpicture}
   \caption[Standard payment versus adaptor swap settlement]{The transaction before and
   after the construction is applied. \textbf{No field is added, removed or reordered}:

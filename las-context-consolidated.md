@@ -1077,7 +1077,10 @@ of the presentation."*
   blockchains*; say so rather than concluding in general terms.
 - **⚠ Slide 5: relabel the parties Alice/Bob** instead of the paper's `u₁`/`u₂`. Royce raised
   it, Wang agreed (*"that's more general, more friendly"*). **Slide only — the report's
-  mathematics keeps `u₁`/`u₂`.**
+  mathematics keeps `u₁`/`u₂`.** ⚠ **"Slide 5" is M10's numbering and no longer locates the
+  slide:** in the current 13-slide deck the swap board is **slide 7**, and the motivation
+  picture that also names the pair is **slide 3**. Both use Alice/Bob (verified 2026-08-22) —
+  the item is done; do not go looking at slide 5.
 - **Keep the patched-Bitcoin demonstration.** Wang reaffirmed the two-step design — LAS
   standalone first, then integration into an existing chain — and said the integration problems
   and what was done about them are exactly what to report.
@@ -1141,9 +1144,21 @@ At ≈10:37–10:55 Royce says on record that on-chain verification is *"on the 
 limit"* at Dilithium-3 but that **"for Dilithium 5 it needs more optimisation to fit in one
 transaction."** Both ASR sources agree he said it, and it is **not evidenced**: `LASVerifyOpt`'s
 parameters are compile-time **D3-only**, so D2 and D5 were never built or measured on-chain
-(`docs/03-results/GAS_LIMIT_INVESTIGATION.md` §7). **"Not evaluated" is the only supportable
-wording** — delete the line from the deck. This is the **third** appearance of this exact trap,
-after §18.8 and the retracted "exceeds the block gas limit" claim.
+(`docs/03-results/GAS_LIMIT_INVESTIGATION.md` §7). The line was deleted from the deck. This is
+the **third** appearance of this exact trap, after §18.8 and the retracted "exceeds the block
+gas limit" claim.
+
+⚠ **This item's own wording has since been overtaken — do not quote the old form.** When M10
+was merged, *"not evaluated"* was the only supportable statement; **that stopped being true on
+2026-08-15**, when D2 and D5 were settled. The state is now three-way and **no row may be
+restated as another**: **D3 = MEASURED, fits** (a real client's receipt for a *whole claim*) ·
+**D2 = MEASURED, fits** (a harness charge for *verification only* — a different boundary, never
+interchangeable with D3's) · **D5 = DERIVED, one transaction is exceeded** (a lower bound
+computed *from* measured quantities; the bound is arithmetic and is never itself "a measured
+total"). What stays unevidenced — and is why this section still stands — is the claim that D5
+**"needs more optimisation"**: nothing measures what optimisation would achieve there.
+Consequently *"no other parameter set was evaluated"* is now **FALSE**, and was purged
+repo-wide on 2026-08-18; if it reappears, it came from an older draft.
 
 ## 19A. Meeting-11 directives [M11, 2026-08-21 (inferred) — deck review, second pass; merged 2026-08-21]
 
@@ -1180,15 +1195,95 @@ slide or prepared as question backup (§8).
   (ERC-20 swaps inside Ethereum need no atomic swap; Ethereum bridges outward). BTC↔ETH is
   doable in principle — "the only different thing is the verification" — and stays a scenario.
 
-### 19A.3 Unresolved — do not act without Royce
+### 19A.3 Resolved since the meeting, and what is still open
 
-- **TPS/throughput** (§17): Wang demonstrated tx-per-block ÷ block-interval with improvised
-  numbers (**none citable** — "let's say 200", "just Google it"). Collides with the standing
-  EIP-7825 never-claims-per-block rule, the once-retracted block-limit claim, and the closed
-  throughput deliverable's never-combine rule. Royce chooses: explain the retraction / record
-  a supervisor override / satisfy the intent with existing per-transaction quantities.
-- **"You have 10 slides"** (§2): recollection vs the deliberate 13-slide deck; not treated as
-  a ruling to cut.
+- **✅ TPS/throughput — RESOLVED by Royce on 2026-08-21 as option (c), "satisfy the intent".**
+  Wang demonstrated tx-per-block ÷ block-interval with improvised numbers (**none citable** —
+  "let's say 200", "just Google it"), a derivation that collides with the standing EIP-7825
+  never-claims-per-block rule, the once-retracted block-limit claim, and the closed throughput
+  deliverable's never-combine rule. The chosen resolution answers Wang's question while keeping
+  every one of those rules, under **three guards that travel together** — they are recorded in
+  `video_deck.template.html` beside the figure, and none may be dropped in isolation:
+  1. the per-block figure is the **report's own sanctioned ledger-capacity bound** — Bitcoin's
+     block-*weight* ceiling, scaling dimension (2), already in `03-results`;
+  2. it is **BITCOIN ONLY** — an EVM per-block figure would be precisely the retracted
+     claims-per-block reading of EIP-7825, which is a per-*transaction* cap;
+  3. it is quoted as a **size bound with its negative stated on the slide itself** ("not a
+     throughput"), and is **never divided by the block interval** — that division is the step
+     that manufactures a TPS.
+  **No TPS number exists anywhere in the deck (verified 2026-08-22), and none may be added.**
+  The supported quantities remain, each on its own and never combined: the per-transaction cap
+  percentage, the serial verification rate (never called a network throughput), and the
+  block-weight ceiling.
+- **❓ "You have 10 slides"** (§2): **still open, and it is Royce's call** — recollection
+  against a deliberate 13-slide deck, and explicitly **not** a ruling to cut. §19A.4 records
+  what the deck actually costs against the 6–8 minute band.
+
+### 19A.4 Delivery status against the built deck (verified 2026-08-22)
+
+A read of `report/slides/video_deck.html` against **both** meetings' deck items. This section
+records *status*, never figures: quote numbers from the macros and the evidence run, never here.
+
+**⚠ How a deck ruling is judged satisfied — the distinction that makes this check meaningful,
+and which is easy to get wrong in the strict direction.** The deck's `data-notes` text is the
+**spoken script**: `VIDEO_PLAN.md` §3 has it toggled OFF before the take, so it is never *on
+screen* — but it is *delivered*, and the video is marked on that delivery. So **"it is only in
+the narration" is not by itself a failure.** The real split is between two kinds of ruling:
+
+- **Must be VISUAL** — Wang asked to *see* it: *"even [if it's] screenshots or something — to
+  show"* (§4), *"if you could give me a picture to summarise the process of your method"*
+  (M10 §11), *"sometimes you can use the actual logo"* (§3), *"add some concrete numbers"*
+  (§12). A narrated substitute does **not** discharge these.
+- **Narration is SUFFICIENT** — the ruling is about a *claim*, and for the central one Wang
+  named the channel himself: *"when you are doing the presentation, you should **say**
+  something like this: this is not compared with ECDSA"* (§6). Carrying such a claim on-slide
+  as well is **stronger than asked**, not required.
+
+**Verified applied — M10:** lead with the application before any technical detail (slides 2–4)
+· the method as a picture (6) · blockchain-specific close (13) · Alice/Bob (3, 7) · the
+patched-client demonstration kept (11) · practical-LAS framing, with **no "implementation of
+the paper" wording anywhere in the deck**.
+
+**Verified applied — M11, visual class:** both venues' transaction structures field by field
+(10) · the swap followable without the maths, with concrete amounts, drawn so **no coin crosses
+between chains** — each payment settles as a transaction on its own ledger, the shared secret
+being the only element crossing (3) · the currency marks drawn as their own scalable paths (3)
+· quantum background and urgency first (2) · verdict plus one card per named audience (13) ·
+the exotic family on slide 4, whose stack carries multi-signature, threshold and aggregate
+beside the adaptor chip marked "← this project" — exactly §8's *"show that the next thing is
+one of the exotic signatures, and emphasise that this is what you have done"*.
+
+**Verified applied — M11, claim class (all three also carried on-slide, i.e. above the bar):**
+"nearly free" naming its base (8 — the eyebrow reads "each measured against its own base", with
+the classical same-step comparator beside it on one shared scale) · Wang's venue vocabulary,
+"more flexible" / "more restricted … cannot be modified" (10, 13) · UTXO-with-UTXO scope in
+DEMO A's own eyebrow (7). And **no TPS figure anywhere**.
+
+**Three drifts found. None is a claim defect; all three are documentation lagging the artefact.**
+
+1. ⚠ **The planned runtime is recorded in three places and they disagree.** The deck's own
+   per-slide `data-time` attributes are the authority and sum to **7:33** — and the deck's own
+   footer **prints `deck 7:33` on every slide**, so this needs no arithmetic to check;
+   `VIDEO_PLAN.md` §1
+   says **7:29** (its slide-10 row reads 0:40 where the deck says 0:44 — exactly the 4 s gap)
+   and repeats 7:29 in its rubric table; `CLAUDE.md` says **7:23**. All three sit inside the
+   6–8 minute band, so nothing is at risk except the margin the plan claims to have. **Fix the
+   two derived copies from the deck, never the reverse** — and note this is CLAUDE.md's own
+   "never paste a number here" rule demonstrating itself.
+2. ⚠ **Slide 3's prices are a day old, and the exposure is in the SPOKEN line, not the printed
+   one.** The slide prints its own retrieval instant, so as a dated, cited figure it stays
+   truthful on a later day. The narration does not: it says the legs are value-matched at spot
+   **"this morning"**, which is false the moment the take moves to another date. State the
+   standing rule precisely — **a stale price *presented as current* is a wrong number** (the
+   repo's shorthand, "a stale price is a wrong number", is the same rule said loosely). Before
+   recording, either re-read both sources and re-run `gen_slides.py`, or drop "this morning";
+   the asserted quantity is the **ratio**, so both legs move together.
+3. ⚠ **`VIDEO_PLAN.md` §2 still describes DEMO A's board as "u₁ · two chains · u₂".** The board
+   was relabelled Alice/Bob per §19.1; the prose describing it was not. Artefact correct, prose
+   stale.
+
+**Still open:** only the 13-vs-10 slide count (§19A.3) — Royce's call, and the deck's true
+**7:33** is the number that decision should be made against.
 
 ## 20. Reference links
 

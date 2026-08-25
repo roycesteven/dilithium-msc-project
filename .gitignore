@@ -63,3 +63,20 @@ evm/test/vectors/swap/
 ref/*.o
 bitcoin/las_consensus/*.o
 bitcoin/las_consensus/bench_las_consensus
+slidev/
+node_modules/
+package.json
+package-lock.json
+slidev/package.json
+slidev/package-lock.json
+slidev/slides.md
+slidev/components/
+slidev/pages/
+slidev/snippets/
+slidev/.gitignore
+AGENTS.md
+dilithium-msc-project.und/
+gitdiagram copy 2.js
+gitdiagram copy.js
+gitdiagram.js
+past_report/
