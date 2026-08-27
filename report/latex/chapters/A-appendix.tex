@@ -508,7 +508,11 @@ than a page.
 \section{Test types and parameter notation}
 \label{app:tests}
 
-\begin{table}[htbp]
+This section collects the testing taxonomy (\cref{tab:tests}), the parameter notation
+(\cref{tab:notation}) and the measurement boundaries (\cref{tab:tiers}) used throughout
+the evaluation.
+
+\begin{table}[H]
   \centering
   \caption[The four test types]{The four test types, what each asserts, and what it
   would catch. The functional suite's statement-binding clause --- that a pre-signature
@@ -543,7 +547,18 @@ than a page.
   \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
+Interpreting those tests across the parameter sets requires a common notation.
+\Cref{tab:notation} therefore collects the symbols used throughout the construction
+and the value each takes at the four evaluated settings; the figures and tables in
+\cref{ch:results} refer back to these definitions rather than restating them. The
+notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and
+this build runs at $d=256$, the ring degree of the reused Dilithium NTT. Two entries
+are exceptions, the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$:
+\cite{esgin2020post} specifies $H$ only as a random oracle onto the challenge set $C$
+and fixes no encoding, so both the digest and its width are implementation choices,
+taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serialize}).
+
+\begin{table}[H]
   \centering
   \caption[Security and scheme parameter notation]{Security and scheme parameters: the symbol, its meaning, and the value(s)
   it takes across the parameter sets, \emph{listed in the row order of}
@@ -585,7 +600,13 @@ than a page.
   \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
+Notation fixes the symbols and parameter values used to describe each operation; it
+does not fix what a timing includes. \Cref{tab:tiers} closes that gap with the three
+measurement boundaries used in this dissertation. Comparisons are only ever made
+within one of them, which is why the classical baseline is recorded as a hybrid rather
+than folded into a single tier.
+
+\begin{table}[H]
   \centering
   \caption[The three measurement boundaries]{The measurement boundaries. Comparisons
   are only ever made within one boundary. The classical column is not a uniform tier
@@ -616,6 +637,13 @@ than a page.
   \end{tabular}
 \end{table}
 
+% Floats only ever move FORWARD, and the three tables above are the first floats in
+% this chapter -- nothing can reach the listings of A.1 and A.2. What a barrier at
+% each section end from here on prevents is the opposite: a deferred table carried
+% into a later section, where it would be placed before or around that section's
+% non-floating listing and put the section out of reading order.
+\FloatBarrier
+
 \section{Full benchmark data tables}
 \label{app:tables}
 
@@ -627,7 +655,7 @@ the core block of \cref{tab:overhead-l3}); \cref{tab:components} gives the compo
 byte sizes at every parameter set (the target setting is the body table
 \cref{tab:complete-l3}).
 
-\begin{table}[h]
+\begin{table}[htbp]
   \centering
   \caption[Per-operation timing across the parameter sets]{Per-operation timing,
   reported independently ($\mu$s per operation; mean $\pm$ sample standard deviation
@@ -643,7 +671,7 @@ byte sizes at every parameter set (the target setting is the body table
   \input{generated/tab_timing}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[htbp]
   \centering
   \caption[LAS objects by component (packed bytes)]{LAS objects by component (packed bytes; \texttt{bench\_levels}). The
   LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The challenge
@@ -656,6 +684,8 @@ byte sizes at every parameter set (the target setting is the body table
   \input{generated/tab_components}
 \end{table}
 
+\FloatBarrier
+
 \section{Auditing the reuse claim}
 \label{app:diff}
 
@@ -665,7 +695,7 @@ upstream tree on its own branch and diffing it against the project branch: the c
 below print nothing for the lattice core, which is what makes ``zero upstream functions
 modified'' an auditable statement rather than an assertion.
 
-\begin{table}[h]
+\begin{table}[htbp]
   \centering
   \caption[Source files: reused, modified, and added]{Source files of the implementation, classified by how the reference is
   used. The lattice core is reused unchanged; inside the reference tree the only modified
@@ -693,12 +723,19 @@ modified'' an auditable statement rather than an assertion.
   \end{tabular}
 \end{table}
 
+% tab:reuse must settle before the listing starts. Listings are non-floating, so a
+% deferred table could otherwise be placed immediately before or around the listing,
+% separating the code from the discussion that introduces it.
+\FloatBarrier
+
 \begin{lstlisting}[language=bash,caption={Branch diff establishing that the lattice core
 is untouched (no output means identical).},label={lst:diff}]
 git diff --name-status dilithium-baseline main -- ref/
 git diff dilithium-baseline main -- ref/poly.c ref/ntt.c ref/sign.c \
     ref/packing.c ref/polyvec.c ref/reduce.c ref/rounding.c ref/params.h
 \end{lstlisting}
+
+\FloatBarrier
 
 \section{Selected code listing: Adapt and Extract}
 \label{app:listing}

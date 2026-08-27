@@ -1,7 +1,9 @@
 # Dissertation (LaTeX, muthesis.cls)
 
-Official title: **Implementing Post-Quantum Secure Exotic Signature Schemes in
-Blockchains**. Built with the University of Manchester CS `muthesis` class.
+Official title: **Implementing a Post-Quantum Secure Adaptor Signature Scheme in
+Blockchains** (changed at Meeting 12, 2026-08-27, on the supervisor's ruling to drop
+"exotic signature schemes" and name the adaptor signature). Built with the University
+of Manchester CS `muthesis` class.
 
 ## Build
 

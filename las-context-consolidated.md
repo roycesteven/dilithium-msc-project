@@ -1,4 +1,4 @@
-# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11)
+# LAS Project — Consolidated Context (Meetings 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
 
 > **Meeting 6 is now IN this file, at §15A** (2026-08-15) — it sits between §15 (M5) and §16
 > (M7) so the reading order stays chronological, and it is lettered rather than numbered so
@@ -1184,8 +1184,11 @@ slide or prepared as question backup (§8).
   move from Dilithium to LAS." Adaptor-ECDSA vs adaptor-LAS is endorsed as the companion
   comparison (it already exists: `bench_classical`).
 - **The coins do not move between chains** (§12, laboured): each payment settles as a
-  transaction on its own chain; the swap is the linkage. Every diagram must be unreadable as a
-  cross-chain coin transfer.
+  transaction on its own chain; the swap is the linkage. ⚠ That is a **technical fact** Wang
+  stated; the drawing he proposed around it he closed as *"just a suggestion"*. The working
+  rule "every diagram must be unreadable as a cross-chain coin transfer" is **this project's
+  own generalisation** of the fact, not his instruction — keep it, but do not attribute it to
+  him (see §19B.5).
 - **Venue wording** (§10): smart contracts are **"more flexible"**; Bitcoin is **"more
   restricted… because they cannot be modified"** — miners verify directly against transaction
   content; a contract compiles to opcodes the EVM executes. Replaces a framing Wang called "a
@@ -1284,6 +1287,135 @@ DEMO A's own eyebrow (7). And **no TPS figure anywhere**.
 
 **Still open:** only the 13-vs-10 slide count (§19A.3) — Royce's call, and the deck's true
 **7:33** is the number that decision should be made against.
+
+## 19B. Meeting-12 directives [M12, 2026-08-27 — the full video rehearsal, then the report's introduction; merged 2026-08-27]
+
+Transcript `meeting12_cleaned_transcript.md`. ✅ **Diarised Teams export** — speaker labels come
+from the source, not from content inference, so unlike M11 these may be treated as attributable
+rulings without re-listening. The ASR still garbles every domain term (`lattice`→"latest",
+`PreSign`→"Resign"); check the transcript's §A before quoting any wording. The M10 feature
+freeze is not mentioned and is not lifted; nothing here authorises a new experiment.
+
+**Verdict: video CONTENT ACCEPTED, LENGTH REJECTED.** The earlier rounds are discharged in his
+own words — *"you have addressed most of the questions I mentioned before, so I don't have
+further comments so far."*
+
+### 19B.1 Record the STRENGTH of each instruction, not only its words
+
+M12 is the meeting that makes this explicit, because a first pass through it promoted three
+**hedged** suggestions into bans and had to be corrected. An imperative (*"just remove the
+exotic signature schemes"*) is a ruling. A hedge (*"maybe… I don't know, too specific"*) is a
+recommendation. Promoting one to the other invents a constraint the supervisor never imposed.
+
+⚠ **Repetition raises PRIORITY — not modality, and not scope.** When the same hedged suggestion
+appears in two meetings — especially when it returns as *"Have you mentioned this?"* — that is
+evidence he still does not see it as adequately addressed, so treat it as a high-priority
+recommendation and go and check the artefact. It does **not** turn "maybe you could" into a
+requirement, and **feedback given over the deck does not become a report requirement**: the
+post-quantum-migration item was raised over the deck in *both* meetings, so carrying it into the
+report was a **project-level consistency choice** under this project's own deck ⊆ report rule
+(Royce, 2026-08-25) — not a Wang report requirement. Read the wording and the artefact context
+separately, every time.
+
+### 19B.2 New rulings
+
+- **The video must finish under 8:00** (§3). The first end-to-end delivery ran **≈10 min 40 s**.
+  He licensed **either** remedy and mandated neither — *"you should be faster, **or** maybe you
+  should remove some details"* — so only the finished length is binding; the route is Royce's.
+- **Visualisation is a trade, not an addition** (§5): *"if you would like to add more
+  visualisations, maybe you should remove some content."* His test is the non-specialist facing
+  three dated quantum estimates — *"which one is the most important one?"*
+- **The title changes** (§6). Imperative: *"just remove the exotic signature schemes [and] refer
+  to the adaptor signature."* He first confirmed the freedom exists (*"now you have the freedom
+  to update your title"*), which **supersedes the "confirmed by supervisor" note** that stood in
+  `report.tex`. Avoiding **"lattice-based"** is a *recommendation* (*"maybe… too specific,
+  because people don't know what is lattice"*), not a bar. Agreed aloud by both:
+  **"Implementing a Post-Quantum Secure Adaptor Signature Scheme in Blockchains"**.
+- **Figure 1.1(a) must argue from the chains, not RSA-2048** (§8): *"you could make it much
+  closer to Bitcoin, or to blockchain itself… Bitcoin and also Ethereum, they are not using
+  RSA."* He invited **replacement** — *"if you replace [it with] some more concrete things"* —
+  so the RSA figures are not protected. What he wants instead: cited work on when quantum
+  computers become realistic, set against the security of *current* blockchains, so the reader
+  sees *"in how many years the current signature schemes will [no longer] be secure"*.
+  ⚠ The across-targets constraint that survives any redraw is **this project's own rule, not
+  his**: each estimate stays at its own target, and no ratio is taken across targets.
+- **Extend the adaptor-signature motivation in the introduction** (§9) — the one substantive
+  report shortfall he named. It is *"one or three sentences… people were just talking about
+  something very abstract. We need some concrete motivation, the concrete examples."* Two
+  things are owed: (a) why adaptor signatures matter to blockchains, concretely; (b) **why the
+  adaptor among the exotic families** — *"there are still a lot of types of exotic signatures…
+  so why did you choose adaptor signature?"* He judged the post-quantum motivation **already
+  good**, so this is the *second* of the two required motivations (§19A.1), not a rewrite of the
+  first. ⚠ The paragraphs already in §1.1 do **not** discharge it: they predate the meeting
+  (committed 2026-08-25, PDF built 2026-08-26), so he read them and still said it, and Royce
+  agreed on the call — *"I think I have not."*
+- **No Background section ⇒ the background goes in the Introduction** (§9): *"if you don't have
+  a specific background section, then you should introduce the important background in the
+  introduction section."* Depth over breadth still holds; the rubric's "an extensive review is
+  not required" was read aloud and not overridden.
+- 💡 **"Post-quantum migration is not only for blockchains"** (§5) — hedged, and said over the
+  *deck* before the report review began. It obliges no report edit on its own. It was acted on
+  because **M11 §7 asked for the same thing** and neither artefact carried it: both said only an
+  unattributed, uncited "being adopted now". ⚠ Never widen it: the big platforms migrated **key
+  agreement** first; the citable signature deployment is ML-DSA authentication on
+  Cloudflare-to-origin connections (July 2026), **not** the public web PKI, where no
+  post-quantum certificate was in use as of October 2025.
+
+### 19B.3 Accepted as they stand — do not reopen
+
+Structure (*"the structure looks okay for me"*), ≥5 objectives (*"not bad"*), contributions,
+critical reflection (*"it's good that you have the critical reflection"*), 28 citations
+(*"not bad"*), and the Chapter 3 / Chapter 4 split, once Royce explained that Chapter 4 carries
+evaluation plus achievement of objectives, challenges and limitations. Only reservation:
+*"maybe you should change a bit regarding the titles of the subsections."* Written comments
+follow on **Overleaf as highlights with attached comments** (Royce's choice when offered), early
+the following week.
+
+### 19B.4 Closes one M11 open item, and re-bases another
+
+- **✅ The 13-vs-10 slide count (§19A.3) is CLOSED.** Wang counted the deck himself this time —
+  *"imagine how many slides we have in total, 13, right?"* — and raised no objection. M10's
+  "~10" is not a live instruction.
+- **⚠ §19A.4's drift item 1 is re-based, and its lesson is now much sharper.** That entry
+  reconciled three copies of a *derived* planned runtime (7:33 / 7:29 / 7:23) and treated the
+  deck's `data-time` sum as the authority. The M12 rehearsal proves that sum was never duration
+  evidence: the same deck delivered in **≈10:40**. The assumption was the defect — `data-time`
+  was derived at **150 wpm** while measured delivery is **≈112 wpm** (95–125 per slide, slowest
+  on the demo slides, where beats cost time that speech does not). `data-time` is therefore
+  derived at the **measured** pace now. **The gate is a timed full rehearsal under 8:00; no
+  derived sum discharges it.**
+
+### 19B.5 Delivery status (2026-08-27)
+
+Status only — never figures. ✅ title changed in `report.tex`, the deck and `report/latex/README.md`
+· ✅ `fig:whynow`(a) rebuilt, RSA removed, panel (b) re-anchored relatively · ✅ deck slide 2
+rebuilt to one figure · ✅ institutional migration cited in figure and deck · ✅ adaptor
+motivation expanded, paid for by deleting a thrice-stated survey point · 🟡 spoken script cut
+**1,190 → 887 words** with `data-time` re-derived — the runtime gate is **still open**.
+
+**⚠ A CHECK THAT WAS SCOPED TOO NARROWLY, found 2026-08-27 by Royce — and the three strands
+must be kept apart.**
+
+1. **The technical fact (M11 §12, and not negotiable because it is simply true):** the coins do
+   not transfer directly from one chain to the other. Each payment settles on its own ledger,
+   and the atomic swap is the link between the two transactions.
+2. **Wang's visual treatment: a SUGGESTION, in his own words.** He described how he would draw
+   it — two chains, 1 BTC, addresses, messages — and closed with *"this is just my personal…
+   just a suggestion"* (10:34–10:35). Its companion, *"add some concrete numbers"*, was said
+   with the **deck** on screen (*"as you show on the deck"*) and is satisfied there.
+3. **NOT a Wang ruling:** "every diagram must be unreadable as a cross-chain coin transfer".
+   That sentence is **this project's own generalisation** of (1), recorded in §19A.2 and
+   `CLAUDE.md`. It is a sound rule — a figure that communicates something false is a defect
+   whoever asks — but it must not be quoted as his instruction.
+
+What was actually wrong: §19A.4 marked the item "verified applied" after reading the **deck
+only**, and the report's **Figure 3.5** (`fig:swapidea`, renumbered from 3.6 when the quantum
+figure went in) had never been checked. It drew two arrows **between the two parties** with the
+ledgers reduced to words on those arrows, so the picture invited exactly the cross-chain-transfer
+reading that (1) says is false, leaving the caption to deny what the drawing showed. **A
+deck-only verification does not discharge a project rule written over every diagram** — when a
+rule says *every*, the check enumerates the artefacts. Concrete prices are **not** owed in the
+report figure: that was the deck-specific suggestion.
 
 ## 20. Reference links
 

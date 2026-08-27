@@ -148,16 +148,63 @@ session that repeats one of these has failed even when its output looks right.
    NOTES**: a first pass scoped four wordings in `data-notes` and left the same claims standing
    in the visible headline, card and divider — purge-is-not-done-until-re-grepped applies
    *within* a slide. → EVIDENCE-OR-SILENCE, FOCUS
-   ⚠️ **THE NOTES ARE THE SPOKEN SCRIPT, SO THEY HAVE A WORD BUDGET (2026-08-25).** They had
-   grown to **3,558 words against a 7:33 plan — 471 wpm, unspeakable**, because script and
-   backup detail were fused. Every slide's `data-notes` is now **`SPOKEN: …  || BACKUP: …`**;
-   only the SPOKEN half is delivered, and `data-time` is **derived from it at 150 wpm** rather
-   than guessed. Keep SPOKEN ≈ **1,100–1,200 words total**, and re-derive `data-time` after any
-   notes edit — a `data-time` that no longer matches its script is a stale number.
+   ⚠️ **2026-08-26 — SELF-INFLICTED, so the grep is now owed on OWN drafting, not only on relayed
+   critique.** Six absolutes in one session's new prose, mine: "the words were **never** the
+   defect" (this file's own 3,558-word case refutes it), "**every** trim", "the **single biggest**
+   waste", "drift **cannot** flatter either side" (interleaving *reduces* drift), "**every**
+   payment with one signature scheme" (Bitcoin has ECDSA **and** Schnorr over one *curve*) and
+   "accepts **every** variant" (only those tried). Two were plain factual errors: "PreSign is the
+   dearest" (`\ovAdapt` 6.9 > `\ovPreSign` 6.6 — an **absolute-time** ordering carried across to
+   an **overhead ratio**) and "none of the **four**" overhead figures (Extract has no basic
+   analogue, so there are **three** pairs). ⚠️ A relayed critique can be **right about the hazard
+   and wrong about the cause**: "the simplified-base question is a strawman" was wrong —
+   `03-results.tex:356` records it as *this project's own assertion, tested and overturned* — yet
+   the bare "No" it objected to did need scoping to **functionally** (the ML-DSA variant's
+   security is unanalysed). Fix the hazard; do not adopt the diagnosis.
+   ⚠️ **2026-08-27 — Royce reaffirmed the standing verify-first instruction ("strict verify
+   ChatGPT feedback"), and it again went BOTH ways in one batch.** RIGHT, and blocking: a draft
+   M12 block had turned three **hedged** supervisor suggestions ("*maybe* lattice-based is too
+   specific", the big-companies line, "be faster **or** remove details") into bans and
+   requirements — **the new named failure mode is RECORDING STRENGTH: an imperative is a ruling,
+   a "maybe you could" is a recommendation, and promoting one to the other invents a
+   constraint.** WRONG, and it would have closed a live requirement: a claim that the report's
+   adaptor motivation already satisfies M12 — refuted by git, since those paragraphs predate the
+   meeting (`9032d1d` 2026-08-25, PDF built 2026-08-26) so the supervisor read them and still
+   asked. **Provenance beats prose: check WHEN the artefact was written against WHEN it was
+   reviewed before marking any feedback item discharged.**
+   ⚠️ **AND THE HEDGE RULE HAS A LIMIT: REPETITION RAISES PRIORITY, NOT MODALITY OR SCOPE.**
+   When the same hedged suggestion recurs — M12's "big companies are migrating" was also asked
+   in M11, and came back as "*Have you mentioned this?*" — that is evidence he still does not
+   see it as addressed, so treat it as a **high-priority recommendation and go check the
+   artefact**. It does **not** become a requirement, and **deck feedback does not become a
+   report requirement**: both instances of that one were spoken over the *deck*, so the report
+   edit followed from this project's own deck ⊆ report rule, not from him. Read wording and
+   artefact context separately, every time. Before filing any "already applied / suggestion
+   only" verdict, check the EARLIER transcripts and **grep the artefacts for the claim**
+   instead of trusting the previous entry.
+   ⚠️ **THE NOTES ARE THE SPOKEN SCRIPT, SO THEY HAVE A WORD BUDGET (2026-08-25).** Fused script
+   and backup detail had reached **3,558 words — 471 wpm, unspeakable**. Every `data-notes` is now
+   **`SPOKEN: … || BACKUP: …`**; only SPOKEN is delivered, `data-time` is **derived from it at
+   150 wpm**, keep it ≈ **1,100–1,200 words total**, and re-derive `data-time` after any notes edit.
+   ⚠️ **The VIEWER honours the split (2026-08-26):** `N` shows SPOKEN alone at reading size, `B`
+   reveals BACKUP — it dumped both at 15 px until then. **Diagnose the panel before cutting the
+   script:** that time the count was inside budget and the viewer was the defect, while the
+   3,558-word case above is the opposite — check both, assume neither.
+   ⚠️ **SPOKEN interprets; the SLIDE carries the figures**, and a term already on screen is not
+   spoken unless the conclusion needs it — reciting visible text is what made the script read as a
+   report aloud. **Methodology is the exception (M10):** say how it was measured, in plain words.
+   Craft rules in `VIDEO_PLAN.md` §1; the five past decks are in `past_report/`.
    ⚠️ **`data-time` is a PLANNING BUDGET, never duration evidence**: it is a derivation from a
    word count at an *assumed* pace, so pauses, demo beats and transitions can still push the
    recording past 8:00. The gate is a **timed full rehearsal inside 6–8 minutes** — quoting the
-   derived total as the video's length is the derived-as-measured error. A caveat may move to
+   derived total as the video's length is the derived-as-measured error, and the first full
+   rehearsal (M12, 2026-08-27) ran **≈10:40** against a derived budget under 8:00, so the gap is
+   real and large. ⚠️ **The assumed 150 wpm was the defect: measured delivery is ≈112 wpm**
+   (1,190 spoken words in ≈640 s), and per-slide it ranges ≈95–125, slowest on the demo slides
+   where beats add time speech does not. **`data-time` is therefore derived at 112 wpm now, not
+   150** — re-derive at the *measured* pace after any notes edit, never the assumed one. The
+   script was cut **1,190 → 887 words** the same day, which derives 7:56 at that pace: inside
+   8:00 but with almost no margin, so the timed rehearsal still decides. A caveat may move to
    BACKUP **only if it is VISIBLE on the slide** (the 2026-08-22 must-be-visual vs
    narration-suffices split); the base-naming and the UTXO-with-UTXO scope note stay SPOKEN
    because nothing on screen carries them.
@@ -314,18 +361,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-25 16:22 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-27 18:20 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`main`** · HEAD 661e9cf · 2026-08-25 · Merge branch 'report'
-- Working tree: 17 modified tracked file(s), 40 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
+- Branch **`main`** · HEAD 9032d1d · 2026-08-25 · introductory material
+- Working tree: 28 modified tracked file(s), 49 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
 - Recent commits:
+  - `9032d1d 2026-08-25 introductory material`
   - `661e9cf 2026-08-25 Merge branch 'report'`
   - `2029564 2026-08-23 report deck 23_08 18:51`
   - `3c47c6a 2026-08-22 Merge pull request #5 from roycesteven/report`
   - `39d684f 2026-08-21 after meeting 11 21_08 15:27`
-  - `ad257d1 2026-08-20 report dan deck 19_08 19_00`
 
 ### Target parameter set — anchors parsed from source
 
@@ -341,7 +388,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `latest` (dir mtime 2026-08-25)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8976** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **9006** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -353,13 +400,13 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Supervisor meetings on record
 
-- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 (`meetingN_cleaned_transcript.md`)
-- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 (`meetingN_cleaned_transcript.md`)
+- Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 
 ### Freshness tripwires
 
 - ⚠ Source newer than Stage-1 evidence: `rust/las-swap/src/ecdsa_backend.rs` (2026-08-25 13:18) > `evidence/latest` (2026-08-25 13:18). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-25.
+- `CLAUDE.md` hand-written sections last touched 2026-08-27.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -551,11 +598,15 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   running as a separate program fed only the recovered bytes. Ext succeeding is **weaker**
   than byte-equality — any `(c, ẑ+y')` with `A·y'=Y` passes it. Macros `btcSwap*` (never mix
   with `btcLas*`/`btcMeas*`); PI=0 is recorded INCOMPLETE and does not move `latest`.
+  ⚠️ **Never write "read σ₂ off chain"** (deck label, fixed 2026-08-26): it reads as *off-chain*,
+  inverting the claim. σ₂ is read **from** the mined transaction on chain B — `Ext` and the second
+  `Adapt` are what run locally. Say **"from chain B"**.
   Honest path only — the tapleaf has **no refund branch**, so timeouts are not implemented.
   ⚠️ **REFUND/TIMEOUT ACROSS VENUES — verified against source 2026-08-19; a relayed
   "EVM ✅ / Bitcoin ❌" table overstated BOTH sides.** **Neither real-client two-leg run
   exercises the timeout/refund recovery path** — say *exercises*, never "implements":
-  Bitcoin genuinely has none (no tapleaf branch), but `AdaptorSwapBound.refund` **is**
+  neither of THOSE two wires one in (`run_btc_eth_swap.sh` does — see below), but
+  `AdaptorSwapBound.refund` **is**
   implemented (timeout + payer check + `State.REFUNDED` + transfer) and
   `run_onchain_two_leg.sh` simply never calls it. Writing "the EVM does not implement
   refund" would seed a false report claim. ⚠️ "Honest path only" (the runners' own scope
@@ -571,7 +622,34 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   never responds, u₁ reclaims, premature refund rejected. That corrected a report overclaim
   ("both parties recover their funds" → "the funder recovers its coin", `app:methoddetail`,
   word-neutral). A Bitcoin refund branch is NEW work under the M10 freeze — Royce's call,
-  not a correctness repair.
+  not a correctness repair; he directed it 2026-08-27 for a BTC↔ETH swap.
+  ⚠️ **BTC↔ETH CROSS-VENUE RUN — PASSED 2026-08-27**, `scripts/run_btc_eth_swap.sh` →
+  `evidence/btc_eth_swap/latest`. BTC = leg B (settled first, patched node, consensus rule),
+  ETH = leg A (`AdaptorSwapBound`, one capped tx); σ₂ recovered from the MINED witness, and
+  Ext's **adapted-signature input** came only from it. `btc_las_spend.py` gained an
+  **opt-in** CLTV refund branch (`--refund-pk`+`--refund-locktime`, all-or-nothing; separate
+  `taproot_for_refundable`, so the legacy **tapleaf, scriptPubKey and address** are
+  unchanged — ⚠️ but the JSON outputs DO gain fields, so never widen that to "the legacy
+  path is byte-identical"; gate: pk1 ⇒ `bcrt1pcdmx5g…rstwpg`). Needed `./xchain` in
+  `evm/foundry.toml` `fs_permissions`. Traps, each cost a rejected edit: CLTV needs **both**
+  `nLockTime` and a non-final `nSequence`, set **before** signing; the witness carries the
+  **refund** key on the refund leaf. ⚠️ **THE REFUND TEST NEEDS THREE CASES, AND CASE A ALONE
+  DOES NOT ISOLATE CLTV:** A (`nLockTime`=deadline, immature) is refused `bad-txns-nonfinal`
+  by **BOTH** nodes — that evidences the deadline via transaction finality, but finality is
+  checked before any script runs, so the differential says nothing about the leaf; **B**
+  (`nLockTime`=0, hence final, deadline still ahead) is refused `Locktime requirement not
+  satisfied` by the patched node while **stock ACCEPTS** (0xbb is an OP_SUCCESSx, so BIP342
+  wins the whole script unexecuted) — B is the only case that isolates the leaf; C (matured)
+  is accepted **and actually mined**, coin returned. ⚠️ **Full fairness is NOT established** — the claim
+  leaf stays single-key under the *funder's* key, so the funder can spend without waiting,
+  and **the mempool leaks the witness**: it can Ext from the unconfirmed adapted signature,
+  replace the claiming tx, keep this coin *and* claim the other leg. ("abort, not theft"
+  is FALSE — retracted.) **Supported wording: "a cross-venue LAS settlement, plus an
+  explicit timeout refund branch shown to be enforced on the Bitcoin side" — never "a
+  fair/full atomic swap".** ⚠️ Only BITCOIN's deadline is exercised: Ethereum is funded with
+  its own timeout but `AdaptorSwapBound.refund` is never called, and the two are in
+  different units (UNIX timestamp vs block height), so **no t₂<t₁ ordering is established**. §4.1 requires timeouts on both transactions and
+  **t₂ < t₁**; 2-of-2 it requires only for PCNs (§4.2).
 - **Framings that must not drift:** a patched node is **not** Bitcoin — "cannot settle on
   Bitcoin as it stands" stays true; implementing one of `BITCOIN_TX_STRUCTURE.md` §5.4's
   three routes is **not** a position on which should be adopted; **the rule's security is
@@ -934,7 +1012,16 @@ any of it.
    2026-08-21 and only a screenshot found them: an SVG label wider than the rect drawn behind it,
    a `.tx` box **silently clipping** its last line under `overflow:hidden` (now `flex:none`, so an
    overrun shows instead of truncating), and a two-line source note printing straight through the
-   footer. ⚠ **Attribute beliefs to NO ONE on the evaluation slide** (2026-08-21): quotation marks
+   footer.
+   ⚠ **SCREENSHOTS ARE NOT ENOUGH EITHER — MEASURE (2026-08-26).** Four rounds of eyeballing still
+   left overruns; `report/slides/audit_overflow.js` + `--dump-dom` walks **every slide and every
+   beat** and reports real geometry (recipe and its two gotchas in `VIDEO_PLAN.md` §3). What it
+   caught: a 67 px clipped line on slide 5, tx boxes overrun on slide 3, and — the root cause worth
+   remembering — **a hidden beat block must leave the FLOW, not just fade**: `.wsay` toggled
+   `opacity` only, so Bob's two blocks both occupied space and the visible one painted over the rail
+   at beats 2 and 4. Toggle `display` for beat blocks that stack; keep opacity only where the strip
+   must hold its height (`.wrail`, `.pipe`). ⚠ A shot taken mid-transition is not a defect — kill
+   `transition`/`animation` before capturing a beat. ⚠ **Attribute beliefs to NO ONE on the evaluation slide** (2026-08-21): quotation marks
    manufactured a source (read as citing eprint 2020/845, which drops Dilithium's optimizations
    only *"in order to simplify the presentation"*), and the replacement `I assumed` was ALSO
    wrong — Royce never held those assumptions and the report says *measured*. The slide is
@@ -1075,7 +1162,7 @@ about order, ask Royce rather than silently reordering.
 
 ## Supervisor rulings in force
 
-Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10, **§19A = M11**).
+Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10, **§19A = M11**, **§19B = M12**).
 Transcripts: `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`). **Read §16 before
 planning application work.** ⚠ **M6 was merged into the spec 2026-08-15** (Royce) — it is
 *lettered* 15A, not numbered, so §16–§19 keep the numbers cited across CLAUDE.md and `docs/`;
@@ -1083,8 +1170,61 @@ its per-item delivery **status matrix** stays in
 `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` §1. Supersedes the old "meeting 6 is not in
 that file" warning — the spec now covers every meeting.
 
-**Meeting 11 (2026-08-21, date inferred from file metadata — deck review, second pass) —
-LATEST WORD.** Transcript `meeting11_cleaned_transcript.md`. ⚠ **Single ASR source, NO
+**Meeting 12 (2026-08-27, date inferred from file metadata + the meeting's own date arithmetic
+— FULL video rehearsal, then the report's introduction) — LATEST WORD.** Transcript
+`meeting12_cleaned_transcript.md`. ✅ Source is a **diarised Teams export**, so unlike M11 these
+are attributable; the ASR still garbles every domain term (`lattice`→"latest",
+`PreSign`→"Resign") — check its §A before quoting. **Video CONTENT ACCEPTED, LENGTH REJECTED**;
+earlier rounds discharged ("you have addressed most of the questions I mentioned before").
+⚠ **RECORD THE STRENGTH, NOT JUST THE WORDS: an imperative ("just remove X") is a ruling; a
+hedged "maybe you could…" is a recommendation.** A first draft of this block promoted three
+hedges into bans and had to be corrected — that is the M12 lesson, and it applies to every
+meeting block here.
+- ⚠ **THE VIDEO MUST FINISH UNDER 8:00 — blocking.** First end-to-end delivery ran **≈10 min
+  40 s** (00:31→≈11:10). He licensed **either** route — "be faster, **or** maybe remove some
+  details" — so the route is Royce's; only the finished length is mandated. Cut order in
+  `VIDEO_PLAN.md` §1. ⚠ This is the measured confirmation of the `data-time` rule above.
+- 💡 **Visualisation is a trade** — "if you would like to add more visualisations, maybe you
+  should remove some content"; his test is a non-specialist facing the three dated quantum
+  estimates: *"which one is the most important one?"*
+- ⚠ **TITLE: drop "exotic signature schemes" and name the adaptor signature** ("just remove…
+  by referring to the adaptor signature") — this **supersedes the "confirmed by supervisor"
+  comment at `report/latex/report.tex:115`**, which he reopened ("now you have the freedom").
+  Avoiding **"lattice-based"** is a *recommendation*, not a bar ("maybe… too specific, I don't
+  know"). Agreed aloud: *"…Post-Quantum Secure Adaptor Signature Scheme[s] in Blockchains"*.
+- ⚠ **`fig:whynow` (a) must argue from the CHAINS, not RSA-2048** — "not that straightforward,
+  not that direct"; make it "much closer to Bitcoin, or to blockchain itself", from cited work
+  on when quantum computers become realistic vs the security of *current* blockchains. He
+  invited **replacement**, so the RSA rows are not protected. ⚠ What still binds is **this
+  project's own rule, not his**: each estimate stays at its own target and the 2019 RSA figure
+  is never divided by the 2026 secp256k1 one.
+- ⚠ **EXTEND THE ADAPTOR MOTIVATION IN §1 — the one substantive report shortfall named.** It is
+  "one or three sentences… very abstract"; owed are (a) why adaptor signatures matter to
+  blockchains, concretely, and (b) **why the adaptor among the exotic families**. ⚠ The
+  paragraphs at `01-introduction.tex:104–122` do **not** discharge it — they predate the
+  meeting (`9032d1d` 2026-08-25; PDF built 2026-08-26), so he read them and still said it, and
+  Royce agreed on the call. **No Background section ⇒ that background goes IN the introduction**
+  (rubric §2.1, endorsed; depth over breadth stands). Word count is at the ceiling: offset in
+  the same edit, out of filler, never a qualifier.
+- ✅ **"PQ migration is not only blockchains" — ASKED IN M11 *AND* M12, never done, DONE
+  2026-08-27.** ⚠️ **A suggestion repeated across two meetings is not a hedge: the repetition is
+  the evidence it was never applied** ("*Have you mentioned this?*"). Both artefacts carried only
+  an unattributed, **uncited** "being adopted now" — Wang's ask and an EVIDENCE-OR-SILENCE defect
+  at once. Fixed inside `fig:whynow` (TikZ body + caption ⇒ **zero words**) and deck slide 4,
+  with `westerbaan2025pqinternet` / `cloudflare2026pqroadmap` / `valenta2026pqauth`.
+  ⚠️ **Never widen it:** big platforms migrated **key agreement** first; the cited signature
+  deployment is **ML-DSA authentication on Cloudflare-to-origin connections (July 2026)**, NOT
+  the public web PKI — no public PQ certificate was in use as of October 2025.
+- ✅ Accepted as they stand: structure, ≥5 objectives, contributions, critical reflection, 28
+  citations, the Ch.3/Ch.4 split; only subsection *titles* may need a tweak. Written comments
+  arrive on Overleaf as highlight+comment early the following week. **13 slides counted by Wang
+  himself** — closes M11's "you have 10 slides" question.
+- 📅 Report+slides+video to Wang **Fri 2026-08-28 17:00**; he reads Sun/Mon; optional meeting
+  **Thu 2026-09-03**; submission **Fri 2026-09-04**.
+**Nothing in M12 authorises a new experiment; the M10 freeze stands.**
+
+**Meeting 11 (2026-08-21, date inferred from file metadata — deck review, second pass).**
+⚠ **Single ASR source, NO
 diarisation** — every speaker label is inferred from content; §D forbids promoting anything to
 a ruling on attribution alone, and Royce confirmed the items by instructing they be fulfilled.
 Most of it confirms the second-batch instructions already recorded above (quantum-first
@@ -1105,7 +1245,6 @@ swap, real logos/prices — all applied). Genuinely new, all applied 2026-08-21:
   deck quotes **Bitcoin's block-WEIGHT capacity bound only**, labelled a size bound, **never ÷ the
   block interval** and **never an EVM per-block figure** (that is the retracted EIP-7825 reading).
   **No TPS number exists anywhere in the deck, and none may be added.**
-- "You have 10 slides" is recollection, not a ruling — the 13-slide deck stands (§D 10).
 **Nothing in Meeting 11 authorises a new experiment; the M10 freeze stands.** Detail: §19A.
 
 **Meeting 10 (date NOT confirmed — 2026-08-14 or -15; never cite a firm one).

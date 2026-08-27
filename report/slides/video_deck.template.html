@@ -617,17 +617,21 @@
   .walk{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;flex:1;min-height:0}
   .wparty{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;
           box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-height:0}
-  .wparty h4{margin:0;font-size:25px;font-weight:700;display:flex;gap:10px;align-items:baseline}
+  .wparty h4{margin:0;font-size:23px;font-weight:700;display:flex;gap:9px;align-items:baseline}
   .wparty h4 span{font-size:19px;font-weight:400;color:var(--muted)}
-  .wobjs{display:flex;flex-wrap:wrap;gap:6px}
-  .wobj{font-size:19px;border:1.5px solid var(--line);border-radius:7px;
-        padding:6px 11px;color:var(--muted);background:var(--wash);opacity:.3;
+  .wobjs{display:flex;flex-wrap:wrap;gap:5px}
+  .wobj{font-size:17.5px;border:1.5px solid var(--line);border-radius:7px;
+        padding:5px 9px;color:var(--muted);background:var(--wash);opacity:.3;
         transition:opacity .4s ease,color .4s ease,border-color .4s ease}
   .wobj.on{opacity:1;color:var(--ink);border-color:var(--mark-b)}
   .wobj.sec.on{border-color:var(--mark-ad);color:var(--ink-ad);font-weight:700}
-  .wsay{margin-top:auto;font-size:19px;line-height:1.32;color:var(--muted);
-        opacity:0;transform:translateY(5px);transition:opacity .4s,transform .4s}
-  .wsay.on{opacity:1;transform:none}
+  /* A hidden beat block must take NO space.  These used to toggle opacity only, so
+     Bob's two .wsay blocks were both in flow at every beat: the visible one was
+     pushed out of the card and painted straight over the rail below (found by
+     screenshotting beats 2 and 4 — invisible from the markup). */
+  .wsay{display:none;margin-top:auto;font-size:17.5px;line-height:1.3;color:var(--muted)}
+  .wsay.on{display:block;animation:wsayin .4s ease}
+  @keyframes wsayin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
   .wsay b{color:var(--ink)}
   .wsay .eq{font-family:var(--mono);font-size:14px;color:var(--ink-ad);display:block;margin-top:4px}
   .wmid{display:flex;flex-direction:column;gap:12px;justify-content:center;position:relative}
@@ -682,6 +686,11 @@
   .dv .k{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.05em;display:block}
   .dv.ok{background:var(--reused-soft)} .dv.ok .k{color:var(--reused)}
   .dv.bad{background:var(--warn-soft)} .dv.bad .k{color:var(--warn)}
+  /* The eye should land on one thing at a time: beat 1 is carriage + the valid spend,
+     beat 2 adds the two-leg pipeline and the negative controls.  Opacity, not display,
+     so nothing on the slide moves while recording. */
+  .pipe[data-w]{opacity:0;transition:opacity .45s ease}
+  .pipe[data-w].on{opacity:1}
   .dv[data-w]{opacity:0;transform:translateY(6px);transition:opacity .45s ease,transform .45s ease}
   .dv[data-w].on{opacity:1;transform:none}
   .dfoot{font-size:14.5px;line-height:1.34;color:var(--muted);text-align:center;flex:none}
@@ -732,13 +741,20 @@
   #safe.on{display:flex}
 
   /* ---- notes panel (rehearsal only — turn OFF before recording) ---- */
-  #notes{position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;z-index:20;
+  /* Rehearsal teleprompter, never in shot: it shows the SPOKEN half at reading
+     size and keeps BACKUP (detail held for questions) behind the B key, so the
+     panel carries what is actually delivered and nothing else. */
+  #notes{position:fixed;left:0;right:0;bottom:0;max-height:48vh;overflow:auto;z-index:20;
          background:var(--card);color:var(--ink);border-top:2px solid var(--adaptor);
-         padding:16px 22px;display:none;font-size:15px;line-height:1.5}
+         padding:20px 40px 26px;display:none;font-size:24px;line-height:1.45}
   #notes.on{display:block}
   #notes .hd{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
-             color:var(--muted);margin-bottom:6px;display:flex;gap:16px}
+             color:var(--muted);margin-bottom:10px;display:flex;gap:16px}
   #notes .hd b{color:var(--adaptor)}
+  #ntext{max-width:1180px}
+  #nback{display:none;max-width:1180px;margin-top:16px;padding-top:12px;
+         border-top:1px dashed var(--line);font-size:16px;line-height:1.5;color:var(--muted)}
+  #nback.on{display:block}
   #help{position:fixed;right:12px;top:10px;z-index:20;font-family:var(--mono);font-size:11.5px;
         color:#8ea0bd;background:rgba(10,17,32,.72);border:1px solid #26324a;border-radius:8px;padding:6px 10px}
   #help.off{display:none}
@@ -766,8 +782,8 @@
     </div>
 
     <!-- ============================ 1 ============================ -->
-    <section class="slide title" data-title="Title" data-time="0:09" data-notes="SPOKEN: Post-quantum secure exotic signature schemes in blockchains. I implemented LAS, a lattice adaptor signature, on the Dilithium reference, and measured what it costs.">
-      <h1 class="headline big">Implementing Post-Quantum Secure<br>Exotic Signature Schemes in Blockchains</h1>
+    <section class="slide title" data-title="Title" data-time="0:13" data-notes="SPOKEN: Hello, I&#x27;m Royce Steven. This project asks whether the signature behind cross-chain swaps can survive quantum computers -- and what it costs to find out. ">
+      <h1 class="headline big">Implementing a Post-Quantum Secure<br>Adaptor Signature Scheme in Blockchains</h1>
       <div class="rule"></div>
       <p class="dek">A lattice-based adaptor signature on CRYSTALS-Dilithium, implemented
       independently in C and Rust and demonstrated in a post-quantum atomic swap.</p>
@@ -783,61 +799,58 @@
          secp256k1 sits there, NOT in the 112-bit row whose 2030 deprecation is
          the figure usually quoted second-hand. -->
     <!-- ============================ 2 ============================ -->
-    <section class="slide" data-part="why" data-title="Why now — the quantum clock" data-time="0:41" data-notes="SPOKEN: Bitcoin and Ethereum sign over secp256k1, and Shor's algorithm breaks the problem it rests on. The question was always: how big a machine? Published estimates have fallen sharply for comparable targets -- for RSA-2048, twenty million noisy qubits down to under one million in six years -- and they now reach secp256k1 itself. These are estimates for hardware nobody has built: what falls is the cost, not a calendar. But a chain cannot wait. Its record is permanent, so a break reaches keys already exposed, and fixing it needs a coordinated consensus-rule change. And NIST's transition schedule disallows quantum-vulnerable signatures after 2035. || BACKUP, only if asked: the NIST row is IR 8547 ipd, November 2024, at 128-bit strength or above, which is where secp256k1 sits -- NOT the 112-bit row deprecated after 2030. The three estimates are Gidney and Ekera, Quantum 5:433, first circulated 2019; Gidney, arXiv 2505.15917; and Babbush et al., ePrint 2026/625. All four are cited in the report, section 1.1 and its figure, so nothing here is deck-only. Only the 2019 and 2025 figures share a target and may be read as a fall.">
-      <h1 class="headline">Resource estimates have fallen sharply for <strong class="hb">comparable targets</strong> &mdash; and now reach <strong class="hi">secp256k1</strong></h1>
+    <section class="slide" data-part="why" data-title="Why now — the quantum clock" data-time="0:36" data-notes="SPOKEN: Bitcoin and Ethereum sign on the same elliptic curve, and a large enough quantum computer breaks the problem it rests on. How large? A published 2026 estimate says under half a million qubits, and minutes. Nobody has built that hardware. But a chain cannot wait: its record is permanent, the fix needs the whole network to agree, and NIST&#x27;s schedule disallows ECDSA at this strength after 2035. || BACKUP, only if asked: the NIST row is IR 8547 ipd, November 2024, at 128-bit strength or above, which is where secp256k1 sits -- NOT the 112-bit row deprecated after 2030. The estimate is Babbush et al., ePrint 2026/625, cited in the report at section 1.1 and its figure, so nothing here is deck-only. Earlier RSA-2048 estimates were dropped from both report and deck: a different target, and no ratio may be taken across targets.">
+      <h1 class="headline">Breaking <strong class="hi">Bitcoin and Ethereum&#8217;s own curve</strong> has a published price &mdash; and a <strong class="hb">deadline</strong></h1>
+      <!-- Rebuilt 2026-08-27 (Meeting 12), answering BOTH of the supervisor's problems
+           at once.  (i) "Which one is the most important one?" -- with three numbers on
+           screen a non-specialist could not tell, so ONE figure now carries the slide.
+           (ii) RSA-2048 is not what these chains use, and he asked for something "much
+           closer to Bitcoin, or to blockchain itself" -- so both RSA points are GONE,
+           not demoted, and what remains is the estimate for the chains' own curve.
+           Removing them also retires the across-targets trap: there is no pair left to
+           divide, so nothing here can be misread as a trend.  The deadline that answers
+           "in how many years" is the card below.
+           WORDING: "the CURVE Bitcoin and Ethereum use", never "the signature" -- they
+           share secp256k1, not one scheme (Bitcoin has ECDSA and Schnorr). -->
       <div class="scene" style="flex:none;height:178px">
         <svg viewBox="0 0 1160 196" role="img"
-             aria-label="A timeline of three published resource estimates for running Shor's algorithm: 2019, twenty million noisy qubits and eight hours for RSA-2048; 2025, under one million qubits and under a week for the same target; 2026, under half a million physical qubits and minutes for secp256k1">
+             aria-label="A published 2026 estimate for running Shor's algorithm against secp256k1, the curve Bitcoin and Ethereum sign with: under 500,000 physical qubits and minutes of runtime to recover a private key">
           <g font-family="inherit" fill="var(--ink)">
             <g class="st st1">
-              <path d="M40 74 H 1120" stroke="var(--line)" stroke-width="2"/>
-              <text x="40" y="30" font-size="19" font-weight="700" fill="var(--muted)">Published resource estimates for running Shor&#8217;s algorithm &#8212; each figure carries its target and its year</text>
+              <text x="580" y="24" font-size="19" font-weight="700" text-anchor="middle" fill="var(--muted)">What recovering a key on the curve Bitcoin and Ethereum use is estimated to cost</text>
+              <path d="M120 40 H 1040" stroke="var(--line)" stroke-width="2"/>
             </g>
             <g class="st st2">
-              <circle cx="140" cy="74" r="9" fill="var(--mark-b)"/>
-              <text x="140" y="112" font-size="19" font-weight="800" text-anchor="middle">2019</text>
-              <text x="140" y="136" font-size="19" text-anchor="middle">20,000,000 noisy qubits</text>
-              <text x="140" y="156" font-size="19" text-anchor="middle" fill="var(--muted)">8 hours &#183; RSA-2048</text>
-              <text x="140" y="178" font-size="17" text-anchor="middle" fill="var(--muted)">Gidney &amp; Eker&#229;</text>
+              <text x="580" y="92" font-size="44" font-weight="800" text-anchor="middle" fill="var(--ink-ad)">&lt; 500,000 physical qubits</text>
+              <text x="580" y="122" font-size="21" font-weight="700" text-anchor="middle">minutes of runtime to recover a private key</text>
             </g>
             <g class="st st3">
-              <circle cx="560" cy="74" r="9" fill="var(--mark-b)"/>
-              <text x="560" y="112" font-size="19" font-weight="800" text-anchor="middle">2025</text>
-              <text x="560" y="136" font-size="19" text-anchor="middle">&lt; 1,000,000 noisy qubits</text>
-              <text x="560" y="156" font-size="19" text-anchor="middle" fill="var(--muted)">&lt; 1 week &#183; RSA-2048</text>
-              <text x="560" y="178" font-size="17" text-anchor="middle" fill="var(--muted)">Gidney</text>
-            </g>
-            <g class="st st4">
-              <circle cx="980" cy="74" r="11" fill="var(--mark-ad)"/>
-              <rect x="856" y="46" width="248" height="24" rx="12" fill="var(--adaptor-soft)" stroke="var(--mark-ad)" stroke-width="1.4"/>
-              <text x="980" y="63" font-size="18" font-weight="800" text-anchor="middle" fill="var(--ink-ad)">Bitcoin and Ethereum&#8217;s curve</text>
-              <text x="980" y="112" font-size="19" font-weight="800" text-anchor="middle" fill="var(--ink-ad)">2026</text>
-              <text x="980" y="136" font-size="19" font-weight="700" text-anchor="middle">&lt; 500,000 physical qubits</text>
-              <text x="980" y="156" font-size="19" text-anchor="middle" fill="var(--muted)">minutes &#183; secp256k1</text>
-              <text x="980" y="178" font-size="17" text-anchor="middle" fill="var(--muted)">Babbush et&#160;al. &#8212; Google Quantum AI, Drake, Boneh</text>
+              <rect x="330" y="138" width="500" height="28" rx="14" fill="var(--adaptor-soft)" stroke="var(--mark-ad)" stroke-width="1.4"/>
+              <text x="580" y="157" font-size="17" font-weight="800" text-anchor="middle" fill="var(--ink-ad)">secp256k1 &#8212; the curve both chains sign with</text>
+              <text x="580" y="186" font-size="15" text-anchor="middle" fill="var(--muted)">2026 estimate &#183; Babbush et&#160;al. &#8212; Google Quantum AI, Drake, Boneh</text>
             </g>
           </g>
         </svg>
       </div>
       <div class="cols c2 tight" style="flex:none">
         <div class="card tint-warn">
-          <h3>A chain cannot wait</h3>
+          <h3>Why this matters now</h3>
           <ul class="imp">
-            <li><b>The record is permanent</b> &#8212; a break applies <b>retroactively</b></li>
-            <li><b>Fixing it is a consensus-rule change</b> &#8212; coordinated, not local</li>
+            <li><b>A blockchain never forgets</b> &#8212; keys exposed years ago can still be attacked</li>
+            <li><b>Fixing it is a consensus-rule change</b> &#8212; the whole network has to agree, not one node</li>
           </ul>
         </div>
         <div class="card">
-          <h3>The date is already written down</h3>
+          <h3>The deadline is already set</h3>
           <p class="bigv">disallowed<br>after <span class="hi">2035</span></p>
-          <p class="vsub"><span class="wt c">cited</span> NIST IR 8547 ipd &#183; &#8805;128-bit, where secp256k1 sits</p>
+          <p class="vsub"><span class="wt c">cited</span> NIST IR 8547 ipd &#183; 128-bit level, where secp256k1 sits</p>
         </div>
       </div>
-      <p class="caveat"><b>Estimates for hardware that does not exist.</b> At one fixed target they fell <b>20&#215;</b> in six years: the cost falls, <b>not</b> the calendar.</p>
+      <p class="caveat"><b>This is an estimate, not an attack today.</b> Nobody has built this hardware &#8212; what such work reports is the estimated <b>cost</b> of the attack, <b>not</b> a calendar. The 2035 deadline is separate: a policy schedule, and it binds either way.</p>
     </section>
 
     <!-- ============================ 3 ============================ -->
-    <section class="slide" data-part="why" data-title="Why this matters" data-time="0:32" data-notes="SPOKEN: Two people want to trade assets across two blockchains, with no exchange and no trusted middleman. An atomic swap makes that safe: either both transfers happen, or neither does. The same primitive underpins payment channels. What makes it work is an adaptor signature -- only the holder of a secret can complete the first payment, and publishing it reveals that secret, releasing the other leg. All of this runs today on an elliptic-curve signature. So why build a new one? || BACKUP: the ratio is corroborated by Coinbase to within 0.04 percent, so it is not one feed quoting itself. Re-read both prices before recording on another day -- a stale price is a wrong number. Neither coin leaves its chain: each transaction settles on its own ledger and the secret is the only link.">
+    <section class="slide" data-part="why" data-title="Why this matters" data-time="0:37" data-notes="SPOKEN: Two people on different blockchains want to trade -- no exchange, nobody to trust. An atomic swap makes that safe: either both transfers happen, or neither. Watch the coins: they never leave their own chain. Each payment settles at home, and what links the two is a secret. The same idea also appears in payment channels, whose deployed signatures are still elliptic-curve based. So why build a new one? || BACKUP: the ratio is corroborated by Coinbase to within 0.04 percent, so it is not one feed quoting itself. Re-read both prices before recording on another day -- a stale price is a wrong number. Neither coin leaves its chain: each transaction settles on its own ledger and the secret is the only link.">
       <h1 class="headline">Two strangers, two chains, <strong class="hb">no trusted middleman</strong></h1>
       <div class="scene">
         <!-- Entity references inside every SVG block are NUMERIC, matching the
@@ -858,7 +871,7 @@
              crossing the middle is the shared secret.  Do not reintroduce a
              chain-to-chain arrow. -->
         <svg viewBox="0 0 1160 380" role="img"
-             aria-label="Alice holds bitcoin on chain one and Bob holds ether on chain two; each payment settles as a transaction on its own chain, and one shared secret links the two — no coin moves between chains">
+             aria-label="Alice holds bitcoin on chain one and Bob holds ether on chain two; each payment settles as a transaction on its own chain, and a secret revealed by one settlement unlocks the other — no coin moves between chains">
           <g font-family="inherit" fill="var(--ink)">
             <g class="st st1">
               <rect x="1" y="44" width="266" height="252" rx="14" fill="var(--card)"
@@ -912,13 +925,13 @@
               <path d="M254 168 C 302 168, 300 88, 344 88" stroke="#f7931a" stroke-width="4" fill="none"/>
               <polygon points="360,88 338,79 338,97" fill="#f7931a"/>
               <rect x="362" y="60" width="436" height="56" rx="11" fill="var(--card)" stroke="#f7931a" stroke-width="2"/>
-              <text x="382" y="84" font-size="20" font-weight="750">tx&#8321; &#8212; settles <tspan fill="#b26a08">on Bitcoin</tspan>, like any payment</text>
-              <text x="382" y="104" font-size="17" fill="var(--muted)">Alice&#8217;s 1 BTC &#8594; an address Bob owns on chain 1</text>
+              <text x="382" y="84" font-size="18" font-weight="750">tx&#8321; &#8212; settles <tspan fill="#b26a08">on Bitcoin</tspan>, like any payment</text>
+              <text x="382" y="104" font-size="16" fill="var(--muted)">Alice&#8217;s 1 BTC &#8594; an address Bob owns on chain 1</text>
               <path d="M906 188 C 858 188, 860 292, 816 292" stroke="#627eea" stroke-width="4" fill="none"/>
               <polygon points="800,292 822,283 822,301" fill="#627eea"/>
               <rect x="362" y="264" width="436" height="56" rx="11" fill="var(--card)" stroke="#627eea" stroke-width="2"/>
-              <text x="382" y="288" font-size="20" font-weight="750">tx&#8322; &#8212; settles <tspan fill="#4a5fd0">on Ethereum</tspan>, like any payment</text>
-              <text x="382" y="308" font-size="17" fill="var(--muted)">Bob&#8217;s 32.37 ETH &#8594; an address Alice owns on chain 2</text>
+              <text x="382" y="288" font-size="18" font-weight="750">tx&#8322; &#8212; settles <tspan fill="#4a5fd0">on Ethereum</tspan>, like any payment</text>
+              <text x="382" y="308" font-size="16" fill="var(--muted)">Bob&#8217;s 32.37 ETH &#8594; an address Alice owns on chain 2</text>
             </g>
 
             <g class="st st3">
@@ -928,8 +941,8 @@
                     stroke="var(--mark-ad)" stroke-width="1.8"/>
               <path d="M483 187 h20 v15 h-20 z M486 187 v-7 a7 7 0 0 1 14 0 v7" fill="none"
                     stroke="var(--ink-ad)" stroke-width="2.4" stroke-linejoin="round"/>
-              <text x="518" y="186" font-size="20" font-weight="750" fill="var(--ink-ad)">one shared secret</text>
-              <text x="518" y="206" font-size="18" fill="var(--ink-ad)">is the only link between them</text>
+              <text x="518" y="186" font-size="20" font-weight="750" fill="var(--ink-ad)">a secret revealed by one leg</text>
+              <text x="518" y="206" font-size="18" fill="var(--ink-ad)">links the two legs</text>
             </g>
 
             <g class="st st4">
@@ -956,7 +969,7 @@
          standardised, exotic is not" -- and it keeps "multi-signatures are being
          built", which is the softening Meeting 10 ordered, not decoration. -->
     <!-- ============================ 4 ============================ -->
-    <section class="slide" data-part="why" data-title="Why post-quantum, and why exotic" data-time="0:37" data-notes="SPOKEN: A blockchain does not run on one signature -- it runs on a stack. At the bottom, the elliptic-curve signatures used today. Step one is already happening: migration to the standardised post-quantum basic signature. But look where that arrow stops. A basic signature only authenticates a message. Everything a chain actually does -- consensus, swaps, payment channels -- lives in the exotic layer above, where coverage is uneven. Multi-signatures are being built; the adaptor case is this project. So: can we build one, what does it cost, and will a chain take it? || BACKUP: why pay for an exotic scheme when a hash-time-locked contract does a swap? Because the hash lock shows -- a script on both chains, the same hash on both chains, and larger transactions. An adaptor signature moves the lock inside the signature: both settlements become ordinary payments, with no shared hash or adaptor-specific marker linking the legs. The report says the same in section 1.1, and is equally careful that what is removed is the explicit protocol link -- timing and amounts can still correlate the two.">
+    <section class="slide" data-part="why" data-title="Why post-quantum, and why exotic" data-time="0:43" data-notes="SPOKEN: Because a blockchain does not run on one signature -- it runs on a stack. Step one is under way: migration to the standardised post-quantum basic signature. But a basic signature only authenticates a message, and what a chain does with signatures -- swaps, payment channels -- lives in the layer above, where coverage is uneven. Multi-signatures are being built; the adaptor case is this project. So: can we build one, what does it cost, will a chain take it? || BACKUP: why pay for an exotic scheme when a hash-time-locked contract does a swap? Because the hash lock shows -- a script on both chains, the same hash on both chains, and larger transactions. An adaptor signature moves the lock inside the signature: both settlements become ordinary payments, with no shared hash or adaptor-specific marker linking the legs. The report says the same in section 1.1, and is equally careful that what is removed is the explicit protocol link -- timing and amounts can still correlate the two.">
       <h1 class="headline">Post-quantum is <strong class="hb">standardised</strong> for basic signatures — <strong class="hi">uneven</strong> for the exotic ones</h1>
       <div class="stk">
         <div class="tierb gap">
@@ -966,9 +979,9 @@
         <div class="stkstop">↑ &nbsp;post-quantum: standardised below, uneven above</div>
         <div class="tierb std">
           <div class="tt">Basic post-quantum signature</div>
-          <div class="ts">NIST FIPS 204 · standardised, and being adopted now</div>
+          <div class="ts">NIST FIPS 204 · standardised — ML-DSA authentication live outside blockchains since 2026</div>
         </div>
-        <div class="stkarrow"><span class="up">↑</span><span><b>Step 1 · migration under way</b> — what organisations are already paying for</span></div>
+        <div class="stkarrow"><span class="up">↑</span><span><b>Step 1 · migration under way</b> — governments and major networks, on dated schedules</span></div>
         <div class="tierb old">
           <div class="tt">Elliptic-curve signatures</div>
           <div class="ts">what chains run today — broken by Shor</div>
@@ -978,7 +991,7 @@
     </section>
 
     <!-- ============================ 5 ============================ -->
-    <section class="slide" data-part="method" data-title="What an adaptor signature does" data-time="0:32" data-notes="SPOKEN: The mechanism, in four steps. PreSign produces a pre-signature that verifies against a statement Y, but is not a valid signature -- you cannot spend with it. Anyone who knows the secret witness can Adapt it into an ordinary signature. That signature goes on chain, looking like a normal payment. And the trick: the counterparty subtracts the pre-signature it already holds, and out falls the witness. Publishing to claim one leg unlocks the other. Both settle, or neither does. || BACKUP: the recovered witness is checked against Y before it is used, so Extract takes the statement as well as the two signatures. No trusted third party, and no shared hash lock tying the chains together.">
+    <section class="slide" data-part="method" data-title="What an adaptor signature does" data-time="0:38" data-notes="SPOKEN: Four functions, no mathematics needed. PreSign produces a signature that is deliberately incomplete: it checks out against a public statement Y, but the network will not accept it. Whoever knows the matching secret can Adapt it into an ordinary signature, and that one goes on chain looking like any payment. The trick: subtract the incomplete signature from the complete one, and the secret falls out. Claiming one leg unlocks the other. || BACKUP: the recovered witness is checked against Y before it is used, so Extract takes the statement as well as the two signatures. No trusted third party, and no shared hash lock tying the chains together.">
       <h1 class="headline">Publishing a signature <strong class="hi">leaks a secret</strong> — that is what makes a swap atomic</h1>
       <div class="scene">
         <!-- The four functions drawn as one flow, built in four timed stages.
@@ -1002,21 +1015,21 @@
                     stroke-width="1.6" stroke-dasharray="7 4"/>
               <text x="21" y="86" font-size="17" font-weight="700" letter-spacing="1.4" fill="var(--mark-ad)">1 &#183; PRESIGN</text>
               <text x="21" y="116" font-size="18" font-weight="750">a signature with a lock on it</text>
-              <text x="21" y="140" font-size="18" fill="var(--muted)">&#963;&#770; = (c, z&#770;) &#183; accepted by PreVerify against Y</text>
+              <text x="21" y="140" font-size="18" fill="var(--muted)">&#963;&#770; = (c, z&#770;) &#183; accepted by PreVerify</text>
               <rect x="21" y="158" width="278" height="36" rx="9" fill="var(--warn-soft)" stroke="var(--warn)"/>
-              <text x="35" y="181" font-size="17" font-weight="700" fill="var(--warn)">not spendable &#8212; Verify rejects it</text>
+              <text x="35" y="181" font-size="16" font-weight="700" fill="var(--warn)">not spendable &#8212; Verify rejects it</text>
             </g>
 
             <g class="st st2">
-              <text x="365" y="122" font-size="17" font-weight="700" text-anchor="middle" fill="var(--ink-ad)">+ witness y</text>
+              <text x="365" y="122" font-size="16" font-weight="700" text-anchor="middle" fill="var(--ink-ad)">+ witness</text>
               <path d="M323 140 H 396" stroke="var(--muted)" stroke-width="2.5" fill="none"/>
               <polygon points="410,140 392,132 392,148" fill="var(--muted)"/>
               <rect x="411" y="56" width="318" height="152" rx="13" fill="var(--card)" stroke="var(--mark-b)" stroke-width="1.6"/>
               <text x="431" y="86" font-size="17" font-weight="700" letter-spacing="1.4" fill="var(--mark-b)">2 &#183; ADAPT</text>
               <text x="431" y="116" font-size="18" font-weight="750">the secret opens the lock</text>
-              <text x="431" y="140" font-size="18" fill="var(--muted)">z = z&#770; + y &#183; only the secret&#8217;s holder can do it</text>
+              <text x="431" y="140" font-size="18" fill="var(--muted)">z = z&#770; + y &#183; only y&#8217;s holder can do it</text>
               <rect x="431" y="158" width="278" height="36" rx="9" fill="var(--reused-soft)" stroke="var(--reused)"/>
-              <text x="445" y="181" font-size="17" font-weight="700" fill="var(--reused)">now an ordinary signature</text>
+              <text x="445" y="181" font-size="16" font-weight="700" fill="var(--reused)">now an ordinary signature</text>
             </g>
 
             <g class="st st3">
@@ -1026,8 +1039,8 @@
               <rect x="821" y="56" width="318" height="152" rx="13" fill="var(--wash)" stroke="var(--line)" stroke-width="1.6"/>
               <text x="841" y="86" font-size="17" font-weight="700" letter-spacing="1.4" fill="var(--muted)">3 &#183; ON CHAIN</text>
               <text x="841" y="116" font-size="18" font-weight="750">it spends like any payment</text>
-              <text x="841" y="142" font-size="18" fill="var(--muted)">&#963; goes on chain &#183; no swap script, no hash lock,</text>
-              <text x="841" y="164" font-size="18" fill="var(--muted)">no shared marker linking the two legs</text>
+              <text x="841" y="142" font-size="18" fill="var(--muted)">no swap script, no hash lock,</text>
+              <text x="841" y="164" font-size="18" fill="var(--muted)">no shared hash or adaptor marker</text>
             </g>
 
             <g class="st st4">
@@ -1054,7 +1067,7 @@
     </section>
 
     <!-- ============================ 6 ============================ -->
-    <section class="slide" data-part="method" data-title="The method" data-time="0:34" data-notes="SPOKEN: So how do you turn a basic signature into an adaptor signature? At the bottom, the Dilithium reference primitives, reused with zero upstream functions modified -- shown by a two-branch diff, not asserted. Above that the base signature, and above that the four functions LAS adds. On the right, the one change that matters: the base signature hashes the commitment w, PreSign hashes w plus the statement Y. Everything else follows. Then I built it again in Rust, and the two agree byte for byte. || BACKUP: the pinned digest is b4a10ffb-03be. It binds the packed OUTPUTS over four fixed vectors, not internals; PreVerify and Extract are asserted per vector, never hashed. H returns the challenge polynomial; the digest c-tilde is how this implementation reaches it, and it is what travels on the wire.">
+    <section class="slide" data-part="method" data-title="The method" data-time="0:38" data-notes="SPOKEN: So how do you turn a basic signature into an adaptor one? Not by inventing lattice arithmetic: Dilithium&#x27;s own primitives are reused, with zero upstream source functions modified -- shown by a diff, not asserted. The one change that matters: the base signature hashes the commitment w; PreSign hashes w plus the statement Y. I built it again in Rust as a check, and the two agree byte for byte. || BACKUP: the pinned digest is b4a10ffb-03be. It binds the packed OUTPUTS over four fixed vectors, not internals; PreVerify and Extract are asserted per vector, never hashed. H returns the challenge polynomial; the digest c-tilde is how this implementation reaches it, and it is what travels on the wire.">
       <h1 class="headline">One substitution in the challenge hash &mdash; <strong class="hi">the lattice core is reused</strong></h1>
       <div class="scene">
         <!-- Landscape so the architecture reads at presentation distance: three
@@ -1128,7 +1141,7 @@
     </section>
 
     <!-- ============================ 7 ============================ -->
-    <section class="slide" data-part="results" data-title="DEMO A — walking the swap" data-time="0:41" data-sub="3" data-notes="SPOKEN: Rather than describe the protocol, let me walk it. One scope note: this swaps a UTXO coin with a UTXO coin, across two UTXO ledgers -- the setting the LAS paper assumes. Watch four things. The abort gate: Bob commits nothing until the proof and Alice's pre-signature both verify. The tripwire: Bob tries to spend the pre-signature he holds, and ordinary verification refuses it. Then Alice, who knows the witness, completes Bob's pre-signature and publishes. And the leak: Bob needs nothing further from Alice -- he reads that signature off chain two, the witness falls out, and he claims the other coin. || BACKUP: Bitcoin-with-Ethereum is doable; the only thing that changes is where verification happens. On chain the settlement is an ordinary payment, with no swap script and no hash lock. Extract returns y-prime and Bob adapts Alice's pre-signature with THAT value -- the two steps must not be collapsed.">
+    <section class="slide" data-part="results" data-title="DEMO A — walking the swap" data-time="0:35" data-sub="3" data-notes="SPOKEN: Let me walk it. Scope note: a UTXO coin for a UTXO coin, across two UTXO ledgers -- the setting the LAS paper assumes. Four moments: Bob commits nothing until the proof and Alice&#x27;s pre-signature check out; ordinary verification refuses the pre-signature he holds; Alice completes it and publishes; and Bob reads that signature from chain two, extracts the witness, and claims the other coin. || BACKUP: Bitcoin-with-Ethereum is doable; the only thing that changes is where verification happens. On chain the settlement is an ordinary payment, with no swap script and no hash lock. Extract returns y-prime and Bob adapts Alice&#x27;s pre-signature with THAT value -- the two steps must not be collapsed.">
       <div class="eyebrow">Two UTXO ledgers</div>
       <h1 class="headline">Step it, <strong class="hi">break it</strong>, and watch the secret fall out</h1>
       <div class="walk">
@@ -1141,8 +1154,7 @@
             <span class="wobj on">Bob’s pre-signature σ̂₂ · {{cfgThreeMsgPreSigB}} B</span>
             <span class="wobj" data-w="2">adapted signature σ₂</span>
           </div>
-          <div class="wsay" data-w="2">Knows y, so it completes Bob's pre-signature and publishes. <b>It takes Bob's coin.</b>
-            <span class="eq">σ₂ ← Adapt((Y, y), pk₂, σ̂₂, m₂)</span></div>
+          <div class="wsay" data-w="2">Knows y, so it completes Bob's pre-signature and publishes. <b>It takes Bob's coin.</b></div>
         </div>
         <div class="wmid">
           <div class="wchain" data-settle="2">
@@ -1165,11 +1177,8 @@
             <span class="wobj on">its own pre-signature σ̂₂</span>
             <span class="wobj sec" data-w="3">the witness y′, extracted</span>
           </div>
-          <div class="wsay" data-only="1">Tries to spend the pre-signature it is holding — <b>ordinary Verify refuses it</b>.
-            <span class="eq">Verify(σ̂₁, m₁, pk₁) → ⊥</span></div>
-          <div class="wsay" data-w="3">Needs <b>nothing further from Alice</b>: it reads σ₂ off chain 2, combines it with the σ̂₂ it made itself, then adapts σ̂₁ with what came out and publishes.
-            <span class="eq">y′ ← Ext(Y, σ₂, σ̂₂) = z₂ − ẑ₂</span>
-            <span class="eq">σ₁ ← Adapt((Y, y′), pk₁, σ̂₁, m₁) → chain 1</span></div>
+          <div class="wsay" data-only="1">Tries to spend the pre-signature it is holding — <b>ordinary Verify refuses it</b>.</div>
+          <div class="wsay" data-w="3"><b>Nothing further from Alice</b>: reads σ₂ from chain 2, extracts y′, adapts σ̂₁.</div>
         </div>
       </div>
       <div class="wrail">
@@ -1197,7 +1206,7 @@
          pairing, and at +{{packedOvPreSign}}% against x{{clOvPreSignX}} it does.
          Never let this slide imply LAS is FASTER than ECDSA in absolute time --
          it is not, and that cost belongs to step 1. -->
-    <section class="slide" data-part="results" data-title="Cost in time" data-time="0:41" data-notes="SPOKEN: Now the cost -- and first, what it is measured against, because there are two steps, not one. Step one is classical to post-quantum. That step is expensive, and it is paid in bytes -- but it is the step organisations are already taking, and it buys quantum resistance and nothing else. Step two is what this project measured: post-quantum basic to post-quantum adaptor, against its own base, every operation paired and interleaved. PreSign {{ovPreSign}} percent, PreVerify {{ovPreVerify}}, Adapt {{ovAdapt}}. Done classically, an ECDSA adaptor pre-signature costs {{clOvPreSignX}} times its own Sign, because it carries a discrete-log-equality proof. Ours costs single digits. || BACKUP: step one's factor of {{clRatioSig}} is THIS build's simplified base -- the FIPS 204 path measures a smaller signature, which slide twelve shows -- so never state it flatly as the price of post-quantum. In absolute time a lattice operation still costs hundreds of microseconds against tens; LAS is not faster than ECDSA. The rejection rate is COUNTED, never inferred from a timing ratio -- inferring it produced a wrong figure early on -- at {{rejAttBase}} attempts per Sign against {{rejAttLas}} per PreSign. And at application level the proof, not the signature, is {{cfgThreeProofPct}} percent of a swap.">
+    <section class="slide" data-part="results" data-title="Cost in time" data-time="0:42" data-notes="SPOKEN: Now the cost -- and everything hangs on what it is measured against: two steps, not one. Step one, classical to post-quantum, is the expensive one, and the step organisations are already taking. Step two is what I measured, interleaved to limit drift: the adaptor overhead stays in single digits. The classical adaptor&#x27;s PreSign is {{clOvPreSignX}} times its own Sign, so LAS adds less overhead relative to its own base. In absolute time the classical one is still ahead. || BACKUP: step one&#x27;s factor of {{clRatioSig}} is THIS build&#x27;s simplified base -- the FIPS 204 path measures a smaller signature, which slide twelve shows -- so never state it flatly as the price of post-quantum. In absolute time a lattice operation still costs hundreds of microseconds against tens; LAS is not faster than ECDSA. The rejection rate is COUNTED, never inferred from a timing ratio -- inferring it produced a wrong figure early on -- at {{rejAttBase}} attempts per Sign against {{rejAttLas}} per PreSign. And at application level the proof, not the signature, is {{cfgThreeProofPct}} percent of a swap.">
       <h1 class="headline">Post-quantum is the expensive step. The <strong class="hi">adaptor layer</strong> on top is not.</h1>
       <div class="cols c2 stretch">
         <div style="display:flex;flex-direction:column;gap:9px;min-height:0">
@@ -1236,11 +1245,11 @@
                 <div class="track"><div class="fill b" style="--w:{{wClAdLayer}}%"></div></div>
                 <div class="val">&#215;{{clOvPreSignX}} its own Sign</div></div>
               <div class="bar" title="LAS PreSign over Sign at the byte tier: +{{packedOvPreSign}} percent">
-                <div class="lab">LAS &#183; byte tier</div>
+                <div class="lab">LAS &#183; with encoding<br><span style="font-weight:400;opacity:.75">byte tier</span></div>
                 <div class="track"><div class="fill ad" style="--w:{{wLasAdPacked}}%"></div></div>
                 <div class="val">+{{packedOvPreSign}}%</div></div>
               <div class="bar" title="LAS PreSign over Sign at the core tier: +{{ovPreSign}} percent">
-                <div class="lab">LAS &#183; core</div>
+                <div class="lab">LAS &#183; crypto only<br><span style="font-weight:400;opacity:.75">core tier</span></div>
                 <div class="track"><div class="fill ad" style="--w:{{wLasAdCore}}%"></div></div>
                 <div class="val">+{{ovPreSign}}%</div></div>
             </div>
@@ -1256,7 +1265,7 @@
     </section>
 
     <!-- ============================ 9 ============================ -->
-    <section class="slide" data-part="results" data-title="Cost in bytes" data-time="0:34" data-notes="SPOKEN: The second result, and it is the sharp one: the price of post-quantum here is not computation, it is communication. Against a classical ECDSA adaptor, the LAS signature is about {{clRatioSig}} times larger and the public key about {{clRatioPk}} times -- while every operation still runs well under a millisecond. And the signature is almost entirely one object: the response z is {{zPctTarget}} percent of it. An adaptor swap adds one more public object, the statement Y. So optimising LAS means optimising z and Y. || BACKUP: on the wire that is {{sigBytesTwo}} bytes against 64, and {{pkBytesTwo}} against 33, on one shared scale at Simplified Dilithium-II. The baseline is a functionality-matched ECDSA ADAPTOR, not plain ECDSA, and the level match is engineering, not a proof.">
+    <section class="slide" data-part="results" data-title="Cost in bytes" data-time="0:32" data-notes="SPOKEN: The price here is not computation, it is communication. Against a classical ECDSA adaptor the LAS signature is about {{clRatioSig}} times larger. It is almost all one object -- the response z is {{zPctTarget}} percent of it -- and a swap adds one more, the statement Y. So you do not optimise the algorithm; you optimise those two objects. || BACKUP: on the wire that is {{sigBytesTwo}} bytes against 64, and {{pkBytesTwo}} against 33, on one shared scale at Simplified Dilithium-II. The baseline is a functionality-matched ECDSA ADAPTOR, not plain ECDSA, and the level match is engineering, not a proof.">
       <h1 class="headline">The cost is not adaptor computation — it is <strong class="hi">bytes on the wire</strong></h1>
       <div class="hero">
         <div class="hnum">×{{clRatioSig}}<small>bigger signature,<br>going post-quantum</small></div>
@@ -1294,7 +1303,7 @@
          Ethereum figure is a real client's receipt (measured).  The tags say
          which, because the two are different kinds of claim. -->
     <!-- ============================ 10 ============================ -->
-    <section class="slide" data-part="results" data-title="What actually goes on chain" data-time="0:43" data-notes="SPOKEN: So what does this look like on a chain? Left, Bitcoin: an ordinary transaction -- version, input, output, locktime -- then the witness carrying the signature and key. No extra field, no swap script, no hash lock; only one slot changes size. Right, Ethereum, and the difference is structural, not maturity. Its signature field is still secp256k1, and consensus checks it; the lattice signature rides in the input data as an argument to a contract. That is why verification there is something you deploy. Bitcoin has no such machine, so the signature sits in the slot consensus itself checks -- which is why it needs a new rule. || BACKUP: Bitcoin's sizes are DERIVED -- measured objects projected onto the BIP141/144/341 wire format, self-checked against two published figures -- while Ethereum's {{gasOptCapPct}} percent of the per-transaction cap is MEASURED, one client's receipt under EIP-7623. Both at Simplified Dilithium-III, one signature instance. On throughput, the honest statement is a SIZE bound: the four-million weight-unit block ceiling admits at most {{btcThreePerBlock}} settlements against {{btcOnePerBlock}} classical. That is ledger capacity, NOT transactions per second. The escrow commits to the verification context at funding, so the claimer cannot substitute its own key.">
+    <section class="slide" data-part="results" data-title="What actually goes on chain" data-time="0:33" data-notes="SPOKEN: On Bitcoin, an ordinary transaction, the signature travelling in the witness: no swap script, no hash lock, no shared hash and no adaptor-specific marker. One slot simply gets bigger. Ethereum is different in kind: the lattice signature rides in the input data, as an argument to a contract. That is why Ethereum needs a contract deployment, while Bitcoin needs a new consensus rule. || BACKUP: Bitcoin&#x27;s sizes are DERIVED -- measured objects projected onto the BIP141/144/341 wire format, self-checked against two published figures -- while Ethereum&#x27;s {{gasOptCapPct}} percent of the per-transaction cap is MEASURED, one client&#x27;s receipt under EIP-7623. Both at Simplified Dilithium-III, one signature instance. On throughput, the honest statement is a SIZE bound: the four-million weight-unit block ceiling admits at most {{btcThreePerBlock}} settlements against {{btcOnePerBlock}} classical. That is ledger capacity, NOT transactions per second. The escrow commits to the verification context at funding, so the claimer cannot substitute its own key.">
       <h1 class="headline">Same fields. <strong class="hi">One bigger slot</strong>. No new field.</h1>
       <div class="cols c2 stretch" style="flex:1;min-height:0">
         <div style="display:flex;flex-direction:column;min-height:0">
@@ -1330,8 +1339,8 @@
     </section>
 
     <!-- ============================ 11 ============================ -->
-    <section class="slide" data-part="results" data-title="DEMO B — a real Bitcoin client" data-time="0:41" data-sub="1" data-notes="SPOKEN: The second demonstration, and this is the part the report can only describe. A settlement fits the size limit comfortably -- but fitting is not being relayed, and neither is being verified. Carriage: a stock Core {{btcNodeTag}} node refuses it under default relay policy, yet it is consensus-valid and gets mined. Verification: I defined a reserved OP_SUCCESS opcode as a lattice verification opcode, and a spend carrying no elliptic-curve signature was accepted, mined, and then settled a whole two-leg swap across two chains. The control: a stock node of the same release accepts every variant, so it cannot be reacting to the signature. || BACKUP: {{btcLasControls}} negative controls -- a changed amount, a changed recipient, a foreign signature -- refused by the patched node, accepted by the stock one. The honest caveat: a patched node is NOT Bitcoin, and I have not analysed the security of the rule I added. The swap pipeline is pre-sign both legs, adapt and mine B, read the signature back off chain, Extract, adapt A, mine A.">
-      <h1 class="headline">It <strong class="hb">fits</strong> the size limits. It fails the <strong class="hi">verification rules</strong> — so I changed one.</h1>
+    <section class="slide" data-part="results" data-title="DEMO B — a real Bitcoin client" data-time="0:38" data-sub="1" data-notes="SPOKEN: A settlement fits Bitcoin&#x27;s size limit, but a normal node refuses to relay it -- yet put in a block, the same stock software accepts it. So size is not the only question. I added lattice verification experimentally, and a spend carrying no elliptic-curve signature settled a two-leg swap across two chains. The negative cases I tried are rejected only by the patched node -- that difference is the evidence. || BACKUP: {{btcLasControls}} negative controls -- a changed amount, a changed recipient, a foreign signature -- refused by the patched node, accepted by the stock one. The honest caveat: a patched node is NOT Bitcoin, and I have not analysed the security of the rule I added. The swap pipeline is pre-sign both legs, adapt and mine B, read the signature back from chain B, Extract, adapt A, mine A.">
+      <h1 class="headline"><strong class="hb">Size</strong> is not enough. Stock Bitcoin does not <strong class="hi">verify LAS</strong> — so I added an experimental rule.</h1>
       <div class="cols stretch c52" style="flex:1;min-height:0">
         <div class="tight" style="display:flex;flex-direction:column;gap:8px;min-height:0">
           <div class="card tint-base">
@@ -1346,11 +1355,11 @@
             <h3>2 · Verification, patched node</h3>
             <div class="opbadge"><span class="op">{{btcLasOpcode}}</span><span class="tr">OP_SUCCESS &#8594; <b>lattice verification</b></span></div>
             <div class="mcap" style="text-align:left">the two-leg swap &#8212; settled by consensus</div>
-            <div class="pipe">
+            <div class="pipe" data-w="1">
               <span class="pstep">PreSign both legs</span><span class="parrow">▸</span>
               <span class="pstep">Adapt B</span><span class="parrow">▸</span>
               <span class="pstep chain">mine B</span><span class="parrow">▸</span>
-              <span class="pstep chain">read σ&#8322; off chain</span><span class="parrow">▸</span>
+              <span class="pstep chain">read σ&#8322; from chain B</span><span class="parrow">▸</span>
               <span class="pstep">Extract y</span><span class="parrow">▸</span>
               <span class="pstep">Adapt A</span><span class="parrow">▸</span>
               <span class="pstep chain">mine A</span>
@@ -1385,7 +1394,7 @@
 
 
     <!-- ============================ 12 ============================ -->
-    <section class="slide" data-part="results" data-title="Settled by measurement" data-time="0:36" data-notes="SPOKEN: The third question: will a real chain take it? Three things were settled by measurement rather than argument. Does full verification fit in one transaction? At Dilithium-3 a real client mined a whole claim at {{gasOptCapPct}} percent of the per-transaction cap. Does the adaptor need a simplified base? No -- on the full FIPS 204 path PreSign and PreVerify are genuinely new algorithms, but Verify is not: the stock verifier accepts every adapted signature. And two optimisations that could have been left as future work were run and closed instead. || BACKUP: one parameter set down, verification alone is charged {{gasDTwoCapPct}} percent; at the largest set one transaction is exceeded, and that is arithmetic, never a measured total. The stock verifier accepted {{mldsaRepairedP}} of {{mldsaIters}}. The statement Y is unchanged by that route, so it is the dominant remaining size target. Truncating the statement is invisible to the adaptor and fatal at Extract at every depth TESTED; the succinct proof loses to the deployed prover at this relation size, because succinctness is asymptotic. The ML-DSA build is functional only -- its security is not analysed.">
+    <section class="slide" data-part="results" data-title="Settled by measurement" data-time="0:42" data-notes="SPOKEN: Will a real chain take it? Three answers from measurement. Does verification fit in one transaction? At Dilithium-3 a real client mined a whole claim at {{gasOptCapPct}} percent of the cap -- one measured instance, close to the edge. Does the adaptor need a simplified base? I assumed so; the experiment overturned that. PreSign and PreVerify still change, but the unmodified FIPS 204 verifier accepts the adapted signature. And two optimisations I hoped would help: neither paid off. || BACKUP: one parameter set down, verification alone is charged {{gasDTwoCapPct}} percent; at the largest set one transaction is exceeded, and that is arithmetic, never a measured total. The stock verifier accepted {{mldsaRepairedP}} of {{mldsaIters}}. The statement Y is unchanged by that route, so it is the dominant remaining size target. Truncating the statement is invisible to the adaptor and fatal at Extract at every depth TESTED; the succinct proof loses to the deployed prover at this relation size, because succinctness is asymptotic. The ML-DSA build is functional only -- its security is not analysed.">
       <!-- The headline counts what the slide actually shows: TWO beliefs that
            measurement overturned, and TWO suggestions closed by running them --
            a different kind of claim, which is why they are counted separately.
@@ -1456,9 +1465,9 @@
          wording contradicted the report.  What the verdict may exempt is the ADAPTOR
          LAYER -- the thing this project added -- not deployment cost in general. -->
     <!-- ============================ 13 ============================ -->
-    <section class="slide" data-part="implications" data-title="Verdict — and what it means in practice" data-time="0:48" data-notes="SPOKEN: Back to the three questions. Can we build one? Yes -- twice, in two languages, agreeing byte for byte. What does it cost? At most {{ovMaxAll}} percent in adaptor computation, but {{clRatioSig}} times the bytes -- and inside a whole swap it is the proof, not the signature, that dominates. Will a real chain take it? Ethereum: deploy a contract. Bitcoin: change a rule. So is LAS good? For the adaptor layer, yes. As something to deploy, not yet -- and what stands in the way is not the adaptor layer, but an unanalysed parameter set, an unanalysed consensus rule, cost, and no live network. Those three cards are what that means for the people who build these systems. Thank you. || BACKUP: the Bitcoin rule costs {{btcLasVerifyUs}} microseconds per input, about {{btcLasRatioSchnorr}} times a Schnorr check -- and that ratio OVERSTATES it, because the levels are not matched. One set down, verification alone is {{gasDTwoCapPct}} percent of the cap. The proof is {{cfgThreeProofPct}} percent of a swap, so optimise the proof and the statement, not the adaptor functions. Every figure carries its warrant -- measured, derived, or cited; anything else is an open question and is said to be one.">
+    <section class="slide" data-part="implications" data-title="Verdict — and what it means in practice" data-time="0:49" data-notes="SPOKEN: Back to the three questions. Build one? Yes -- twice, in two languages, byte for byte. Cost? Single digits in computation, {{clRatioSig}} times the bytes. Will a chain take it? On Ethereum through a contract; on Bitcoin only with a new rule. Is LAS good? For the adaptor layer, yes; to deploy, not yet -- and what stops deployment is not the adaptor layer. For Bitcoin: analyse that rule before anyone ships it. For Ethereum: drive verification cost down. For designers: budget the proof and the statement, not the adaptor. Thank you. || BACKUP: the Bitcoin rule costs {{btcLasVerifyUs}} microseconds per input, about {{btcLasRatioSchnorr}} times a Schnorr check -- and that ratio OVERSTATES it, because the levels are not matched. One set down, verification alone is {{gasDTwoCapPct}} percent of the cap. The proof is {{cfgThreeProofPct}} percent of a swap, so optimise the proof and the statement, not the adaptor functions. Every figure carries its warrant -- measured, derived, or cited; anything else is an open question and is said to be one.">
       <h1 class="headline">Good enough to <strong class="hb">build on</strong> — what stops <strong class="hi">deployment</strong> is not the adaptor layer</h1>
-      <p class="vlead">Built <b>twice</b>, byte-identical · <b>+{{ovMaxAll}}%</b> time · <b>×{{clRatioSig}}</b> bytes · both venues settle end to end</p>
+      <p class="vlead">Built <b>twice</b>, byte-identical · <b>+{{ovMaxAll}}%</b> time · <b>×{{clRatioSig}}</b> bytes · end-to-end settlement on Bitcoin regtest and a local EVM</p>
       <div class="v3">
         <div class="col bt">
           <div class="who"><b>Bitcoin</b>if you build it</div>
@@ -1494,16 +1503,21 @@
 </div>
 
 <div id="grid"></div>
-<div id="notes"><div class="hd"><span id="nnum"></span><b id="ntime"></b><span>press N to hide — turn this OFF before recording</span></div><div id="ntext"></div></div>
+<div id="notes"><div class="hd"><span id="nnum"></span><b id="ntime"></b><span id="nback-hint">B backup</span><span>N hides — turn this OFF before recording</span></div><div id="ntext"></div><div id="nback"></div></div>
 <!-- default OFF: this overlay is drawn over the page, so it would appear in a
      recording.  Press H to bring it up while rehearsing. -->
-<div id="help" class="off">→ ← navigate · N notes · T timer · S safe area · G grid · F fullscreen · H this</div>
+<div id="help" class="off">→ ← navigate · N notes · B backup · T timer · S safe area · G grid · F fullscreen · H this</div>
 
 <script>
 (function(){
   var stage=document.getElementById('stage'),frame=document.getElementById('frame');
   var slides=[].slice.call(document.querySelectorAll('.slide'));
   var i=0,sub=0,started=false,t0=0,tick=null,budget=0;
+  /* data-notes is "SPOKEN: ... || BACKUP: ..." -- only the SPOKEN half is
+     delivered (and data-time is derived from it), so the panel shows that half
+     alone; BACKUP is detail held for questions and appears only on demand. */
+  var showBackup=false,spokenText='',backupText='';
+  var NOTE_SPLIT=/\|\|\s*BACKUP\s*[:,]?\s*/;
 
   slides.forEach(function(s){ budget+=toSec(s.dataset.time||'0:00'); });
 
@@ -1554,7 +1568,19 @@
     document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
     document.getElementById('nnum').textContent='SLIDE '+(i+1)+' — '+(s.dataset.title||'');
     document.getElementById('ntime').textContent='planned '+(s.dataset.time||'');
-    document.getElementById('ntext').textContent=s.dataset.notes||'';
+    var parts=(s.dataset.notes||'').split(NOTE_SPLIT);
+    spokenText=parts[0].replace(/^SPOKEN\s*:?\s*/,'').trim();
+    backupText=(parts[1]||'').trim();
+    renderNotes();
+  }
+
+  function renderNotes(){
+    document.getElementById('ntext').textContent=spokenText;
+    var b=document.getElementById('nback');
+    b.textContent=backupText;
+    b.classList.toggle('on', showBackup && !!backupText);
+    document.getElementById('nback-hint').textContent =
+      backupText ? (showBackup?'B hides backup':'B backup') : 'no backup';
   }
 
   function startClock(){
@@ -1577,6 +1603,7 @@
     else if(k==='Home'){ show(0); }
     else if(k==='End'){ show(slides.length-1); }
     else if(k==='n'||k==='N'){ document.getElementById('notes').classList.toggle('on'); }
+    else if(k==='b'||k==='B'){ showBackup=!showBackup; renderNotes(); }
     else if(k==='s'||k==='S'){ document.getElementById('safe').classList.toggle('on'); }
     else if(k==='t'||k==='T'){ startClock(); }
     else if(k==='g'||k==='G'){ document.getElementById('grid').classList.toggle('on'); }

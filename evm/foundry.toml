@@ -16,4 +16,8 @@ fs_permissions = [
   # script/TwoLeg.s.sol: the two-leg swap's scratch output, one subdirectory per
   # chain. Scratch, regenerated per run and git-ignored, like ./onetx.
   { access = "read-write", path = "./twoleg" },
+  # scripts/run_btc_eth_swap.sh drives the SAME script/TwoLeg.s.sol for its Ethereum leg,
+  # but writes here so a cross-venue run and a two-EVM-chain run can never overwrite each
+  # other's scratch or leave one reading the other's leftovers. Same scratch discipline.
+  { access = "read-write", path = "./xchain" },
 ]

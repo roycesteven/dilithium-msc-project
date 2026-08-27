@@ -32,9 +32,15 @@ python3 scripts/gen_slides.py --check   # non-zero if the committed deck is stal
 Re-run it after any `scripts/sync_report.sh`, or the slides will quote an older evidence
 run than the report does.
 
-**Deck keys:** `→ ←` navigate · `N` speaker notes · `T` start the timer · `S` show the
-talking-head safe area · `G` slide grid · `F` fullscreen · `H` the key map · `video_deck.html#7`
-opens on slide 7 for rehearsing one beat.
+**Deck keys:** `→ ←` navigate · `N` speaker notes · `B` the BACKUP half of the notes · `T` start
+the timer · `S` show the talking-head safe area · `G` slide grid · `F` fullscreen · `H` the key
+map · `video_deck.html#7` opens on slide 7 for rehearsing one beat.
+
+⚠ **The notes panel is a teleprompter, not a dump.** `data-notes` holds `SPOKEN: … || BACKUP: …`
+and only the SPOKEN half is delivered, so `N` shows that half alone, at reading size; `B` reveals
+BACKUP underneath when a question needs it. Before this split reached the viewer the panel printed
+both halves at 15 px, which read as an over-long script and invited cutting narration that was
+never going to be spoken — do not re-merge them.
 
 ⚠ **The key-map overlay now defaults to OFF** — it is drawn over the page, so it used to sit in
 shot for the whole take. Press `H` while rehearsing, and it stays hidden when you record.
@@ -93,9 +99,34 @@ the two clients disagreeing, the two transaction structures side by side — or 
 consequence *for a named audience*, which a dissertation chapter does not do. Where the deck
 carries a fact the report does not, it is cited on the slide itself: slide 2's quantum
 estimates and NIST date, and slide 3's spot prices, are **cited** claims, not measured ones.
-⚠ Slide 2's three estimates and the NIST transition date are **not in the report**. That is a
-deliberate deck-only motivation, and it is the one place the two artefacts differ in
-substance; if it should be in both, the report's §1.1 needs a sentence and four references.
+⚠ **Corrected 2026-08-26:** slide 2's three estimates and the NIST transition date were once
+deck-only. They are **now in the report** — `refs.bib` gains `gidney2021factoring`,
+`gidney2025factoring`, `babbush2026securing`, `nistir8547`, and they appear in §1.1 with
+`fig:whynow` — so the deck no longer asserts anything the report lacks. Do not reinstate the
+older "deck-only motivation" wording.
+
+### Narration — how the SPOKEN half is written (rewritten 2026-08-26)
+
+The scripts were rewritten after reading five past MSc video transcripts (`past_report/`).
+**Three of the five (2, 4, 5) worked**: they opened from the audience's own world, *showed* the
+problem rather than asserting it, carried one plain analogy for the hard step, said what each
+number **meant** immediately after saying it, and closed on the questions the opening posed. The
+**other two (1, 3)** read as a report aloud — an agenda slide, chained jargon, and figures
+recited without interpretation. Five rules follow, and the first four are also what buys the time:
+
+1. **The slide carries the figures; the narration carries the meaning.** Text already on screen
+   is the cheapest thing to cut, and the largest trims in the 2026-08-26 pass came from exactly
+   there (slide 2's "chain cannot wait" cards, slide 8's three percentages, slide 13's three
+   implication cards).
+2. **Open each part with a question the audience would ask**, and answer it in the next breath.
+3. **One analogy per hard idea** — slide 5's "a signature that is deliberately incomplete" is the
+   deck's only one.
+4. **What must be SPOKEN regardless of the slide:** the base-naming two-step (slide 8) and the
+   UTXO-with-UTXO scope note (slide 7). Nothing on screen carries either, and both are rulings.
+5. ⚠ **Methodology is not jargon** — Wang's M10 ruling is *"it's not only just the results, but
+   how you get the results"*, so how a thing was measured stays in the script; it is said in plain
+   words instead ("run back to back in the same session to reduce drift", not "paired and
+   interleaved"). Cutting jargon must never cut the method.
 
 ## 2. The two demonstrations — how each is driven
 
@@ -175,8 +206,21 @@ sed 's|<html lang="en">|<html lang="en" data-theme="light">|' report/slides/vide
 ```
 
 `--virtual-time-budget` must exceed the scene animations (the four stages finish at ~2.4 s) or the
-shot catches them mid-build. `#N` opens slide N **on its first beat**, so a beat-2 state cannot be
-captured this way — press for those by hand.
+shot catches them mid-build. `#N` opens slide N **on its first beat**. **Later beats are reachable
+after all**: append a script that dispatches `KeyboardEvent('keydown',{key:'ArrowRight'})` n times
+on `document`, then kills `transition`/`animation` on every element ~1 s later, or the shot catches
+a fade half-done (that is not a defect — re-shoot before reporting one).
+
+**Measuring overflow instead of eyeballing it** (`report/slides/audit_overflow.js`, added
+2026-08-26). Append it to a staged copy and run Chrome with `--dump-dom`; it walks **every slide and
+every beat** and prints, into a `<pre id="zzAUDITOUT">`, anything painting outside the slide's
+content box, any child escaping the card that frames it, and any SVG `<text>` wider than the `<rect>`
+behind it. Two lessons from building it: measure against `slide.clientWidth`, not a padding guess,
+or every container reports a uniform false ~8 px overrun; and its SVG text↔rect pairing is a
+heuristic, so discard hits where the text sits wholly outside the rect it was matched to. It found
+what four rounds of eyeballing had missed — a 67 px clipped line on slide 5 and hidden beat blocks
+pushing slide 7's cards over the rail. ⚠ Screenshots still decide: the audit says *where*, the
+render says whether it reads.
 
 ---
 

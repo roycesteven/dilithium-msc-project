@@ -49,7 +49,34 @@ contract TwoLegFund {
         string memory tFile = vm.envString("T_FILE"); // t1.bin | t2.bin
         string memory outDir = vm.envString("OUT_DIR"); // e.g. twoleg/chain1
         uint256 coin = vm.envUint("COIN_WEI");
-        uint256 timeout = vm.envUint("TIMEOUT_SECS");
+
+        // OPTIONAL CROSS-VENUE TIMEOUT COORDINATION — an ADDITION, not a Fig. 1 repair.
+        //
+        // eprint 2020/845 Sec 4.1 first recalls the classical atomic-swap setup of [23],
+        // in which both transactions carry timeouts and t2 < t1. The LAS choreography it
+        // then gives, and Fig. 1 itself, do NOT restate those timeout steps, so nothing
+        // here may be described as required for Fig. 1 compliance.
+        //
+        // `TIMEOUT_ABS` lets a cross-venue experiment express both legs' configured
+        // deadlines as absolute UNIX-second values, so their NUMERIC ordering can be
+        // checked rather than estimated. That is a shared numeric time domain and NOT a
+        // shared consensus clock: this contract enforces `block.timestamp`, whereas a
+        // Bitcoin timestamp `nLockTime` is enforced against that chain's Median Time
+        // Past, so the two enforcement instants remain different quantities.
+        //
+        // `TIMEOUT_SECS` is retained for existing callers and derives the deadline
+        // relative to this chain's current `block.timestamp`.
+        uint256 deadline = vm.envOr("TIMEOUT_ABS", uint256(0));
+        uint256 relative = vm.envOr("TIMEOUT_SECS", uint256(0));
+        require(deadline == 0 || relative == 0, "set TIMEOUT_ABS or TIMEOUT_SECS, not both");
+        if (deadline == 0) {
+            require(relative > 0, "no deadline: set TIMEOUT_ABS or TIMEOUT_SECS");
+            deadline = block.timestamp + relative;
+        }
+        // A deadline already past would make the escrow refundable the instant it is
+        // funded, so the claim could be raced by the payer from block one.
+        require(deadline > block.timestamp, "deadline is not in the future");
+        require(deadline <= type(uint64).max, "deadline overflows uint64");
 
         string memory tPath = string.concat(vecDir, "/", tFile);
         bytes memory aHatP = LASRegister.packNtt(_readPolys(string.concat(vecDir, "/pp_normal.bin"), 30));
@@ -63,7 +90,7 @@ contract TwoLegFund {
         vm.startBroadcast(pk);
         AdaptorSwapBound swapc = new AdaptorSwapBound();
         uint256 id = swapc.fundLASBound{value: coin}(
-            beneficiary, uint64(block.timestamp + timeout), LASRegister.contextBound(aHatP, tHatP, tPacked)
+            beneficiary, uint64(deadline), LASRegister.contextBound(aHatP, tHatP, tPacked)
         );
         vm.stopBroadcast();
 
@@ -81,6 +108,13 @@ contract TwoLegFund {
         // checks that they do. Writing it here alone would prove nothing — it is the
         // chain's answer that the parties must sign.
         vm.writeFile(string.concat(outDir, "/legmsg.expected"), vm.toString(swapc.legMessage(id)));
+        // The deadline READ BACK OUT OF THE ESCROW, not the local value that was passed in:
+        // a caller comparing two legs' deadlines then compares what each contract will
+        // actually enforce. The equality is also asserted, so a silent narrowing in the
+        // uint64 cast fails here rather than surfacing as an unexplained refund verdict.
+        (,,, uint64 storedDeadline,,) = swapc.swaps(id);
+        require(uint256(storedDeadline) == deadline, "stored deadline differs from the one funded");
+        vm.writeFile(string.concat(outDir, "/deadline.unix"), vm.toString(uint256(storedDeadline)));
     }
 }
 
@@ -131,6 +165,7 @@ interface Vm {
     function readFileBinary(string calldata path) external view returns (bytes memory);
     function writeFile(string calldata path, string calldata data) external;
     function envUint(string calldata name) external view returns (uint256);
+    function envOr(string calldata name, uint256 defaultValue) external view returns (uint256);
     function envAddress(string calldata name) external view returns (address);
     function envString(string calldata name) external view returns (string memory);
     function envBytes32(string calldata name) external view returns (bytes32);

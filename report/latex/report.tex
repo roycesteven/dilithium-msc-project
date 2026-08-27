@@ -29,6 +29,11 @@
 \usepackage{array}           % ragged-right fixed-width columns (see \newcolumntype L below)
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned wrapping column
 \usepackage{longtable}       % page-breaking tables (tab:challenges is taller than a page)
+% [H] for app:tests' three reference tables. Measured, not assumed: that section is
+% three half-page tables with only linking prose, so every float defers, the prose is
+% all consumed on the preceding page and the barrier then flushes three text-free
+% pages. They are cited by number and need no adjacency, so they should not float.
+\usepackage{float}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tikz}
@@ -94,17 +99,28 @@
 \setcounter{bottomnumber}{2}
 \setcounter{totalnumber}{5}
 
+% Loaded WITHOUT the [section] option on purpose: that option would put a barrier
+% before every section in the whole document and re-flow chapters 1-5, whose float
+% placement is tuned by the fractions above. Bare, it does nothing until an explicit
+% \FloatBarrier, which only the appendix uses -- there the tables must not drift out
+% of their own section and land among the code listings, which do not float.
+\usepackage{placeins}
+
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,
         columns=fullflexible,showstringspaces=false}
 
 \begin{document}
 
 % ---------- front matter ----------
-% Official project title (confirmed by supervisor). The specific instantiation
-% (a lattice adaptor signature on Dilithium, demonstrated in an atomic swap) is
-% stated in the abstract and introduction.
-\title{Implementing Post-Quantum Secure\\
-       Exotic Signature Schemes in Blockchains}
+% Official project title.  REOPENED AND CHANGED at Meeting 12 (2026-08-27): the
+% supervisor confirmed the freedom to update it, ruled "just remove the exotic
+% signature schemes [and] refer to the adaptor signature", and both parties said this
+% wording aloud and agreed it.  "Lattice-based" was deliberately NOT used in the title
+% -- he judged it too specific for a general reader -- so the instantiation (a lattice
+% adaptor signature on Dilithium, demonstrated in an atomic swap) is stated in the
+% abstract and introduction instead.
+\title{Implementing a Post-Quantum Secure\\
+       Adaptor Signature Scheme in Blockchains}
 \author{Royce Steven}
 \stuid{14202489}
 \submitdate{2026}

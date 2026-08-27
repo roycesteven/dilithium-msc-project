@@ -120,7 +120,12 @@ def load_core_helpers(core_src):
          ["CTransaction", "CTxIn", "CTxOut", "COutPoint", "CTxInWitness"])
     take("test_framework.script",
          ["CScript", "CScriptOp", "taproot_construct", "TaprootSignatureHash",
-          "LEAF_VERSION_TAPSCRIPT", "OP_DROP", "OP_CHECKSIG", "OP_1"])
+          "LEAF_VERSION_TAPSCRIPT", "OP_DROP", "OP_CHECKSIG", "OP_1",
+          # Needed only by btc_las_spend.py's refund leaf. Listed here because
+          # `load_core_helpers` is the one place that states what the pinned Core tree must
+          # expose, and a symbol missing from it must fail with that named diagnosis rather
+          # than as a KeyError deep inside script construction.
+          "OP_CHECKLOCKTIMEVERIFY"])
     take("test_framework.key", ["ECKey", "compute_xonly_pubkey", "sign_schnorr"])
     take("test_framework.address", ["output_key_to_p2tr"])
 
