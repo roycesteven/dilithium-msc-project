@@ -862,6 +862,30 @@ int main(void) {
   printf("   avg = mean attempts/sig; accept%% = 1/avg; both schemes reject under\n");
   printf("   Fiat-Shamir-with-aborts at the bound gamma-kappa (Base Sign) /\n");
   printf("   gamma-kappa-1 (LAS PreSign).\n");
+
+  /* Per-k counts of the SAME sample the table above summarises.  Print-only: it
+     reads the already-collected att_base/att_pre arrays and measures nothing new,
+     so no timing, gate or KAT is affected.  It exists because avg/min/max/p50/p95
+     cannot reconstruct a distribution -- without these counts the report's
+     acceptance figure can only draw the closed-form model, never the measured
+     curve.  Machine-readable on purpose: scripts/plot_las_benchmarks.py parses
+     these lines into rejection_histogram.csv. */
+  {
+    unsigned long kmax = att_base[NSIG-1] > att_pre[NSIG-1]
+                       ? att_base[NSIG-1] : att_pre[NSIG-1];
+    unsigned long k;
+    printf("   attempts histogram (k, calls accepted on exactly the k-th attempt,\n");
+    printf("   out of %d calls each):\n", NSIG);
+    for(k = 1; k <= kmax; ++k) {
+      unsigned long cb = 0, cp = 0;
+      int s;                       /* not `j`: the enclosing scope already has one */
+      for(s = 0; s < NSIG; ++s) {
+        if(att_base[s] == k) ++cb;
+        if(att_pre[s]  == k) ++cp;
+      }
+      printf("   histogram k=%lu base=%lu presign=%lu\n", k, cb, cp);
+    }
+  }
   printf("   Run-validity gates below cover the %d x %d TIMED sign-class calls of EACH\n",
          RUNS, NITER_SIGN);
   printf("   tier of the primary table -- the packed sign-class calls wrap the same\n");

@@ -11,35 +11,39 @@ signature, by reusing the CRYSTALS-Dilithium reference primitives, and demonstra
 end-to-end in a post-quantum atomic swap.
 
 The artefact is built \emph{additively}: the entire lattice core is reused unchanged,
-with no upstream function modified, while the adaptor layer (PreSign, PreVerify, Adapt,
-Extract), a bit-packed wire encoding with a typed codec, and the application are
-added as new code. It passes functional, serialization, tamper and known-answer tests,
-and an independent second implementation in Rust reproduces the wire format and the
-pinned digest byte-for-byte under a different compiler and statistical harness.
+while the adaptor layer (PreSign, PreVerify, Adapt, Extract), a wire encoding, and the
+application are added as new code. It passes functional, serialization, tamper and
+known-answer tests, and an independent Rust implementation reproduces the wire format and
+pinned digest byte-for-byte under a different compiler and harness.
 
 The primary comparison is LAS against its own simplified Dilithium-style base at
 identical parameters and primitives, which isolates the adaptor layer's cost; a classical
 elliptic-curve (ECDSA) adaptor provides a functionality-matched ``price of post-quantum''
-baseline. At the core measurement boundary the adaptor layer is almost free in
-computation: PreSign, PreVerify and Adapt each add at most $+\ovMaxAll\%$ over the basic
-operation they mirror, and Extract is the cheapest of all. The real cost is
+baseline. At the target core measurement boundary the adaptor layer adds small
+compute overheads: PreSign, PreVerify and Adapt add $+\ovPreSign\%$,
+$+\ovPreVerify\%$ and $+\ovAdapt\%$ over the basic operations they mirror, and stay below
+$+\ovMaxAll\%$ across the parameter sweep. The real cost is
 \emph{communication} --- the signature is \zPctTarget\% lattice response vector, and an
-adaptor swap additionally transmits a public-key-sized statement --- and that cost
-reappears as computation once the byte boundary is included, raising the premium to
-$+\packedOvPreSign$--$\packedOvAdapt\%$.
+adaptor swap additionally transmits a public-key-sized statement, which each adaptor
+operation must also decode, raising the computation premium to
+$+\packedOvPreSign$--$\packedOvAdapt\%$ once encoding is counted.
 
 Building the same construction on unmodified NIST ML-DSA tests the simplification the
-implementation rests on, and corrects it: the signing side must indeed be redesigned, but
-the standard verifier need not be, and it accepts the adapted signature unchanged. That
-route halves the signature at equal computation while leaving the statement untouched, so
-it relocates the communication bottleneck rather than removing it.
+implementation rests on, and corrects it: PreSign and PreVerify require adaptor-specific
+algorithms, but the standard verifier need not change, and it accepts the adapted
+signature unchanged. That route halves the signature at close to equal computation while
+leaving the statement untouched, so it relocates the communication bottleneck rather than
+removing it.
 
 Taking the protocol to a UTXO ledger, the setting the original construction assumes,
 sharpens the conclusion: measured across three configurations, the signature is at the
-application level not the dominant cost at all. The zero-knowledge proof of knowledge
+application level not the dominant cost. The zero-knowledge proof of knowledge
 consumes \cfgThreeProofPct--\cfgTwoProofPct\% of each post-quantum swap, and substituting
 a lattice prover for a pairing-based one
-makes the swap \emph{faster} while making it larger. A working, tested, end-to-end
+makes the swap \emph{faster} while making it larger. Native on-chain verification also
+fits in one Ethereum transaction for the single setting and signature instance measured,
+and a Bitcoin client extended with one consensus rule settles a two-leg swap carrying no
+elliptic-curve signature. A working, tested, end-to-end
 post-quantum exotic signature is therefore achievable by reuse of standardised
 primitives, and the proof system, not the signature, is where a post-quantum swap should
 next be optimised.

@@ -12,9 +12,12 @@
 # one. The Bitcoin claim leaf is a SINGLE-KEY check under the FUNDER's own public key —
 # that being the key the pre-signature was made under — so the funder can spend the coin
 # without waiting for the timeout, and the refund branch is therefore not an EXCLUSIVE
-# recovery path. Worse, the mempool is a witness-leak window: the funder can Ext the witness
-# from the claiming transaction while it is still unconfirmed, replace it with a spend of
-# its own, keep this coin AND go on to claim the other leg. eprint 2020/845 Sec 4.1 reasons
+# recovery path. Worse, the mempool exposes the ADAPTED SIGNATURE before confirmation: the
+# funder, which holds the matching pre-signature, can run Ext on that unconfirmed signature
+# and attempt a conflicting spend. If its conflicting spend confirms instead, it keeps this
+# coin while using the extracted witness to claim the other leg. (Whether the conflicting
+# spend wins depends on relay/replacement policy and miners, so the race is the claim, not a
+# guaranteed theft — but a race is already enough to deny fairness.) eprint 2020/845 Sec 4.1 reasons
 # from a signature "published on a blockchain" and abstracts that race away; a concrete
 # Bitcoin implementation does not get to. Closing it needs a claim condition the funder
 # cannot satisfy alone — a second LAS check under the claimant's key, which the consensus
@@ -40,14 +43,36 @@
 #     Ext recovers is what settles leg A on ETHEREUM.
 #   * TIMEOUT REFUND ON BITCOIN, WITH THE TWO REJECTION CAUSES SEPARATED. See section 17.
 #
-# ⚠️ ONLY BITCOIN'S DEADLINE IS EXERCISED. This run exercises Bitcoin's deadline. Ethereum is
-# funded with its own timeout, but its refund path is NOT exercised — `AdaptorSwapBound.refund`
-# is implemented and is never called here. And the two deadlines are not commensurable: leg A's
-# is a UNIX timestamp (`block.timestamp + timeout`), leg B's is a BITCOIN BLOCK HEIGHT. A block
-# count and a wall-clock instant are different units, so this run does NOT establish the paper's
-# numeric ordering t2 < t1 across the two chains, and nothing here may be quoted as if it did.
-# Pairing the two is a deployment decision, not something either contract or the consensus rule
-# checks.
+# THE RECOVERY LAYER — AN ADDITION, NOT A FIG. 1 REPAIR. Read this before quoting the paper.
+# eprint 2020/845 Sec 4.1 opens by RECALLING the classical atomic-swap protocol of its [23], in
+# which both transactions carry timeouts and u2's transaction carries the shorter one
+# (t2 < t1), to give u2 enough time to react. ⚠️ That is not the same as publishing order: in
+# that recap u1 publishes her transaction first, so the leg published FIRST is the one with the
+# LONGER t1. It is the leg SETTLED first that carries t2. Sec 4.1 then turns to LAS, and the
+# choreography it gives — Fig. 1 — restates no timeout at all. So the settlement path here
+# follows the Fig. 1 LAS choreography, as it already did, and everything below about deadlines
+# is an EXTRA recovery experiment inspired by the classical timeout setup that Sec 4.1 recalls.
+# Nothing here may be reported as making Fig. 1 compliant.
+#
+# WHAT THE RECOVERY EXPERIMENT COVERS, AND ON WHAT:
+#   * Both venues' refund mechanisms are exercised on DEDICATED RECOVERY-TEST OBJECTS, one of
+#     each venue's own kind — a control UTXO on Bitcoin (coin B3, section 17) and a second
+#     escrow on Ethereum (section 18b). NEITHER settled leg has its refund path taken; both
+#     are claimed, which is what the honest path means.
+#   * The two CONFIGURED deadlines are expressed in ONE NUMERIC DOMAIN (absolute UNIX seconds)
+#     and their ordering t2 < t1 is checked by this script, leg B — settled first, and whose
+#     settlement publishes the adapted signature the witness is extracted from — carrying the
+#     shorter one.
+#
+# ⚠️ A SHARED NUMERIC DOMAIN IS NOT A SHARED CLOCK, and the difference is not cosmetic. Leg A's
+# deadline is enforced against `block.timestamp` by the contract. Leg B's is a timestamp-mode
+# `nLockTime`: BIP65's OP_CHECKLOCKTIMEVERIFY compares its operand with `nLockTime`, requires
+# the same locktime TYPE and a non-final input, while whether the transaction may be included
+# is decided by consensus finality against the block's MEDIAN TIME PAST (BIP113). Two ledgers,
+# two enforcement quantities. What this run supports is the CONFIGURED numeric inequality and
+# the fact that each side enforces its own deadline. It does not show the two instants
+# coincide, the difference t1 - t2 is a configured gap and not a guaranteed reaction window,
+# and neither venue checks the other's deadline — pairing them stays a deployment decision.
 #
 # WHAT DOES NOT CARRY OVER FROM run_btc_two_leg.sh. That runner proves its two ledgers are
 # independent by OFFERING leg B's settled transaction to chain 1 and having it refused for a
@@ -108,8 +133,9 @@ SEED_PREIMAGE="LAS-CONSENSUS-PARAMS-v1"
 PI="${PI:-1}"
 
 # THE TWO DEADLINES, AS OFFSETS FROM ONE HORIZON COMPUTED AT RUN TIME (section 4b).
-# Leg B is settled FIRST — settling it is what publishes the witness — so it carries the
-# SHORTER deadline, leaving the reacting party a window to extract and claim leg A. Both are
+# Leg B is settled FIRST — settling it publishes the ADAPTED SIGNATURE, from which a party
+# holding the matching pre-signature extracts the witness — so it carries the SHORTER
+# deadline, preserving the configured reaction margin before leg A's later deadline. Both are
 # absolute UNIX seconds so the configured ordering is a numeric fact this script can check
 # rather than estimate; that is a shared numeric domain and NOT a shared consensus clock
 # (section 4b says exactly what each side enforces).
@@ -403,8 +429,9 @@ EXP_A="$(cat xchain/eth/legmsg.expected)"
 hex_to_bin "$MSG_A" "$VEC/legA_msg.bin"
 
 # --- 7. leg B's REFUNDABLE address on BITCOIN, and its three coins -------------------------
-# Leg B: u2 escrows 1 BTC for u1, pre-signed under u2's key (pk2). Claimed FIRST — settling
-# it is what publishes the witness.
+# Leg B: u2 escrows 1 BTC for u1, pre-signed under u2's key (pk2). Claimed FIRST — settling it
+# publishes the ADAPTED SIGNATURE, from which a holder of the matching pre-signature extracts
+# the witness. The witness itself never goes on chain.
 #
 # THE ADDRESS IS THE TWO-LEAF ONE. `--refund-pk`/`--refund-locktime` select
 # `taproot_for_refundable`, so this address is NOT the single-leaf address the same-venue
@@ -504,11 +531,14 @@ MSG_B="$(jqpy 'import sys;print(open(sys.argv[1],"rb").read().hex())' "$VEC/legB
   echo "ledger_separation=cross-offer control run_btc_two_leg.sh uses; that has no analogue."
   echo "legA_binds=chain id, contract, escrow id, payer, beneficiary, amount"
   echo "legB_binds=its transaction inputs and prevout amounts and its outputs; NO chain id"
-  echo "deadlines=INCOMMENSURABLE: legA a UNIX timestamp, legB a block height. No t2<t1"
-  echo "deadlines=ordering is established by this run, and none may be quoted from it."
-  echo "deadline_exercised=BITCOIN ONLY. Ethereum is funded with its own timeout, but its"
-  echo "deadline_exercised=refund path is NOT exercised — AdaptorSwapBound.refund is"
-  echo "deadline_exercised=implemented and is never called here."
+  echo "deadlines=ONE NUMERIC DOMAIN: legA t1=$T1 and legB t2=$T2, both absolute UNIX seconds,"
+  echo "deadlines=ordered t2 < t1 — CONFIGURED and checked by this run, NOT enforced by either"
+  echo "deadlines=venue. NOT one clock: legB is judged against median time past (BIP113),"
+  echo "deadlines=legA against block.timestamp, so t1-t2 is a configured gap and not a"
+  echo "deadlines=guaranteed reaction window."
+  echo "deadline_exercised=BOTH VENUES, each on a dedicated recovery-test object of its own"
+  echo "deadline_exercised=kind — a control UTXO on Bitcoin, a second escrow on Ethereum."
+  echo "deadline_exercised=NEITHER settled leg takes its refund path; both are claimed."
   echo "--- Ethereum ---"
   echo "anvil=$(anvil --version 2>/dev/null | head -1)"
   echo "cast=$(cast --version 2>/dev/null | head -1)"
@@ -526,7 +556,11 @@ MSG_B="$(jqpy 'import sys;print(open(sys.argv[1],"rb").read().hex())' "$VEC/legB
   echo "tapleaf=TWO leaves: claim <sha256(pk2)> OP_CHECKLASSIGVERIFY OP_1, and refund"
   echo "tapleaf=<$REFUND_T> OP_CHECKLOCKTIMEVERIFY OP_DROP <sha256(pk2)> OP_CHECKLASSIGVERIFY OP_1"
   echo "legB_address=$ADDR_B (the TWO-leaf address; NOT the single-leaf one the same-venue runners pin)"
-  echo "refund_deadline_height=$REFUND_T (funded at height $NOW_H)"
+  echo "refund_deadline_t2=$REFUND_T (a UNIX TIMESTAMP, not a height; median time past after"
+  echo "  funding was $NOW_MTP). Timestamp finality is evaluated against MTP under BIP113;"
+  echo "  the refund leaf itself is constrained by CLTV/BIP65."
+  echo "legA_deadline_t1=$T1 (a UNIX TIMESTAMP, enforced against block.timestamp)"
+  echo "deadline_ordering=t2 < t1, CONFIGURED and checked; one numeric domain, NOT one clock"
   echo "shim_selftest=PASSED"
   echo "--- LAS: ONE instance, TWO venue-specific verification mechanisms ---"
   echo "consensus_seed=$SEED (SHA-256 of \"$SEED_PREIMAGE\", VERIFIED)"
@@ -538,10 +572,13 @@ MSG_B="$(jqpy 'import sys;print(open(sys.argv[1],"rb").read().hex())' "$VEC/legB
   echo "--- ⚠ FAIRNESS IS NOT ESTABLISHED ---"
   echo "caveat=The claim leaf is single-key under the FUNDER's key, so the funder can spend"
   echo "caveat=without waiting: the refund branch is NOT an exclusive recovery path."
-  echo "caveat=The mempool is a witness-leak window — the funder can Ext from the unconfirmed"
-  echo "caveat=claiming transaction, replace it, keep this coin AND claim the other leg."
-  echo "caveat=Supported wording: a cross-venue LAS settlement, plus an explicit timeout"
-  echo "caveat=refund branch shown to be enforced. NEVER 'a fair/full atomic swap'."
+  echo "caveat=The mempool exposes the ADAPTED SIGNATURE before confirmation — the funder,"
+  echo "caveat=holding the matching pre-signature, can Ext from it and attempt a conflicting"
+  echo "caveat=spend; if that confirms instead it keeps this coin and claims the other leg."
+  echo "caveat=A timeout closes neither hole."
+  echo "caveat=Supported wording: a cross-venue LAS settlement, plus both venues' timeout"
+  echo "caveat=refund mechanisms exercised on dedicated recovery-test objects and the deadline"
+  echo "caveat=ordering t2 < t1 configured and checked. NEVER 'a fair/full atomic swap'."
   for f in pp_normal.bin t1.bin t2.bin Y.bin pk1.bin pk2.bin; do
     [ -f "$VEC/$f" ] && echo "vector_${f%.bin}=sha256:$(sha256sum "$VEC/$f" | cut -c1-16)... $(stat -c%s "$VEC/$f") B"
   done
@@ -735,8 +772,9 @@ fi
 cat "$OUT/extract_adapt.log"
 
 # --- 17. THE REFUND BATTERY, on coin B3 -----------------------------------------------------------
-# eprint 2020/845 Sec 4.1 requires timeouts on both transactions. This exercises the BITCOIN
-# one, on a coin the swap never touches. The Ethereum one is configured but not exercised.
+# The BITCOIN half of the recovery layer, on a coin the swap never touches; Ethereum's half is
+# section 18b. Sec 4.1 states the two-timeout setup while RECALLING the classical protocol of
+# its [23] — Fig. 1 restates none — so this is an addition around Fig. 1, not a repair to it.
 #
 # "REFUSED BEFORE THE DEADLINE" HAS TWO DIFFERENT CAUSES AND ONLY ONE IS ABOUT CLTV. Both are
 # run, separately, because a test that conflated them would report the wrong reason:
@@ -1030,7 +1068,7 @@ ESCROW_R_BAL="$(cast balance "$SWAP_A" --rpc-url "$RPC_ETH")"
 [ "$(( BAL_C_BEFORE_E3 - ESCROW_R_BAL ))" = "$COIN_WEI" ] \
   || fail_out "the matured refund did not move the escrowed coin out of the contract: balance went $BAL_C_BEFORE_E3 -> $ESCROW_R_BAL, expected a fall of exactly $COIN_WEI"
 [ "$ESCROW_R_BAL" = "0" ] \
-  || fail_out "the contract still holds $ESCROW_R_BAL wei after both legs closed — something remains escrowed that this run did not account for"
+  || fail_out "the contract still holds $ESCROW_R_BAL wei after leg A was claimed and the refund-test escrow was refunded — something remains escrowed that this run did not account for"
 {
   echo "eth refund escrow id     : $ID_R (payer u1, beneficiary u2, deadline t1=$T1)"
   echo "chain timestamp at E1    : $ETH_NOW_E1  (strictly before t1)"
@@ -1116,7 +1154,7 @@ s2l, s2c, s1l = blob(sig2_local), blob(sig2_chain), blob(sig1_local)
 wh, we = blob(wit_honest), blob(wit_ext)
 sent_a, recv_a = hexbytes(open(cdA).read()), hexbytes(ta["input"])
 
-print("=== leg B — BITCOIN (settled first; publishing it reveals the witness) ===")
+print("=== leg B — BITCOIN (settled first; publishes the adapted signature Ext runs on) ===")
 print("settlement tx       : %s" % tb.get("txid"))
 print("block               : %s (confirmations %s)" % (tb.get("blockhash"), tb.get("confirmations")))
 print()
@@ -1155,8 +1193,18 @@ print("legA escrow balance after: %s wei (must be 0)" % escrowA)
 print("cross-venue replay ctrl  : cast exit %s, contract reason matched: %s"
       % (replay_rc, "YES" if replay_reason_ok == "1" else "NO"))
 print()
+print("=== the two deadlines (the recovery layer Sec 4.1 recalls from [23]) ===")
+print("t2  leg B, BITCOIN, settled first  : %d — enforced as a timestamp nLockTime against" % t2)
+print("                                     MEDIAN TIME PAST")
+print("t1  leg A, ETHEREUM, settled second: %d — enforced against block.timestamp" % t1)
+print("ordering t2 < t1                   : %s (%ds configured deadline gap)"
+      % ("YES" if t2 < t1 else "NO", t1 - t2))
+print("⚠ one numeric domain (UNIX seconds), NOT one consensus clock: median time past and")
+print("  block.timestamp are different quantities on separate ledgers, so the gap above is a")
+print("  CONFIGURED difference and not a guaranteed real reaction window.")
+print()
 print("=== the BITCOIN timeout refund branch (coin B3, never part of the swap) ===")
-print("deadline (block height)  : %s, matured at height %s" % (refund_t, mature_h))
+print("deadline t2                   : %s, median time past at maturity %s" % (refund_t, mature_mtp))
 print("before deadline, NOT final    : refused by BOTH nodes (finality, not the leaf)")
 print("before deadline, final        : refused by the PATCHED node only, for locktime")
 print("                                (stock accepts: 0xbb is an OP_SUCCESSx, so BIP342")
@@ -1165,8 +1213,17 @@ print("after deadline                : accepted and MINED")
 print("refund escrowed coin spent    : %s" % ("YES" if rf is None else "NO — still unspent"))
 print("refund payout                 : %s sat to %s (expected %d to %s)"
       % (sat(rp), addr_of(rp), valB3 - fee, rdest))
-print("⚠ Ethereum's own timeout was CONFIGURED but NOT exercised: AdaptorSwapBound.refund")
-print("  is implemented and is never called by this run.")
+print()
+print("=== the ETHEREUM timeout refund branch (a second escrow, never part of the swap) ===")
+print("deadline t1                   : %s, chain timestamp at maturity %s" % (t1, eth_mature))
+print("before t1, by the payer       : reverted 'before timeout'; a broadcast forced past gas")
+print("                                estimation was MINED with status %s and moved nothing" % status_e1)
+print("after t1, not the payer       : reverted 'not payer'")
+print("after t1, the SETTLED leg A   : reverted 'not open' — local state exclusivity only,")
+print("                                NOT evidence of cross-chain atomicity")
+print("after t1, by the payer        : receipt status %s, escrow state %s (REFUNDED=3)"
+      % (status_r, state_r))
+print("contract balance afterwards   : %s wei" % escrow_r)
 
 fail = []
 if not tb.get("blockhash"):
@@ -1229,6 +1286,22 @@ else:
     if addr_of(rp) != rdest:
         fail.append("the refund paid %s, not the funder's address %s" % (addr_of(rp), rdest))
 
+# The Ethereum half of the recovery layer, and the configured ordering. Each of these is also
+# gated in the shell as it happens; re-checked here so verdict.txt stands on its own.
+if t2 >= t1:
+    fail.append("the deadlines are not ordered t2 < t1 (t2=%d, t1=%d): the leg settled first "
+                "does not carry the shorter deadline" % (t2, t1))
+if status_e1 != "0":
+    fail.append("the premature Ethereum refund was mined with receipt status %s, not 0 — the "
+                "deadline did not refuse it" % status_e1)
+if status_r != "1":
+    fail.append("the matured Ethereum refund was mined with receipt status %s, not 1" % status_r)
+if state_r != "3":
+    fail.append("the Ethereum refund escrow ended in state %s, not REFUNDED (3)" % state_r)
+if num(escrow_r) != 0:
+    fail.append("the Ethereum contract still holds %s wei after leg A and the refund-test "
+                "escrow closed" % escrow_r)
+
 if fail:
     print()
     print("RESULT: FAIL — %d post-condition(s) not met:" % len(fail))
@@ -1252,18 +1325,34 @@ print("        signature — and only it — was the adapted-signature input to 
 print("        paid ETH on a real Ethereum client, verified by a DEPLOYED CONTRACT inside one")
 print("        EIP-7825-capped transaction, under a signature adapted with the recovered")
 print("        witness. ONE LAS instance, two venue-specific verification mechanisms.")
-print("        Separately, the BITCOIN leg's TIMEOUT REFUND branch was exercised: refused")
-print("        before its deadline and, once matured, mined so the coin returned.")
+print("        Separately, BOTH VENUES' TIMEOUT REFUND mechanisms were exercised on DEDICATED")
+print("        RECOVERY-TEST OBJECTS, one of each venue's own kind — Bitcoin's CLTV leaf at")
+print("        t2, on a control UTXO funded to the same address as leg B and spent through the")
+print("        same refundable tree, built from the same refund key and locktime; and the")
+print("        contract's `refund` at t1, on a second escrow carrying leg A's own deadline and")
+print("        registered context. Each was")
+print("        refused before its configured deadline and, once matured, returned the test")
+print("        coin. The configured deadlines are ordered t2 < t1, the venue settled first")
+print("        carrying the shorter one. NEITHER SETTLED LEG had its own refund path taken —")
+print("        both were claimed, which is what the honest path means.")
 print()
-print("⚠ THIS IS NOT A FAIR ATOMIC SWAP AND MUST NOT BE CALLED ONE. The claim leaf is")
-print("  single-key under the FUNDER's key, so the funder can spend without waiting and the")
-print("  refund is NOT an exclusive recovery path; and the mempool leaks the witness before")
-print("  confirmation, so the funder could Ext, replace the claiming transaction, keep this")
-print("  coin AND claim the other leg. eprint 2020/845 Sec 4.1 reasons from a signature")
-print("  'published on a blockchain' and abstracts that race away; this does not.")
-print("⚠ Only BITCOIN's deadline was exercised. Ethereum is funded with its own timeout, but")
-print("  its refund path is not exercised. The two are in DIFFERENT UNITS — a UNIX timestamp")
-print("  on Ethereum, a block height on Bitcoin — so NO t2 < t1 ordering is established.")
+print("⚠ THIS IS NOT A FAIR ATOMIC SWAP AND MUST NOT BE CALLED ONE, and the deadlines above do")
+print("  NOT change that. The claim leaf is single-key under the FUNDER's key, so the funder")
+print("  can spend without waiting and the refund is NOT an exclusive recovery path; and the")
+print("  mempool exposes the ADAPTED SIGNATURE before confirmation, so the funder — holding the")
+print("  matching pre-signature — can Ext from it and attempt a conflicting spend; if that")
+print("  confirms instead it keeps this coin and claims the other leg. Whether it wins depends")
+print("  on relay/replacement policy and miners, so the race is the claim and not a guaranteed")
+print("  theft, but a race is already enough to deny fairness. A timeout closes neither hole.")
+print("  eprint 2020/845 Sec 4.1 reasons from a signature 'published on a blockchain' and")
+print("  abstracts that race away; this does not.")
+print("⚠ THE ORDERING IS CONFIGURED, NOT ENFORCED. Each side enforces only its own deadline:")
+print("  nothing in the contract or the consensus rule checks the other leg's, and the two are")
+print("  enforced against different quantities (median time past vs block.timestamp). Pairing")
+print("  them remains a deployment decision.")
+print("⚠ Sec 4.1 states the two-timeout setup while RECALLING the classical protocol of its")
+print("  [23]; the LAS choreography it then gives — Fig. 1 — restates no timeout. This")
+print("  recovery layer is therefore an ADDITION around Fig. 1, never a repair to it.")
 PY
 VERDICT_RC=${PIPESTATUS[0]}
 set -o pipefail
@@ -1297,6 +1386,11 @@ set -o pipefail
   echo
   cat "$OUT/leg_messages.txt"
   echo
+  cat "$OUT/deadlines.txt"
+  echo
+  echo "--- THE ETHEREUM REFUND BATTERY (a second escrow; leg A itself was CLAIMED) ---"
+  cat "$OUT/eth_refund.txt"
+  echo
   cat "$OUT/legB_size_model.txt"
   echo
   echo "LEDGER SEPARATION. The two venues are different clients with different consensus"
@@ -1317,10 +1411,13 @@ set -o pipefail
   echo "succeeding on the mined sigma_2 is additional, weaker evidence: any (c, z_hat + y')"
   echo "with A*y' = Y would also pass it."
   echo
-  echo "SCOPE: the settlement path plus the BITCOIN refund branch; Ethereum's refund path is"
-  echo "not exercised. A patched node is not Bitcoin; the consensus rule's security is"
-  echo "unanalysed; regtest and anvil are not mainnets; the two sides' security levels are"
-  echo "unmatched."
+  echo "SCOPE: the settlement path, plus BOTH venues' refund mechanisms exercised on dedicated"
+  echo "recovery-test objects — a control UTXO on Bitcoin and a second escrow on Ethereum —"
+  echo "rather than by taking the refund path of either settled leg. The deadline ordering"
+  echo "t2 < t1 is CONFIGURED and checked, not enforced by either venue. Full fairness is NOT"
+  echo "established — see the warnings in the verdict. A patched node is not Bitcoin; the"
+  echo "consensus rule's security is unanalysed; regtest and anvil are not mainnets; the two"
+  echo "sides' security levels are unmatched."
 } | tee -a "$OUT/verdict.txt"
 
 rm -rf "$REPO/evm/xchain"
@@ -1340,8 +1437,15 @@ echo "evidence written: evidence/btc_eth_swap/$RUN_ID/"
 echo "  verdict.txt              — pass/fail computed FROM both clients' records and the bytes"
 echo "  legB_mined.json          — Bitcoin's record of the leg it settled"
 echo "  legA_receipt.json / legA_tx.json — Ethereum's record of the leg it settled"
-echo "  refund_mined.json        — the matured refund, as mined"
-echo "  refund_*_consensus_*.err — each premature refund's refusal, verbatim, per node"
+echo "  refund_mined.json        — the matured BITCOIN refund, as mined"
+echo "  refund_*_consensus_*.err — per-node output for the premature-refund controls, verbatim"
+echo "                             (patched/stock differential: for refund_cltv the STOCK node"
+echo "                              ACCEPTS, so these are not all refusals)"
+echo "  deadlines.txt            — t2, t1, the horizon they came from, and what enforces each"
+echo "  eth_refund.txt           — the Ethereum refund battery, case by case"
+echo "  ethrefund_*.log          — each Ethereum refund control's reply, verbatim"
+echo "  ethrefund_e1_receipt.json / ethrefund_receipt.json — the premature and matured refunds"
+echo "  eth_timetravel.log       — how the Ethereum clock was advanced past t1"
 echo "  recovered_sigB.json      — the chain-byte recovery, with the commitment used"
 echo "  controls.txt             — patched vs stock, per case"
 echo "  replay_call.log / replay_send.log — the Ethereum cross-venue binding control"
@@ -1352,5 +1456,9 @@ echo
 echo "decisive rows in verdict.txt:"
 echo "  'identical to the Adapt output ... YES'          (Adapt provenance)"
 echo "  'extracted witness == Gen's witness ... YES'     (Ext recovered y from Bitcoin's bytes)"
-echo "  'refund escrowed coin spent ... YES'             (the timeout branch really pays out)"
+echo "  'refund escrowed coin spent ... YES'             (Bitcoin refund control UTXO was spent)"
+echo "  'refund payout ... expected'                     (and paid the funder the right amount)"
+echo "  'after t1, by the payer ... state 3'             (Ethereum refund escrow reached REFUNDED)"
+echo "  'contract balance ... fell by exactly'           (and the coin left the contract)"
+echo "  'ordering t2 < t1 ... YES'                       (the configured deadline ordering)"
 echo "  'cross-venue replay ctrl ... reason matched: YES'(the legs bind across venues)"

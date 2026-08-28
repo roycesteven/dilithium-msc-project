@@ -31,11 +31,15 @@ import {LASRegister} from "./LASRegister.sol";
 /// (`LASRegister.claimMessage`), so a signature authorises exactly one escrow, on one
 /// chain, paying one beneficiary one amount.
 ///
-/// TWO-TIMEOUT REFUND RULE (2020/845 §4.1), unchanged from `AdaptorSwap`: the leg claimed
-/// FIRST — the one whose settlement reveals the witness — must carry the SHORTER timeout,
-/// so the reacting party still has a window to extract and claim the second leg. Each leg
-/// is an independent escrow on its own chain, so `refund` can only enforce its own timeout;
-/// the asymmetry is the funders' responsibility.
+/// TWO-TIMEOUT REFUND RULE, unchanged from `AdaptorSwap`. eprint 2020/845 §4.1 states it while
+/// RECALLING the classical protocol of its [23] — the LAS choreography in Fig. 1 restates no
+/// timeout — so this is a convention the funders adopt, not something Fig. 1 requires. The leg
+/// claimed FIRST, whose settlement publishes the adapted signature a holder of the matching
+/// pre-signature extracts the witness from, carries the SHORTER timeout, preserving a
+/// configured margin in which to extract and claim the second leg. `refund` can enforce only
+/// THIS escrow's own timeout; it cannot inspect or enforce the counterparty venue's deadline,
+/// which may not even be a contract escrow, so the configured asymmetry is the parties'
+/// responsibility.
 contract AdaptorSwapBound {
     enum State { EMPTY, OPEN, CLAIMED, REFUNDED }
 

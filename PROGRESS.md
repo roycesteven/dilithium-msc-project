@@ -102,3 +102,56 @@ Open risks:
 Next action:
 - Run the deck aloud against a clock (N for notes, T to start) and adjust per-slide data-time
   from what it actually takes; then regenerate the word count.
+
+## Checkpoint — 2026-08-28 15:35
+
+Branch: main
+
+Current goal:
+- Bring report/slides/video_deck.html onto the latest Stage-1 benchmark, the one
+  03-results.tex now reads (evidence run 20260828_144608, git c41bbb5).
+
+Done:
+- Regenerated the deck with `python3 scripts/gen_slides.py` (never hand-edited the output).
+  `--check` was STALE before, clean after; swap_console.html was already in sync and its
+  re-render came out byte-identical.
+- 21 lines changed in video_deck.html, every one macro-driven: the step-2 ladder
+  (PreSign/PreVerify/Adapt/worst case), the ECDSA-vs-LAS adaptor-overhead bars and their
+  derived widths, the classical PreSign ratio, the counted rejection attempts, and the
+  verdict slide's lead line.
+- Checked the template for hand-typed copies of the old run's values: none, every figure
+  goes through a {{macro}}. Checked the prose those values sit in: still true - each adaptor
+  overhead stays single-digit, and the classical adaptor still costs more over its own base
+  than LAS does over its own.
+- No layout re-shoot: every changed value has the same character count as the one it
+  replaced, and the only geometry change is bar fills getting shorter (.fill has
+  min-width:3px, so the thinnest one stays visible).
+- Verified (against plot_las_paper_figures.py:487-559 and the committed PDF's legend) that
+  fig:rejcdf's solid curves are the measured empirical CDF for this run, dashed = the model.
+  A relayed claim that the curves are always the model was checked and is wrong; acting on it
+  would have put a false statement in CLAUDE.md and contradicted a correct report caption.
+- CLAUDE.md: fig:rejcdf block rewritten from a to-do into the discharged rule, with the
+  silent-fallback tell; added the durable rule that absolute C-vs-Rust timing agreement is not
+  a safe report claim (live status kept here, per the handoff protocol).
+
+Files touched:
+- report/slides/video_deck.html (regenerated), CLAUDE.md, PROGRESS.md
+
+Evidence used:
+- report/latex/generated/*.tex (run 20260828_144608), evidence/latest/tables/
+
+Open risks:
+- The Rust column of this run is ~2.5-3x SLOWER than C on every operation (KeyGen, Sign,
+  Verify, PreSign, PreVerify, Adapt, Extract) and the Criterion column moved the same way;
+  the 2026-08-04 run had them within a few percent. \rustCMaxDev is now 196 with
+  \rustCMaxDevOp = KeyGen, so 03-results.tex:221-224 reads "every operation agrees within
+  about 196% ... but close", which its own macro contradicts. Cause NOT established (build
+  profile, machine load, toolchain are all unverified guesses). The deck is unaffected: its
+  only Rust claims are byte-level, and the KAT digest is unchanged.
+- Settling it needs Royce: a re-run under a stated build profile is a measurement; the
+  alternative is a scoped rewrite of that paragraph onto the relative conclusions plus the KAT.
+- The report PDF in the tree was built from these macros, so the sentence is live in it.
+
+Next action:
+- Ask Royce which way to settle sec:res-rust (re-run vs rewrite), then re-run
+  `python3 scripts/gen_slides.py --check` if any Stage-1 macro changes again.

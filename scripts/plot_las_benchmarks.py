@@ -219,6 +219,17 @@ def parse_log(path):
         d["rej_base"] = rejrow("Base Sign", "Base Sign")
         d["rej_las"] = rejrow("LAS PreSign", "LAS PreSign")
 
+        # Per-k counts of the sampled signing calls, emitted by bench_levels.c as
+        # "histogram k=<k> base=<n> presign=<n>".  OPTIONAL: logs captured before
+        # that line existed simply carry no histogram, and every consumer falls
+        # back to the summary statistics, so an older evidence run still parses.
+        hist = []
+        for ln in rej:
+            m4 = re.search(r"histogram k=(\d+) base=(\d+) presign=(\d+)", ln)
+            if m4:
+                hist.append((int(m4.group(1)), int(m4.group(2)), int(m4.group(3))))
+        d["rej_hist"] = hist
+
         comm = _section(lines, "--- C. COMMUNICATION", "--- D.")
 
         def grab_int(pattern, what):
@@ -1552,6 +1563,15 @@ def write_fair_csvs(data, out_dir):
             rows.append([lvl, op, r["avg"], r["accept_pct"], r["min"], r["max"], r["p50"], r["p95"]])
     _writer(out_dir, "rejection_sampling.csv",
             ["level", "operation", "avg_attempts", "acceptance_pct", "min", "max", "p50", "p95"], rows)
+
+    # The measured attempt distribution, when the log carries it (see above).
+    rows = []
+    for lvl in levels:
+        for k, cb, cp in data[lvl].get("rej_hist", []):
+            rows.append([lvl, k, cb, cp])
+    if rows:
+        _writer(out_dir, "rejection_histogram.csv",
+                ["level", "attempts", "base_sign_calls", "las_presign_calls"], rows)
 
     comps = [("pk = t", "sz_pk"), ("sk = r", "sz_sk"), ("Y = t'", "sz_Y"),
              ("r'", "sz_ywit"), ("c", "sz_c"), ("z", "sz_z"), ("z_hat", "sz_zhat"),

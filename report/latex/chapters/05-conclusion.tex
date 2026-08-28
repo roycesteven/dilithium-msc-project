@@ -5,38 +5,41 @@
 \label{sec:conclusions}
 
 The aim of \cref{sec:aims} was achieved within the stated prototype scope: the lattice
-core is reused unchanged, the adaptor layer, wire encoding and application are new tested
-code, the scheme passes functional, serialization, tamper and known-answer tests, an
-independent Rust implementation reproduces the pinned digest byte-for-byte, and an
-end-to-end two-party, two-chain swap runs.
+core is reused unchanged; the adaptor layer, wire encoding and application are new tested
+code; functional, serialization, tamper and known-answer tests pass; Rust reproduces the
+pinned digest byte-for-byte; and a two-party, two-chain swap runs.
 
 The central question --- what adaptor functionality costs over a plain signature, and
 what post-quantum operation costs over a classical one --- is answered with measured data
-at declared boundaries. Adaptor functionality is almost free in computation: at most
-$+\ovMaxAll\%$ at the core boundary, rising to
-$+\packedOvPreSign$--$\packedOvAdapt\%$ once the byte boundary is included, a rise that is
-serialization rather than arithmetic. The cost of LAS is therefore \emph{communication}
---- the signature is \zPctTarget\% response vector, with the statement $Y$ on top --- and
-the classical comparison points the same way, the discrete-logarithm-equality proof making
-\emph{its} adaptor layer proportionally the more expensive.
+at declared boundaries. Adaptor functionality has small core-tier overhead at the target
+setting ($+\ovPreSign\%$, $+\ovPreVerify\%$ and $+\ovAdapt\%$ for PreSign, PreVerify and
+Adapt respectively), with a $+\ovMaxAll\%$ maximum across the parameter sweep, rising to
+$+\packedOvPreSign$--$\packedOvAdapt\%$ once packing is included, because serialization
+rather than arithmetic dominates. LAS therefore costs \emph{communication}: the signature
+is \zPctTarget\% response vector, with the statement $Y$ on top. The classical comparison
+points the same way, with its discrete-logarithm-equality proof making that adaptor layer
+proportionally more expensive.
 
 One design decision was tested rather than asserted. The simplified base was adopted
-because the adaptor appeared to need an exact verification identity; building the same
-construction on unmodified ML-DSA showed that belief was half wrong
-(\cref{sec:res-mldsa}). \textsc{PreSign} and \textsc{PreVerify} must indeed be new
-algorithms --- the naive port fails outright --- but \textsc{Verify} need not be, and a
+because the adaptor appeared to need an exact verification identity; implementing the
+same construction on unmodified ML-DSA showed that belief was half wrong
+(\cref{sec:res-mldsa}). \textsc{PreSign} and \textsc{PreVerify} do require
+adaptor-specific algorithms --- the naive port fails outright --- but \textsc{Verify} does
+not: a
+% "at equal computation" overstated sec:res-mldsa, whose measured finding is that
+% per-signature cost is "close to equal" -- ML-DSA restarts about twice as often, each
+% attempt costing roughly half.  The hedge is the finding, so it travels with the claim.
 standard FIPS~204 verifier accepts the adapted signature. That route would halve the
-signature at equal computation, yet leave the statement $Y$ untouched, so it relocates
-the communication bottleneck rather than removing it.
+signature at close to equal computation, yet leave $Y$ untouched, relocating rather than
+removing the communication bottleneck.
 
 Taking the protocol to a UTXO ledger --- the venue \cite{esgin2020post} assumes ---
-sharpens that conclusion, because at the application level the signature is not the
-dominant cost at all: the role-A proof consumes \cfgTwoProofPct\% of a swap under Groth16
-and \cfgThreeProofPct\% under LaZer. Changing only the proof system, the
-\emph{post-quantum} prover is \cmpTimePctAbs\% faster end-to-end while being
-\cmpBytesPctAbs\% larger. The fully post-quantum configuration is thus at once the faster
-one, the one with the weaker trust assumption, and the only one Shor does not break,
-paying for all three in bytes.
+sharpens that conclusion: at application level the signature is not the dominant cost.
+The role-A proof consumes \cfgTwoProofPct\% of a Groth16 swap and \cfgThreeProofPct\% of
+a LaZer swap. Changing only the proof system, the \emph{post-quantum} prover is
+\cmpTimePctAbs\% faster end-to-end while \cmpBytesPctAbs\% larger. The fully
+post-quantum configuration is therefore faster, needs no trusted setup, and is the only
+one Shor does not break, paying for all three in bytes.
 
 All five objectives were met (\cref{tab:objectives}). The principal qualification is
 scope: no concrete security is formally analysed, and nothing settled on a live network.
@@ -49,28 +52,24 @@ scope: no concrete security is formally analysed, and nothing settled on a live 
 
 The central strategic choice --- to build \emph{additively} on a standardised reference
 rather than reimplement lattice arithmetic --- paid off twice. It made the implementation
-tractable, and it produced an unusually strong provenance argument: the security-critical
-arithmetic is byte-for-byte the published CRYSTALS-Dilithium reference, with a two-branch
-diff that makes the claim auditable rather than assertable. Being language-agnostic, the
-strategy also made the second implementation cheap, upgrading the correctness argument
-from one tested codebase to two agreeing byte-for-byte, and exposing every timing
-conclusion to an independent harness. If one methodological result deserves to outlive
-this dissertation, it is that pairing a pinned known-answer digest with an independent
-reimplementation is a cheap and decisive way to validate a cryptographic port.
+tractable, and it produced a strong provenance argument: the security-critical arithmetic
+is byte-for-byte the published CRYSTALS-Dilithium reference, with a two-branch diff that
+makes the claim auditable. Being language-agnostic, the strategy also made the second
+implementation cheap, moving the correctness argument from one tested codebase to two
+agreeing byte-for-byte and exposing timing conclusions to an independent harness. Pairing
+a pinned digest with an independent reimplementation proved a decisive way to validate a
+cryptographic port.
 
-Two further things went better than expected. Confronting the fairness problem honestly
---- comparing LAS against a parameter-matched base rather than optimised Dilithium ---
-converted an apparent size deficit into a precisely attributed one. And counting
-rejection attempts rather than inferring them from a timing ratio corrected a materially
-wrong earlier figure, a lesson now institutionalised as a gate every run must pass.
+Two further things went better than expected. Comparing LAS against a parameter-matched
+base rather than optimised Dilithium turned an apparent size deficit into an attributed
+one. Counting rejection attempts rather than inferring them from timing also corrected a
+materially wrong earlier figure, now a gate every run must pass.
 
-A third result belongs here because it reads as failure and is not. Two optimisations
-this dissertation could have left as speculation --- compressing the statement inside the
-construction, and trying the relation under a succinct post-quantum system --- were
-implemented and measured instead, and neither paid off (\cref{sec:future}). An untested
-future-work suggestion costs nothing to write and tells a reader nothing; each instead
-names the mechanism that defeats it, closing the first direction outright and the second
-at the scale measured here, which is worth more than the optimisation would have been.
+Two negative results also matter. Compressing the statement inside the construction and
+trying the relation under a succinct post-quantum system were implemented rather than
+left as speculation, and neither paid off (\cref{sec:future}). Each now names the
+mechanism that defeats it, closing the first direction outright and the second at the
+scale measured here.
 
 \subsection{What fell short}
 \label{sec:reflection-shortfalls}
@@ -79,46 +78,40 @@ Three shortfalls are worth stating plainly, over and above the scoped limitation
 \cref{sec:eval-limitations}.
 
 First, \textbf{on-chain settlement was measured, then solved narrowly, and still not
-deployed}. The first Solidity verifier sat far above the cap, and the optimistic variant
-only moved the problem into a fraud proof that also exceeded it. The dissertation then drew
-the wrong lesson --- recording the cause as structural, SHAKE256 not being EVM-native, and
-inferring that local optimisation could not close the gap. Re-expressing the same predicate
-closed it (\cref{sec:res-app}): an inference asserted rather than measured, which cost the
-project that question for as long as it stood. What remains unsolved is cost --- settlement
-far dearer than a classical claim, fitting by a thin margin at one parameter set and one
-message length.
+% The clause removed here ("the optimistic variant only moved the problem into an over-cap
+% fraud proof") was the last Naysayer reference in the report, against the 2026-08-19 ruling
+% that it is out of the dissertation -- and it pointed at an artefact no chapter or appendix
+% describes any more, app:naysayer having been deleted with it.
+deployed}. The first Solidity verifier sat far above the cap. The dissertation then drew the wrong
+lesson, treating the gap as structural because SHAKE256 is not EVM-native. Re-expressing
+the same predicate closed it (\cref{sec:res-evm}). What remains unsolved is cost:
+settlement is far dearer than a classical claim and fits only by a thin margin at one
+parameter set and message length.
 
 Second, the applications are \textbf{exploratory demonstrators, not products}. Both are
-measured over ledger models; the real-client runs that settle them are local nodes, never
-a live network. For the UTXO study this is partly forced: Bitcoin Script cannot
-verify a lattice signature, so the post-quantum configurations could not settle on a real
-node without a consensus change --- exactly the assumption \cite{esgin2020post} makes.
-The reported costs are therefore an implementation-level feasibility estimate rather than
-a deployment figure, and since the omitted overheads add cost, not an upper bound on one.
+measured over ledger models; the real-client runs are local, not live-network
+deployments. For the UTXO study this is partly forced: Bitcoin Script cannot verify a
+lattice signature, so the post-quantum configurations need the consensus change
+\cite{esgin2020post} assumes. The reported costs are implementation-level feasibility
+estimates, not deployment figures or upper bounds.
 
-Third, the concrete security of the chosen parameter set is \textbf{unanalysed by
-design}. This was a sanctioned scope decision, not an oversight, but it bounds what
-the performance numbers mean: they characterise a faithful, testable artefact at a
-stated engineering setting, not a parameter set anyone should deploy.
+Third, concrete security of the chosen parameter set is \textbf{unanalysed by design}.
+This sanctioned scope decision bounds what the performance numbers mean: they
+characterise a faithful, testable artefact, not a parameter set anyone should deploy.
 
 \subsection{What would be done differently}
 \label{sec:reflection-differently}
 
-The clearest change is \textbf{target selection for the application}. Substantial effort
-went into taking the verifier on-chain in Solidity before the gas cost was known to be
-prohibitive. The framing was wrong: the project asked ``can a
-post-quantum signature be verified on chain?'' when what mattered was where a
-post-quantum swap actually spends --- which the measurements answer per configuration and
-per metric (\cref{sec:res-stage2}), not with a single figure. Starting from the UTXO
-setting \cite{esgin2020post} assumes would have reached that sooner, with the EVM
-measurement retained for what it does establish: what a gas-metered venue charges.
+The clearest change is \textbf{target selection for the application}. Too much effort
+went into Solidity before the gas cost was known. The framing should have been where a
+post-quantum swap actually spends, not whether one signature can be verified on chain.
+Starting from the UTXO setting \cite{esgin2020post} assumes would have reached
+\cref{sec:res-stage2} sooner, with the EVM retained as a gas-metered venue check.
 
-Second, \textbf{measurement discipline would come first}: both early artefacts --- the
-biased acceptance estimate and the asymmetric timed loops --- followed from building the
-benchmark before deciding what boundary it measured. Third, in the same spirit, the ML-DSA
-experiment should have come \emph{before} the simplified scheme was justified in writing:
-a design decision defended by argument alone is one nobody has tested, and testing it took
-days, not weeks.
+Second, \textbf{measurement discipline would come first}: the biased acceptance estimate
+and asymmetric timed loops both followed from building the benchmark before fixing its
+boundary. Third, the ML-DSA experiment should have come \emph{before} the simplified
+scheme was justified in writing: testing it took days, not weeks.
 
 \section{Future work}
 \label{sec:future}
@@ -130,30 +123,23 @@ days, not weeks.
         is invisible to the adaptor's own functions, which hash whatever statement they
         are handed, and fatal at both boundaries that matter: ordinary verification
         recomputes $A\vecz - c\,t$ against the true $Y$, and \textsc{Extract} accepts only
-        on the exact relation. Deriving $Y$ from its seed compresses it completely and
-        hands over the witness. What is open is not a better encoding but a different hard
-        relation whose statement is small by construction.
+        on the exact relation. Deriving $Y$ from its seed hands over the witness. What is
+        open is a different hard relation whose statement is small by construction.
   \item \textbf{Reduce the proof.} The route proposed here was measured and fails at this
         scale. What \cite{esgin2020post} asks of $\pi$ in the swap is knowledge of a short
-        witness to $Y$, and it observes that $\pi$, though costly in communication, is
-        exchanged only between the parties and so adds no on-chain storage cost; hiding
-        the witness is required by the swap itself, and making the proof \emph{succinct}
-        as well was this dissertation's own goal. Measured under LaBRADOR, that encoding
-        loses to the deployed prover on size --- by the library's own estimate rather than
-        a packed proof --- and on time
-        outright: succinctness
-        is asymptotic, and one instance of this relation is too small to reach it. What
-        is open is a construction whose proof is small at \emph{this} scale.
+        witness to $Y$; hiding that witness is required by the swap, while succinctness
+        was this dissertation's added goal. Measured under LaBRADOR, that encoding loses
+        to the deployed prover on size --- by the library's own estimate rather than a
+        packed proof --- and on time outright: succinctness is asymptotic, and one
+        instance is too small to reach it. What remains open is a proof small at
+        \emph{this} scale.
   \item \textbf{Reduce the cost of one-transaction verification.} Fitting under the cap
-        was proposed here as future work and then answered, without any of the routes
-        originally predicted (\cref{sec:res-app}), though for one signature instance and
-        message length at both sets measured, and exceeded at the largest by
-        derivation. Fitting is also not the same as
-        being worth doing: settlement stays far above a classical claim, and the hash is
-        the dominant measured term, so that is where a substantial further reduction would
-        have to come from --- though what native support for it would cost, and whether the
-        result would be competitive, was not evaluated here. A precompile for ML-DSA
-        verification is specified as a draft, covering only NIST level~II
+        was proposed here as future work and then answered, though only for one signature
+        instance and message length at both measured sets --- verification alone at the
+        smaller --- with the largest exceeded by derivation (\cref{sec:res-evm}). Fitting is not the same as being worth doing:
+        settlement remains far above a classical claim, and the hash is the dominant
+        measured term. A precompile for ML-DSA verification is specified as a draft,
+        covering only NIST level~II
         \cite{eip8051}, and was declined from the next scheduled upgrade
         \cite{eip7773}; it would not verify LAS, bearing instead on the ML-DSA route of
         \cref{sec:res-mldsa}, whose adapted signatures a stock FIPS~204 verifier accepts.
@@ -163,10 +149,10 @@ days, not weeks.
         is the prerequisite before that route could be recommended over the simplified
         scheme.
   \item \textbf{Take the UTXO study to a live network.} \emph{Signet} would supply the
-        classical configuration with the fees, propagation and confirmation latency the model
-        cannot.
+        classical configuration with the fees, propagation and confirmation latency the
+        model cannot.
         For configurations~2 and~3 no stock Bitcoin test network can supply a deployment
-        figure: the blocker is a consensus rule, not engineering. \Cref{app:btcnode} adds
-        that rule experimentally and settles a lattice-authorised two-leg swap; Bitcoin as
+        figure: the blocker is consensus, not engineering. \Cref{app:btcnode} adds that
+        rule experimentally and settles a lattice-authorised two-leg swap; Bitcoin as
         deployed cannot, so that figure awaits adoption.
 \end{itemize}

@@ -94,9 +94,15 @@ venue measured against it. On a local EVM a
 $\approx$\gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the EIP-7825
 per-transaction cap. That negative result is quantified
 rather than assumed, and it is what the comparison contributes. That ceiling later proved to bound the
+% "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and that
+% equivalence holds only under the registration invariant no contract checks (tab:onchain).
+% The instance belongs here too: two verifier stages branch on coefficient values.  The
+% introduction carries the same two scopings, so leaving them out here would have made the
+% chapter that JUDGES the objective the least scoped statement of it in the report.
 \emph{implementation} rather than the scheme: a claim transaction running a restructured
-verifier was mined inside the cap, at the target parameter set and message length
-(\cref{sec:res-app}). The venue decision therefore rests on cost, not impossibility.
+verifier was mined inside the cap --- under \cref{tab:onchain}'s registration invariant,
+at the target set, message length and signature instance measured
+(\cref{sec:res-evm}). The venue decision therefore rests on cost, not impossibility.
 
 \section{Implementation challenges}
 \label{sec:eval-challenges}
@@ -108,10 +114,14 @@ consumed most of the engineering effort. Three themes recur. Two are failures th
 working while breaking ordinary verification two steps later, and a doubly-transformed
 public matrix produces a verifier whose parts agree with each other but not with the C
 implementation --- both caught only by checking outside the component, which is why
-\cref{sec:eval-strategy} treats internal self-consistency as insufficient. Two more are
-measurement artefacts that would have biased the headline
+\cref{sec:eval-strategy} treats internal self-consistency as insufficient.
+
+% "The last" implied the three themes enumerated all six rows of tab:challenges; they do
+% not -- rows 2 and 3 are one-offs, which is what "recur" already licenses.  Numbering the
+% theme instead of calling it the last removes a count a reader can falsify.
+Two more are measurement artefacts that would have biased the headline
 result had they survived, and are why every boundary is now declared and every run
-gated. The last is asymptotic rather than arithmetic, and generalises past this project:
+gated. The third is asymptotic rather than arithmetic, and generalises past this project:
 in constraint-system libraries the ergonomic interface and the scalable interface are
 not the same interface.
 

@@ -1,9 +1,12 @@
-\chapter{Code listings and reproduction}
+\chapter{Supporting evidence and reproducibility}
 \label{app:code}
 
-Per the writing guide, code snippets belong in an appendix rather than the body. Only
-the most representative listings are included here; the full source is in the project
-repository.
+This appendix carries the supporting implementation, methodology and reproducibility
+material that would interrupt the main report if presented in full: the commands needed to
+reproduce the evaluation, the derivations deferred from \cref{ch:methodology}, the
+representative \textsc{PreSign}, \textsc{Adapt} and \textsc{Extract} routines,
+supplementary benchmark data, and the real-client blockchain experiments. The complete
+source and evidence artefacts remain in the project repository.
 
 \section{Building and reproducing the benchmarks}
 \label{app:repro}
@@ -11,8 +14,11 @@ repository.
 The evaluation is reproducible from the commands below. The upstream Dilithium
 reference is pinned at the repository's initial commit (\texttt{2374d22}); the
 classical baseline library is the BlockstreamResearch \texttt{secp256k1-zkp}
-\texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}; the Rust port builds on a
-vendored copy of the \texttt{fips204} crate (commit \texttt{c948882}). The C
+\texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}; the proof-of-knowledge library
+is LaZer at commit \texttt{2fa3dfb}; the Rust port builds on a
+vendored copy of the \texttt{fips204} crate (commit \texttt{c948882}). The two external
+libraries are unmodified, and the commands below explicitly check out the pinned
+\texttt{secp256k1-zkp} and LaZer commits rather than their current default branches. The C
 toolchain is the system compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-O3};
 the Rust toolchain is stable \texttt{rustc} (the committed run used 1.96.0) in
 release profile.
@@ -48,8 +54,8 @@ make test/test_swap3  && ./test/test_swap3
 
 \begin{lstlisting}[language=bash,caption={Classical adaptor baseline (one-time
 clone).},label={lst:classical}]
-git clone --depth 1 https://github.com/BlockstreamResearch/secp256k1-zkp \
-    third_party/secp256k1-zkp        # tested at commit 95b9835
+git clone https://github.com/BlockstreamResearch/secp256k1-zkp third_party/secp256k1-zkp
+git -C third_party/secp256k1-zkp checkout 95b9835   # the measured commit
 cd ref && make test/bench_classical && ./test/bench_classical
 \end{lstlisting}
 
@@ -57,6 +63,7 @@ cd ref && make test/bench_classical && ./test/bench_classical
 clone and build; see the repository README for the dependency recipe).},
 label={lst:lazer}]
 git clone https://github.com/lazer-crypto/lazer third_party/lazer
+git -C third_party/lazer checkout 2fa3dfb          # the measured commit
 cd third_party/lazer && make lazer.h liblazer.a
 # the generated proof parameters (ref/relation_zk_params.h) are committed,
 # so SageMath is needed only to REgenerate them, never to build
@@ -64,8 +71,8 @@ cd third_party/lazer && make lazer.h liblazer.a
 
 The Rust port is reproduced with the standard Cargo tooling; the test gate runs
 first because the benchmarks refuse to time unverified code, and the known-answer
-test asserts the same pinned digest as the C implementation
-(\texttt{\katDigestHead\ldots\katDigestTail}).
+test asserts the same pinned digest as the C implementation.
+% Digest value is not printed: pinned KAT digest = \katDigestHead\ldots\katDigestTail
 
 \begin{lstlisting}[language=bash,caption={Rust port: test gate, statistical
 benchmark, protocol driver, and size report (one suite script, or the four steps
@@ -266,7 +273,7 @@ included: no context re-derivation, no state transition, no event, no payout. Ch
 one transaction under EIP-7623 it comes to \gasDTwoTotal{} gas, \gasDTwoCapPct\% of the
 cap, \gasDTwoHeadroom{} short of it, with the standard branch rather than the calldata
 floor binding (\texttt{evidence/onchain\_d2/}). It is therefore a harness computation over
-a narrower boundary than the Dilithium-III client receipt of \cref{sec:res-app}, and the
+a narrower boundary than the Dilithium-III client receipt of \cref{sec:res-evm}, and the
 two are not interchangeable. The accepted verdict is asserted before the figure is
 reported --- a rejecting run would have measured the early exit rather than verification
 --- though the assertion follows the measurement rather than preceding it.
@@ -379,8 +386,8 @@ security category.
 \section{The atomic-swap demonstration and its proof of knowledge}
 \label{app:swapdemo}
 
-The narrated demonstration referenced in \cref{sec:res-app} follows the swap protocol
---- Figure~1 of \cite{esgin2020post} --- step for step, realised over the model ledger
+The protocol defined in \cref{fig:swapflow} follows Figure~1 of
+\cite{esgin2020post} step for step, realised over the model ledger
 of \cref{app:utxomodel}. Two parties swap coins across two ledgers with no
 trusted third party and no swap-specific on-chain script --- ordinary output scripts
 remain, which is what \emph{scriptless} means here. Alice, the witness holder, commits first:
@@ -391,8 +398,10 @@ transaction spending her own coin, and sends $\{Y, \pi, \hat{\sigma}_1\}$ in one
 off-chain message. Bob pre-signs his own transaction against the \emph{same} $Y$ only
 after both $\pi$ and Alice's pre-signature verify --- the protocol's abort gate; at that
 point neither pre-signature is spendable. Alice, who knows $y$, adapts and publishes her
-signature to claim Bob's coin; the act of publishing reveals $y$, which Bob extracts and
-uses to adapt and publish his own signature. Either both legs settle or neither does.
+signature to claim Bob's coin; Bob, holding the matching pre-signature, extracts $y$ from
+that published signature and uses it to adapt and publish his own. In the measured
+executions both legs settle and the witness is recovered as the protocol requires; the
+adversarial case is outside what this demonstration establishes (\cref{app:utxomodel}).
 The demonstration prints this narrative and asserts every step, including the
 counterfactuals that a pre-adaptation signature fails basic verification and that $\pi$
 is rejected against any other statement.
@@ -737,41 +746,91 @@ git diff dilithium-baseline main -- ref/poly.c ref/ntt.c ref/sign.c \
 
 \FloatBarrier
 
-\section{Selected code listing: Adapt and Extract}
+\section{Selected code listings: PreSign, Adapt and Extract}
 \label{app:listing}
 
-The adaptor mechanism reduces to two short routines. \textsc{Adapt} adds the witness
-to the pre-signature's response; \textsc{Extract} recovers the witness by subtraction
-and confirms it against the statement. Both reuse the reference's polynomial
-arithmetic verbatim.
+Three routines carry the adaptor mechanism. \textsc{PreSign} folds the statement into the
+commitment before hashing and rejects at the tighter bound; \textsc{Adapt} adds the
+witness to the pre-signature's response; \textsc{Extract} recovers the witness by
+subtraction and confirms it against the statement. They compose the same
+reference-derived polynomial arithmetic used throughout the base path, with the
+LAS-specific response-vector subtraction required by \textsc{Extract}. The latter
+recomputes $A\,s$ using the same matrix and vector operations that key generation uses to
+form $t$.
 
-\begin{lstlisting}[language=C,caption={\texttt{las\_adapt} and \texttt{las\_ext} from
-\texttt{ref/las.c}.},label={lst:lasc}]
-int las_adapt(las_sig *sig, const las_sig *presig, const uint8_t *m, size_t mlen,
-              const las_pk *Y, const las_sk *y, const las_pk *pk, const las_pp *pp) {
-  unsigned int j;
+\begin{lstlisting}[language=C,caption={Selected implementation cores from
+\texttt{ref/las.c}. The \textsc{PreSign} excerpt retains the adaptor-specific statement
+binding, challenge construction, response computation and rejection gate, while eliding
+the reference-derived matrix/vector setup around them; \texttt{las\_adapt} and
+\texttt{las\_ext} are shown in full, apart from abridged provenance
+comments.},label={lst:lasc}]
+/* --- PreSign: the adaptor-specific core, Algorithm 2 steps 2-7 (abridged) --- */
+rej:
+  ++las_attempts;
+  las_polyvecm_uniform_Sgamma(y, mask_seed, mask_nonce++);   /* y <- S_gamma^(n+l)  */
+
+  /* ... w = A y, via the reference-derived matrix and vector helpers ... */
+  las_polyvecn_caddq(w);
+
+  /* THE core adaptor mechanism: the statement is folded into the commitment
+   * before hashing.  Sign hashes w; PreSign hashes w + Y, so the adapted
+   * signature satisfies the ORDINARY Verify equation for the same challenge. */
+  las_polyvecn_add(w_plus_t_prime, w, Y->t_prime);
+  las_polyvecn_reduce(w_plus_t_prime);
+  las_polyvecn_caddq(w_plus_t_prime);
+  las_polyvecn_pack_w(w_packed, w_plus_t_prime);
+
+  shake256_init(&state);
+  shake256_absorb(&state, t_packed, sizeof t_packed);
+  shake256_absorb(&state, w_packed, sizeof w_packed);        /* the shifted w + Y   */
+  shake256_absorb(&state, m, mlen);
+  shake256_finalize(&state);
+  shake256_squeeze(c_tilde, LAS_CTILDEBYTES, &state);
+  las_poly_challenge(&c, c_tilde);                           /* SampleInBall(c~)    */
+  c_hat = c;
+  poly_ntt(&c_hat);
+
+  las_polyvecm_pointwise_poly_montgomery(presig->z_hat, &c_hat, r_hat);
+  las_polyvecm_invntt_tomont(presig->z_hat);
+  las_polyvecm_add(presig->z_hat, presig->z_hat, y);         /* z_hat = y + c r     */
+  las_polyvecm_reduce(presig->z_hat);
+  if(las_polyvecm_chknorm(presig->z_hat, bound))             /* caller-supplied     */
+    goto rej;                                                /* PreSign bound       */
+  memcpy(presig->c_tilde, c_tilde, LAS_CTILDEBYTES);         /* sigma_hat = (c~, z_hat) */
+
+/* --- Adapt --- */
+int las_adapt(signature *sig, const pre_signature *presig,
+              const uint8_t *m, size_t mlen, const statement *Y,
+              const witness *r_prime, const public_key *pk,
+              const public_params *pp) {
   if(las_preverify(presig, m, mlen, Y, pk, pp))
     return -1;
-  sig->c = presig->c;
-  for(j = 0; j < LAS_M; ++j) {            /* z = z_hat + y_witness */
-    poly_add(&sig->z[j], &presig->z[j], &y->s[j]);
-    poly_reduce(&sig->z[j]);
-  }
+  memcpy(sig->c_tilde, presig->c_tilde, LAS_CTILDEBYTES);    /* challenge preserved */
+  las_polyvecm_add(sig->z, presig->z_hat, r_prime->value);   /* z = z_hat + r'      */
+  las_polyvecm_reduce(sig->z);
   return 0;
 }
 
-int las_ext(las_sk *y, const las_sig *sig, const las_sig *presig,
-            const las_pk *Y, const las_pp *pp) {
-  poly Ay[LAS_N];
-  unsigned int j;
-  for(j = 0; j < LAS_M; ++j) {            /* s = z - z_hat */
-    poly_sub(&y->s[j], &sig->z[j], &presig->z[j]);
-    poly_reduce(&y->s[j]);
-  }
-  las_Amul(Ay, pp, y->s);                  /* check A*s == Y */
-  for(j = 0; j < LAS_N; ++j)
-    if(!poly_equal(&Ay[j], &Y->t[j]))
-      return -1;
+/* --- Extract --- */
+int las_ext(witness *s, const signature *sig, const pre_signature *presig,
+            const statement *Y, const public_params *pp) {
+  unsigned int i, j;
+  poly s_1_hat[ELL], a_s[LAS_N];
+  las_polyvecm_sub(s->value, sig->z, presig->z_hat);         /* s = z - z_hat       */
+  las_polyvecm_reduce(s->value);
+  for(j = 0; j < ELL; ++j)                                   /* a_s = A s, formed   */
+    s_1_hat[j] = s->value[LAS_N + j];                        /* as KeyGen forms t   */
+  las_polyvecl_ntt(s_1_hat);
+  las_polyvec_matrix_pointwise_montgomery(a_s, pp->a_prime, s_1_hat);
+  las_polyvecn_reduce(a_s);
+  las_polyvecn_invntt_tomont(a_s);
+  las_polyvecn_add(a_s, a_s, s->value);
+  las_polyvecn_reduce(a_s);
+  las_polyvecn_caddq(a_s);
+  for(i = 0; i < LAS_N; ++i)                                 /* accept iff A s == Y */
+    for(j = 0; j < LAS_D; ++j)
+      if(a_s[i].coeffs[j] != Y->t_prime[i].coeffs[j])
+        return -1;
   return 0;
 }
 \end{lstlisting}
@@ -869,6 +928,34 @@ chain: the digest of \cite{bip341} carries no chain identifier, whereas the Ethe
 message is derived from \texttt{block.chainid} among other state. Offering leg~B's settled
 transaction to the other chain is therefore refused because that coin does not exist there
 --- which evidences two separate ledgers, and not a signature bound to a chain.
+
+\paragraph{One swap across two kinds of ledger.}
+Both legs above settle on Bitcoin. A further experiment put one leg on the patched client
+and the other on Ethereum, so that a single LAS instance --- one public matrix and one
+adaptor statement, with one signing key pair per leg --- is verified by two mechanisms that
+share no code: the consensus opcode above, and the deployed escrow contract of
+\cref{sec:res-evm}, which receives the matrix as calldata. The Bitcoin leg settles first;
+its adapted signature is recovered from the \emph{mined} witness, \textsc{Extract} runs on
+those bytes as a separate program, and the recovered witness adapts the Ethereum leg, which
+settles inside one transaction under the EIP-7825 cap. What this adds to the two-leg run
+above is not the choreography, which is the same, but that the two halves are different
+ledger models: the venue changes while the cryptographic object does not.
+
+The timeout side was exercised on both venues, each on a recovery-test object of that
+venue's own kind --- a control coin on Bitcoin, a second escrow on Ethereum --- rather than
+by refunding either settled leg, since both were claimed. Each was refused before its own
+deadline and, once matured, returned the coin. The two deadlines are set as absolute
+UNIX-second values so their ordering is checkable, with the leg settled first carrying the
+shorter one, following the classical setup \cite{esgin2020post} recalls in its
+Section~4.1 --- the LAS choreography of its Figure~1 restates no timeout, so this is an
+addition around that figure rather than part of it. The ordering is \emph{configured and
+checked, not enforced}: Bitcoin judges a timestamp locktime against median time past and
+the contract against \texttt{block.timestamp}, so the two are one numeric domain and not
+one clock, and neither venue inspects the other's deadline. None of this establishes a fair
+atomic swap. The Bitcoin claim leaf is a single-key check under the funder's own key, so the
+funder need not wait for the timeout, and the mempool exposes the adapted signature before
+confirmation, leaving a conflicting-spend race that a timeout does not close. Evidence:
+\texttt{evidence/btc\_eth\_swap/}.
 
 Three limits travel with this. A patched node is not Bitcoin, so the claim that
 configurations~2 and~3 cannot settle on Bitcoin as deployed is unaffected. Implementing one

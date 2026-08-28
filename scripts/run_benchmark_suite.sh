@@ -167,8 +167,13 @@ cp "$RUN_DIR/metadata.txt" "$STAGE/"
 python3 scripts/plot_las_benchmarks.py --input-dir "$STAGE" --output-dir "$STAGE"
 
 # CSV evidence (+ the full report figure manifest) -> tables/
+# NOTE: this is a WHITELIST and everything left in the stage is deleted below, so a
+# new CSV that is not named here is written and then silently discarded.
+# rejection_histogram.csv (the measured per-attempt distribution behind fig:rejcdf)
+# was lost exactly that way once.
 TABLE_CSVS="parameter_sets.csv primary_timing.csv adaptor_overhead.csv \
-rejection_sampling.csv communication_components.csv computation_components.csv \
+rejection_sampling.csv rejection_histogram.csv \
+communication_components.csv computation_components.csv \
 las_object_catalogue.csv report_figure_manifest.csv application_atomic_swap.csv \
 application_payload_breakdown.csv application_multihop_amhl.csv"
 

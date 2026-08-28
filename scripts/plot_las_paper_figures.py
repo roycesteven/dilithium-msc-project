@@ -57,21 +57,80 @@ OI = {
 ORD_COL = OI["skyblue"]   # basic signature operations / objects
 LAS_COL = OI["blue"]      # LAS adaptor operations
 
+# ---------------------------------------------------------------------------
+# PRINT MODE -- the report's figure type floor (Royce, 2026-08-28)
+# ---------------------------------------------------------------------------
+# No figure may carry type smaller than the paragraph around it, and the report
+# body is 12pt.  The trap is that matplotlib lays a figure out in INCHES and its
+# type in POINTS, while \includegraphics rescales the whole canvas to the text
+# block: a 9.4in canvas at 11pt lands at 11 x (5.71/9.4) ~ 6.7pt on the page,
+# barely half the body size.  Print mode therefore draws each figure at its
+# FINAL PRINTED WIDTH so that 1pt here is exactly 1pt on the page.
+#
+# THREE conditions make that equality hold, and all three are load-bearing:
+#   1. the figure is saved WITHOUT bbox_inches="tight".  Tight cropping resizes
+#      the canvas to the drawn content and LaTeX then rescales it back up to
+#      \linewidth -- if the content overflowed the canvas that rescale is
+#      DOWNWARDS and the type lands below 12pt again.  Print mode uses
+#      tight_layout instead, which moves the axes INSIDE a fixed canvas.
+#   2. the report includes the file at width=\linewidth, not a fraction of it.
+#   3. NO hard-coded fontsize= survives in a report-bound figure: one missed
+#      literal is one label under the floor.  Every inline size goes through
+#      _pt(), every canvas through _figsize().
+# Screen defaults are untouched, so evidence-package figures keep their geometry.
+PRINT = False
+TEXT_WIDTH_IN = 5.71          # muthesis, 12pt option: \textwidth = 145mm
+PRINT_FONT_PT = 12.0          # = the report's body size; never lower this
+
+
+def _pt(screen_pt):
+    """Font size for an inline label: the 12pt floor in print mode."""
+    return PRINT_FONT_PT if PRINT else screen_pt
+
+
+def _figsize(screen_wh, print_h):
+    """Canvas size: exactly the printed width in print mode, the old one otherwise."""
+    return (TEXT_WIDTH_IN, print_h) if PRINT else screen_wh
+
+
+def _greek(text):
+    """Latin Modern Roman is a TEXT font and carries no ℓ, κ or γ -- left as literal
+    characters they render as empty boxes.  In print mode they are handed to the CM
+    math font instead, which is also what the report typesets them in."""
+    if not PRINT:
+        return text
+    return (text.replace("ℓ", r"$\ell$")
+                .replace("κ", r"$\kappa$")
+                .replace("γ", r"$\gamma$"))
+
 
 def _style():
     """One shared matplotlib style (Meeting-6: label/legend fonts must stay
     readable once the figure is shrunk to \\linewidth in the report).
-    Recessive axes (no top/right spine, light grid), >=10pt text everywhere."""
+    Recessive axes (no top/right spine, light grid), >=10pt text everywhere --
+    and exactly the body's 12pt in print mode."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    if PRINT:
+        # The SAME TYPEFACE as the body, not merely the same point size.  At 12pt
+        # DejaVu Sans has a far larger x-height than the report's Latin Modern
+        # Roman, so a nominally equal label still reads as bigger than the
+        # paragraph beside it.  lmodern is what report.tex loads, so setting the
+        # figures in Latin Modern Roman makes "the same as the paragraph" true by
+        # appearance and not just by measurement.
+        plt.rcParams.update({
+            "font.family": "serif",
+            "font.serif": ["Latin Modern Roman", "DejaVu Serif"],
+            "mathtext.fontset": "cm",
+        })
     plt.rcParams.update({
-        "font.size": 11,
-        "axes.labelsize": 11.5,
-        "axes.titlesize": 11.5,
-        "xtick.labelsize": 10.5,
-        "ytick.labelsize": 10.5,
-        "legend.fontsize": 10.5,
+        "font.size": _pt(11),
+        "axes.labelsize": _pt(11.5),
+        "axes.titlesize": _pt(11.5),
+        "xtick.labelsize": _pt(10.5),
+        "ytick.labelsize": _pt(10.5),
+        "legend.fontsize": _pt(10.5),
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.grid": False,
@@ -121,19 +180,51 @@ def load_all(in_dir):
         for r in rej_rows:
             rej.setdefault(r["level"], {})[r["operation"]] = float(r["acceptance_pct"])
             rej_full.setdefault(r["level"], {})[r["operation"]] = r
-    return params, timing, comm, overhead, rej, rej_full
+    # OPTIONAL measured attempt distribution (bench_levels.c prints it; older
+    # evidence runs do not carry it, and every consumer falls back to the model).
+    hist_rows = _read(in_dir, "rejection_histogram.csv", required=False)
+    hist = None
+    if hist_rows:
+        hist = {}
+        for r in hist_rows:
+            hist.setdefault(r["level"], {})[int(r["attempts"])] = (
+                int(r["base_sign_calls"]), int(r["las_presign_calls"]))
+    return params, timing, comm, overhead, rej, rej_full, hist
 
 
-def _save(fig, out_dir, name):
+def _save(fig, out_dir, name, top_reserve=1.0, bottom_reserve=0.0):
+    """Write the figure. In print mode the canvas size IS the printed size, so it
+    must not be cropped: tight_layout fits the axes inside the fixed canvas and
+    the save is uncropped. `top_reserve` < 1 keeps room above the axes for the
+    parameter annotation, which is drawn in axes coordinates just above 1.0 and
+    would otherwise fall off a canvas that is no longer grown to fit it.
+    `bottom_reserve` keeps the same fixed-canvas contract for figures that place
+    a legend below the axes."""
     import matplotlib.pyplot as plt
+    if PRINT:
+        fig.tight_layout(rect=(0, bottom_reserve, 1, top_reserve))
     for ext in ("pdf", "png"):                 # PDF is vector for LaTeX; PNG is preview
-        fig.savefig(out_dir / ("%s.%s" % (name, ext)), bbox_inches="tight", dpi=200)
+        p = out_dir / ("%s.%s" % (name, ext))
+        if PRINT:
+            fig.savefig(p, dpi=200)            # NO bbox_inches: see PRINT MODE above
+        else:
+            fig.savefig(p, bbox_inches="tight", dpi=200)
     plt.close(fig)
 
 
 def _xtick(params, lvl):
     p = params[lvl]
-    return "%s\nn=%s, ℓ=%s, κ=%s" % (SHORT.get(lvl, lvl), p["n"], p["ell"], p["kappa"])
+    name = SHORT.get(lvl, lvl)
+    # At 12pt a tick slot is only ~82pt wide, so print mode breaks the name AND the
+    # parameter list over separate lines -- measured: the one-line parameter string
+    # is ~84pt and overlapped its neighbours.  Nothing is abbreviated: Meeting 8
+    # bars abbreviating scheme or level names in tables and figures.
+    if PRINT:
+        if lvl == "paper":
+            name = "LAS-2020/\n845 reference"
+        return _greek("%s\nn=%s, ℓ=%s,\nκ=%s") % (name.replace(" ", "\n", 1),
+                                                   p["n"], p["ell"], p["kappa"])
+    return "%s\nn=%s, ℓ=%s, κ=%s" % (name, p["n"], p["ell"], p["kappa"])
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +286,7 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
         ("Extract\n(LAS only)", None,     "Ext",       None),
     ]
     w = 0.38
-    fig, ax = plt.subplots(figsize=(9.4, 5.2))
+    fig, ax = plt.subplots(figsize=_figsize((9.4, 5.2), 4.9))
     xticks, xlabels, tops = [], [], []
     for gi, (lbl, bop, lop, okey) in enumerate(groups):
         xticks.append(gi)
@@ -209,13 +300,14 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
                    edgecolor="black", linewidth=0.4)
             tops += [bm + bs, lm + ls]
             ax.text(gi - w / 2, bm + bs, "%.0f" % bm, ha="center", va="bottom",
-                    fontsize=9.5)
+                    fontsize=_pt(9.5))
             ax.text(gi + w / 2, lm + ls, "%.0f" % lm, ha="center", va="bottom",
-                    fontsize=9.5)
+                    fontsize=_pt(9.5))
             if okey in o:                                 # exact overhead, on the orange bar
                 ax.annotate("+%.1f%%" % o[okey], xy=(gi + w / 2, lm + ls),
-                            xytext=(0, 15), textcoords="offset points", ha="center",
-                            va="bottom", fontsize=11, fontweight="bold",
+                            xytext=(0, 19 if PRINT else 15),
+                            textcoords="offset points", ha="center",
+                            va="bottom", fontsize=_pt(11), fontweight="bold",
                             color=OI["vermillion"])
         else:                                             # single bar (shared / LAS-only)
             op = bop or lop
@@ -224,9 +316,11 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
             ax.bar(gi, m, w, yerr=s, capsize=3, color=col, edgecolor="black",
                    linewidth=0.4)
             tops.append(m + s)
-            ax.text(gi, m + s, "%.0f" % m, ha="center", va="bottom", fontsize=9.5)
+            ax.text(gi, m + s, "%.0f" % m, ha="center", va="bottom", fontsize=_pt(9.5))
     top = max(tops)
-    ax.set_ylim(0, top * 1.30)
+    # More headroom in print mode: the legend and the bar labels are 12pt there,
+    # so the old 1.30 let the legend sit on the tallest pair.
+    ax.set_ylim(0, top * (1.42 if PRINT else 1.30))
     ax.set_xticks(xticks)
     ax.set_xticklabels(xlabels)
     ax.set_ylabel("time per operation (microseconds)")
@@ -236,13 +330,20 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
                              label="LAS adaptor")],
               loc="upper right", framealpha=0.95)
     p = params[hl]
-    ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s"
-            % (SHORT.get(hl, hl), p["n"], p["ell"], p["M"], p["kappa"], p["gamma"],
-               p["N"], p["Q"]),
-            transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
+    # One line at 12pt is ~7in wide against a 5.71in canvas, so print mode breaks
+    # the setting name off from its parameters instead of overflowing.
+    ann = ("%s setting    n=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s"
+           % (SHORT.get(hl, hl), p["n"], p["ell"], p["M"], p["kappa"], p["gamma"],
+              p["N"], p["Q"]))
+    if PRINT:
+        ann = (_greek("%s setting\nn=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s")
+               % (SHORT.get(hl, hl), p["n"], p["ell"], p["M"], p["kappa"],
+                  p["gamma"], p["N"], p["Q"]))
+    ax.text(0.0, 1.015, ann,
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=_pt(10),
             color="#444444")
     ax.grid(axis="y", alpha=0.3)
-    _save(fig, out_dir, "per_operation_timing_paper")
+    _save(fig, out_dir, "per_operation_timing_paper", top_reserve=0.88)
 
 
 # ---------------------------------------------------------------------------
@@ -278,7 +379,7 @@ def fig_comm(comm, params, hl, out_dir):
     ax.set_yticklabels([r[0] for r in rows])
     ax.set_xlabel("serialized size (bytes)")
     p = params[hl]
-    ax.text(0.0, 1.02, "%s setting\nn=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s"
+    ax.text(0.0, 1.02, _greek("%s setting\nn=%s, ℓ=%s, M=%s, κ=%s, γ=%s, d=%s, q=%s")
         % (
             SHORT.get(hl, hl),
             p["n"], p["ell"], p["M"], p["kappa"],
@@ -302,7 +403,7 @@ def fig_overhead(overhead, params, levels, out_dir):
     xs = list(range(len(levels)))
     w = 0.26
     allv = []
-    fig, ax = plt.subplots(figsize=(8.8, 5.2))
+    fig, ax = plt.subplots(figsize=_figsize((8.8, 5.2), 5.6))
     for i, (key, lbl, col) in enumerate(pairs):
         vals = [overhead[lvl][key] for lvl in levels]
         allv += vals
@@ -310,14 +411,19 @@ def fig_overhead(overhead, params, levels, out_dir):
                       edgecolor="black", linewidth=0.3)
         for b, v in zip(bars, vals):
             ax.text(b.get_x() + b.get_width() / 2, v + (0.12 if v >= 0 else -0.3),
-                    "%+.1f" % v, ha="center", fontsize=8.5)
+                    "%+.1f" % v, ha="center", fontsize=_pt(8.5))
     ax.axhline(0, color="black", linewidth=0.6)
-    ax.set_ylim(bottom=min(0.0, min(allv)) - 0.5, top=max(allv) * 1.32)
+    # Percentage maxima vary between runs; when the tallest bar is small, a pure
+    # multiplicative margin leaves too little physical room for the legend.
+    ax.set_ylim(bottom=min(0.0, min(allv)) - 0.5,
+                top=max(max(allv) * 1.32, max(allv) + 4.0))
     ax.set_xticks(xs)
-    ax.set_xticklabels([_xtick(params, lvl) for lvl in levels], fontsize=9)
+    ax.set_xticklabels([_xtick(params, lvl) for lvl in levels], fontsize=_pt(9))
     ax.set_xlabel("parameter setting (engineering benchmark setting)")
     ax.set_ylabel("overhead vs basic operation (percent)")
-    ax.legend(loc="upper right")
+    # Keep the legend away from the LAS-2020/845 and L2 value labels in the
+    # upper-left portion of the plot; those are the labels most easily occluded.
+    ax.legend(loc="upper right", framealpha=0.95)
     ax.grid(axis="y", alpha=0.3)
     _save(fig, out_dir, "adaptor_overhead_paper")
 
@@ -378,7 +484,7 @@ def _acc_per_attempt(params, hl):
     return acc(gamma - kappa), acc(gamma - kappa - 1)
 
 
-def fig_acceptance_cdf(params, rej_full, hl, out_dir):
+def fig_acceptance_cdf(params, rej_full, hl, out_dir, rej_hist=None):
     plt = _style()
 
     p = params[hl]
@@ -388,36 +494,72 @@ def fig_acceptance_cdf(params, rej_full, hl, out_dir):
         ("LAS PreSign", acc_presign, rej_full[hl]["LAS PreSign"], ADPT_COL, "s"),
     ]
     ks = list(range(1, 16))
-    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+    fig, ax = plt.subplots(figsize=_figsize((9.0, 5.0), 4.8))
 
-    for lbl, pa, row, col, mk in series:
+    # Keep curve identity in the legend and the measured attempt statistics in
+    # the table/body. Figure 3.3 is printed at text width, so verbose legend prose
+    # quickly collides with the data.
+    for idx, (lbl, pa, row, col, mk) in enumerate(series):
         cdf = [100.0 * (1.0 - (1.0 - pa) ** k) for k in ks]
-        ax.plot(ks, cdf, color=col, linewidth=2.0, marker=mk, markersize=6,
-                label="%s: geometric model (%.1f%% on the first attempt, "
-                      "mean %.3f attempts)" % (lbl, 100.0 * pa, 1.0 / pa))
-
-    # measured statistics (C driver distribution sample, straight from the CSV)
-    for i, (lbl, _, row, col, _) in enumerate(series):
-        ax.text(0.98, 0.34 - 0.07 * i,
-                "%s: measured mean %s, p50 %s, p95 %s, max %s (2000 calls)"
-                % (lbl, row["avg_attempts"], row["p50"], row["p95"], row["max"]),
-                transform=ax.transAxes, ha="right", va="top", fontsize=10,
-                color=col)
-    ax.text(0.98, 0.41, "measured (C implementation):", transform=ax.transAxes,
-            ha="right", va="top", fontsize=10, color="#444444")
+        # In print mode the legend carries CURVE IDENTITY only. The predicted means
+        # and first-attempt rates it used to spell out are still on the page and in
+        # the report -- caption, the body of sec:res-compute and tab:rejstats -- and
+        # repeating them here made a legend box wide enough to cover the y axis.
+        # MEASURED curve when the evidence carries the per-attempt histogram;
+        # the closed-form model is then kept as a thin dashed reference so the
+        # figure shows model-versus-measurement agreement rather than the model
+        # alone.  With no histogram in the run (older evidence) the model is the
+        # only thing that can be drawn, and it is labelled as such.
+        counts = (rej_hist or {}).get(hl, {})
+        if counts:
+            total = sum(c[idx] for c in counts.values())
+            run = 0.0
+            emp = []
+            for k in ks:
+                run += counts.get(k, (0, 0))[idx]
+                emp.append(100.0 * run / total if total else 0.0)
+            ax.plot(ks, emp, color=col, linewidth=2.0, marker=mk, markersize=6,
+                    label=lbl)
+            # No per-series legend entry for the model: two more rows made the
+            # legend tall enough to cover the measured statistics. One proxy entry
+            # below names the dashed style for both curves instead.
+            ax.plot(ks, cdf, color=col, linewidth=1.1, linestyle="--", alpha=0.9)
+        else:
+            ax.plot(ks, cdf, color=col, linewidth=2.0, marker=mk, markersize=6,
+                    label=("%s: model" if PRINT else
+                           "%s: geometric model (%.1f%% on the first attempt, "
+                           "mean %.3f attempts)") % ((lbl,) if PRINT else
+                                                     (lbl, 100.0 * pa, 1.0 / pa)))
 
     ax.set_xticks(ks)
     ax.set_ylim(0, 104)
     ax.set_xlabel("attempts allowed (k)")
-    ax.set_ylabel("probability of acceptance within k attempts (percent)")
-    ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, κ=%s, γ=%s, d=%s"
-            % (SHORT.get(hl, hl), p["n"], p["ell"], p["kappa"], p["gamma"],
-               p["N"]),
-            transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
+    ax.set_ylabel("probability of acceptance\nwithin k attempts (percent)"
+                  if PRINT else
+                  "probability of acceptance within k attempts (percent)")
+    ax.text(0.0, 1.015, _greek("%s setting%sn=%s, ℓ=%s, κ=%s, γ=%s, d=%s")
+            % (SHORT.get(hl, hl), "\n" if PRINT else "    ",
+               p["n"], p["ell"], p["kappa"], p["gamma"], p["N"]),
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=_pt(10),
             color="#444444")
-    ax.legend(loc="lower right")
+    if (rej_hist or {}).get(hl):
+        from matplotlib.lines import Line2D
+        h, l = ax.get_legend_handles_labels()
+        h.append(Line2D([0], [0], color="#666666", linestyle="--", linewidth=1.1))
+        l.append("geometric model")
+        legend = fig.legend(h, l, loc="lower center", bbox_to_anchor=(0.5, 0.035),
+                            ncol=3, frameon=False, columnspacing=1.2,
+                            handlelength=2.0, borderaxespad=0.0)
+        legend.set_in_layout(False)
+    else:
+        h, l = ax.get_legend_handles_labels()
+        legend = fig.legend(h, l, loc="lower center", bbox_to_anchor=(0.5, 0.035),
+                            ncol=2, frameon=False, columnspacing=1.2,
+                            handlelength=2.0, borderaxespad=0.0)
+        legend.set_in_layout(False)
     ax.grid(axis="y", alpha=0.3)
-    _save(fig, out_dir, "rejection_acceptance_cdf_paper")
+    _save(fig, out_dir, "rejection_acceptance_cdf_paper",
+          top_reserve=0.87, bottom_reserve=0.18)
 
 
 # ---------------------------------------------------------------------------
@@ -461,7 +603,7 @@ def fig_attempts_dist(params, rej_full, hl, out_dir):
     ax.set_xticks(ks)
     ax.set_xlabel("attempts until acceptance (k)")
     ax.set_ylabel("probability of exactly k attempts (percent)")
-    ax.text(0.0, 1.015, "%s setting    n=%s, ℓ=%s, κ=%s, γ=%s, d=%s"
+    ax.text(0.0, 1.015, _greek("%s setting    n=%s, ℓ=%s, κ=%s, γ=%s, d=%s")
             % (SHORT.get(hl, hl), p["n"], p["ell"], p["kappa"], p["gamma"],
                p["N"]),
             transform=ax.transAxes, ha="left", va="bottom", fontsize=10,
@@ -546,7 +688,7 @@ def write_manifest(out_dir, generated):
                      "main (cumulative acceptance within k attempts; "
                      "Meeting-7 replacement for the per-attempt mass figure)",
                      "parameter_sets.csv + rejection_sampling.csv",
-                     "P(accepted within k) model; measured mean/p50/p95/max annotated",
+                     "P(accepted within k), measured curve plus geometric model",
                      "Simplified Dilithium-III (headline)", "percent", S])
     if "attempts_dist" in generated:
         rows.append(["rejection_attempts_distribution_paper.pdf/.png",
@@ -628,7 +770,14 @@ def main(argv=None):
     ap.add_argument("--appendix-dir", default=None,
                     help="where the optional rejection-sampling appendix figure is written "
                          "(default: same as --output-dir)")
+    ap.add_argument("--print-figures", action="store_true",
+                    help="draw at the report's printed width with 12pt type (the body "
+                         "size), saved uncropped -- for report/latex/figures/. The "
+                         "including \\includegraphics MUST use width=\\linewidth.")
     args = ap.parse_args(argv)
+
+    global PRINT
+    PRINT = args.print_figures
 
     repo = Path(__file__).resolve().parents[1]
     in_dir = resolve_input_dir(repo, args.input_dir)
@@ -640,7 +789,7 @@ def main(argv=None):
     if app_dir != out_dir:
         app_dir.mkdir(parents=True, exist_ok=True)
 
-    params, timing, comm, overhead, rej, rej_full = load_all(in_dir)
+    params, timing, comm, overhead, rej, rej_full, rej_hist = load_all(in_dir)
     levels = [l for l in LEVEL_ORDER if l in params] or sorted(params)
     if not levels:
         sys.exit("ERROR: no parameter settings found in parameter_sets.csv")
@@ -666,7 +815,7 @@ def main(argv=None):
             generated.add("rejection")
         if rej_full and hl in rej_full:
             # MAIN: cumulative acceptance within k attempts (Meeting-7 ruling)
-            fig_acceptance_cdf(params, rej_full, hl, out_dir)
+            fig_acceptance_cdf(params, rej_full, hl, out_dir, rej_hist)
             generated.add("acceptance_cdf")
             # APPENDIX: the per-attempt mass function it supersedes
             fig_attempts_dist(params, rej_full, hl, app_dir)

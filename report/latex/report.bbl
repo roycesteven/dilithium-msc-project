@@ -120,14 +120,6 @@ Vadim Lyubashevsky.
 \newblock In {\em Annual International Conference on the Theory and
   Applications of Cryptographic Techniques}, pages 738--755. Springer, 2012.
 
-\bibitem{malavolta2019anonymous}
-Giulio Malavolta, Pedro Moreno-Sanchez, Clara Schneidewind, Aniket Kate, and
-  Matteo Maffei.
-\newblock Anonymous multi-hop locks for blockchain scalability and
-  interoperability.
-\newblock In {\em 26th Annual Network and Distributed System Security
-  Symposium, NDSS 2019}, 2019.
-
 \bibitem{nistir8547}
 Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, and David
   Cooper.
@@ -173,20 +165,6 @@ Luke Valenta and Kevin Guthrie.
 \newblock Cloudflare Blog, July 2026.
 \newblock Published 29 July 2026.
   \url{https://blog.cloudflare.com/post-quantum-authentication-to-origins/}.
-
-\bibitem{westerbaan2025pqinternet}
-Bas Westerbaan.
-\newblock State of the post-quantum {I}nternet in 2025.
-\newblock Cloudflare Blog, October 2025.
-\newblock Published 28 October 2025.
-  \url{https://blog.cloudflare.com/pq-2025/}.
-
-\bibitem{cloudflare2026pqroadmap}
-Bas Westerbaan.
-\newblock Cloudflare targets 2029 for full post-quantum security.
-\newblock Cloudflare Blog, April 2026.
-\newblock Published 7 April 2026.
-  \url{https://blog.cloudflare.com/post-quantum-roadmap/}.
 
 \bibitem{bip341}
 Pieter Wuille, Jonas Nick, and Anthony Towns.

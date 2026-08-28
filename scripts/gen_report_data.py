@@ -59,6 +59,19 @@ def die(msg):
     sys.exit("gen_report_data.py: ERROR: %s" % msg)
 
 
+def resolve_pointer_path(path):
+    """Resolve evidence/latest pointer files while preserving ordinary paths."""
+    path = Path(path)
+    if path.is_file():
+        target = path.read_text(errors="replace").strip()
+        if target:
+            target_path = Path(target)
+            return target_path if target_path.is_absolute() else path.parent / target_path
+    if not path.exists() and path.parent.is_file():
+        return resolve_pointer_path(path.parent) / path.name
+    return path
+
+
 # ---------------------------------------------------------------------------
 # parsers (evidence in, python structures out)
 # ---------------------------------------------------------------------------
@@ -393,6 +406,7 @@ def parse_mldsa(ev_dir):
     not been run, so the report degrades to "not available" rather than to a
     stale number.
     """
+    ev_dir = resolve_pointer_path(ev_dir)
     hint = ev_dir / "mldsa_hint_mode3.log"
     contract = ev_dir / "mldsa_contract_mode3.log"
     compare = ev_dir / "mldsa_compare_mode3.log"
@@ -799,6 +813,7 @@ def parse_onchain_gas(path):
     optimisticClaim.  Every wanted row is therefore pinned to the deployed contract
     that must own it, and any table from a test file is skipped outright.
     """
+    path = resolve_pointer_path(path)
     if not path.exists():
         return None
     want = {
@@ -874,6 +889,7 @@ def parse_onchain_onetx(d):
     Absent directory -> None, so the pipeline still runs without this evidence.
     """
     import json
+    d = resolve_pointer_path(d)
     rec, tx = d / "claim_receipt.json", d / "claim_tx.json"
     if not rec.exists() or not tx.exists():
         return None
@@ -914,6 +930,7 @@ def parse_onchain_d2(d):
     ONE fixed signature instance: SampleInBall and the response decoder branch on
     values, so this bounds nothing over inputs.  Absent directory -> None.
     """
+    d = resolve_pointer_path(d)
     log = d / "gas_d2.log"
     if not log.exists():
         return None

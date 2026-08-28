@@ -69,14 +69,38 @@ def main():
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-        from matplotlib.ticker import LogLocator
+        from matplotlib.ticker import LogLocator, FuncFormatter
     except ImportError:
         sys.stderr.write("matplotlib not installed: pip install matplotlib\n")
         return 1
 
+    # The only consumer of this figure is the report, so it is drawn at the report's
+    # printed size: 12pt type (the body size -- no figure may carry type smaller than
+    # the paragraph around it) on a canvas exactly \textwidth wide, saved UNCROPPED.
+    # Cropping would let \includegraphics rescale the canvas and the type with it;
+    # see the PRINT MODE note in scripts/plot_las_paper_figures.py.
+    PRINT_PT = 12.0
+    TEXT_WIDTH_IN = 5.71          # muthesis, 12pt option: \textwidth = 145mm
     plt.rcParams.update({
-        "font.size": 11, "axes.labelsize": 11.5, "axes.titlesize": 11.5,
-        "xtick.labelsize": 10.5, "ytick.labelsize": 10.5, "legend.fontsize": 10.5,
+        # Same TYPEFACE as the body, not just the same size: 12pt DejaVu Sans has a
+        # much larger x-height than the report's Latin Modern Roman and reads as
+        # bigger than the paragraph beside it. lmodern is what report.tex loads.
+        #
+        # "Latin Modern Roman" is a family of OPTICAL SIZES -- lmroman9, 10, 12 and
+        # 17 all answer to that one name and matplotlib picks among them, so the
+        # face is not pinned by naming the family.  It picked lmroman10 (and
+        # lmroman9 for the bold labels), which at 12pt are drawn WIDER and heavier
+        # than the lmroman12 the 12pt body is set in -- x-heights match, stems and
+        # advances do not, which is why the figure read as larger than the
+        # paragraph beside it.  Naming the optical size pins it to the body's own
+        # face; the family stays as the fallback for a machine without it.
+        "font.family": "serif",
+        "font.serif": ["LM Roman 12", "Latin Modern Roman", "DejaVu Serif"],
+        "mathtext.fontset": "cm",
+        "font.size": PRINT_PT, "axes.labelsize": PRINT_PT,
+        "axes.titlesize": PRINT_PT,
+        "xtick.labelsize": PRINT_PT, "ytick.labelsize": PRINT_PT,
+        "legend.fontsize": PRINT_PT,
         "axes.spines.top": False, "axes.spines.right": False,
         "axes.grid": False, "figure.dpi": 200,
     })
@@ -84,6 +108,10 @@ def main():
     # rows top-to-bottom: classical, floor, [single-transaction verify], verify.
     # The optimised row is inserted only when the log carries it, so this script
     # still reproduces the pre-optimisation figure from an older evidence log.
+    # Two lines: Latin Modern Roman is a good deal narrower than the sans face, so
+    # "LAS full verify, optimised" fits on one line -- and keeping the rows at two
+    # lines keeps the figure short enough to share its page with fig:evmtx, which a
+    # three-line version pushed onto a float page of its own.
     labels = ["Classical ECDSA\n(claimClassical)",
               "LAS floor\n(claimLAS, no verify)"]
     values = [CLASSICAL, LAS_FLOOR]
@@ -100,36 +128,61 @@ def main():
     ratios = ["1$\\times$"] + ["%.3g$\\times$" % (v / CLASSICAL) for v in values[1:]]
     ypos = list(range(len(values) - 1, -1, -1))  # first label at the top
 
-    fig, ax = plt.subplots(figsize=(9.2, 0.78 * len(values) + 0.75))
+    fig, ax = plt.subplots(figsize=(TEXT_WIDTH_IN, 0.72 * len(values) + 1.05))
     left = 1e4  # log-axis floor: bars start here, not at 0 (0 is undefined on a log axis)
     ax.barh(ypos, [v - left for v in values], left=left, height=0.62,
             color=colors, zorder=3)
 
     ax.set_xscale("log")
     ax.set_xlim(left, 1.6e8)
-    ax.set_ylim(-0.6, len(values) - 0.4)
+    # Extra headroom at the top: the cap annotation is drawn downwards from
+    # the top of the axes and crowded the first bar's value label without it.
+    ax.set_ylim(-0.6, len(values) - 0.02)
     ax.set_yticks(ypos)
     ax.set_yticklabels(labels)
-    ax.set_xlabel("on-chain settlement gas (log scale; EVM gas is deterministic)")
+    # Two lines: at 12pt this runs ~340pt against a 411pt canvas and was clipped.
+    ax.set_xlabel("on-chain settlement gas\n(log scale; EVM gas is deterministic)")
     ax.xaxis.set_major_locator(LogLocator(base=10))
+    # Plain-text magnitudes instead of 10^n: matplotlib sets a mathtext exponent at
+    # 0.7x the base size, which put 8.4pt digits on a page whose body is 12pt. Same
+    # tick positions, same log axis -- only the label text changes.
+    ax.xaxis.set_major_formatter(FuncFormatter(
+        lambda v, _pos: ("%gM" % (v / 1e6)) if v >= 1e6 else
+                        ("%gk" % (v / 1e3)) if v >= 1e3 else "%g" % v))
     ax.grid(axis="x", which="major", alpha=0.25, linewidth=0.6, zorder=0)
 
-    # value + ratio labels at the bar ends
+    # Value + ratio labels. At 12pt a label is ~30% of the axis, so a label hung off
+    # the end of a long bar runs past the right edge; long bars therefore carry it
+    # INSIDE in white, short bars outside as before. No figure is abbreviated to fit:
+    # the full gas counts stay on the page.
+    # The inside labels are set REGULAR, not bold: bold Latin Modern is ~15% wider
+    # per character and much heavier, so at the same 12pt it still read as bigger
+    # than the paragraph (Royce, 2026-08-28).  White on a saturated bar carries
+    # enough contrast without the extra weight.
+    import math
+    lo, hi = math.log10(left), math.log10(1.6e8)
     for y, v, r in zip(ypos, values, ratios):
-        ax.text(v * 1.15, y, "{:,}".format(v) + "  (" + r + ")",
-                va="center", ha="left", fontsize=10)
+        txt = "{:,}".format(v) + "  (" + r + ")"
+        if (math.log10(v) - lo) / (hi - lo) > 0.55:
+            ax.text(v * 0.93, y, txt, va="center", ha="right", fontsize=PRINT_PT,
+                    color="white", zorder=5)
+        else:
+            ax.text(v * 1.15, y, txt, va="center", ha="left", fontsize=PRINT_PT)
 
     # EIP-7825 per-transaction gas cap threshold
     ax.axvline(EIP7825_CAP, color="#B00020", linestyle="--", linewidth=1.4, zorder=4)
-    ax.text(EIP7825_CAP * 0.92, len(values) - 0.5,
+    ax.text(EIP7825_CAP * 0.92, len(values) - 0.07,
             "EIP-7825 per-transaction cap\n{:,} gas".format(EIP7825_CAP),
-            color="#B00020", ha="right", va="top", fontsize=9.5)
+            color="#B00020", ha="right", va="top", fontsize=PRINT_PT)
 
     out_dir = args.out or (Path(__file__).resolve().parent.parent
                            / "report" / "latex" / "figures")
     out_dir.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
     for ext in ("pdf", "png"):
-        fig.savefig(out_dir / ("fig_onchain." + ext), bbox_inches="tight", dpi=200)
+        # NO bbox_inches="tight": the canvas width IS the printed width, and cropping
+        # it would make LaTeX rescale the figure -- and its 12pt type -- on include.
+        fig.savefig(out_dir / ("fig_onchain." + ext), dpi=200)
     plt.close(fig)
     sys.stderr.write("wrote %s/fig_onchain.{pdf,png}\n" % out_dir)
     return 0

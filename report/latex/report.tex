@@ -102,8 +102,9 @@
 % Loaded WITHOUT the [section] option on purpose: that option would put a barrier
 % before every section in the whole document and re-flow chapters 1-5, whose float
 % placement is tuned by the fractions above. Bare, it does nothing until an explicit
-% \FloatBarrier, which only the appendix uses -- there the tables must not drift out
-% of their own section and land among the code listings, which do not float.
+% \FloatBarrier: Chapter 1 uses one to keep the large motivation figure from splitting
+% the adaptor-signature paragraph, and the appendix uses them so tables do not drift
+% out of their own section and land among the code listings, which do not float.
 \usepackage{placeins}
 
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,

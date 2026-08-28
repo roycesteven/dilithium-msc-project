@@ -229,6 +229,14 @@ who finds one stops trusting the rest.
 Every claim carries exactly one of three warrants, and the prose must make clear which:
 
 1. **MEASURED** — a real run. Name the evidence path; never retype the number (→ FOCUS).
+   ⚠️ **Evidence paths, `app:repro`'s commands and `app:diff`'s file list STAY PRINTED** (Royce,
+   2026-08-28, rejecting a relayed "remove all repository paths from the PDF"): the path is part
+   of the warrant, and "the captured evidence run" must never replace a concrete checkable one.
+   Those listings implement M5's reproducibility package and M3's two-branch diff, but **printing
+   paths is THIS PROJECT'S reporting decision, never a Wang ruling** — he never ruled on it and
+   M10 §19 cuts the other way (*"the marker does not have access to the repository"*), so do not
+   cite him for it. Volatile **run metadata** is the opposite call: the Stage-1/Stage-2 run ids
+   and the KAT digest stay in LaTeX `%` comments, unrendered.
 2. **DERIVED** — arithmetic on measured quantities. Say *derived*, show the inputs, and never
    let it read as measured. A derivation is not a measurement and must not be reported as one.
 3. **CITED** — someone else's result, with the reference that supports *that specific* claim.
@@ -298,6 +306,25 @@ the base signature.** Results/evaluation must lead with this
   the body**, never collected at a chapter end or in the appendix (Meeting 8, overrides the
   older figures-to-appendix habit); group the four LAS function figures side by side; avoid
   single-figure pages; no abbreviations of scheme/level names in tables or figures.
+- **⚠️ FIGURE TYPE FLOOR = THE BODY'S 12pt, IN THE BODY'S FACE (Royce, 2026-08-28).** Nothing
+  inside a figure may be smaller than the paragraph around it — and *nominally* equal is not
+  enough: 12pt DejaVu Sans reads as bigger than 12pt Latin Modern, which is what "too large"
+  meant when the first pass was rejected. Plotted figures are drawn in **Latin Modern Roman at
+  12pt on a canvas exactly `\textwidth` wide and saved UNCROPPED** (`--print-figures`;
+  `bbox_inches="tight"` re-crops, so LaTeX rescales the type and the guarantee is void) and
+  **included at `width=\linewidth`, never a fraction of it**; ℓ/κ/γ go through mathtext (the
+  text face carries no Greek). Gate: `scripts/check_figure_type.py` reads the sizes back out
+  of the PDFs — **sizes only, so it passes a figure that is the wrong face or bold.**
+  ⚠️ **The family name does NOT pin the face, and BOLD is a size defect too** (2026-08-28,
+  `fig_onchain` rejected as "bigger than the caption and paragraph" while measuring 12pt):
+  *Latin Modern Roman* spans the optical sizes, and matplotlib took **lmroman10 + lmroman9-bold**
+  there (**lmroman17** in `plot_las_paper_figures.py`) against the body's **lmroman12** — x-heights
+  are equal but advances and stems are not, and bold LM is ~15% wider per character. So name the
+  optical size (`"LM Roman 12"` ahead of the family) and set **no figure text bold**.
+  TikZ figures use `\normalsize` throughout — **widen a box or break a line, never
+  shrink the font**. ⚠️ `fig_criterion_presign` is **exempt and must not be touched** (Royce);
+  its text is outlined, so the gate cannot judge it. Cost, paid knowingly: +4 pages, and
+  §res-evm's two figures now take a text-free page each.
 - **⚠️ DECK ⊆ REPORT — the difference is PRESENTATION, not content (Royce, 2026-08-25).** No
   slide may assert what the report does not; a claim added to the deck is added to the report
   in the same edit, or it does not go on the slide. (Rubric 3.2.2's "additional aspects" is
@@ -306,7 +333,13 @@ the base signature.** Results/evaluation must lead with this
   estimates + the basic/exotic layers; the rubric 3.1.2 figure the Introduction had none of,
   and the home of the four deck citations) and **`fig:evmtx`** (§res-txstruct — the EVM claim
   transaction field by field, the Ethereum half of Wang's M11 both-venues ask; `fig:txstruct`
-  is Bitcoin-only). ⚠️ Captions are excluded from the count by the `-sum` weights; the TikZ
+  is Bitcoin-only). ⚠️ **`fig:txstruct` lives in RESULTS (§res-txstruct), not §2.7** — moved
+  2026-08-28 because it prints measured sizes, which belong beside `tab:btctx`; §2.7 keeps the
+  *method* (which fields change, what is on- vs off-chain, how measured objects map to the
+  BIP-141/144/341 fields, and that the mapping is accepted only once it reproduces a published
+  reference spend). Per-field bytes were dropped from the figure when it moved — the table
+  beside it gives every field — leaving only the two rows that DIFFER, both now shaded.
+  ⚠️ Captions are excluded from the count by the `-sum` weights; the TikZ
   *bodies* measured zero for these two, but confirm any new one against a regenerated count
   rather than assuming. Placement is global: **re-check the whole PDF** — neither figure has
   been rendered yet.
@@ -361,18 +394,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-27 18:20 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-28 16:44 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`main`** · HEAD 9032d1d · 2026-08-25 · introductory material
-- Working tree: 28 modified tracked file(s), 49 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
+- Branch **`main`** · HEAD c41bbb5 · 2026-08-27 · deck report 27_08 19:05
+- Working tree: 408 modified tracked file(s), 54 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
 - Recent commits:
+  - `c41bbb5 2026-08-27 deck report 27_08 19:05`
   - `9032d1d 2026-08-25 introductory material`
   - `661e9cf 2026-08-25 Merge branch 'report'`
   - `2029564 2026-08-23 report deck 23_08 18:51`
   - `3c47c6a 2026-08-22 Merge pull request #5 from roycesteven/report`
-  - `39d684f 2026-08-21 after meeting 11 21_08 15:27`
 
 ### Target parameter set — anchors parsed from source
 
@@ -383,19 +416,19 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Latest measured evidence (pointers only — never retype a number)
 
-- Stage-1 benchmark suite: `evidence/latest` → `latest` (dir mtime 2026-08-25)
+- Stage-1 benchmark suite: `evidence/latest` → `runs/20260828_144608` (dir mtime 2026-08-28)
 - Stage-2 UTXO swap: `evidence/stage2/latest` → `latest` (dir mtime 2026-08-25)
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `latest` (dir mtime 2026-08-25)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **9006** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8978** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
-- Last checkpoint in `PROGRESS.md`: Checkpoint — 2026-08-17 17:55
+- Last checkpoint in `PROGRESS.md`: Checkpoint — 2026-08-28 15:35
 - Next action recorded there:
-  - Run the deck aloud against a clock (N for notes, T to start) and adjust per-slide data-time
-  - from what it actually takes; then regenerate the word count.
+  - Ask Royce which way to settle sec:res-rust (re-run vs rewrite), then re-run
+  - `python3 scripts/gen_slides.py --check` if any Stage-1 macro changes again.
 - `CONTEXT.md` (long-form handoff): CONTEXT — session handoff (updated 2026-07-29; ninth-session update first)
 
 ### Supervisor meetings on record
@@ -405,8 +438,8 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Freshness tripwires
 
-- ⚠ Source newer than Stage-1 evidence: `rust/las-swap/src/ecdsa_backend.rs` (2026-08-25 13:18) > `evidence/latest` (2026-08-25 13:18). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-08-27.
+- Stage-1 evidence (2026-08-28) is newer than the newest scheme source (2026-08-25) — measurements match the code.
+- `CLAUDE.md` hand-written sections last touched 2026-08-28.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -457,6 +490,14 @@ silently, probabilistically, two operations from the cause. `γ = κ·d·(n+ℓ)
 MSIS hardness parameter; acceptance ≈37% per attempt (`≈ e^{−1}`) for the simplified scheme
 without hint vector, measured directly via the `las_attempts` counter, **never inferred
 from timing ratios**.
+✅ **`fig:rejcdf`'s SOLID curves are the measured empirical CDF** — the dashed pair stays the
+closed-form model, drawn as a reference — **as of the 2026-08-28 Stage-1 run, the first to
+carry `tables/rejection_histogram.csv`**. ⚠️ Check that file exists for the headline level
+before repeating the claim of any later run: `plot_las_paper_figures.py` **falls back to the
+model with no error when it does not**, and the only visible tell is the legend (measured =
+`basic Sign` / `LAS PreSign` / one `geometric model` entry; model-only = `…: model` twice).
+Per-call counts come from `bench_levels.c`'s print-only `histogram k=…` block; the summary
+statistics alone cannot reconstruct a distribution, so never rebuild one from them.
 
 **Rejection gate (never weaken or rename):** every C and Rust benchmark driver hard-asserts
 measured attempts/call against exact theory — **Sign 2.71875**, **PreSign 2.77483** at the
@@ -528,6 +569,12 @@ KAT-locked to C byte-for-byte.
   `bench_classical` (ECDSA adaptor via vendored `secp256k1-zkp`), Rust Criterion. Two baselines,
   per Meeting 2. Headline: the price of post-quantum here is **communication, not computation**;
   LAS's adaptor overhead is small, where the classical adaptor pays ~4× for its DLEQ proof.
+- ⚠️ **Absolute C-vs-Rust timing agreement is NOT a safe report claim** — it has already swung
+  far outside "close" between evidence runs, and **no cause is established: never explain a
+  divergence without evidence** (compiler, machine load and build profile are all guesses until
+  measured). What survives independently of it, and is what the claims must rest on: the KAT
+  byte-agreement and the *relative* adaptor overheads. So re-read `\rustCMaxDev` against
+  §`sec:res-rust`'s own wording after every Stage-1 run. Live status → `PROGRESS.md`.
 
 **Stage 2 — the application (complete, Bitcoin/UTXO).** `rust/las-swap/` = eprint 2020/845 §4.1
 Fig. 1 atomic swap over a UTXO ledger model (ledger takes the signature algorithm as a parameter,
@@ -637,19 +684,55 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   DOES NOT ISOLATE CLTV:** A (`nLockTime`=deadline, immature) is refused `bad-txns-nonfinal`
   by **BOTH** nodes — that evidences the deadline via transaction finality, but finality is
   checked before any script runs, so the differential says nothing about the leaf; **B**
-  (`nLockTime`=0, hence final, deadline still ahead) is refused `Locktime requirement not
+  (final, deadline still ahead) is refused `Locktime requirement not
   satisfied` by the patched node while **stock ACCEPTS** (0xbb is an OP_SUCCESSx, so BIP342
   wins the whole script unexecuted) — B is the only case that isolates the leaf; C (matured)
   is accepted **and actually mined**, coin returned. ⚠️ **Full fairness is NOT established** — the claim
   leaf stays single-key under the *funder's* key, so the funder can spend without waiting,
-  and **the mempool leaks the witness**: it can Ext from the unconfirmed adapted signature,
-  replace the claiming tx, keep this coin *and* claim the other leg. ("abort, not theft"
-  is FALSE — retracted.) **Supported wording: "a cross-venue LAS settlement, plus an
-  explicit timeout refund branch shown to be enforced on the Bitcoin side" — never "a
-  fair/full atomic swap".** ⚠️ Only BITCOIN's deadline is exercised: Ethereum is funded with
-  its own timeout but `AdaptorSwapBound.refund` is never called, and the two are in
-  different units (UNIX timestamp vs block height), so **no t₂<t₁ ordering is established**. §4.1 requires timeouts on both transactions and
-  **t₂ < t₁**; 2-of-2 it requires only for PCNs (§4.2).
+  and **the mempool exposes the adapted signature before confirmation**: the funder, which
+  holds the matching pre-signature, can run Ext on that unconfirmed signature and attempt a
+  conflicting spend. If its conflicting spend confirms instead, it keeps this coin while
+  using the extracted witness to claim the other leg. ("abort, not theft" is FALSE —
+  retracted.) **A timeout closes neither hole**, so the recovery work below does not buy
+  fairness wording.
+- ⚠️ **RECOVERY LAYER EXTENDED 2026-08-27 — supersedes "only Bitcoin's deadline is exercised"
+  and "no t₂<t₁ ordering is established"; do not quote either back.** Both venues' refund
+  mechanisms now run, each on a **dedicated recovery-test object of that venue's own kind** —
+  a control UTXO on Bitcoin, a second escrow on Ethereum (E1 before t₁ / E2 not-payer / E3
+  matured pays out / E4 the settled leg stays `not open`). **Neither settled leg takes its
+  refund path**; both are claimed. Leg B's CLTV operand is now a **UNIX timestamp** (was a
+  block height), so t₂ and t₁ share one numeric domain and `t2 < t1` is asserted by the
+  runner; `TwoLegFund` gained `TIMEOUT_ABS` (`TIMEOUT_SECS` still works, `run_onchain_two_leg.sh`
+  untouched — and that runner **already configured** t₂<t₁, it just never exercised either refund).
+  ⚠️ **One numeric domain is NOT one clock**: Bitcoin enforces timestamp finality against
+  **median time past** (BIP113) while the contract uses `block.timestamp`, so `t1 − t2` is a
+  **configured deadline gap, never a guaranteed reaction window**, and neither venue checks the
+  other's deadline. Maturing Bitcoin needs `setmocktime` + blocks on **both** nodes, not height.
+  **Supported wording: "a cross-venue LAS settlement, plus both venues' timeout refund
+  mechanisms exercised and the deadline ordering t₂<t₁ configured and checked" — never "a
+  fair/full atomic swap".** ⚠️ **This run feeds NO report macros** — `evidence/btc_eth_swap/` is read
+  only by its own runner, so moving its `latest` breaks nothing, and **`btcSwap*` belong to
+  `btc_twoleg`, NOT to this run** (the similar name already caused one false "the report is
+  stale" claim). **It IS now in the report**: `app:btcnode` gained "One swap across two kinds
+  of ledger" (2026-08-28) — appendix, so **zero body words** — quoting no figures, only the
+  evidence path. ⚠️ **M11's "no artefact may imply it was run" is SPENT, not violated**: it
+  barred claiming an unrun thing, and the run is real; it does not license recharacterising
+  the Stage-2 measured swap, which stays **UTXO-with-UTXO** per Wang. The deck still says
+  nothing about it: **deck ⊆ report is now satisfied for the cross-venue claims already
+  stated in `app:btcnode`, and any stronger slide claim would still need report support** —
+  rubric 3.2.2 is met by the DEMOS, never by extra claims, so adding a slide is Royce's call.
+- ⚠️ **§4.1's two-timeout setup is its RECAP of [23], NOT a Fig. 1 requirement** (corrected
+  2026-08-27; the old flat "§4.1 requires timeouts on both transactions and t₂<t₁" over-attributed).
+  Fig. 1 restates **no** timeout. Its fairness argument instead uses the LAS security properties
+  together with the proof-of-knowledge π and the M-SIS argument needed to bridge the extracted
+  witness back into the small relation Adapt requires — the paper's own *"π is essential to make
+  sure that u₂ receives the coins c₁"*. So the recovery layer is an **addition around Fig. 1,
+  never a repair to it** — Fig. 1 was already being followed. ⚠️ In that recap **u₁ publishes
+  first**, so the leg published first carries the **longer** t₁; it is the leg **settled** first
+  that carries t₂ — publishing order and settling order are opposite. 2-of-2 the paper requires
+  only for PCNs (§4.2).
+  ⚠️ **Settlement publishes the ADAPTED SIGNATURE, not the witness** — `Ext` needs σ̂ too, so
+  "settling it publishes/reveals the witness" is false and was purged from five places.
 - **Framings that must not drift:** a patched node is **not** Bitcoin — "cannot settle on
   Bitcoin as it stands" stays true; implementing one of `BITCOIN_TX_STRUCTURE.md` §5.4's
   three routes is **not** a position on which should be adopted; **the rule's security is
@@ -796,7 +879,10 @@ Gated twice: modelled charge (`test/LASGasBreakdown.t.sol`) **and** a real clien
 a complete native verifier over vendored ZKNox ETHDILITHIUM primitives, validated against C and
 bound by a fund-time `keccak256(A′,t,M)` commitment; its cost is far above EIP-7825's cap.
 ⚠️ **NAYSAYER IS OUT OF THE DISSERTATION (Royce, 2026-08-19) — "tidak ada value nya".** Removed
-from Ch.3/4/5, `app:naysayer` deleted, all `gasNaysay*` macros dropped. **SUPERSEDES** the
+from Ch.3/4/5, `app:naysayer` deleted, all `gasNaysay*` macros dropped — ⚠️ **except one Ch.5
+clause that survived to 2026-08-28** ("the optimistic variant … over-cap fraud proof"), a dangling
+reference once `app:naysayer` went: **third** missed purge, so re-grep the ARTEFACT, not the diff.
+**SUPERSEDES** the
 2026-08-19 rule "retain the measured negative result" written earlier the same day — do not quote
 it back. Contract, tests and `evidence/onchain/` **stay**; a Naysayer figure reaching the report
 does not. Context, so the decision is not re-litigated: Wang suggested adapting it (M7 08:59) and
@@ -873,7 +959,11 @@ split all enabled), zero upstream functions modified, control verifier = stock
 *is* a result), `test_mldsa_las{2,3,5}`, `bench_mldsa_compare{2,3,5}` (both constructions in ONE
 binary); runner `run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`, write-up
 `docs/03-results/MLDSA_HINT_EXPERIMENT.md`. **Never mix its numbers with `evidence/latest/`.**
-- **The claim, in its corrected form:** *PreSign and PreVerify are necessarily new algorithms;
+- **The claim, in its corrected form** (softened again 2026-08-28 — "necessarily new" claimed
+  more than the naive port's 0/200 shows, which is that THAT reuse fails, not that none can
+  work; same correction `tab:challenges` row 2 already records for the disabled optimisations,
+  and the report now says **require adaptor-specific algorithms** at all four sites):
+  *PreSign and PreVerify require adaptor-specific algorithms;
   `Verify` is not.* With the whole commitment path (committed high bits, low-bits rejection test
   **and** `MakeHint`) on `w+Y` and PreSign tightened to `GAMMA1−BETA−ETA`, all adaptor properties
   hold at ML-DSA-44/65/87, **including unmodified FIPS 204 `crypto_sign_verify` accepting the
@@ -1198,14 +1288,21 @@ meeting block here.
   invited **replacement**, so the RSA rows are not protected. ⚠ What still binds is **this
   project's own rule, not his**: each estimate stays at its own target and the 2019 RSA figure
   is never divided by the 2026 secp256k1 one.
-- ⚠ **EXTEND THE ADAPTOR MOTIVATION IN §1 — the one substantive report shortfall named.** It is
-  "one or three sentences… very abstract"; owed are (a) why adaptor signatures matter to
-  blockchains, concretely, and (b) **why the adaptor among the exotic families**. ⚠ The
-  paragraphs at `01-introduction.tex:104–122` do **not** discharge it — they predate the
-  meeting (`9032d1d` 2026-08-25; PDF built 2026-08-26), so he read them and still said it, and
-  Royce agreed on the call. **No Background section ⇒ that background goes IN the introduction**
-  (rubric §2.1, endorsed; depth over breadth stands). Word count is at the ceiling: offset in
-  the same edit, out of filler, never a qualifier.
+- ✅ **ADAPTOR MOTIVATION IN §1 — BOTH HALVES NOW DONE (b closed 2026-08-28).** It was "one or
+  three sentences… very abstract"; owed were (a) why adaptor signatures matter to blockchains,
+  concretely, and (b) **why the adaptor among the exotic families**. (a) was expanded 2026-08-27
+  (atomic swap + `fig:swapidea` + the HTLC contrast). (b) was still one sentence arguing from
+  *applications + gap* and never from what makes an adaptor **functionally different**, which is
+  the question Wang actually asked ("a lot of types of exotic signatures… why did you choose
+  adaptor signature?"); §1.1 now contrasts it against multi-/threshold/aggregate and names the
+  distinguishing function — it **links two separate settlements**. ⚠️ **Two traps hit while
+  drafting it, both caught in review:** aggregate signatures **compress** signatures, they do not
+  change *who authorises* (do not lump the three together); and "publishing one signature releases
+  the secret" is the **publishes-the-witness error again** — `Ext` needs the pre-signature, so say
+  *a party holding the matching pre-signature extracts it*. Also restore hedges when rewriting:
+  "**Common** classical adaptor constructions", not all. **No Background section ⇒ background goes
+  IN the introduction** (rubric §2.1, endorsed; depth over breadth stands) — M12 item 6, *still
+  open*, and headroom is now thin.
 - ✅ **"PQ migration is not only blockchains" — ASKED IN M11 *AND* M12, never done, DONE
   2026-08-27.** ⚠️ **A suggestion repeated across two meetings is not a hedge: the repetition is
   the evidence it was never applied** ("*Have you mentioned this?*"). Both artefacts carried only
