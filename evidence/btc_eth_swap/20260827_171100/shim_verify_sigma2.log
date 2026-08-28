@@ -1,0 +1,2 @@
+verify: ACCEPTED by LASConsensusVerify — the same predicate, with the same
+        compiled-in parameters, that OP_CHECKLASSIGVERIFY runs on the node

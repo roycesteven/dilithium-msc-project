@@ -1,0 +1,5 @@
+[LAS legB] inputs=1 outputs=1 witness_items=[24]
+  total_size  model 11405    node 11405    OK
+  weight      model 11651    node 11651    OK
+  vsize       model 2913     node 2913     OK
+[LAS legB] size model agrees with the client

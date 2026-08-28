@@ -1,0 +1,4 @@
+pp seed: supplied (e2a16befb5800a12...), NOT this tool's default -- keys and Y are generated under it
+pi: proved and VERIFIED, 30719 bytes
+setup: pp_normal.bin t1.bin t2.bin pk{1,2}.bin sk{1,2}.bin Y.bin witness.bin
+next: fund both legs, write legA_msg.bin and legB_msg.bin (32 B each), then `presign`

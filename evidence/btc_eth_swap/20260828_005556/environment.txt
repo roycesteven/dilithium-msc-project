@@ -1,0 +1,67 @@
+run_id=20260828_005556
+git=c41bbb5
+branch=main
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+--- venues ---
+legA=ETHEREUM anvil chain_id=31337 rpc=http://127.0.0.1:8562 hardfork=osaka (u1 -> u2, 1000000000000000000 wei)
+legB=BITCOIN  regtest rpc=18610/18611 tag=v31.1 (u2 -> u1, 1.0 BTC)
+ledger_separation=different clients, consensus rules and genesis states. NOT the
+ledger_separation=cross-offer control run_btc_two_leg.sh uses; that has no analogue.
+legA_binds=chain id, contract, escrow id, payer, beneficiary, amount
+legB_binds=its transaction inputs and prevout amounts and its outputs; NO chain id
+deadlines=ONE NUMERIC DOMAIN: legA t1=1787961382 and legB t2=1787878582, both absolute UNIX seconds,
+deadlines=ordered t2 < t1 — CONFIGURED and checked by this run, NOT enforced by either
+deadlines=venue. NOT one clock: legB is judged against median time past (BIP113),
+deadlines=legA against block.timestamp, so t1-t2 is a configured gap and not a
+deadlines=guaranteed reaction window.
+deadline_exercised=BOTH VENUES, each on a dedicated recovery-test object of its own
+deadline_exercised=kind — a control UTXO on Bitcoin, a second escrow on Ethereum.
+deadline_exercised=NEITHER settled leg takes its refund path; both are claimed.
+--- Ethereum ---
+anvil=anvil Version: 1.7.1
+cast=cast Version: 1.7.1
+forge=forge Version: 1.7.1
+tx_gas_cap=16777216  cap_control=PASSED (accepted at cap, refused at cap+1)
+settlement_contract=AdaptorSwapBound (message DERIVED from escrow state)
+--- Bitcoin Core ---
+btc_src=/home/melly/btc-stage2/src-31.1 (HEAD == v31.1 commit 9be056a8a72b624dae9623b2f7bded92c2a21c91, plus the committed patch)
+patch_sha256=6fb8161d5b2b3820752a0d98f04be40849942dad8ed738c851e36ed92dd1189f
+applied_patch_sha256=6fb8161d5b2b3820752a0d98f04be40849942dad8ed738c851e36ed92dd1189f (VERIFIED EQUAL; no untracked files)
+bitcoind_patched_sha256=de3a4bd76eb10a7d4e22d0501384987598d99ebff7f61bfec47ff6b55528c4d0
+bitcoind_stock_sha256=986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+opcode=OP_CHECKLASSIGVERIFY (0xbb, a BIP342 OP_SUCCESSx slot)
+instrument=generateblock submit=false — CONSENSUS validation, not mempool policy
+tapleaf=TWO leaves: claim <sha256(pk2)> OP_CHECKLASSIGVERIFY OP_1, and refund
+tapleaf=<1787878582> OP_CHECKLOCKTIMEVERIFY OP_DROP <sha256(pk2)> OP_CHECKLASSIGVERIFY OP_1
+legB_address=bcrt1ppvxeem7y57d4h66hjwl492lk3pcp8jmeq0wtqc8wc25fpmrsumcsx330gm (the TWO-leaf address; NOT the single-leaf one the same-venue runners pin)
+refund_deadline_t2=1787878582 (a UNIX TIMESTAMP, not a height; median time past after
+  funding was 1787874983). Timestamp finality is evaluated against MTP under BIP113;
+  the refund leaf itself is constrained by CLTV/BIP65.
+legA_deadline_t1=1787961382 (a UNIX TIMESTAMP, enforced against block.timestamp)
+deadline_ordering=t2 < t1, CONFIGURED and checked; one numeric domain, NOT one clock
+shim_selftest=PASSED
+--- LAS: ONE instance, TWO venue-specific verification mechanisms ---
+consensus_seed=e2a16befb5800a121a9b49918f0183ef6812069998e929717a5f34ea692e5998 (SHA-256 of "LAS-CONSENSUS-PARAMS-v1", VERIFIED)
+pp_seed=e2a16befb5800a121a9b49918f0183ef6812069998e929717a5f34ea692e5998 — the WHOLE swap was generated under the Bitcoin node's compiled-in
+pp_seed=seed, and the Ethereum leg registered that same A' as calldata. Both venues
+pp_seed=verify the SAME LAS instance; only the mechanism differs.
+swap_tool=ref/test/export_swap_vectors_pi
+pi=proved and verified (Fig. 1 steps 2-3)
+--- ⚠ FAIRNESS IS NOT ESTABLISHED ---
+caveat=The claim leaf is single-key under the FUNDER's key, so the funder can spend
+caveat=without waiting: the refund branch is NOT an exclusive recovery path.
+caveat=The mempool exposes the ADAPTED SIGNATURE before confirmation — the funder,
+caveat=holding the matching pre-signature, can Ext from it and attempt a conflicting
+caveat=spend; if that confirms instead it keeps this coin and claims the other leg.
+caveat=A timeout closes neither hole.
+caveat=Supported wording: a cross-venue LAS settlement, plus both venues' timeout
+caveat=refund mechanisms exercised on dedicated recovery-test objects and the deadline
+caveat=ordering t2 < t1 configured and checked. NEVER 'a fair/full atomic swap'.
+vector_pp_normal=sha256:0fac85a354c418a5... 30720 B
+vector_t1=sha256:15df01fe3fac4941... 6144 B
+vector_t2=sha256:bd25de4e93bcea79... 6144 B
+vector_Y=sha256:470fe7265707f7c2... 4416 B
+vector_pk1=sha256:91f89defeae098cd... 4416 B
+vector_pk2=sha256:6c9641b7d6296516... 4416 B
+vector_pi=sha256:a2e139016aeb288e... 30738 B

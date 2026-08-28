@@ -1,0 +1,18 @@
+{
+  "alt_txid": "ed3a07acb68fea1a7f383f5ee886deeaf95a883357eccfe8697ea6b3f2f64576",
+  "alt_vout": 1,
+  "claimed_value_sat": 100000000,
+  "dest_spk_hex": "0014173b79ad6e443c3d83d83eeb8307f1f62a06ea24",
+  "fee_sat": 200000,
+  "locktime": 0,
+  "mutate": "output_recipient",
+  "path": "claim",
+  "pk_path": "/home/melly/dilithium-msc-project/evm/test/vectors/swap_xchain/pk2.bin",
+  "refund_locktime": 131,
+  "refund_pk_path": "/home/melly/dilithium-msc-project/evm/test/vectors/swap_xchain/pk2.bin",
+  "sequence": 4294967295,
+  "sighash_hex": "080820ebf55281f29db5d7eece3cc3fcb95e43cf3cf577e193ce4ecb1f2b3d68",
+  "txid": "81846f8a8ba67ffa5a6f4e5e07a80d33863f74dfe3e9a43e5911fa2288525939",
+  "value_sat": 100000000,
+  "vout": 0
+}

@@ -1,0 +1,10 @@
+legA (ETHEREUM): chain_id=31337 contract=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 id=0 message=0x22a429a5538c7310c87196afba94dd7206750acbd9077483a2949009f56bde74
+  binds  : chain id, contract, escrow id, payer, beneficiary, amount
+  deadline: block.timestamp + 172800 s  (a WALL-CLOCK instant) — CONFIGURED,
+            never exercised: AdaptorSwapBound.refund is not called by this run
+legB (BITCOIN) : coin=81846f8a8ba67ffa5a6f4e5e07a80d33863f74dfe3e9a43e5911fa2288525939:0 -> bcrt1qzuahnttwgs7rmq7c8m4cxpl37c4qd63y49uchu  sighash=080820ebf55281f29db5d7eece3cc3fcb95e43cf3cf577e193ce4ecb1f2b3d68
+  binds  : this transaction's inputs and prevout amounts, and its outputs.
+           NO chain id — BIP341's sighash has none.
+  deadline: block height 131  (a BLOCK COUNT) — EXERCISED, see the refund battery
+  ⚠ the two deadlines are in DIFFERENT UNITS and are never compared; this run makes
+    no claim about the paper's numeric ordering t2 < t1 across the two venues.

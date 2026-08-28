@@ -1,0 +1,15 @@
+
+RESULT: FAIL — funding leg A on Ethereum failed
+
+run_id: 20260827_170907
+This is a recorded negative result, not a crashed run. Retained alongside it:
+  btc_{patched,stock}/regtest/debug.log   both Bitcoin nodes' logs
+  anvil.log                               the Ethereum node's log
+  *_consensus_*.{json,err}  each Bitcoin node's block-validation answer, verbatim
+  legB_spend.json refund_*_spend.json     exactly what this run intended to mine
+  legA.calldata legA_send.log             what it intended to send, and the reply
+  replay_call.log replay_send.log         the EVM cross-venue binding control
+  cap_control.log                         the EIP-7825 differential control
+  recovered_sigB.json                     the chain-byte recovery, if reached
+  setup_vectors.log presign.log adapt.log extract_adapt.log
+  applied.patch environment.txt selftest.log

@@ -1,0 +1,30 @@
+{
+  "claimed_value_sat": 100000000,
+  "core_helpers_used": [
+    "test_framework.address.output_key_to_p2tr",
+    "test_framework.key.ECKey",
+    "test_framework.key.compute_xonly_pubkey",
+    "test_framework.key.sign_schnorr",
+    "test_framework.messages.COutPoint",
+    "test_framework.messages.CTransaction",
+    "test_framework.messages.CTxIn",
+    "test_framework.messages.CTxInWitness",
+    "test_framework.messages.CTxOut",
+    "test_framework.script.CScript",
+    "test_framework.script.CScriptOp",
+    "test_framework.script.LEAF_VERSION_TAPSCRIPT",
+    "test_framework.script.OP_1",
+    "test_framework.script.OP_CHECKLOCKTIMEVERIFY",
+    "test_framework.script.OP_CHECKSIG",
+    "test_framework.script.OP_DROP",
+    "test_framework.script.TaprootSignatureHash",
+    "test_framework.script.taproot_construct"
+  ],
+  "dest_spk_hex": "00149a7caccd5f4cc5352e44bfbd586524a296e7eff4",
+  "leaf": "las",
+  "locktime": 0,
+  "mutate": "output_amount",
+  "pays_self": false,
+  "sequence": 4294967295,
+  "sighash": "4163fd6835d0c82b06de04c0b7d9cd69c2cca56d49a7346a4a9e0fa7ffacd643"
+}

@@ -1,0 +1,10 @@
+eth refund escrow id     : 1 (payer u1, beneficiary u2, deadline t1=1787961382)
+chain timestamp at E1    : 1787874999  (strictly before t1)
+chain timestamp at E2-E4 : 1787961442  (at or past t1)
+E1 before t1, payer      : eth_call REVERTED 'before timeout'; a broadcast forced past
+                           gas estimation was MINED with status 0, left the
+                           balance at 1000000000000000000 and the escrow OPEN
+E2 after t1, not payer   : REVERTED 'not payer'
+E4 after t1, settled legA: REVERTED 'not open' (local state exclusivity)
+E3 after t1, payer       : receipt status 1, escrow state 3 (REFUNDED=3)
+contract balance         : 1000000000000000000 -> 0 wei (fell by exactly 1000000000000000000)

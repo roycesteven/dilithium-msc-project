@@ -1,0 +1,2 @@
+adapt: sigma_2 written and verified as an ordinary signature (6736 bytes)
+next: publish it on chain 2, then read it BACK off the chain for extract_and_adapt

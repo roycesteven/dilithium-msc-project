@@ -1,0 +1,11 @@
+legA (ETHEREUM): chain_id=31337 contract=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 id=0 message=0x22a429a5538c7310c87196afba94dd7206750acbd9077483a2949009f56bde74
+  binds  : chain id, contract, escrow id, payer, beneficiary, amount
+  deadline: t1 = 1787961382 (absolute UNIX seconds), enforced against block.timestamp
+legB (BITCOIN) : coin=993078345977f63a7d04c820eb5d65fcb27d5ff73443f2e5bd2ad19bd275d7b6:0 -> bcrt1qnf72en2lfnzn2tjyh774sefy52tw0ml5nnylrk  sighash=4163fd6835d0c82b06de04c0b7d9cd69c2cca56d49a7346a4a9e0fa7ffacd643
+  binds  : this transaction's inputs and prevout amounts, and its outputs.
+           NO chain id — BIP341's sighash has none.
+  deadline: t2 = 1787878582 (absolute UNIX seconds), enforced as a timestamp nLockTime
+            against MEDIAN TIME PAST
+  ⚠ t2 < t1 holds as a CONFIGURED numeric ordering, checked in section 4b. The two are
+    one numeric domain, NOT one consensus clock: median time past and block.timestamp
+    are different quantities on separate ledgers.

@@ -1,0 +1,26 @@
+{
+  "address": "bcrt1plwajcy6cr2w5sg87mhpulsck538gy807ydp0etuc7ttk7xnvunzq2vpthr",
+  "core_helpers_used": [
+    "test_framework.address.output_key_to_p2tr",
+    "test_framework.key.ECKey",
+    "test_framework.key.compute_xonly_pubkey",
+    "test_framework.key.sign_schnorr",
+    "test_framework.messages.COutPoint",
+    "test_framework.messages.CTransaction",
+    "test_framework.messages.CTxIn",
+    "test_framework.messages.CTxInWitness",
+    "test_framework.messages.CTxOut",
+    "test_framework.script.CScript",
+    "test_framework.script.CScriptOp",
+    "test_framework.script.LEAF_VERSION_TAPSCRIPT",
+    "test_framework.script.OP_1",
+    "test_framework.script.OP_CHECKSIG",
+    "test_framework.script.OP_DROP",
+    "test_framework.script.TaprootSignatureHash",
+    "test_framework.script.taproot_construct"
+  ],
+  "internal_key": "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+  "leaf_script_hex": "208ceafb2813d09e3e62bb96276badb08e40990780ab31a1314ffdfa4e8d450fa1bb51",
+  "pk_sha256": "8ceafb2813d09e3e62bb96276badb08e40990780ab31a1314ffdfa4e8d450fa1",
+  "scriptPubKey_hex": "5120fbbb2c13581a9d4820feddc3cfc316a44e821dfe2342fcaf98f2d76f1a6ce4c4"
+}

@@ -1,0 +1,193 @@
+=== leg B — BITCOIN (settled first; publishes the adapted signature Ext runs on) ===
+settlement tx       : d2a259c0c74eefd54a15121d2411665f11403110835b17f073ed8aec873aa82c
+block               : 4805623ef0fdc7b29efb147578bf47fc3b1e2864fee9386de447eb848a6f6ef2 (confirmations 1)
+
+=== leg A — ETHEREUM (settled second, from the witness Bitcoin published) ===
+claim tx            : 0xb55600964dabb704bc6574aeff12ee36a762bfd832aabf0a23704688eda13ab4
+status              : SUCCESS
+gasLimit on tx      : 16777216  (EIP-7825 cap 16777216)
+gasUsed             : 16412375
+calldata            : 50148 received / 50148 expected, byte-equal YES
+
+=== the witness crossing from Bitcoin to Ethereum ===
+sigma_2 recovered from the MINED BITCOIN witness : 6736 bytes, split at offset 6736
+  boundary located by                           : sha256(pk) committed by the funding output's tapleaf, not a locally known signature length
+  identical to the Adapt output                 : YES   <- Adapt provenance
+extracted witness == Gen's witness              : YES
+  sha256(witness extracted)                     : e83ecc6c62fb3a8b39d4b89b03f3dcc9...
+sigma_1 (adapted under the EXTRACTED witness)   : 6736 bytes, sha256 6c057e9c552ff10119760f67d4b5e389...
+  (Ext also reads the protocol state u2 already holds; what came from the ledger, and
+   only from it, is the ADAPTED-SIGNATURE input.)
+
+=== did the coins move? ===
+legB escrowed coin spent : YES
+legB payout              : 99800000 sat to bcrt1qnf72en2lfnzn2tjyh774sefy52tw0ml5nnylrk (expected 99800000 to bcrt1qnf72en2lfnzn2tjyh774sefy52tw0ml5nnylrk)
+legA payout to u2        : 1000000000000000000 wei, fee-adjusted (escrow was 1000000000000000000)
+legA escrow balance after: 0 wei (must be 0)
+cross-venue replay ctrl  : cast exit 1, contract reason matched: YES
+
+=== the two deadlines (the recovery layer Sec 4.1 recalls from [23]) ===
+t2  leg B, BITCOIN, settled first  : 1787878582 — enforced as a timestamp nLockTime against
+                                     MEDIAN TIME PAST
+t1  leg A, ETHEREUM, settled second: 1787961382 — enforced against block.timestamp
+ordering t2 < t1                   : YES (82800s configured deadline gap)
+⚠ one numeric domain (UNIX seconds), NOT one consensus clock: median time past and
+  block.timestamp are different quantities on separate ledgers, so the gap above is a
+  CONFIGURED difference and not a guaranteed real reaction window.
+
+=== the BITCOIN timeout refund branch (coin B3, never part of the swap) ===
+deadline t2                   : 1787878582, median time past at maturity 1787879183
+before deadline, NOT final    : refused by BOTH nodes (finality, not the leaf)
+before deadline, final        : refused by the PATCHED node only, for locktime
+                                (stock accepts: 0xbb is an OP_SUCCESSx, so BIP342
+                                 wins the whole script without executing it)
+after deadline                : accepted and MINED
+refund escrowed coin spent    : YES
+refund payout                 : 99800000 sat to bcrt1qgk0c06jqwwqz8rfsm4tn36g590tmnsst4n94q8 (expected 99800000 to bcrt1qgk0c06jqwwqz8rfsm4tn36g590tmnsst4n94q8)
+
+=== the ETHEREUM timeout refund branch (a second escrow, never part of the swap) ===
+deadline t1                   : 1787961382, chain timestamp at maturity 1787961442
+before t1, by the payer       : reverted 'before timeout'; a broadcast forced past gas
+                                estimation was MINED with status 0 and moved nothing
+after t1, not the payer       : reverted 'not payer'
+after t1, the SETTLED leg A   : reverted 'not open' — local state exclusivity only,
+                                NOT evidence of cross-chain atomicity
+after t1, by the payer        : receipt status 1, escrow state 3 (REFUNDED=3)
+contract balance afterwards   : 0 wei
+
+RESULT: a CROSS-VENUE LAS SETTLEMENT. Leg B paid BTC on a patched Bitcoin Core,
+        authorised solely by a LAS signature verified IN CONSENSUS under
+        OP_CHECKLASSIGVERIFY. Its adapted signature was read back out of the MINED
+        WITNESS, its boundary located by the funding output's own commitment; that
+        signature — and only it — was the adapted-signature input to Ext; and leg A
+        paid ETH on a real Ethereum client, verified by a DEPLOYED CONTRACT inside one
+        EIP-7825-capped transaction, under a signature adapted with the recovered
+        witness. ONE LAS instance, two venue-specific verification mechanisms.
+        Separately, BOTH VENUES' TIMEOUT REFUND mechanisms were exercised on DEDICATED
+        RECOVERY-TEST OBJECTS, one of each venue's own kind — Bitcoin's CLTV leaf at
+        t2, on a control UTXO funded to the same address as leg B and spent through the
+        same refundable tree, built from the same refund key and locktime; and the
+        contract's `refund` at t1, on a second escrow carrying leg A's own deadline and
+        registered context. Each was
+        refused before its configured deadline and, once matured, returned the test
+        coin. The configured deadlines are ordered t2 < t1, the venue settled first
+        carrying the shorter one. NEITHER SETTLED LEG had its own refund path taken —
+        both were claimed, which is what the honest path means.
+
+⚠ THIS IS NOT A FAIR ATOMIC SWAP AND MUST NOT BE CALLED ONE, and the deadlines above do
+  NOT change that. The claim leaf is single-key under the FUNDER's key, so the funder
+  can spend without waiting and the refund is NOT an exclusive recovery path; and the
+  mempool exposes the ADAPTED SIGNATURE before confirmation, so the funder — holding the
+  matching pre-signature — can Ext from it and attempt a conflicting spend; if that
+  confirms instead it keeps this coin and claims the other leg. Whether it wins depends
+  on relay/replacement policy and miners, so the race is the claim and not a guaranteed
+  theft, but a race is already enough to deny fairness. A timeout closes neither hole.
+  eprint 2020/845 Sec 4.1 reasons from a signature 'published on a blockchain' and
+  abstracts that race away; this does not.
+⚠ THE ORDERING IS CONFIGURED, NOT ENFORCED. Each side enforces only its own deadline:
+  nothing in the contract or the consensus rule checks the other leg's, and the two are
+  enforced against different quantities (median time past vs block.timestamp). Pairing
+  them remains a deployment decision.
+⚠ Sec 4.1 states the two-timeout setup while RECALLING the classical protocol of its
+  [23]; the LAS choreography it then gives — Fig. 1 — restates no timeout. This
+  recovery layer is therefore an ADDITION around Fig. 1, never a repair to it.
+
+--- BITCOIN: every case put to BOTH nodes as a CONSENSUS question ---
+    (generateblock submit=false: block validation, not mempool policy)
+
+legB_valid                         patched: ACCEPTED                                                   stock: ACCEPTED
+legB_output_amount                 patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of d9c258acfd23e091cb35d1ac9d9f stock: ACCEPTED
+legB_output_recipient              patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of afae626d71b9d53fe044b4976b39 stock: ACCEPTED
+legB_input_outpoint                patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of 6dbafca19df0104457d27763dc05 stock: ACCEPTED
+legB_chunk_truncated               patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (Malformed LAS witness (chunk count or chunk length)), input 0 of d2a25 stock: ACCEPTED
+legB_chunk_reordered               patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of d2a259c0c74eefd54a15121d2411 stock: ACCEPTED
+legB_wrong_pubkey                  patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS public key does not match the committed hash), input 0 of d2a259c0 stock: ACCEPTED
+legB_wrong_prevout_amt             patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of d2a259c0c74eefd54a15121d2411 stock: ACCEPTED
+legB_foreign_signature             patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of d2a259c0c74eefd54a15121d2411 stock: ACCEPTED
+legB_non_sighash_msg               patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of d2a259c0c74eefd54a15121d2411 stock: ACCEPTED
+legB_evm_message_signature         patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (LAS signature did not verify), input 0 of d2a259c0c74eefd54a15121d2411 stock: ACCEPTED
+refund_immature                    patched: REJECTED: error code: -25 error message: TestBlockValidity failed: bad-txns-nonfinal, non-final transaction  stock: REJECTED: error code: -25 error message: TestBlockValidity failed: bad-txns-nonfinal, non-final transaction 
+refund_cltv                        patched: REJECTED: error code: -25 error message: TestBlockValidity failed: block-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 44b3054fc1f43cb97fb189 stock: ACCEPTED
+refund_mature                      patched: ACCEPTED                                                   stock: ACCEPTED
+
+  Required and checked exactly: valid = ACCEPTED/ACCEPTED; every negative =
+  REJECTED/ACCEPTED — EXCEPT refund_immature, which is REJECTED/REJECTED because a
+  non-final transaction is refused by block validation before any script runs, by
+  every node. That case evidences the deadline, NOT the refund leaf; refund_cltv is
+  the one that isolates the leaf, and its patched-node reason names locktime.
+
+--- THE TWO CROSS-VENUE BINDING CONTROLS (the mirrored pair) ---
+  legB_evm_message_signature : a GENUINE LAS signature under leg B's OWN key over
+                               LEG A's Ethereum digest, offered to the Bitcoin
+                               consensus rule. Refused. Only the message differs
+                               from the settlement signature.
+  legA cross-venue replay    : leg A's Ethereum claim rebuilt carrying LEG B's
+                               BIP341 sighash. Reverted with the contract's own
+                               'message not bound', and a real broadcast left the
+                               escrow untouched.
+
+legA (ETHEREUM): chain_id=31337 contract=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 id=0 message=0x22a429a5538c7310c87196afba94dd7206750acbd9077483a2949009f56bde74
+  binds  : chain id, contract, escrow id, payer, beneficiary, amount
+  deadline: t1 = 1787961382 (absolute UNIX seconds), enforced against block.timestamp
+legB (BITCOIN) : coin=993078345977f63a7d04c820eb5d65fcb27d5ff73443f2e5bd2ad19bd275d7b6:0 -> bcrt1qnf72en2lfnzn2tjyh774sefy52tw0ml5nnylrk  sighash=4163fd6835d0c82b06de04c0b7d9cd69c2cca56d49a7346a4a9e0fa7ffacd643
+  binds  : this transaction's inputs and prevout amounts, and its outputs.
+           NO chain id — BIP341's sighash has none.
+  deadline: t2 = 1787878582 (absolute UNIX seconds), enforced as a timestamp nLockTime
+            against MEDIAN TIME PAST
+  ⚠ t2 < t1 holds as a CONFIGURED numeric ordering, checked in section 4b. The two are
+    one numeric domain, NOT one consensus clock: median time past and block.timestamp
+    are different quantities on separate ledgers.
+
+horizon (max of both chains' own clocks) : 1787874982
+  bitcoin median time past at horizon    : 1787874982
+  ethereum latest block timestamp        : 1787874979
+t2 = leg B (BITCOIN, settled first)      : 1787878582  (+3600s) — enforced as a timestamp nLockTime against MEDIAN TIME PAST
+t1 = leg A (ETHEREUM, settled second)    : 1787961382  (+86400s) — enforced as block.timestamp by AdaptorSwapBound
+ordering t2 < t1                         : 82800s CONFIGURED DEADLINE GAP, checked by this script
+⚠ one numeric domain (UNIX seconds), NOT one consensus clock: the two enforcement
+  quantities are median time past and block.timestamp on separate ledgers, so the gap
+  above is a configured difference and NOT a guaranteed real reaction window.
+
+--- THE ETHEREUM REFUND BATTERY (a second escrow; leg A itself was CLAIMED) ---
+eth refund escrow id     : 1 (payer u1, beneficiary u2, deadline t1=1787961382)
+chain timestamp at E1    : 1787874999  (strictly before t1)
+chain timestamp at E2-E4 : 1787961442  (at or past t1)
+E1 before t1, payer      : eth_call REVERTED 'before timeout'; a broadcast forced past
+                           gas estimation was MINED with status 0, left the
+                           balance at 1000000000000000000 and the escrow OPEN
+E2 after t1, not payer   : REVERTED 'not payer'
+E4 after t1, settled legA: REVERTED 'not open' (local state exclusivity)
+E3 after t1, payer       : receipt status 1, escrow state 3 (REFUNDED=3)
+contract balance         : 1000000000000000000 -> 0 wei (fell by exactly 1000000000000000000)
+
+[LAS legB] inputs=1 outputs=1 witness_items=[24]
+  total_size  model 11405    node 11405    OK
+  weight      model 11651    node 11651    OK
+  vsize       model 2913     node 2913     OK
+[LAS legB] size model agrees with the client
+
+LEDGER SEPARATION. The two venues are different clients with different consensus
+rules and different genesis states. This is NOT the cross-offer control the
+same-venue Bitcoin runner uses — a Bitcoin transaction cannot be offered to an EVM
+node at all — and must not be reported as its equivalent.
+
+WHAT EACH MESSAGE BINDS — TWO DIFFERENT LISTS, NEITHER A SUPERSET OF THE OTHER.
+Leg A binds chain id, contract, escrow id, payer, beneficiary and amount. Leg B's
+BIP341 sighash binds its transaction inputs and prevout amounts and its outputs, and
+has NO chain id. There is no transaction input on the EVM side and no chain
+identifier on the Bitcoin side.
+
+Both settlement signatures are Adapt's output. base_sign_det is used by the shim's
+selftest, for the control signatures above and for the refund signatures, but neither
+settlement signature comes from it. Their Adapt provenance rests on the byte-for-byte
+equality of the chain-recovered signature with the retained Adapt output. Ext
+succeeding on the mined sigma_2 is additional, weaker evidence: any (c, z_hat + y')
+with A*y' = Y would also pass it.
+
+SCOPE: the settlement path, plus BOTH venues' refund mechanisms exercised on dedicated
+recovery-test objects — a control UTXO on Bitcoin and a second escrow on Ethereum —
+rather than by taking the refund path of either settled leg. The deadline ordering
+t2 < t1 is CONFIGURED and checked, not enforced by either venue. Full fairness is NOT
+established — see the warnings in the verdict. A patched node is not Bitcoin; the
+consensus rule's security is unanalysed; regtest and anvil are not mainnets; the two
+sides' security levels are unmatched.

@@ -1,0 +1,30 @@
+{
+  "address": "bcrt1ppvxeem7y57d4h66hjwl492lk3pcp8jmeq0wtqc8wc25fpmrsumcsx330gm",
+  "core_helpers_used": [
+    "test_framework.address.output_key_to_p2tr",
+    "test_framework.key.ECKey",
+    "test_framework.key.compute_xonly_pubkey",
+    "test_framework.key.sign_schnorr",
+    "test_framework.messages.COutPoint",
+    "test_framework.messages.CTransaction",
+    "test_framework.messages.CTxIn",
+    "test_framework.messages.CTxInWitness",
+    "test_framework.messages.CTxOut",
+    "test_framework.script.CScript",
+    "test_framework.script.CScriptOp",
+    "test_framework.script.LEAF_VERSION_TAPSCRIPT",
+    "test_framework.script.OP_1",
+    "test_framework.script.OP_CHECKLOCKTIMEVERIFY",
+    "test_framework.script.OP_CHECKSIG",
+    "test_framework.script.OP_DROP",
+    "test_framework.script.TaprootSignatureHash",
+    "test_framework.script.taproot_construct"
+  ],
+  "internal_key": "50929b74c1a04954b78b4b6035e97a5e078a5a0f28ec96d547bfee9ace803ac0",
+  "leaf": "las",
+  "leaf_script_hex": "206c9641b7d6296516536ada1acfda1b95b99bd8bb510c70781dcb92fdb284ea36bb51",
+  "pk_sha256": "6c9641b7d6296516536ada1acfda1b95b99bd8bb510c70781dcb92fdb284ea36",
+  "refund_locktime": 1787878582,
+  "refundable": true,
+  "scriptPubKey_hex": "51200b0d9cefc4a79b5beb5793bf52abf6887013cb7903dcb060eec2a890ec70e6f1"
+}

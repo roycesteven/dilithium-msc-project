@@ -1,0 +1,57 @@
+run_id=20260827_171100
+git=9032d1d
+branch=main
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+--- venues ---
+legA=ETHEREUM anvil chain_id=31337 rpc=http://127.0.0.1:8562 hardfork=osaka (u1 -> u2, 1000000000000000000 wei)
+legB=BITCOIN  regtest rpc=18610/18611 tag=v31.1 (u2 -> u1, 1.0 BTC)
+ledger_separation=different clients, consensus rules and genesis states. NOT the
+ledger_separation=cross-offer control run_btc_two_leg.sh uses; that has no analogue.
+legA_binds=chain id, contract, escrow id, payer, beneficiary, amount
+legB_binds=its transaction inputs and prevout amounts and its outputs; NO chain id
+deadlines=INCOMMENSURABLE: legA a UNIX timestamp, legB a block height. No t2<t1
+deadlines=ordering is established by this run, and none may be quoted from it.
+deadline_exercised=BITCOIN ONLY. Ethereum is funded with its own timeout, but its
+deadline_exercised=refund path is NOT exercised — AdaptorSwapBound.refund is
+deadline_exercised=implemented and is never called here.
+--- Ethereum ---
+anvil=anvil Version: 1.7.1
+cast=cast Version: 1.7.1
+forge=forge Version: 1.7.1
+tx_gas_cap=16777216  cap_control=PASSED (accepted at cap, refused at cap+1)
+settlement_contract=AdaptorSwapBound (message DERIVED from escrow state)
+--- Bitcoin Core ---
+btc_src=/home/melly/btc-stage2/src-31.1 (HEAD == v31.1 commit 9be056a8a72b624dae9623b2f7bded92c2a21c91, plus the committed patch)
+patch_sha256=6fb8161d5b2b3820752a0d98f04be40849942dad8ed738c851e36ed92dd1189f
+applied_patch_sha256=6fb8161d5b2b3820752a0d98f04be40849942dad8ed738c851e36ed92dd1189f (VERIFIED EQUAL; no untracked files)
+bitcoind_patched_sha256=de3a4bd76eb10a7d4e22d0501384987598d99ebff7f61bfec47ff6b55528c4d0
+bitcoind_stock_sha256=986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+opcode=OP_CHECKLASSIGVERIFY (0xbb, a BIP342 OP_SUCCESSx slot)
+instrument=generateblock submit=false — CONSENSUS validation, not mempool policy
+tapleaf=TWO leaves: claim <sha256(pk2)> OP_CHECKLASSIGVERIFY OP_1, and refund
+tapleaf=<131> OP_CHECKLOCKTIMEVERIFY OP_DROP <sha256(pk2)> OP_CHECKLASSIGVERIFY OP_1
+legB_address=bcrt1pdrqpq9sa9vk7xjkn4rfrql29tzc7k5a9za7n67mcsysqwyef323qzq58cp (the TWO-leaf address; NOT the single-leaf one the same-venue runners pin)
+refund_deadline_height=131 (funded at height 104)
+shim_selftest=PASSED
+--- LAS: ONE instance, TWO venue-specific verification mechanisms ---
+consensus_seed=e2a16befb5800a121a9b49918f0183ef6812069998e929717a5f34ea692e5998 (SHA-256 of "LAS-CONSENSUS-PARAMS-v1", VERIFIED)
+pp_seed=e2a16befb5800a121a9b49918f0183ef6812069998e929717a5f34ea692e5998 — the WHOLE swap was generated under the Bitcoin node's compiled-in
+pp_seed=seed, and the Ethereum leg registered that same A' as calldata. Both venues
+pp_seed=verify the SAME LAS instance; only the mechanism differs.
+swap_tool=ref/test/export_swap_vectors_pi
+pi=proved and verified (Fig. 1 steps 2-3)
+--- ⚠ FAIRNESS IS NOT ESTABLISHED ---
+caveat=The claim leaf is single-key under the FUNDER's key, so the funder can spend
+caveat=without waiting: the refund branch is NOT an exclusive recovery path.
+caveat=The mempool is a witness-leak window — the funder can Ext from the unconfirmed
+caveat=claiming transaction, replace it, keep this coin AND claim the other leg.
+caveat=Supported wording: a cross-venue LAS settlement, plus an explicit timeout
+caveat=refund branch shown to be enforced. NEVER 'a fair/full atomic swap'.
+vector_pp_normal=sha256:0fac85a354c418a5... 30720 B
+vector_t1=sha256:15df01fe3fac4941... 6144 B
+vector_t2=sha256:bd25de4e93bcea79... 6144 B
+vector_Y=sha256:470fe7265707f7c2... 4416 B
+vector_pk1=sha256:91f89defeae098cd... 4416 B
+vector_pk2=sha256:6c9641b7d6296516... 4416 B
+vector_pi=sha256:26d9e7d675aa8eed... 30743 B

@@ -1,0 +1,13 @@
+{
+  "bestblock": "75c3fbb5f40e3d7e65a12d4049f6bc1b237485f3b6419f6c6de064b513654a37",
+  "confirmations": 1,
+  "value": 0.99800000,
+  "scriptPubKey": {
+    "asm": "0 db9f8a6040cd975434ee6ab78c143016bf853737",
+    "desc": "addr(bcrt1qmw0c5czqekt4gd8wd2mcc9psz6lc2dehvvltcr)#msnjxf0w",
+    "hex": "0014db9f8a6040cd975434ee6ab78c143016bf853737",
+    "address": "bcrt1qmw0c5czqekt4gd8wd2mcc9psz6lc2dehvvltcr",
+    "type": "witness_v0_keyhash"
+  },
+  "coinbase": false
+}

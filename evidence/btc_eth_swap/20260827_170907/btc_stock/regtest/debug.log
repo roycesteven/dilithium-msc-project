@@ -1,0 +1,328 @@
+
+
+
+
+
+2026-08-27T16:09:12Z Bitcoin Core version v31.1.0 (release build)
+2026-08-27T16:09:12Z parameter interaction: -bind set -> setting -listen=1
+2026-08-27T16:09:12Z parameter interaction: -connect or -maxconnections=0 set -> setting -dnsseed=0
+2026-08-27T16:09:12Z Log output may contain privacy-sensitive information. Be cautious when sharing logs.
+2026-08-27T16:09:12Z Using the 'x86_shani(1way;2way)' SHA256 implementation
+2026-08-27T16:09:12Z Using RdSeed as an additional entropy source
+2026-08-27T16:09:12Z Using RdRand as an additional entropy source
+2026-08-27T16:09:12Z Default data directory /home/melly/.bitcoin
+2026-08-27T16:09:12Z Using data directory /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest
+2026-08-27T16:09:12Z Config file: /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/bitcoin.conf (not found, skipping)
+2026-08-27T16:09:12Z Command-line arg: bind="127.0.0.1"
+2026-08-27T16:09:12Z Command-line arg: connect="127.0.0.1:18612"
+2026-08-27T16:09:12Z Command-line arg: daemonwait=""
+2026-08-27T16:09:12Z Command-line arg: datadir="/home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock"
+2026-08-27T16:09:12Z Command-line arg: fallbackfee="0.0002"
+2026-08-27T16:09:12Z Command-line arg: port="18613"
+2026-08-27T16:09:12Z Command-line arg: regtest=""
+2026-08-27T16:09:12Z Command-line arg: rpcport="18611"
+2026-08-27T16:09:12Z Using at most 125 automatic connections (1048576 file descriptors available)
+2026-08-27T16:09:12Z scheduler thread start
+2026-08-27T16:09:12Z Binding RPC on address ::1 port 18611
+2026-08-27T16:09:12Z Binding RPC on address 127.0.0.1 port 18611
+2026-08-27T16:09:12Z Generated RPC authentication cookie /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/.cookie
+2026-08-27T16:09:12Z Permissions used for cookie: rw-------
+2026-08-27T16:09:12Z Using random cookie authentication.
+2026-08-27T16:09:12Z Starting HTTP server with 16 worker threads
+2026-08-27T16:09:12Z http_pool_0 thread start
+2026-08-27T16:09:12Z http_pool_1 thread start
+2026-08-27T16:09:12Z http_pool_2 thread start
+2026-08-27T16:09:12Z http_pool_3 thread start
+2026-08-27T16:09:12Z http_pool_4 thread start
+2026-08-27T16:09:12Z http_pool_5 thread start
+2026-08-27T16:09:12Z http_pool_6 thread start
+2026-08-27T16:09:12Z http_pool_7 thread start
+2026-08-27T16:09:12Z http_pool_8 thread start
+2026-08-27T16:09:12Z http_pool_9 thread start
+2026-08-27T16:09:12Z http_pool_10 thread start
+2026-08-27T16:09:12Z http_pool_11 thread start
+2026-08-27T16:09:12Z http_pool_12 thread start
+2026-08-27T16:09:12Z http_pool_13 thread start
+2026-08-27T16:09:12Z http_pool_14 thread start
+2026-08-27T16:09:12Z http_pool_15 thread start
+2026-08-27T16:09:12Z Using wallet directory /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/wallets
+2026-08-27T16:09:12Z Using SQLite Version 3.50.4
+2026-08-27T16:09:12Z init message: Verifying wallet(s)…
+2026-08-27T16:09:12Z Using /16 prefix for IP bucketing
+2026-08-27T16:09:12Z init message: Loading P2P addresses…
+2026-08-27T16:09:12Z Creating peers.dat because the file was not found ("/home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/peers.dat")
+2026-08-27T16:09:12Z init message: Loading banlist…
+2026-08-27T16:09:12Z Recreating the banlist database
+2026-08-27T16:09:12Z SetNetworkActive: true
+2026-08-27T16:09:12Z /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/fee_estimates.dat is not found. Continue anyway.
+2026-08-27T16:09:12Z Cache configuration:
+2026-08-27T16:09:12Z * Using 2.0 MiB for block index database
+2026-08-27T16:09:12Z * Using 8.0 MiB for chain state database
+2026-08-27T16:09:12Z * Using 1014.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2026-08-27T16:09:12Z Script verification uses 15 additional threads
+2026-08-27T16:09:12Z Using obfuscation key for blocksdir *.dat files (/home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/blocks): 'b1d5e5a94cfff222'
+2026-08-27T16:09:12Z Opening LevelDB in /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/blocks/index
+2026-08-27T16:09:12Z Opened LevelDB successfully
+2026-08-27T16:09:12Z Using obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/blocks/index: 0000000000000000
+2026-08-27T16:09:12Z Using 16 MiB out of 16 MiB requested for signature cache, able to store 524288 elements
+2026-08-27T16:09:12Z Using 16 MiB out of 16 MiB requested for script execution cache, able to store 524288 elements
+2026-08-27T16:09:12Z init message: Loading block index…
+2026-08-27T16:09:12Z Validating signatures for all blocks.
+2026-08-27T16:09:12Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000000000000000000000000
+2026-08-27T16:09:12Z Loading block index db: last block file = 0
+2026-08-27T16:09:12Z Loading block index db: last block file info: CBlockFileInfo(blocks=0, size=0, heights=0...0, time=1970-01-01...1970-01-01)
+2026-08-27T16:09:12Z Checking all blk files are present...
+2026-08-27T16:09:12Z Initializing chainstate Chainstate [ibd] @ height -1 (null)
+2026-08-27T16:09:12Z Opening LevelDB in /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/chainstate
+2026-08-27T16:09:12Z Opened LevelDB successfully
+2026-08-27T16:09:12Z Wrote new obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/chainstate: 12e4210285803e9f
+2026-08-27T16:09:12Z Using obfuscation key for /home/melly/dilithium-msc-project/evidence/btc_eth_swap/20260827_170907/btc_stock/regtest/chainstate: 12e4210285803e9f
+2026-08-27T16:09:12Z init message: Verifying blocks…
+2026-08-27T16:09:12Z Block index and chainstate loaded
+2026-08-27T16:09:12Z Setting NODE_NETWORK in non-prune mode
+2026-08-27T16:09:12Z initload thread start
+2026-08-27T16:09:12Z UpdateTip: new best=0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206 height=0 version=0x00000001 log2_work=1.000000 tx=1 date='2011-02-02T23:16:42Z' progress=0.000002 cache=0.3MiB(0txo)
+2026-08-27T16:09:12Z block tree size = 1
+2026-08-27T16:09:12Z nBestHeight = 0
+2026-08-27T16:09:12Z Failed to open mempool file. Continuing anyway.
+2026-08-27T16:09:12Z initload thread exit
+2026-08-27T16:09:12Z mapport thread start
+2026-08-27T16:09:12Z torcontrol thread start
+2026-08-27T16:09:12Z Bound to 127.0.0.1:18613
+2026-08-27T16:09:12Z init message: Starting network threads…
+2026-08-27T16:09:12Z DNS seeding disabled
+2026-08-27T16:09:12Z net thread start
+2026-08-27T16:09:12Z addcon thread start
+2026-08-27T16:09:12Z opencon thread start
+2026-08-27T16:09:12Z init message: Done loading
+2026-08-27T16:09:12Z msghand thread start
+2026-08-27T16:09:12Z New manual peer connected: transport: v2, version: 70016, blocks=0 peer=0
+2026-08-27T16:09:14Z Synchronizing blockheaders, height: 5 (~100.00%)
+2026-08-27T16:09:14Z Enabling script verification at block #1 (56a62e887673c77da5bcf9b340d92237be594d662e08577ac347e4aabeeb81d1): assumevalid=0 (always verify).
+2026-08-27T16:09:14Z Leaving InitialBlockDownload (latching to false)
+2026-08-27T16:09:14Z UpdateTip: new best=56a62e887673c77da5bcf9b340d92237be594d662e08577ac347e4aabeeb81d1 height=1 version=0x20000000 log2_work=2.000000 tx=2 date='2026-08-27T16:09:13Z' progress=0.454545 cache=0.3MiB(1txo)
+2026-08-27T16:09:14Z UpdateTip: new best=7d27600143d08fe76f9ab530913d0126dd3f0e1ee571cab2ad65f72ba1ad2582 height=2 version=0x20000000 log2_work=2.584963 tx=3 date='2026-08-27T16:09:14Z' progress=0.625000 cache=0.3MiB(2txo)
+2026-08-27T16:09:14Z UpdateTip: new best=27fafbf905bc51eeb00e547089cfd5c8334b81a8288a37346a2482740a4a1c72 height=3 version=0x20000000 log2_work=3.000000 tx=4 date='2026-08-27T16:09:14Z' progress=0.769231 cache=0.3MiB(3txo)
+2026-08-27T16:09:14Z UpdateTip: new best=1f31a58ac91ad7048f95a30c4795ca9a1e60cfc8d5f9cf1f84005d0a5f65641d height=4 version=0x20000000 log2_work=3.321928 tx=5 date='2026-08-27T16:09:15Z' progress=0.892857 cache=0.3MiB(4txo)
+2026-08-27T16:09:14Z UpdateTip: new best=4e1ff3eee30952b8ecea430ba3e39a2e6f518756c184daea46ff131b27abac2f height=5 version=0x20000000 log2_work=3.584963 tx=6 date='2026-08-27T16:09:15Z' progress=1.000000 cache=0.3MiB(5txo)
+2026-08-27T16:09:14Z Saw new cmpctblock header hash=5c731384db5d4507e1b39dac1fb0cb821f3c80b6557e05efab50727629e69a2c height=6 peer=0
+2026-08-27T16:09:14Z UpdateTip: new best=5c731384db5d4507e1b39dac1fb0cb821f3c80b6557e05efab50727629e69a2c height=6 version=0x20000000 log2_work=3.807355 tx=7 date='2026-08-27T16:09:15Z' progress=1.000000 cache=0.3MiB(6txo)
+2026-08-27T16:09:14Z Saw new cmpctblock header hash=43924abdaccc222a7ecfdd2f9acb7665a1de3417ae2f1046725c9214051630db height=7 peer=0
+2026-08-27T16:09:14Z UpdateTip: new best=43924abdaccc222a7ecfdd2f9acb7665a1de3417ae2f1046725c9214051630db height=7 version=0x20000000 log2_work=4.000000 tx=8 date='2026-08-27T16:09:15Z' progress=1.000000 cache=0.3MiB(7txo)
+2026-08-27T16:09:14Z Saw new cmpctblock header hash=302c8bb15c6d07a86e7a372e94edccb037726440992c7567daf3ad9a5cd0a4c2 height=8 peer=0
+2026-08-27T16:09:14Z UpdateTip: new best=302c8bb15c6d07a86e7a372e94edccb037726440992c7567daf3ad9a5cd0a4c2 height=8 version=0x20000000 log2_work=4.169925 tx=9 date='2026-08-27T16:09:16Z' progress=1.000000 cache=0.3MiB(8txo)
+2026-08-27T16:09:14Z Saw new cmpctblock header hash=70f262150dc1b0338f89d69e219c19b853c14044be0f9fc247f9159e423720b0 height=9 peer=0
+2026-08-27T16:09:14Z UpdateTip: new best=70f262150dc1b0338f89d69e219c19b853c14044be0f9fc247f9159e423720b0 height=9 version=0x20000000 log2_work=4.321928 tx=10 date='2026-08-27T16:09:16Z' progress=1.000000 cache=0.3MiB(9txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=41c1e1f019a703668f8f0e3fb2a6af4a1c21d13f2eba04dc00896e63510b1805 height=10 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=41c1e1f019a703668f8f0e3fb2a6af4a1c21d13f2eba04dc00896e63510b1805 height=10 version=0x20000000 log2_work=4.459432 tx=11 date='2026-08-27T16:09:16Z' progress=1.000000 cache=0.3MiB(10txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=55e0947e15bfeeaa2746b74fa2598bede3b228170f5ac7f7d951f396e70b73a2 height=11 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=55e0947e15bfeeaa2746b74fa2598bede3b228170f5ac7f7d951f396e70b73a2 height=11 version=0x20000000 log2_work=4.584963 tx=12 date='2026-08-27T16:09:16Z' progress=1.000000 cache=0.3MiB(11txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=189e2f96c7570bd144e247455fd74dd627cafe512e1cbe4236aaf536d2691c34 height=12 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=189e2f96c7570bd144e247455fd74dd627cafe512e1cbe4236aaf536d2691c34 height=12 version=0x20000000 log2_work=4.700440 tx=13 date='2026-08-27T16:09:16Z' progress=1.000000 cache=0.3MiB(12txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=4fc4b2a2734263020252d9d3c6b7fe809d7fa986a8b285b5fd28c8e1252098ab height=13 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=4fc4b2a2734263020252d9d3c6b7fe809d7fa986a8b285b5fd28c8e1252098ab height=13 version=0x20000000 log2_work=4.807355 tx=14 date='2026-08-27T16:09:16Z' progress=1.000000 cache=0.3MiB(13txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=6c264bb161414ba8026a695afbf48fbc60b185fb6000c8c04f61477622c74552 height=14 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=6c264bb161414ba8026a695afbf48fbc60b185fb6000c8c04f61477622c74552 height=14 version=0x20000000 log2_work=4.906891 tx=15 date='2026-08-27T16:09:17Z' progress=1.000000 cache=0.3MiB(14txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=2f50e9b8858b90246d572a5fdc87c655f1cf78674e6fca4f0e5c4bc11d3c1f27 height=15 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=2f50e9b8858b90246d572a5fdc87c655f1cf78674e6fca4f0e5c4bc11d3c1f27 height=15 version=0x20000000 log2_work=5.000000 tx=16 date='2026-08-27T16:09:17Z' progress=1.000000 cache=0.3MiB(15txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=2a729a2203e80e7dd63808714fa55cf8bd99c19263bfdbffac47892942fe9d85 height=16 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=2a729a2203e80e7dd63808714fa55cf8bd99c19263bfdbffac47892942fe9d85 height=16 version=0x20000000 log2_work=5.087463 tx=17 date='2026-08-27T16:09:17Z' progress=1.000000 cache=0.3MiB(16txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=72bd1076ce03a7e8f08144ab8e71a20f04fcac3c7bfad67aff60191a589e5e5d height=17 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=72bd1076ce03a7e8f08144ab8e71a20f04fcac3c7bfad67aff60191a589e5e5d height=17 version=0x20000000 log2_work=5.169925 tx=18 date='2026-08-27T16:09:17Z' progress=1.000000 cache=0.3MiB(17txo)
+2026-08-27T16:09:15Z Saw new cmpctblock header hash=6b89995fb4d491736f2d029724e61344ecb009f92f4fabfb606f22b902cc8665 height=18 peer=0
+2026-08-27T16:09:15Z UpdateTip: new best=6b89995fb4d491736f2d029724e61344ecb009f92f4fabfb606f22b902cc8665 height=18 version=0x20000000 log2_work=5.247928 tx=19 date='2026-08-27T16:09:17Z' progress=1.000000 cache=0.3MiB(18txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=6970577c78c34173e4283e7df573e9409326e8c3b7d01411d4cedb792e5f5537 height=19 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=6970577c78c34173e4283e7df573e9409326e8c3b7d01411d4cedb792e5f5537 height=19 version=0x20000000 log2_work=5.321928 tx=20 date='2026-08-27T16:09:17Z' progress=1.000000 cache=0.3MiB(19txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=314295f58f6ef8bc1b741528a19f9d5f8ec6e7baf9b0d91a09bd8964bf517ec1 height=20 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=314295f58f6ef8bc1b741528a19f9d5f8ec6e7baf9b0d91a09bd8964bf517ec1 height=20 version=0x20000000 log2_work=5.392317 tx=21 date='2026-08-27T16:09:18Z' progress=1.000000 cache=0.3MiB(20txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=5148b4fd352492f8e8dd2a5fca4bb4bdcc544a1e6e7c9ab889c5746dfa8087e0 height=21 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=5148b4fd352492f8e8dd2a5fca4bb4bdcc544a1e6e7c9ab889c5746dfa8087e0 height=21 version=0x20000000 log2_work=5.459432 tx=22 date='2026-08-27T16:09:18Z' progress=1.000000 cache=0.3MiB(21txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=32d7dd22fb654bad05652b13140b9ef49490f3f4333932d4c5107e3b31dd21d9 height=22 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=32d7dd22fb654bad05652b13140b9ef49490f3f4333932d4c5107e3b31dd21d9 height=22 version=0x20000000 log2_work=5.523562 tx=23 date='2026-08-27T16:09:18Z' progress=1.000000 cache=0.3MiB(22txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=3f312e87f4cd3c9a759624129b5c8e8ab94f7b98a4cd9ba766cb04dde425b6ca height=23 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=3f312e87f4cd3c9a759624129b5c8e8ab94f7b98a4cd9ba766cb04dde425b6ca height=23 version=0x20000000 log2_work=5.584963 tx=24 date='2026-08-27T16:09:18Z' progress=1.000000 cache=0.3MiB(23txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=610d0061ca0b6a2d90990e941dd20ded7d2e42cf241410695ca89caa5bc8a99f height=24 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=610d0061ca0b6a2d90990e941dd20ded7d2e42cf241410695ca89caa5bc8a99f height=24 version=0x20000000 log2_work=5.643856 tx=25 date='2026-08-27T16:09:18Z' progress=1.000000 cache=0.3MiB(24txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=6670f03f9d6517bc0f80e7355cc5d053ced6aadb14aa848086a266f1d56335b0 height=25 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=6670f03f9d6517bc0f80e7355cc5d053ced6aadb14aa848086a266f1d56335b0 height=25 version=0x20000000 log2_work=5.700440 tx=26 date='2026-08-27T16:09:18Z' progress=1.000000 cache=0.3MiB(25txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=7b164b67c6e2bb4945762bba9dcf86a3a68ea79d29ba586d15dc7565269e669c height=26 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=7b164b67c6e2bb4945762bba9dcf86a3a68ea79d29ba586d15dc7565269e669c height=26 version=0x20000000 log2_work=5.754888 tx=27 date='2026-08-27T16:09:19Z' progress=1.000000 cache=0.3MiB(26txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=1f85a1871b3e52e476d4fa1bce798d3f97ed2c1ba8a3ffb2d1b23bf727b8ebb2 height=27 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=1f85a1871b3e52e476d4fa1bce798d3f97ed2c1ba8a3ffb2d1b23bf727b8ebb2 height=27 version=0x20000000 log2_work=5.807355 tx=28 date='2026-08-27T16:09:19Z' progress=1.000000 cache=0.3MiB(27txo)
+2026-08-27T16:09:16Z Saw new cmpctblock header hash=2b13ee5b400316e2102bfed24e27dc54a589be366c2fa9be6c0122929ef0fdcc height=28 peer=0
+2026-08-27T16:09:16Z UpdateTip: new best=2b13ee5b400316e2102bfed24e27dc54a589be366c2fa9be6c0122929ef0fdcc height=28 version=0x20000000 log2_work=5.857981 tx=29 date='2026-08-27T16:09:19Z' progress=1.000000 cache=0.3MiB(28txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=2f372c8589f20581a32ff6e45c41216ac40f3aad9d635552eb5a7340d73c8cc7 height=29 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=2f372c8589f20581a32ff6e45c41216ac40f3aad9d635552eb5a7340d73c8cc7 height=29 version=0x20000000 log2_work=5.906891 tx=30 date='2026-08-27T16:09:19Z' progress=1.000000 cache=0.3MiB(29txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=3bf8a9078825edc4121145ffac23508ab2ac5c7ad12ab646e058db07cb12b151 height=30 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=3bf8a9078825edc4121145ffac23508ab2ac5c7ad12ab646e058db07cb12b151 height=30 version=0x20000000 log2_work=5.954196 tx=31 date='2026-08-27T16:09:19Z' progress=1.000000 cache=0.3MiB(30txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=3754f4e891884bf13a0546a5b7c8ec7f65c88894d2e96361e393fa45fe52ec03 height=31 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=3754f4e891884bf13a0546a5b7c8ec7f65c88894d2e96361e393fa45fe52ec03 height=31 version=0x20000000 log2_work=6.000000 tx=32 date='2026-08-27T16:09:19Z' progress=1.000000 cache=0.3MiB(31txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=30dbd44f69ca22e41bb9a7b24e3700c7032183c8250202bc5768fcf023e8febf height=32 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=30dbd44f69ca22e41bb9a7b24e3700c7032183c8250202bc5768fcf023e8febf height=32 version=0x20000000 log2_work=6.044394 tx=33 date='2026-08-27T16:09:20Z' progress=1.000000 cache=0.3MiB(32txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=47da11aa9cafdf8dce1664911b3e161d6717ed5d285a8ad1bfdc18e96e855b98 height=33 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=47da11aa9cafdf8dce1664911b3e161d6717ed5d285a8ad1bfdc18e96e855b98 height=33 version=0x20000000 log2_work=6.087463 tx=34 date='2026-08-27T16:09:20Z' progress=1.000000 cache=0.3MiB(33txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=567fac52ac15be9b2aecc694ae2203ef34ad0e4678552df1aacb6d6b0dbd37d1 height=34 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=567fac52ac15be9b2aecc694ae2203ef34ad0e4678552df1aacb6d6b0dbd37d1 height=34 version=0x20000000 log2_work=6.129283 tx=35 date='2026-08-27T16:09:20Z' progress=1.000000 cache=0.3MiB(34txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=10a8725b53cabf5a5bfbd546b5b86240c28e30b3f5ade663c6a45b8bc3129b3b height=35 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=10a8725b53cabf5a5bfbd546b5b86240c28e30b3f5ade663c6a45b8bc3129b3b height=35 version=0x20000000 log2_work=6.169925 tx=36 date='2026-08-27T16:09:20Z' progress=1.000000 cache=0.3MiB(35txo)
+2026-08-27T16:09:17Z Saw new cmpctblock header hash=088670fc9e59ed990dacbfeb2d0b869755fb2046ca3df458ca816be2a510cba4 height=36 peer=0
+2026-08-27T16:09:17Z UpdateTip: new best=088670fc9e59ed990dacbfeb2d0b869755fb2046ca3df458ca816be2a510cba4 height=36 version=0x20000000 log2_work=6.209453 tx=37 date='2026-08-27T16:09:20Z' progress=1.000000 cache=0.3MiB(36txo)
+2026-08-27T16:09:18Z Saw new cmpctblock header hash=246028e7af7bcda2ecb506a8e93b6e88953639c55474d7f0984ac1480372db5d height=37 peer=0
+2026-08-27T16:09:18Z UpdateTip: new best=246028e7af7bcda2ecb506a8e93b6e88953639c55474d7f0984ac1480372db5d height=37 version=0x20000000 log2_work=6.247928 tx=38 date='2026-08-27T16:09:20Z' progress=1.000000 cache=0.3MiB(37txo)
+2026-08-27T16:09:18Z Saw new cmpctblock header hash=290c31dc79ac84a65d8d97608c6ce2af74c4673db690a8d6f32b3f7ad6d2e223 height=38 peer=0
+2026-08-27T16:09:18Z UpdateTip: new best=290c31dc79ac84a65d8d97608c6ce2af74c4673db690a8d6f32b3f7ad6d2e223 height=38 version=0x20000000 log2_work=6.285402 tx=39 date='2026-08-27T16:09:21Z' progress=1.000000 cache=0.3MiB(38txo)
+2026-08-27T16:09:18Z Saw new cmpctblock header hash=5a65ed15d58cf374611760c9938347dc801350442ebdfec080da9ddc21dd9d41 height=39 peer=0
+2026-08-27T16:09:18Z UpdateTip: new best=5a65ed15d58cf374611760c9938347dc801350442ebdfec080da9ddc21dd9d41 height=39 version=0x20000000 log2_work=6.321928 tx=40 date='2026-08-27T16:09:21Z' progress=1.000000 cache=0.3MiB(39txo)
+2026-08-27T16:09:18Z Saw new cmpctblock header hash=632a4aaad6b71b81303aefed056ed351067cadd6f27bd3b7d447918118650c08 height=40 peer=0
+2026-08-27T16:09:18Z UpdateTip: new best=632a4aaad6b71b81303aefed056ed351067cadd6f27bd3b7d447918118650c08 height=40 version=0x20000000 log2_work=6.357552 tx=41 date='2026-08-27T16:09:21Z' progress=1.000000 cache=0.3MiB(40txo)
+2026-08-27T16:09:18Z Saw new cmpctblock header hash=59aa3720e277c186b424bd2b5f1f9571d9f2732d021795dc956dc751cce2df00 height=41 peer=0
+2026-08-27T16:09:18Z UpdateTip: new best=59aa3720e277c186b424bd2b5f1f9571d9f2732d021795dc956dc751cce2df00 height=41 version=0x20000000 log2_work=6.392317 tx=42 date='2026-08-27T16:09:21Z' progress=1.000000 cache=0.3MiB(41txo)
+2026-08-27T16:09:18Z Saw new cmpctblock header hash=1bee1543e6024d7c195ef972d3b9b3c1317f13607b8dd23c0c71e5b1d157b0d0 height=42 peer=0
+2026-08-27T16:09:18Z UpdateTip: new best=1bee1543e6024d7c195ef972d3b9b3c1317f13607b8dd23c0c71e5b1d157b0d0 height=42 version=0x20000000 log2_work=6.426265 tx=43 date='2026-08-27T16:09:21Z' progress=1.000000 cache=0.3MiB(42txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=0eab3d47f52168e1e33cf02d11f984a4375ec5e9605700188088822a9b5e2f01 height=43 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=0eab3d47f52168e1e33cf02d11f984a4375ec5e9605700188088822a9b5e2f01 height=43 version=0x20000000 log2_work=6.459432 tx=44 date='2026-08-27T16:09:21Z' progress=1.000000 cache=0.3MiB(43txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=3f45690a87c2ff4b3e9f9d4ef8e0f1f3986cb0c9b02c58e4b1189be569e2c863 height=44 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=3f45690a87c2ff4b3e9f9d4ef8e0f1f3986cb0c9b02c58e4b1189be569e2c863 height=44 version=0x20000000 log2_work=6.491853 tx=45 date='2026-08-27T16:09:22Z' progress=1.000000 cache=0.3MiB(44txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=45a977a9ecc17a5cd210f3cf4c208a15be54c49f07eb7f601aa4bf23edcf20d8 height=45 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=45a977a9ecc17a5cd210f3cf4c208a15be54c49f07eb7f601aa4bf23edcf20d8 height=45 version=0x20000000 log2_work=6.523562 tx=46 date='2026-08-27T16:09:22Z' progress=1.000000 cache=0.3MiB(45txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=6d2dfc83a843ecbf7ae6ecf328349e8c8e2086cc7f5c233d84e357fce3682601 height=46 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=6d2dfc83a843ecbf7ae6ecf328349e8c8e2086cc7f5c233d84e357fce3682601 height=46 version=0x20000000 log2_work=6.554589 tx=47 date='2026-08-27T16:09:22Z' progress=1.000000 cache=0.3MiB(46txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=733642a70e56d393b22988acd18aa7aaf0dd10e090e51f3cae57bce5147680a7 height=47 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=733642a70e56d393b22988acd18aa7aaf0dd10e090e51f3cae57bce5147680a7 height=47 version=0x20000000 log2_work=6.584963 tx=48 date='2026-08-27T16:09:22Z' progress=1.000000 cache=0.3MiB(47txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=14c7e11a93a11a9ebf97689ae1251e60436672830af95b913ee2258c5f39949e height=48 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=14c7e11a93a11a9ebf97689ae1251e60436672830af95b913ee2258c5f39949e height=48 version=0x20000000 log2_work=6.614710 tx=49 date='2026-08-27T16:09:22Z' progress=1.000000 cache=0.3MiB(48txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=2725fa2a2c2f52d522c2317d7d2ce47392fe2874da66b2319c6d7cf627aaa74c height=49 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=2725fa2a2c2f52d522c2317d7d2ce47392fe2874da66b2319c6d7cf627aaa74c height=49 version=0x20000000 log2_work=6.643856 tx=50 date='2026-08-27T16:09:22Z' progress=1.000000 cache=0.3MiB(49txo)
+2026-08-27T16:09:19Z Saw new cmpctblock header hash=6d18d8cafc8e8181a45c9131b82d88a84bee1c60c643d3da6cdf1a0f576a2fc9 height=50 peer=0
+2026-08-27T16:09:19Z UpdateTip: new best=6d18d8cafc8e8181a45c9131b82d88a84bee1c60c643d3da6cdf1a0f576a2fc9 height=50 version=0x20000000 log2_work=6.672425 tx=51 date='2026-08-27T16:09:23Z' progress=1.000000 cache=0.3MiB(50txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=441162b84022713edb6dd413cea5970ba5eb052ac7033c51ffac3e66a1a7e64b height=51 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=441162b84022713edb6dd413cea5970ba5eb052ac7033c51ffac3e66a1a7e64b height=51 version=0x20000000 log2_work=6.700440 tx=52 date='2026-08-27T16:09:23Z' progress=1.000000 cache=0.3MiB(51txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=7a292fd91d32b5a4f4bbca49e7b30b15428f599c7f64e557a7e0bcbb9e2b4bca height=52 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=7a292fd91d32b5a4f4bbca49e7b30b15428f599c7f64e557a7e0bcbb9e2b4bca height=52 version=0x20000000 log2_work=6.727920 tx=53 date='2026-08-27T16:09:23Z' progress=1.000000 cache=0.3MiB(52txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=5c727d6beb81870dd5f9d2b924fcacf9d17332dd5a5f3cb0b6daeadd4939612c height=53 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=5c727d6beb81870dd5f9d2b924fcacf9d17332dd5a5f3cb0b6daeadd4939612c height=53 version=0x20000000 log2_work=6.754888 tx=54 date='2026-08-27T16:09:23Z' progress=1.000000 cache=0.3MiB(53txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=34e6632d288912c653d99d08ec85fd8e19bd198846fbf349cf41c20936a05cc6 height=54 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=34e6632d288912c653d99d08ec85fd8e19bd198846fbf349cf41c20936a05cc6 height=54 version=0x20000000 log2_work=6.781360 tx=55 date='2026-08-27T16:09:23Z' progress=1.000000 cache=0.3MiB(54txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=654dc020789eaf6d24bf185cb8bbf4a581b2e567835e3798cd3a9fe4d0427e8c height=55 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=654dc020789eaf6d24bf185cb8bbf4a581b2e567835e3798cd3a9fe4d0427e8c height=55 version=0x20000000 log2_work=6.807355 tx=56 date='2026-08-27T16:09:23Z' progress=1.000000 cache=0.3MiB(55txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=25574f298c63abfe079a7f235e4f7d57a0c215ae36fdec747e632cfc680ded6b height=56 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=25574f298c63abfe079a7f235e4f7d57a0c215ae36fdec747e632cfc680ded6b height=56 version=0x20000000 log2_work=6.832890 tx=57 date='2026-08-27T16:09:24Z' progress=1.000000 cache=0.3MiB(56txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=4230f83fbaa12cdb57d269fa3a14dbd9e505a8d6261fb275d53179d12ba89dc1 height=57 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=4230f83fbaa12cdb57d269fa3a14dbd9e505a8d6261fb275d53179d12ba89dc1 height=57 version=0x20000000 log2_work=6.857981 tx=58 date='2026-08-27T16:09:24Z' progress=1.000000 cache=0.3MiB(57txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=1f055ba2c3197d7938d645fde54874a038749987c428905eacef555bc2b92b12 height=58 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=1f055ba2c3197d7938d645fde54874a038749987c428905eacef555bc2b92b12 height=58 version=0x20000000 log2_work=6.882643 tx=59 date='2026-08-27T16:09:24Z' progress=1.000000 cache=0.3MiB(58txo)
+2026-08-27T16:09:20Z Saw new cmpctblock header hash=09600be4152e3cca72e7530f696842cf4ef3ab7a0f254b8fc10f8e8e9b22ab51 height=59 peer=0
+2026-08-27T16:09:20Z UpdateTip: new best=09600be4152e3cca72e7530f696842cf4ef3ab7a0f254b8fc10f8e8e9b22ab51 height=59 version=0x20000000 log2_work=6.906891 tx=60 date='2026-08-27T16:09:24Z' progress=1.000000 cache=0.3MiB(59txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=4817a2f53d275d7c13106b104e66fcd6664e212008dd3ba750f108cee1c91d96 height=60 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=4817a2f53d275d7c13106b104e66fcd6664e212008dd3ba750f108cee1c91d96 height=60 version=0x20000000 log2_work=6.930737 tx=61 date='2026-08-27T16:09:24Z' progress=1.000000 cache=0.3MiB(60txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=0371cf9824e6723a4c21185e3e55ed1c2f6d3b8b7d1ee2bafaac1feda7870dbb height=61 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=0371cf9824e6723a4c21185e3e55ed1c2f6d3b8b7d1ee2bafaac1feda7870dbb height=61 version=0x20000000 log2_work=6.954196 tx=62 date='2026-08-27T16:09:24Z' progress=1.000000 cache=0.3MiB(61txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=732bbff082b37faa9c8b7fed258a8de1f63c9a0abca3a516108e1effce4251ce height=62 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=732bbff082b37faa9c8b7fed258a8de1f63c9a0abca3a516108e1effce4251ce height=62 version=0x20000000 log2_work=6.977280 tx=63 date='2026-08-27T16:09:25Z' progress=1.000000 cache=0.3MiB(62txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=65bf4b0264c6757074efad68da27e72cb8c47ebffff15196517b118a64334375 height=63 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=65bf4b0264c6757074efad68da27e72cb8c47ebffff15196517b118a64334375 height=63 version=0x20000000 log2_work=7.000000 tx=64 date='2026-08-27T16:09:25Z' progress=1.000000 cache=0.3MiB(63txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=77d564500bd019c4b5524bda330415b371fa2558f9ba4f92c2f063b2d706ee7e height=64 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=77d564500bd019c4b5524bda330415b371fa2558f9ba4f92c2f063b2d706ee7e height=64 version=0x20000000 log2_work=7.022368 tx=65 date='2026-08-27T16:09:25Z' progress=1.000000 cache=0.3MiB(64txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=0e4ed99a0a9b08d4a39c93e21321772f7f804ed885eb25f160eea97e7a372437 height=65 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=0e4ed99a0a9b08d4a39c93e21321772f7f804ed885eb25f160eea97e7a372437 height=65 version=0x20000000 log2_work=7.044394 tx=66 date='2026-08-27T16:09:25Z' progress=1.000000 cache=0.3MiB(65txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=6d0b2fd8ccb94f8b3f64decd5cd4506abfbf3091009a5aa8b972291e73eb35d0 height=66 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=6d0b2fd8ccb94f8b3f64decd5cd4506abfbf3091009a5aa8b972291e73eb35d0 height=66 version=0x20000000 log2_work=7.066089 tx=67 date='2026-08-27T16:09:25Z' progress=1.000000 cache=0.3MiB(66txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=755d70db6b0e55f03984fbad23a329db3642140b374a555d275bdc80883b5f9f height=67 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=755d70db6b0e55f03984fbad23a329db3642140b374a555d275bdc80883b5f9f height=67 version=0x20000000 log2_work=7.087463 tx=68 date='2026-08-27T16:09:25Z' progress=1.000000 cache=0.3MiB(67txo)
+2026-08-27T16:09:21Z Saw new cmpctblock header hash=3fd026871f3228262c9849297a05bfb8db323c4387ffe01dc12c778c25ceced1 height=68 peer=0
+2026-08-27T16:09:21Z UpdateTip: new best=3fd026871f3228262c9849297a05bfb8db323c4387ffe01dc12c778c25ceced1 height=68 version=0x20000000 log2_work=7.108524 tx=69 date='2026-08-27T16:09:26Z' progress=1.000000 cache=0.3MiB(68txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=6656c72a387fbb4212c426227193fa760343f511489362ea6919e77f6dc2bdd4 height=69 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=6656c72a387fbb4212c426227193fa760343f511489362ea6919e77f6dc2bdd4 height=69 version=0x20000000 log2_work=7.129283 tx=70 date='2026-08-27T16:09:26Z' progress=1.000000 cache=0.3MiB(69txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=100aa654a026a61f246b760ffb34a6ba46e0a9ed901a1ae26349e12a7949c612 height=70 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=100aa654a026a61f246b760ffb34a6ba46e0a9ed901a1ae26349e12a7949c612 height=70 version=0x20000000 log2_work=7.149747 tx=71 date='2026-08-27T16:09:26Z' progress=1.000000 cache=0.3MiB(70txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=700650ad3896f86f16e0a6f9f6957598f99b975e28d924e613413d4a720e14b8 height=71 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=700650ad3896f86f16e0a6f9f6957598f99b975e28d924e613413d4a720e14b8 height=71 version=0x20000000 log2_work=7.169925 tx=72 date='2026-08-27T16:09:26Z' progress=1.000000 cache=0.3MiB(71txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=7db83ae5a41efd0aa3431e82402f2e349c0325d6a571221e3822f578d8e9f668 height=72 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=7db83ae5a41efd0aa3431e82402f2e349c0325d6a571221e3822f578d8e9f668 height=72 version=0x20000000 log2_work=7.189825 tx=73 date='2026-08-27T16:09:26Z' progress=1.000000 cache=0.3MiB(72txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=75dd44b261fdf943f6e0988e1ab0aadf3a001c903f4b708c6385e0c44648e465 height=73 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=75dd44b261fdf943f6e0988e1ab0aadf3a001c903f4b708c6385e0c44648e465 height=73 version=0x20000000 log2_work=7.209453 tx=74 date='2026-08-27T16:09:26Z' progress=1.000000 cache=0.3MiB(73txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=45db55b10ba13d929ab0158a7a79bb4be920a9eacf12872950d91f805abc7ea3 height=74 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=45db55b10ba13d929ab0158a7a79bb4be920a9eacf12872950d91f805abc7ea3 height=74 version=0x20000000 log2_work=7.228819 tx=75 date='2026-08-27T16:09:27Z' progress=1.000000 cache=0.3MiB(74txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=222c8483f5bb707f776f1ea882bd178513cb2258fec7f172fbf67da85c466258 height=75 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=222c8483f5bb707f776f1ea882bd178513cb2258fec7f172fbf67da85c466258 height=75 version=0x20000000 log2_work=7.247928 tx=76 date='2026-08-27T16:09:27Z' progress=1.000000 cache=0.3MiB(75txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=0bcfae65c865cd0c2f1e59aef421732a6aea5ec6d0eee689d976748bc2d8b917 height=76 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=0bcfae65c865cd0c2f1e59aef421732a6aea5ec6d0eee689d976748bc2d8b917 height=76 version=0x20000000 log2_work=7.266787 tx=77 date='2026-08-27T16:09:27Z' progress=1.000000 cache=0.3MiB(76txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=36559af09f601c744fe974d3c4b00d2b95ff43dc8550e2e5d8404ad6fef1a7b8 height=77 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=36559af09f601c744fe974d3c4b00d2b95ff43dc8550e2e5d8404ad6fef1a7b8 height=77 version=0x20000000 log2_work=7.285402 tx=78 date='2026-08-27T16:09:27Z' progress=1.000000 cache=0.3MiB(77txo)
+2026-08-27T16:09:22Z Saw new cmpctblock header hash=1aa11fa4dae1c5fd84285f06061621f59062d5f5a559cdcda2f6eeb3d1a2b3e0 height=78 peer=0
+2026-08-27T16:09:22Z UpdateTip: new best=1aa11fa4dae1c5fd84285f06061621f59062d5f5a559cdcda2f6eeb3d1a2b3e0 height=78 version=0x20000000 log2_work=7.303781 tx=79 date='2026-08-27T16:09:27Z' progress=1.000000 cache=0.3MiB(78txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=25c857067808e095f7d802285c6e2a48f749bd66c474abb6aa2185d57db8551d height=79 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=25c857067808e095f7d802285c6e2a48f749bd66c474abb6aa2185d57db8551d height=79 version=0x20000000 log2_work=7.321928 tx=80 date='2026-08-27T16:09:27Z' progress=1.000000 cache=0.3MiB(79txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=62d9b96484c3c3994f214ba03de802a27e7c2194e92fa3e79794f3a3f1528812 height=80 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=62d9b96484c3c3994f214ba03de802a27e7c2194e92fa3e79794f3a3f1528812 height=80 version=0x20000000 log2_work=7.339850 tx=81 date='2026-08-27T16:09:28Z' progress=1.000000 cache=0.3MiB(80txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=5280caec0218ee1aecdeb509828a2a2da2331d1088c6867b25d799afabe59a0d height=81 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=5280caec0218ee1aecdeb509828a2a2da2331d1088c6867b25d799afabe59a0d height=81 version=0x20000000 log2_work=7.357552 tx=82 date='2026-08-27T16:09:28Z' progress=1.000000 cache=0.3MiB(81txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=4f9ea4200ea43a6f0e847e850d21092d2f7752b396f99569b2ae4ffcd766dee0 height=82 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=4f9ea4200ea43a6f0e847e850d21092d2f7752b396f99569b2ae4ffcd766dee0 height=82 version=0x20000000 log2_work=7.375039 tx=83 date='2026-08-27T16:09:28Z' progress=1.000000 cache=0.3MiB(82txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=70b174a8e7a401ddc599b1d77dae88cc4e46889cc17ba7cb8275663e1086bb54 height=83 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=70b174a8e7a401ddc599b1d77dae88cc4e46889cc17ba7cb8275663e1086bb54 height=83 version=0x20000000 log2_work=7.392317 tx=84 date='2026-08-27T16:09:28Z' progress=1.000000 cache=0.3MiB(83txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=55528bc1c5dac49aba9164187ba3a912cdf3827351dc2298f00df9924685398b height=84 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=55528bc1c5dac49aba9164187ba3a912cdf3827351dc2298f00df9924685398b height=84 version=0x20000000 log2_work=7.409391 tx=85 date='2026-08-27T16:09:28Z' progress=1.000000 cache=0.3MiB(84txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=3e38e27096479e822dfc92e062522cbe0bf2f7d1ea7c8632c7bcdfa2b9eb4067 height=85 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=3e38e27096479e822dfc92e062522cbe0bf2f7d1ea7c8632c7bcdfa2b9eb4067 height=85 version=0x20000000 log2_work=7.426265 tx=86 date='2026-08-27T16:09:28Z' progress=1.000000 cache=0.3MiB(85txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=11ef8b30d4bc31ddb55e2d6e3dd520d3ac121372acb8cbac0bb137f8a7ed4488 height=86 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=11ef8b30d4bc31ddb55e2d6e3dd520d3ac121372acb8cbac0bb137f8a7ed4488 height=86 version=0x20000000 log2_work=7.442943 tx=87 date='2026-08-27T16:09:29Z' progress=1.000000 cache=0.3MiB(86txo)
+2026-08-27T16:09:23Z Saw new cmpctblock header hash=2f4575d0b8ec2ecd6c0e6fb8bb92810233959d316c1aa16dd5c063af4d05f6c7 height=87 peer=0
+2026-08-27T16:09:23Z UpdateTip: new best=2f4575d0b8ec2ecd6c0e6fb8bb92810233959d316c1aa16dd5c063af4d05f6c7 height=87 version=0x20000000 log2_work=7.459432 tx=88 date='2026-08-27T16:09:29Z' progress=1.000000 cache=0.3MiB(87txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=7145531a5c8735585a05590255813aeaa6e3a70e786366c01c1fcf94fa9075f9 height=88 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=7145531a5c8735585a05590255813aeaa6e3a70e786366c01c1fcf94fa9075f9 height=88 version=0x20000000 log2_work=7.475733 tx=89 date='2026-08-27T16:09:29Z' progress=1.000000 cache=0.3MiB(88txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=033e734d6ae9a8e8abee2e8f9f0da874e80763dcf8c742e286461d445ca77504 height=89 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=033e734d6ae9a8e8abee2e8f9f0da874e80763dcf8c742e286461d445ca77504 height=89 version=0x20000000 log2_work=7.491853 tx=90 date='2026-08-27T16:09:29Z' progress=1.000000 cache=0.3MiB(89txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=215130d3369cec7eb421e346390149c4246b254db48b1b4fdbcf28558e87a88a height=90 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=215130d3369cec7eb421e346390149c4246b254db48b1b4fdbcf28558e87a88a height=90 version=0x20000000 log2_work=7.507795 tx=91 date='2026-08-27T16:09:29Z' progress=1.000000 cache=0.3MiB(90txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=674f29ce23d911cd4748715dba681ca79c99628b52f8bf746a2802b037339229 height=91 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=674f29ce23d911cd4748715dba681ca79c99628b52f8bf746a2802b037339229 height=91 version=0x20000000 log2_work=7.523562 tx=92 date='2026-08-27T16:09:29Z' progress=1.000000 cache=0.3MiB(91txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=3f91d8996a51c865b21eef8bfdeab4507e2f75ff43e063d8c17849cd7ae67e39 height=92 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=3f91d8996a51c865b21eef8bfdeab4507e2f75ff43e063d8c17849cd7ae67e39 height=92 version=0x20000000 log2_work=7.539159 tx=93 date='2026-08-27T16:09:30Z' progress=1.000000 cache=0.3MiB(92txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=37fdc2dba357fa550e144c29a82a2acc4df1ad1a6109095da8396836a0f694c1 height=93 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=37fdc2dba357fa550e144c29a82a2acc4df1ad1a6109095da8396836a0f694c1 height=93 version=0x20000000 log2_work=7.554589 tx=94 date='2026-08-27T16:09:30Z' progress=1.000000 cache=0.3MiB(93txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=65b022f5c54e292f03661a0cd1ab154c939b7cf6aef30d89c975a4773169c283 height=94 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=65b022f5c54e292f03661a0cd1ab154c939b7cf6aef30d89c975a4773169c283 height=94 version=0x20000000 log2_work=7.569856 tx=95 date='2026-08-27T16:09:30Z' progress=1.000000 cache=0.3MiB(94txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=34cefbb37da46a9cc602049a08a9888652de8e4695502eae9846b87f1e48a83c height=95 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=34cefbb37da46a9cc602049a08a9888652de8e4695502eae9846b87f1e48a83c height=95 version=0x20000000 log2_work=7.584963 tx=96 date='2026-08-27T16:09:30Z' progress=1.000000 cache=0.3MiB(95txo)
+2026-08-27T16:09:24Z Saw new cmpctblock header hash=126d9d6d354572469192cb7ec81d137ec77aed4f0535e533fda7b38b69c9ddc5 height=96 peer=0
+2026-08-27T16:09:24Z UpdateTip: new best=126d9d6d354572469192cb7ec81d137ec77aed4f0535e533fda7b38b69c9ddc5 height=96 version=0x20000000 log2_work=7.599913 tx=97 date='2026-08-27T16:09:30Z' progress=1.000000 cache=0.3MiB(96txo)
+2026-08-27T16:09:25Z Saw new cmpctblock header hash=2ecd13f5032a1b68a68b78f7fb8d373aad99cf35ffdc5a791cb6c0771ce40f8d height=97 peer=0
+2026-08-27T16:09:25Z UpdateTip: new best=2ecd13f5032a1b68a68b78f7fb8d373aad99cf35ffdc5a791cb6c0771ce40f8d height=97 version=0x20000000 log2_work=7.614710 tx=98 date='2026-08-27T16:09:30Z' progress=1.000000 cache=0.3MiB(97txo)
+2026-08-27T16:09:25Z Saw new cmpctblock header hash=3faa1284a737b0f83b4479806760d6850f10ca9d95f693305b4ac09c83fa0498 height=98 peer=0
+2026-08-27T16:09:25Z UpdateTip: new best=3faa1284a737b0f83b4479806760d6850f10ca9d95f693305b4ac09c83fa0498 height=98 version=0x20000000 log2_work=7.629357 tx=99 date='2026-08-27T16:09:31Z' progress=1.000000 cache=0.3MiB(98txo)
+2026-08-27T16:09:25Z Saw new cmpctblock header hash=510edb5af704ccd07430dfe5359ca30d542d42ccb6a957b2ce6b9b5fed510846 height=99 peer=0
+2026-08-27T16:09:25Z UpdateTip: new best=510edb5af704ccd07430dfe5359ca30d542d42ccb6a957b2ce6b9b5fed510846 height=99 version=0x20000000 log2_work=7.643856 tx=100 date='2026-08-27T16:09:31Z' progress=1.000000 cache=0.3MiB(99txo)
+2026-08-27T16:09:25Z Saw new cmpctblock header hash=466710a4954967b00b095b7baeb9f3dba99b5cfa753bfea408d6974db7c879f3 height=100 peer=0
+2026-08-27T16:09:25Z UpdateTip: new best=466710a4954967b00b095b7baeb9f3dba99b5cfa753bfea408d6974db7c879f3 height=100 version=0x20000000 log2_work=7.658211 tx=101 date='2026-08-27T16:09:31Z' progress=1.000000 cache=0.3MiB(100txo)
+2026-08-27T16:09:25Z Saw new cmpctblock header hash=5b7610085796510ff9a26a708ee0fe30194214f03893a202e05eba2f5fb3e04c height=101 peer=0
+2026-08-27T16:09:25Z UpdateTip: new best=5b7610085796510ff9a26a708ee0fe30194214f03893a202e05eba2f5fb3e04c height=101 version=0x20000000 log2_work=7.672425 tx=102 date='2026-08-27T16:09:31Z' progress=1.000000 cache=0.3MiB(101txo)
+2026-08-27T16:09:32Z http_pool_2 thread exit
+2026-08-27T16:09:32Z http_pool_4 thread exit
+2026-08-27T16:09:32Z http_pool_3 thread exit
+2026-08-27T16:09:32Z http_pool_7 thread exit
+2026-08-27T16:09:32Z http_pool_8 thread exit
+2026-08-27T16:09:32Z http_pool_9 thread exit
+2026-08-27T16:09:32Z http_pool_10 thread exit
+2026-08-27T16:09:32Z http_pool_6 thread exit
+2026-08-27T16:09:32Z http_pool_12 thread exit
+2026-08-27T16:09:32Z http_pool_5 thread exit
+2026-08-27T16:09:32Z http_pool_13 thread exit
+2026-08-27T16:09:32Z http_pool_11 thread exit
+2026-08-27T16:09:32Z http_pool_14 thread exit
+2026-08-27T16:09:32Z http_pool_0 thread exit
+2026-08-27T16:09:32Z http_pool_15 thread exit
+2026-08-27T16:09:32Z http_pool_1 thread exit
+2026-08-27T16:09:32Z tor: Thread interrupt
+2026-08-27T16:09:32Z torcontrol thread exit
+2026-08-27T16:09:32Z mapport thread exit
+2026-08-27T16:09:32Z Shutdown in progress...
+2026-08-27T16:09:32Z opencon thread exit
+2026-08-27T16:09:32Z addcon thread exit
+2026-08-27T16:09:32Z net thread exit
+2026-08-27T16:09:32Z msghand thread exit
+2026-08-27T16:09:32Z scheduler thread exit
+2026-08-27T16:09:32Z Writing 0 mempool transactions to file...
+2026-08-27T16:09:32Z Writing 0 unbroadcast transactions to file.
+2026-08-27T16:09:32Z Dumped mempool: 0.000s to copy, 0.010s to dump, 27 bytes dumped to file
+2026-08-27T16:09:32Z Shutdown done

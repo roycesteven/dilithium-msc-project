@@ -1,0 +1,9 @@
+horizon (max of both chains' own clocks) : 1787874982
+  bitcoin median time past at horizon    : 1787874982
+  ethereum latest block timestamp        : 1787874979
+t2 = leg B (BITCOIN, settled first)      : 1787878582  (+3600s) — enforced as a timestamp nLockTime against MEDIAN TIME PAST
+t1 = leg A (ETHEREUM, settled second)    : 1787961382  (+86400s) — enforced as block.timestamp by AdaptorSwapBound
+ordering t2 < t1                         : 82800s CONFIGURED DEADLINE GAP, checked by this script
+⚠ one numeric domain (UNIX seconds), NOT one consensus clock: the two enforcement
+  quantities are median time past and block.timestamp on separate ledgers, so the gap
+  above is a configured difference and NOT a guaranteed real reaction window.
