@@ -150,8 +150,24 @@ def main():
     legs = {}
     for leg in ("A", "B"):
         mined = load(args.twoleg / f"leg{leg}_mined.json")
+        # BIP141 defines weight = 3*base + total, so the base (non-witness) size follows
+        # EXACTLY from two integers the client itself reported -- it is arithmetic on
+        # measured values, not a second model of the serialization. Everything the witness
+        # discount applies to is then total - base. This is what lets the deck state a
+        # per-field split without falling back on the projected btcThree* figures.
+        base = (mined["weight"] - mined["size"]) // 3
+        if 3 * base + mined["size"] != mined["weight"]:
+            die(f"leg {leg}: weight {mined['weight']} is not 3*base + size for size "
+                f"{mined['size']}; the client's own fields disagree, so no macro may "
+                "quote a base/witness split from them")
+        # ⚠ size - base is NOT the witness: BIP141's total_size also carries BIP144's
+        # marker and flag, which are fixed at one byte each for every segwit transaction.
+        # Subtracting those 2 is exact, not a model, and without it the witness figure is
+        # 2 B too large -- enough to make a stated "witness = N B" claim simply wrong.
+        witness = mined["size"] - base - 2
         legs[leg] = (mined["vsize"], mined["weight"],
-                     len(mined["vin"][0]["txinwitness"]))
+                     len(mined["vin"][0]["txinwitness"]),
+                     base, witness)
     # These macros are quoted as "each leg", so EVERY one of them is gated on the two legs
     # agreeing — size, weight and witness count alike. They need not agree: a beneficiary
     # paid to a different output type changes the size, and a different signature length
@@ -164,6 +180,8 @@ def main():
     emit("btcSwapLegVsize", f"{legs['A'][0]:,}".replace(",", "{,}"))
     emit("btcSwapLegWeight", f"{legs['A'][1]:,}".replace(",", "{,}"))
     emit("btcSwapItems", legs["A"][2])
+    emit("btcSwapLegBase", f"{legs['A'][3]:,}".replace(",", "{,}"))
+    emit("btcSwapLegWitness", f"{legs['A'][4]:,}".replace(",", "{,}"))
 
     # The signature recovered FROM the mined witness, and where its boundary was found.
     # Reported as measured bytes so the appendix never restates SIGNATURE_BYTES from memory.

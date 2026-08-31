@@ -361,14 +361,15 @@ whereas LAS folds the statement into a hash it already computes. Relative to eac
 scheme's own base operations, the lattice adaptor layer adds less computational
 overhead.
 
-\section{Testing the simplification: the adaptor on unmodified ML-DSA}
+\section{Testing the simplification: the adaptor with ML-DSA verification}
 \label{sec:res-mldsa}
 
-\Cref{sec:impl} disabled Dilithium's hint vector, Power2Round and high/low-bit
-decomposition, reasoning that the adaptor needs the exact identity $A\vecz-c\,t=w+Y$.
-That was an \emph{assertion}, so it was tested: the four adaptor operations were built a
-third time on NIST ML-DSA \emph{as FIPS~204 specifies it} \cite{1274601}, all three
-optimisations enabled. Three findings follow; the second overturns the assertion.
+\Cref{sec:impl} follows the LAS paper's simplified Dilithium-style base, which omits
+Dilithium's hint vector, Power2Round and high/low-bit decomposition. In this simplified
+form, the exact identity $A\vecz-c\,t=w+Y$ is exposed. This section tests whether those
+omitted optimisations can coexist with the adaptor layer: the four adaptor operations were
+built around NIST ML-DSA \emph{as FIPS~204 specifies it} \cite{1274601}, all three
+optimisations enabled. Three findings follow; the second pinpoints the boundary.
 
 \textbf{The naive port fails outright.} Adding the statement to the challenge hash and
 changing nothing else --- treating the hint machinery as a black box --- yields
@@ -563,10 +564,12 @@ naively. No constrained device was measured, so that point should not be over-re
 \section{Transaction structure and what a UTXO chain would charge}
 \label{sec:res-txstruct}
 
-The sizes above are the model ledger's own encoding (\cref{app:utxomodel}). Laid out
-instead in Bitcoin's wire format under the projection of \cref{sec:stage2method}, what
-does a settled swap cost, and does it fit? \Cref{fig:txstruct} answers structurally and
-\cref{tab:btctx} field by field.
+The sizes above are the model ledger's own encoding (\cref{app:utxomodel}). What a
+settled swap costs on a Bitcoin client is read from two \emph{mined} transactions: an
+ordinary payment, and one leg of the swap of \cref{app:btcnode}. \Cref{fig:txstruct}
+compares them structurally and \cref{tab:btctx} field by field. Both were mined on
+regtest, the swap leg on the node carrying the experimental rule: the sizes are real, on
+regtest rather than mainnet.
 
 \begin{figure}[htbp]
   \centering
@@ -591,25 +594,24 @@ does a settled swap cost, and does it fit? \Cref{fig:txstruct} answers structura
     \node[hdr, anchor=north] (h1) at (0,0) {(a) Standard payment};
     \node[fld] (a1) at (0,-8mm) {\texttt{version}};
     \node[fld] (a2) at (a1.south) {input: outpoint, \texttt{sequence}};
-    \node[chg] (a3) at (a2.south) {output: value, \texttt{scriptPubKey}\\
-                                   \textbf{31\,B}};
+    \node[fld] (a3) at (a2.south) {output: value, \texttt{scriptPubKey}};
     \node[fld] (a4) at (a3.south) {\texttt{locktime}};
     \node[chg] (a5) at (a4.south) {witness: $\sigma$, $\mathit{pk}$\\
-                                   \textbf{\btcOneWitness\,B}};
+                                   \textbf{\btcMeasClStack\,B}};
     \node[note] (a6) at ([yshift=-3mm]a5.south)
-      {total \btcOneTotal\,B \;$=$\; \btcOneVsize\,vB};
+      {total \btcMeasClTotal\,B \;$=$\; \btcMeasClVsize\,vB};
 
     %% ---------------- right: the swap settlement ----------------
     \node[hdr, anchor=north] (h2) at (70mm,0) {(b) Adaptor swap settlement};
     \node[fld] (b1) at (70mm,-8mm) {\texttt{version}};
     \node[fld] (b2) at (b1.south) {input: outpoint, \texttt{sequence}};
-    \node[chg] (b3) at (b2.south) {output: value, \texttt{scriptPubKey}\\
-                                   \textbf{43\,B}};
+    \node[fld] (b3) at (b2.south) {output: value, \texttt{scriptPubKey}};
     \node[fld] (b4) at (b3.south) {\texttt{locktime}};
-    \node[chg] (b5) at (b4.south) {witness: $\sigma$, $\mathit{pk}$\\
-                                   \textbf{\btcThreeWitness\,B}};
+    \node[chg] (b5) at (b4.south) {witness: chunked $\sigma$ and $\mathit{pk}$,\\
+                                   tapscript, control block\\
+                                   \textbf{\btcMeasLasStack\,B}};
     \node[note] (b6) at ([yshift=-3mm]b5.south)
-      {total \btcThreeTotal\,B \;$=$\; \btcThreeVsize\,vB};
+      {total \btcMeasLasTotal\,B \;$=$\; \btcMeasLasVsize\,vB};
 
     %% ---------------- what never appears on chain ----------------
     \node[off, anchor=north] at (35mm,-72mm)
@@ -618,49 +620,48 @@ does a settled swap cost, and does it fit? \Cref{fig:txstruct} answers structura
        \textbf{Never transmitted at all:} the witness $y$, which $u_2$ recovers as $y'$
        from the published $\sigma$ and its own $\hat{\sigma}_2$ via \textsc{Ext}.};
   \end{tikzpicture}
-  \caption[Standard payment versus adaptor swap settlement]{A standard payment and the
-  corresponding post-quantum adaptor-swap settlement under the transaction mapping of
-  \cref{sec:stage2method}. \textbf{No field is added, removed or reordered}: the swap
-  condition needs no on-chain script of its own, which is what \emph{scriptless} means.
-  The two shaded rows are the two that differ, and neither difference comes from the
-  adaptor layer --- the witness grows from \btcOneWitness\,B to \btcThreeWitness\,B
-  because the signature and public key are lattice objects, and the output script from
-  31\,B to 43\,B because it commits to a 32-byte hash of that key rather than a 20-byte
-  hash of an elliptic-curve one. The measured object sizes are laid out in the witness
-  serialisation of \cite{bip144}, with the output forms of
-  \cite{bip141,bip341}; \cref{tab:btctx} gives every field of both columns.}
+  \caption[Standard payment versus adaptor swap settlement]{Two \emph{mined}
+  transactions: an ordinary payment, and one leg of the swap settled in
+  \cref{app:btcnode}. \textbf{No field is added, removed or reordered}, and the base is
+  byte-identical at \btcMeasBase\,B --- the swap condition needs no on-chain script of
+  its own, which is what \emph{scriptless} means. Exactly one row differs, and the
+  difference does not come from the adaptor layer: the witness carries lattice objects
+  rather than an elliptic-curve signature and key, and because each stack element is
+  capped at \btcChunkWidth\,B they arrive chunked, alongside the tapscript and its
+  control block. Both transactions pay to the same output form, so the output does not
+  grow; a settlement paying to taproot instead would add 12\,B of base, which is not what
+  was mined here. Sizes are the client's own, and the field layout follows
+  \cite{bip141,bip144,bip341}; \cref{tab:btctx} gives every field.}
   \label{fig:txstruct}
 \end{figure}
 
 \begin{table}[htbp]
   \centering
-  \caption[The settled transaction, field by field]{One settled swap transaction in
-  Bitcoin's wire format, field by field. The layout is identical in both columns
-  (\cref{fig:txstruct}); only the sizes differ. Object sizes are measured;
-  % Run metadata is not printed: Stage-2 evidence run = \stageTwoRunId{}
-  the field arithmetic is derived from \cite{bip141,bip144,bip341}
-  and self-checked against the published 110\,vB P2WPKH reference spend. Virtual size is
-  the quantity a UTXO chain prices, and the gap between it and total size is the
-  witness discount. The model ledger's own encoding (\cref{tab:stage2-comm}) totals
-  \cfgThreeMsgChainA\,B for the same objects, agreeing with the \btcThreeTotal\,B here
-  to within 0.2\,\%: the two differ only in where the public key sits --- inline in the
-  model's output, in the witness under Bitcoin's layout --- and in Bitcoin's marker,
-  flag and compactSize prefixes.}
+  \caption[The settled transaction, field by field]{Two mined transactions field by
+  field, every figure as the client decoded it: an ordinary payment against one leg of the
+  swap of \cref{app:btcnode}. Total size, weight and virtual size are the client's own;
+  the base is reconstructed from the fields and \emph{cross-checked} against that weight,
+  since BIP-141 fixes weight as three times base plus total \cite{bip141}. ``Witness
+  stack'' is the serialized items --- for the swap leg the chunked signature and key, the
+  tapscript and the control block --- and ``witness size'' adds BIP-144's marker and flag
+  \cite{bip144}. Virtual size is the quantity a UTXO chain prices, and the gap between it
+  and total size is the witness discount. \textbf{Scope}: both were mined on regtest, the
+  swap leg on the node of \cref{app:btcnode} carrying the experimental rule.}
   \label{tab:btctx}
   \small
-  \input{generated/tab_btctx}
+  \input{generated/tab_btctx_measured}
 \end{table}
 
 \paragraph{The witness discount absorbs more than half of the post-quantum penalty.}
 This rests on a transaction structure Bitcoin did not originally have. Before SegWit
 \cite{bip141,bip144} a signature travelled in the input script, where every byte was billed
 alike; the segregated witness bills witness bytes at one weight unit against four, and
-Taproot \cite{bip341} supplies the output form used here. In raw bytes the post-quantum
-settlement is \btcRawRatio$\times$ the classical one; in virtual size --- what fees are
-charged on --- only \btcVsizeRatio$\times$, a post-quantum signature being \emph{entirely}
-witness data. That decision, taken long before anyone considered lattice signatures on
-Bitcoin, removes \btcDiscountSaving\,\% of the size penalty; on the original structure the
-same settlement would pay the undiscounted rate throughout. It is a concrete argument for
+Taproot \cite{bip341} supplies the output form used here. Derived from the two mined transactions, the post-quantum settlement is
+\btcMeasRawRatio$\times$ the classical one in raw bytes; in virtual size --- what fees are
+charged on --- only \btcMeasVsizeRatio$\times$, a post-quantum signature being
+\emph{entirely} witness data. That decision, taken long before anyone considered lattice
+signatures on Bitcoin, removes \btcMeasDiscountSaving\,\% of the size penalty; on the
+original structure the same settlement would pay the undiscounted rate throughout. It is a concrete argument for
 % No gas figure here.  \gasLasVerifiedM is the BASELINE claimLASVerified, and quoting it
 % in a paragraph arguing for the UTXO venue rests that argument on the dearer of two
 % measured implementations -- while sec:res-evm's own first move is to say that figure
@@ -670,11 +671,9 @@ UTXO chains as the venue, with no counterpart on the EVM, where calldata carries
 comparable discount; \cref{sec:res-evm} measures what a gas-metered venue charges.
 
 \paragraph{It fits the weight limits, not the element-size or verification rules.}
-A settlement weighs \btcThreeWeight{}\,WU against the \btcMaxStdWeight{}\,WU standardness
-limit --- \btcThreePctStd\,\% of it --- and the \btcMaxBlockWeight{}\,WU block limit
-admits an upper bound of \btcThreePerBlock{} settlements per block against
-\btcOnePerBlock{} classical ones, ignoring competing transactions. The limit is a weight
-limit, not a gas limit, and one swap sits well inside it.
+The mined settlement weighs \btcMeasLasWeight{}\,WU against the
+\btcMaxStdWeight{}\,WU standardness limit --- \btcMeasPctStd\,\% of it. The limit is a
+weight limit, not a gas limit, and one swap sits well inside it.
 
 Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
 verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340

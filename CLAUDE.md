@@ -203,8 +203,12 @@ session that repeats one of these has failed even when its output looks right.
    (1,190 spoken words in ≈640 s), and per-slide it ranges ≈95–125, slowest on the demo slides
    where beats add time speech does not. **`data-time` is therefore derived at 112 wpm now, not
    150** — re-derive at the *measured* pace after any notes edit, never the assumed one. The
-   script was cut **1,190 → 887 words** the same day, which derives 7:56 at that pace: inside
-   8:00 but with almost no margin, so the timed rehearsal still decides. A caveat may move to
+   script was cut **1,190 → 887** on 2026-08-27, had drifted back to **941** by 2026-08-30, and is
+   now **868 words = 7:45**; **every `data-time` is derived from its own slide's SPOKEN half at
+   112 wpm**, though small differences between the summed per-slide times and the whole-script
+   estimate can arise from per-slide rounding. ⚠ **A recorded word count goes stale silently —
+   recount it, never quote one from prose (this file included).** Margin is ~15 s, so the timed
+   rehearsal still decides. A caveat may move to
    BACKUP **only if it is VISIBLE on the slide** (the 2026-08-22 must-be-visual vs
    narration-suffices split); the base-naming and the UTXO-with-UTXO scope note stay SPOKEN
    because nothing on screen carries them.
@@ -327,7 +331,21 @@ the base signature.** Results/evaluation must lead with this
   §res-evm's two figures now take a text-free page each.
 - **⚠️ DECK ⊆ REPORT — the difference is PRESENTATION, not content (Royce, 2026-08-25).** No
   slide may assert what the report does not; a claim added to the deck is added to the report
-  in the same edit, or it does not go on the slide. (Rubric 3.2.2's "additional aspects" is
+  in the same edit, or it does not go on the slide.
+  ⚠ **IT IS NOW A GATE, because Royce asked it be kept "ketat dan akurat" (2026-08-30):
+  `python3 scripts/check_deck_subset.py`** (exit 1 on a gap). Run it after any deck or report
+  edit. **Its header is the real documentation** — five false-pass paths are documented and
+  closed, and negative controls confirm the gate fails when its evidence is broken: value
+  matching is coincidence (`clSigBytes`=64 also occurs in `tab_components`, which has no
+  ECDSA column); a macro is geometry only if **every** occurrence is a `--w:` bar width; an
+  exemption that does not re-verify is a hardcoded pass; an empty value must not match; and
+  only **compiled, uncommented** TeX counts, so a stale draft or a `%`-commented mention can
+  never satisfy it.
+  ⚠ **A macro-name diff is a PROXY, not the invariant.** The first run flagged 10; 5 were bar
+  geometry, 3 were facts the report prints in `tab:classical` without ever citing the macro,
+  and only 2 were real. Never delete a slide claim on the strength of a name search alone.
+  ⚠ **Scope: macros only.** Literal figures typed into slide text (2035, 520), qualitative
+  claims and citations are outside it and still need reading. (Rubric 3.2.2's "additional aspects" is
   satisfied by the **demos** — work the project did that text cannot show — never by extra
   claims.) Two report figures exist because of this rule: **`fig:whynow`** (§1.1 — the quantum
   estimates + the basic/exotic layers; the rubric 3.1.2 figure the Introduction had none of,
@@ -394,18 +412,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-28 16:44 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-08-31 00:48 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`main`** · HEAD c41bbb5 · 2026-08-27 · deck report 27_08 19:05
-- Working tree: 408 modified tracked file(s), 54 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
+- Branch **`main`** · HEAD e8d2481 · 2026-08-28 · evidence 28_08 18:37
+- Working tree: 30 modified tracked file(s), 51 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
 - Recent commits:
+  - `e8d2481 2026-08-28 evidence 28_08 18:37`
+  - `c80dacb 2026-08-28 28_08 18:36`
   - `c41bbb5 2026-08-27 deck report 27_08 19:05`
   - `9032d1d 2026-08-25 introductory material`
   - `661e9cf 2026-08-25 Merge branch 'report'`
-  - `2029564 2026-08-23 report deck 23_08 18:51`
-  - `3c47c6a 2026-08-22 Merge pull request #5 from roycesteven/report`
 
 ### Target parameter set — anchors parsed from source
 
@@ -421,7 +439,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `latest` (dir mtime 2026-08-25)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8978** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8996** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -439,7 +457,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - Stage-1 evidence (2026-08-28) is newer than the newest scheme source (2026-08-25) — measurements match the code.
-- `CLAUDE.md` hand-written sections last touched 2026-08-28.
+- `CLAUDE.md` hand-written sections last touched 2026-08-30.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -592,6 +610,39 @@ Groth16, (3) LAS + LaZer, from one pinned master seed.
   `generated/btcmacros.tex` + `tab:btctx`; prose `docs/02-methodology/BITCOIN_TX_STRUCTURE.md`.
   ⚠️ **Config 1 must be projected from a DER witness item, never the 64-byte compact ECDSA
   signature** — that error understated the classical baseline and inflated every PQ ratio.
+  ⚠️ **§res-txstruct IS NO LONGER PROJECTED (Royce, 2026-08-30: "tidak boleh ada satu pun angka
+  yang projected").** It now reads two **mined** transactions — carriage `A1_mined.json` (an
+  ordinary payment) and `legA_mined.json` (a settled swap leg) — via
+  `scripts/gen_btc_measured_tx.py` → `btcmeasmacros.tex` + `tab_btctx_measured.tex`. **No
+  `btcOne*`/`btcThree*` macro survives in any chapter** and the projected `tab_btctx` is input
+  nowhere; `gen_bitcoin_tx_data.py` still supplies the protocol constants and measured-object
+  ratios the chapter keeps (`btcMaxStdWeight`, `btcSigOverElement`), so do **not** delete it.
+  ⚠️ **The CLASSICAL projection was validated by the mined A1 spend (191 B, 110 vB, 31 B
+  output), but the projected LAS settlement was NOT the transaction later mined:** it assumed a
+  Taproot output (94 B base, 2,885 vB) whereas the measured swap leg pays to P2WPKH (82 B base,
+  2,905 vB). §res-txstruct replaces the projection with measured evidence — **do not describe
+  this as a mere relabelling.**
+  ⚠️ **What changed is a CLAIM, by Royce's ruling: the output does NOT grow.** Both mined
+  transactions pay to P2WPKH, so the base is byte-identical at 82 B and the whole measured
+  increase is witness. "The output script grows 31→43 B" belonged to that assumed Taproot
+  output; it is deleted and must never be reinstated from the old figure.
+  ⚠️ **Two things must not return with it.** (a) **No per-block capacity in this chapter** —
+  `block_weight // tx_weight` is a bound, not a measurement; no block was mined holding 344
+  legs, so "N settlements per block" is gone. (b) **The "model ledger agrees to within 0.2%"
+  cross-check was tied to the projected total**; against the measured 11,373 B the gap is
+  wider, so it was dropped rather than restated.
+  ⚠️ A ratio over two mined transactions is **derived from measured**, and the prose says so.
+  ⚠️ **Knock-on edits, checked chapter by chapter — only TWO were needed, do not churn the rest.**
+  `02-methodology.tex` §"What a settled transaction contains" described the *projection*
+  ("mapping the measured objects onto the fields… the committed key hash into the output
+  script") and so carried the retired output claim while pointing at `sec:res-txstruct`;
+  rewritten to the mined-transaction provenance. `05-conclusion.tex`'s "**Both** are measured
+  over ledger models" was falsified by the change — Stage 2 is a model, the Bitcoin evidence is
+  now mined — and now separates the two. **Abstract, Introduction and Evaluation need nothing**
+  (verified: no projection prose, no `btcOne*`/`btcThree*`, no "43 B" / "per block"), and the
+  appendix already reports the mined leg. ⚠️ `sync_report.sh` now also runs
+  `gen_btc_measured_tx.py` — without it the chapter's `btcMeas*` go stale while `btcmacros.tex`
+  moves underneath them.
 - **Deliberately dead, do NOT repair:** `ref/amhl.{c,h}`, `ref/chain.{c,h}`, and
   `ref/test/{test_contract,test_pcn,bench_app}.c` — pre-seven-type (`las_pp`/`las_pk`/`las_sk`/
   `las_sig`), superseded by the Rust evaluation. `STAGE1_ONLY=1` skips them and still regenerates
@@ -645,6 +696,30 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   running as a separate program fed only the recovered bytes. Ext succeeding is **weaker**
   than byte-equality — any `(c, ẑ+y')` with `A·y'=Y` passes it. Macros `btcSwap*` (never mix
   with `btcLas*`/`btcMeas*`); PI=0 is recorded INCOMPLETE and does not move `latest`.
+  ⚠ **THE MINED LEG IS A MEASUREMENT, AND THE DECK QUOTES IT INSTEAD OF A PROJECTION**
+  (Royce, 2026-08-30 — "saya tidak mau ada projected"). `leg{A,B}_mined.json` carry the
+  client's own `vsize`/`weight`/`size`, so deck slide 10's Bitcoin column reads
+  `btcSwapLeg{Base,Witness,Vsize,Weight}` + `btcSwapItems`, **not** the `btcThree*`
+  projections — both venues now show `measured`, which also retires the
+  derived-vs-measured asymmetry a reader would otherwise query. New in
+  `gen_btc_regtest_data.py`: `btcSwapLegBase`, `btcSwapLegWitness`.
+  ⚠ **`size - base` is NOT the witness** — BIP141's total also carries BIP144's marker and
+  flag, one byte each, so witness = `size - base - 2`; without it the figure is 2 B too
+  large. Asserted to close (`base + 2 + witness == size`), and the generator now also dies
+  unless `3*base + size == weight`.
+  ⚠ **The chunked stack elements carry the PUBLIC KEY as well as the signature** — measured
+  11,152 B = 6,736 + 4,416 exactly — and the two trailing items are the **tapscript** and
+  the **control block**. Never write "the signature chunked", never "tapleaf" for that
+  element, and say **stack-element limit**, not "push limit": {{btcChunkWidth}} bounds an
+  element, and no script push opcode is involved.
+  ⚠ **Scope travels with it: that leg settled on a REGTEST node carrying the experimental
+  rule, so it is not a mainnet spend** — the slide says so, and "a patched node is not
+  Bitcoin" is untouched. `btcThree*` remain correct and stay in the REPORT: they model all
+  three configurations including the classical baseline, which was never mined and so
+  cannot be measured.
+  ✅ **deck ⊆ report closed for it 2026-08-30**: `app:btcnode`'s existing per-leg sentence
+  now also gives the base / marker-and-flag / witness split and the chunking — appendix, so
+  **zero words**.
   ⚠️ **Never write "read σ₂ off chain"** (deck label, fixed 2026-08-26): it reads as *off-chain*,
   inverting the claim. σ₂ is read **from** the mined transaction on chain B — `Ext` and the second
   `Adapt` are what run locally. Say **"from chain B"**.
@@ -1111,11 +1186,55 @@ any of it.
    `opacity` only, so Bob's two blocks both occupied space and the visible one painted over the rail
    at beats 2 and 4. Toggle `display` for beat blocks that stack; keep opacity only where the strip
    must hold its height (`.wrail`, `.pipe`). ⚠ A shot taken mid-transition is not a defect — kill
-   `transition`/`animation` before capturing a beat. ⚠ **Attribute beliefs to NO ONE on the evaluation slide** (2026-08-21): quotation marks
+   `transition`/`animation` before capturing a beat.
+   ⚠ **THE AUDIT LIED FOR TWO SESSIONS — `audit_overflow.js` HAD A SCALE BUG (fixed 2026-08-30).**
+   It compared a **screen-space** `sb.top` against the **unscaled** `slide.clientHeight`, so at the
+   headless 0.86 stage scale its bottom threshold sat ~46 px BELOW the slide's real padded edge and
+   it returned **CLEAN for slides painting straight through the footer** (DEMO B, caught only by
+   screenshot). Both thresholds now derive the scale from the rect itself. **Re-run it before
+   trusting any earlier "clean" verdict**, and keep shooting the slide as well: the two find
+   different things, and a clean audit is still not a clean slide.
+   ⚠ **THE AUDIT CANNOT SEE SIBLING OVERLAP AT ALL — three slides shipped broken behind a green
+   run (2026-08-30).** It tests escapes from the slide's padding box and from a framing card, so
+   content that paints *over a neighbour* while both stay inside the slide is invisible to it:
+   slide 8's column spilled upward through the headline (a `justify-content:center` column that no
+   longer fits spills BOTH ways, and upward is never checked), slide 10's summary line painted over
+   the LAS bar, and slide 11's Ethereum measured line painted over the conclusion. **Every one was
+   found only by looking at the render.** Anchor columns to the top when their height is not
+   guaranteed, and treat "overflow clean" as necessary, never sufficient — the screenshot decides.
+   ⚠ **IN-SHOT TYPE FLOOR IS NOW 22 px — slide 13's scale, deck-wide (Royce, 2026-08-30:
+   "tidak boleh ada tulisan kecil-kecil lagi ... hanya daging").** Superseded the old 13 px floor.
+   Gate: `report/slides/audit_type.js` (same `--dump-dom` recipe) reports every visible run below a
+   floor, in **canvas px**. ⚠ Its whole point is SVG: a scene's `font-size="22"` paints at
+   `22 × viewBox scale`, so a scene that shrinks when neighbouring content stacks silently drops
+   below the floor — **measure the painted size, never assume a scene renders 1:1**, and re-measure
+   after any change to what sits beside it. Buying the size means CUTTING: what went was byte
+   figures repeated from the slide that owns them, arrow captions restating the box beside them,
+   and a duplicate opcode badge — never a caveat, a scope note or a warrant.
+   ⚠ **ONE ORIENTATION PER SLIDE — columns are allowed, MIXING is not (Royce, 2026-08-30:
+   "boleh 2 kolom, tapi pilih salah satu antara vertikal atau horizontal saja").** Two vertical
+   stacks side by side is the banned shape, and the fix is to **split it into two slides**, not to
+   cram it into one column: that is how "Cost in time" and "Settled by measurement" became four
+   slides and **the deck is now 15, not 13** — so "the demos are slides 7 and 11" is stale, they
+   are **7 and 12**. ⚠ Slides **7, 10 and 13 are exempt by name** (Royce, "jangan rusak"): the swap
+   board, the two-venue comparison and the three-audience verdict are comparisons whose side-by-side
+   arrangement IS the content. A blanket single-column rule broke all three and had to be reverted.
+   ⚠ **Attribute beliefs to NO ONE on the evaluation slide** (2026-08-21): quotation marks
    manufactured a source (read as citing eprint 2020/845, which drops Dilithium's optimizations
    only *"in order to simplify the presentation"*), and the replacement `I assumed` was ALSO
    wrong — Royce never held those assumptions and the report says *measured*. The slide is
-   question-form ("Does X? → measured answer"); reintroduce neither framing. ⚠ **In-shot type floor 13px** (Royce, 2026-08-21, "tulisan harus
+   question-form ("Does X? → measured answer"); reintroduce neither framing. ⚠ **SLIDE TEXT STYLE — visible AND spoken, all 13 slides (Royce, 2026-08-30).** No **em-dash**
+   anywhere a viewer can see: colon, semicolon, `·` or a full stop instead (the minus in `z − ẑ`
+   is `&#8722;`, not one — never sweep it). No `CITED` badge: sources are **author-year in text**
+   (`Babbush et al. (2026)`, `(Valenta and Guthrie, 2026)`), each bound to its **own** claim, never
+   one trailing parenthesis after two. **"exotic" / "multi-signature" / "threshold" appear nowhere
+   visible or spoken** now the title names the adaptor signature — HTML design comments may keep
+   them. ⚠ **That ban must not delete M10 #2's softening**, which now reads *"other advanced types
+   are being built, the adaptor case much less so"*; deleting it reinstates the overclaim. Slide 10
+   keeps **both** warrants and now says *why* they differ (a marker would otherwise ask): Bitcoin
+   **projected** from measured LAS objects onto the wire format, Ethereum **measured** from a real
+   client's receipt; the two-published-spends cross-check stays in BACKUP.
+   ⚠ **In-shot type floor 13px** (Royce, 2026-08-21, "tulisan harus
    besar dan jelas" per the UoM template, whose own floor is 20pt): rehearsal-only chrome exempt;
    the gas chart left the evaluation slide because its axis type cannot meet the floor at 720p. Plan + beat sheet +
    on-camera claim discipline in `report/slides/VIDEO_PLAN.md`. It is **generated**:
@@ -1312,6 +1431,20 @@ meeting block here.
   ⚠️ **Never widen it:** big platforms migrated **key agreement** first; the cited signature
   deployment is **ML-DSA authentication on Cloudflare-to-origin connections (July 2026)**, NOT
   the public web PKI — no public PQ certificate was in use as of October 2025.
+  ⚠️ **ALL THREE REFS ARE CLOUDFLARE PUBLICATIONS, so the warrant supports ONE NAMED migrator,
+  never a plural** — "major internet platforms / many big companies are migrating" asserts
+  independent companies none of them evidences. Say **"Cloudflare is already migrating its
+  infrastructure"**. Caught 2026-08-30 in *both* halves of one drafting pass (slide text and
+  narration), which is the grep-the-deck-AND-the-notes lesson again.
+  ⚠️ **The 2026-08-27 pass was slide furniture only — corrected 2026-08-30.** It put the claim
+  in two `.ts`/`.stkarrow` captions and left the SPOKEN script silent, while Wang's channel was
+  speech both times ("you should **say**", "**Have you mentioned** this?"). Slide 4 now carries
+  it aloud. The old caption also asserted "**governments** and major networks" with no source at
+  all — deleted, EVIDENCE-OR-SILENCE. **Deck-only by decision** (ChatGPT review 2026-08-30,
+  verified): both askings were over the deck, and at the report review Wang graded the PQ
+  motivation *"you have already done a good job"* — so the report is NOT edited for this, and
+  `westerbaan2025pqinternet` / `cloudflare2026pqroadmap` stay **cited nowhere**, i.e. absent from
+  the bibliography, until Royce says otherwise.
 - ✅ Accepted as they stand: structure, ≥5 objectives, contributions, critical reflection, 28
   citations, the Ch.3/Ch.4 split; only subsection *titles* may need a tweak. Written comments
   arrive on Overleaf as highlight+comment early the following week. **13 slides counted by Wang
@@ -1693,30 +1826,31 @@ Be direct, evidence-based, scoped.
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **dilithium-msc-project** (7414 symbols, 12381 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **dilithium-msc-project** (8013 symbols, 14444 relationships, 535 execution flows).
 
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+> Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
 ## Always Do
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
+- **MUST run impact analysis before editing.** Use `impact({target: "symbolName", direction: "upstream"})` (MCP) or `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .` (CLI fallback); report callers, processes, and risk. Never substitute grep for graph analysis.
+- **MUST analyze graph changes before committing.** Use `detect_changes({scope: "all"})` (MCP) or `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback). `partial: true` or `truncated: true` is not a clean check — a zero means unseen, not unaffected; re-run it. For regression review: `detect_changes({scope: "compare", base_ref: "main"})` or `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "main" --repo .`.
 - **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- **MUST treat `risk: UNKNOWN` as unresolved, not as low.** An empty caller set is not evidence the symbol is unused — it can also mean the callers are not resolvable by the index (plain-object property access, dynamic dispatch, cross-language calls). `impact` pairs `UNKNOWN` with a `riskNote` saying so. Confirm with a text search before treating the symbol as safe to change or delete; do not proceed on the strength of a zero.
 - When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
 - When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
 - For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
 
 ## Never Do
 
-- NEVER edit a function, class, or method without first running `impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER edit a function, class, or method before MCP/CLI impact analysis.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis, and never read `UNKNOWN` as an all-clear — it means the walk could not answer, which is the one verdict that requires confirming by other means.
 - NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
-- NEVER commit changes without running `detect_changes()` to check affected scope.
+- NEVER commit before MCP/CLI graph change analysis.
 
 ## Resources
 
 | Resource | Use for |
-|----------|---------|
+| --- | --- |
 | `gitnexus://repo/dilithium-msc-project/context` | Codebase overview, check index freshness |
 | `gitnexus://repo/dilithium-msc-project/clusters` | All functional areas |
 | `gitnexus://repo/dilithium-msc-project/processes` | All execution flows |
@@ -1725,12 +1859,12 @@ This project is indexed by GitNexus as **dilithium-msc-project** (7414 symbols, 
 ## CLI
 
 | Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| --- | --- |
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->

@@ -910,7 +910,10 @@ $u_1$ adapts leg~B and settles it, and the adapted signature is then read back o
 \emph{mined} witness --- its boundary located by the key hash the funding output committed to
 rather than by an assumed signature length. Leg~A is adapted with the recovered witness and
 settles on the other chain. Each leg is \btcSwapLegVsize\,vB, \btcSwapLegWeight\,WU and
-\btcSwapItems{} witness items.
+\btcSwapItems{} witness items: \btcSwapLegBase\,bytes of non-witness transaction, the two
+bytes BIP-141 adds as a marker and flag \cite{bip141}, and \btcSwapLegWitness\,bytes of
+witness. That witness holds the signature and the public key split across stack elements of
+at most \btcChunkWidth\,bytes, followed by the tapscript and its control block.
 
 Two separate facts carry the provenance, and they should not be merged. The recovered
 signature is \btcSwapRecoveredBytes\,bytes and byte-identical to what \textsc{Adapt}

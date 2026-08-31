@@ -16,8 +16,17 @@
     var slide = document.querySelector('.slide.active');
     if (!slide) return;
     var sb = box(slide), cs = getComputedStyle(slide);
-    var padB = sb.top + slide.clientHeight - parseFloat(cs.paddingBottom);
-    var padR = sb.left + slide.clientWidth - parseFloat(cs.paddingRight);
+    /* ⚠ SCALE, 2026-08-30. getBoundingClientRect() is in SCREEN px but clientHeight /
+       paddingBottom are in the stage's own unscaled px, and the stage is scaled to the
+       window — so `sb.top + slide.clientHeight - paddingBottom` mixed two coordinate
+       systems and put the bottom threshold ~46px BELOW the slide's real edge at a 0.86
+       scale. That returned CLEAN for slides whose content painted straight through the
+       footer (DEMO B, found by screenshot). Derive the scale from the rect itself and
+       convert, so the threshold is the slide's real padded edge in screen px. */
+    var sy = slide.clientHeight ? sb.height / slide.clientHeight : 1;
+    var sx = slide.clientWidth ? sb.width / slide.clientWidth : 1;
+    var padB = sb.bottom - parseFloat(cs.paddingBottom) * sy;
+    var padR = sb.right - parseFloat(cs.paddingRight) * sx;
 
     // (a) out of the slide
     slide.querySelectorAll('*').forEach(function (el) {

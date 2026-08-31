@@ -20,10 +20,10 @@ is \zPctTarget\% response vector, with the statement $Y$ on top. The classical c
 points the same way, with its discrete-logarithm-equality proof making that adaptor layer
 proportionally more expensive.
 
-One design decision was tested rather than asserted. The simplified base was adopted
-because the adaptor appeared to need an exact verification identity; implementing the
-same construction on unmodified ML-DSA showed that belief was half wrong
-(\cref{sec:res-mldsa}). \textsc{PreSign} and \textsc{PreVerify} do require
+One design decision was tested rather than asserted. The implementation
+followed the LAS paper's simplified Dilithium-style base. Rebuilding the adaptor path on
+ML-DSA showed that simplification is not functionally required for final
+verification (\cref{sec:res-mldsa}). \textsc{PreSign} and \textsc{PreVerify} do require
 adaptor-specific algorithms --- the naive port fails outright --- but \textsc{Verify} does
 not: a
 % "at equal computation" overstated sec:res-mldsa, whose measured finding is that
@@ -88,8 +88,8 @@ the same predicate closed it (\cref{sec:res-evm}). What remains unsolved is cost
 settlement is far dearer than a classical claim and fits only by a thin margin at one
 parameter set and message length.
 
-Second, the applications are \textbf{exploratory demonstrators, not products}. Both are
-measured over ledger models; the real-client runs are local, not live-network
+Second, the applications are \textbf{exploratory demonstrators, not products}.
+Stage~2 measures over ledger models; the real-client runs are local, not live-network
 deployments. For the UTXO study this is partly forced: Bitcoin Script cannot verify a
 lattice signature, so the post-quantum configurations need the consensus change
 \cite{esgin2020post} assumes. The reported costs are implementation-level feasibility

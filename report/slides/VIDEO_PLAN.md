@@ -59,8 +59,14 @@ know where you are. Nothing else in the deck behaves differently.
 
 ## 1. Structure and timing
 
-**Thirteen slides**, planned total **7:29** — inside the 6–8 minute band with roughly half a
-minute of margin at each end. The count grew past Meeting 10's "more or less 10" because
+**Thirteen slides**, planned total **7:45** — inside the 6–8 minute band, but with only ~15 s
+of margin, so the timed rehearsal decides, not this number.
+
+⚠ **Every `data-time` is now DERIVED, not chosen** (2026-08-30): each is its own slide's SPOKEN
+word count at the **measured 112 wpm**, so the per-slide table below and the total move whenever
+narration is edited — re-derive, never hand-set. The pace is measured, not assumed: the M12
+rehearsal ran ≈10:40, and 150 wpm was the figure that made the old budget look safe when it
+was not. The script is **868 words**; at 112 wpm that is 7:45. The count grew past Meeting 10's "more or less 10" because
 three of Wang's later instructions each asked for a slide that did not exist: the quantum
 background and urgency (2), the transaction structure of both venues (10), and the verdict
 with its implications for Bitcoin and blockchain developers (13). **If Wang wants it back
@@ -87,9 +93,15 @@ top-right stepper lights.
 | 13 | **Verdict — and what it means in practice** | Implications | 0:45 | **the close**: the three questions answered, the verdict, and one card per audience |
 
 **If you run long**, cut in this order: slide 12's future-work card (the two closed
-suggestions) → slide 8's rejection-gate caveat → slide 6's known-answer-digest row → slide 2's
-second card (the NIST date), which the narration can carry alone. Do **not** cut a
-demonstration beat — the two demonstrations are where *Use of the Medium* and *Complementing
+suggestions) → slide 8's rejection-gate caveat → slide 6's known-answer-digest row.
+⚠ **The fourth entry, "slide 2's second card (the NIST date)", is WITHDRAWN (2026-08-30) as a
+PROJECT-LEVEL presentation choice:** it is the single concrete deadline/urgency marker left on
+that slide after Meeting 12's density feedback, and it mirrors the revised `fig:whynow`
+argument. ⚠ **It is NOT a Wang video requirement** — his "in how many years" line belongs to
+M12 §8, spoken over the *report* PDF about Figure 1.1(a), while his feedback on this *slide*
+ran the other way (too many numbers, "which one is the most important?"). Do not cite him for
+keeping it; revisit it if a timed rehearsal still exceeds 8:00 after the cuts above. Do **not**
+cut a demonstration beat — the two demonstrations are where *Use of the Medium* and *Complementing
 the Report* are earned, and those are 80 % of the video mark between them. **If you run
 short**, slide 7's fourth beat and slide 12's ML-DSA table have more to say than is printed.
 
@@ -221,6 +233,15 @@ heuristic, so discard hits where the text sits wholly outside the rect it was ma
 what four rounds of eyeballing had missed — a 67 px clipped line on slide 5 and hidden beat blocks
 pushing slide 7's cards over the rail. ⚠ Screenshots still decide: the audit says *where*, the
 render says whether it reads.
+
+⚠ **THE AUDIT CANNOT SEE FOOTER COLLISIONS — a clean run is not a clean slide (2026-08-30).** It
+tests escapes from a slide's content box and from the card that frames an element; `#foot` is
+positioned separately, so content *reaching* it is neither. Slide 13 passed the audit while its
+three columns painted 21 px through the footer and their coloured rules struck out the slide
+number — caught only by the screenshot. **Shoot the slide as well as auditing it**, and when a
+headline grows to two lines, re-measure the slides below it against `#foot`, not just the audit.
+The cause there is worth knowing: `.v3 .cav` is a `<p>` and had no `margin:0`, so it carried the
+UA default `1em`. Check that on any new text element before blaming the layout.
 
 ---
 

@@ -28,12 +28,11 @@ adaptor swap additionally transmits a public-key-sized statement, which each ada
 operation must also decode, raising the computation premium to
 $+\packedOvPreSign$--$\packedOvAdapt\%$ once encoding is counted.
 
-Building the same construction on unmodified NIST ML-DSA tests the simplification the
-implementation rests on, and corrects it: PreSign and PreVerify require adaptor-specific
-algorithms, but the standard verifier need not change, and it accepts the adapted
-signature unchanged. That route halves the signature at close to equal computation while
-leaving the statement untouched, so it relocates the communication bottleneck rather than
-removing it.
+A further experiment tests whether the adaptor layer can coexist with ML-DSA's hint and
+rounding machinery. PreSign and PreVerify require adaptor-specific changes, but the
+standard FIPS~204 verifier accepts the adapted signature unchanged. This route roughly
+halves the signature at close to equal computation while leaving the statement untouched,
+relocating rather than removing the communication bottleneck.
 
 Taking the protocol to a UTXO ledger, the setting the original construction assumes,
 sharpens the conclusion: measured across three configurations, the signature is at the

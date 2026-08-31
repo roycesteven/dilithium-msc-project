@@ -85,6 +85,11 @@ else
   echo "WARNING: no evidence/stage2/latest/bench_swap.log; btcmacros.tex left as-is." >&2
 fi
 
+# Section res-txstruct is measured, not projected (Royce, 2026-08-30): its figures come
+# from two MINED transactions rather than from the projection above. This must run, or the
+# chapter's btcMeas* macros and tab_btctx_measured.tex go stale while btcmacros.tex moves.
+python3 "$ROOT/scripts/gen_btc_measured_tx.py"
+
 # --- 3. optional PDF rebuild -------------------------------------------------
 if [ "$BUILD" = yes ]; then
   make -C "$ROOT/report/latex"

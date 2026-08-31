@@ -510,10 +510,10 @@ both pre-signatures stay off-chain, while the witness $y$ is never transmitted: 
 derives it from the published $\sigma$ and its own pre-signature. The construction
 therefore adds \emph{no adaptor-specific on-chain field} --- what \emph{scriptless}
 means: the swap condition need not appear as a separate on-chain script. The resulting
-transaction cost is obtained by mapping the measured signature-scheme objects onto the
-fields of \cite{bip141,bip144,bip341} --- signature and public key into the witness, the
-committed key hash into the output script --- accepting that mapping only once it
-reproduces published reference sizes for an ordinary spend (\cref{sec:res-txstruct}).
+transaction cost is not modelled but read from two \emph{mined} regtest transactions: the
+client's own size, weight and virtual size, with the field decomposition reconstructed
+from the decoded transactions and checked against the weight accounting of
+\cite{bip141,bip144,bip341} (\cref{sec:res-txstruct}).
 
 One notational point matters once the venue is a real ledger. The swap protocol writes the
 signed object as $\mathit{tx}_i$, but a transaction is not a message: a signature commits to

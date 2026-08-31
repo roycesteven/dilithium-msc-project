@@ -12,15 +12,15 @@
 \contentsline {table}{\numberline {3.7}{\ignorespaces Per-phase execution time of the swap}}{44}{table.3.7}%
 \contentsline {table}{\numberline {3.8}{\ignorespaces Communication cost of the swap}}{45}{table.3.8}%
 \contentsline {table}{\numberline {3.9}{\ignorespaces The settled transaction, field by field}}{47}{table.3.9}%
-\contentsline {table}{\numberline {3.10}{\ignorespaces On-chain settlement gas: classical vs.\ post-quantum}}{49}{table.3.10}%
+\contentsline {table}{\numberline {3.10}{\ignorespaces On-chain settlement gas: classical vs.\ post-quantum}}{50}{table.3.10}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces Objectives against evidence}}{55}{table.4.1}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Objectives against evidence}}{56}{table.4.1}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {A.1}{The six implementation challenges}}{74}{table.A.1}%
-\contentsline {table}{\numberline {A.2}{\ignorespaces The four test types}}{76}{table.A.2}%
-\contentsline {table}{\numberline {A.3}{\ignorespaces Security and scheme parameter notation}}{78}{table.A.3}%
-\contentsline {table}{\numberline {A.4}{\ignorespaces The three measurement boundaries}}{79}{table.A.4}%
-\contentsline {table}{\numberline {A.5}{\ignorespaces Per-operation timing across the parameter sets}}{80}{table.A.5}%
-\contentsline {table}{\numberline {A.6}{\ignorespaces LAS objects by component (packed bytes)}}{81}{table.A.6}%
-\contentsline {table}{\numberline {A.7}{\ignorespaces Source files: reused, modified, and added}}{82}{table.A.7}%
+\contentsline {table}{\numberline {A.1}{The six implementation challenges}}{75}{table.A.1}%
+\contentsline {table}{\numberline {A.2}{\ignorespaces The four test types}}{77}{table.A.2}%
+\contentsline {table}{\numberline {A.3}{\ignorespaces Security and scheme parameter notation}}{79}{table.A.3}%
+\contentsline {table}{\numberline {A.4}{\ignorespaces The three measurement boundaries}}{80}{table.A.4}%
+\contentsline {table}{\numberline {A.5}{\ignorespaces Per-operation timing across the parameter sets}}{81}{table.A.5}%
+\contentsline {table}{\numberline {A.6}{\ignorespaces LAS objects by component (packed bytes)}}{82}{table.A.6}%
+\contentsline {table}{\numberline {A.7}{\ignorespaces Source files: reused, modified, and added}}{83}{table.A.7}%
