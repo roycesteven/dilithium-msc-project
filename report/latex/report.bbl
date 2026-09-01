@@ -159,6 +159,12 @@ Peter~W Shor.
   logarithms on a quantum computer.
 \newblock {\em SIAM review}, 41(2):303--332, 1999.
 
+\bibitem{tairi2021post}
+Erkan Tairi, Pedro Moreno-Sanchez, and Matteo Maffei.
+\newblock Post-quantum adaptor signature for privacy-preserving off-chain
+  payments.
+\newblock In {\em Financial Cryptography and Data Security}. Springer, 2021.
+
 \bibitem{valenta2026pqauth}
 Luke Valenta and Kevin Guthrie.
 \newblock Post-quantum authentication to origins is now supported.

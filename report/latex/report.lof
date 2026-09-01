@@ -9,11 +9,11 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{34}{figure.3.1}%
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{35}{figure.3.2}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Cumulative probability of acceptance at the target setting}}{38}{figure.3.3}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Cumulative probability of acceptance at the target setting}}{37}{figure.3.3}%
 \contentsline {figure}{\numberline {3.4}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{39}{figure.3.4}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces Standard payment versus adaptor swap settlement}}{46}{figure.3.5}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Standard payment versus adaptor swap settlement}}{47}{figure.3.5}%
 \contentsline {figure}{\numberline {3.6}{\ignorespaces On-chain settlement gas for the four claim paths}}{51}{figure.3.6}%
-\contentsline {figure}{\numberline {3.7}{\ignorespaces The claim transaction on the EVM}}{52}{figure.3.7}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces The claim transaction on the EVM}}{51}{figure.3.7}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

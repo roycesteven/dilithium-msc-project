@@ -148,14 +148,16 @@ $[-\gamma,\gamma]$, and the secret-dependent term satisfies
 $\inftynorm{c\,r}\le\kappa$, because the challenge has exactly $\kappa$ nonzero
 coefficients of $\pm1$ and the secret is ternary. Each response coefficient
 $z_i = y_i + (c\,r)_i$ is therefore uniform on a window of $2\gamma+1$ consecutive
-integers whose centre is displaced from zero by at most $\kappa$. The acceptance
+integers whose centre is displaced from zero by at most $\kappa$. \textsc{Sign}'s acceptance
 interval $[-(\gamma-\kappa),\,\gamma-\kappa]$ is narrower than that window by exactly
 $\kappa$ on each side, so it lies wholly inside the window \emph{wherever} the
 displacement falls. Each coefficient is thus accepted with probability exactly
 $\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$, independently of the secret --- which is
 precisely why rejection sampling makes the published response simulatable, and hence
 why it leaks nothing about $r$. Raising this to the $(n+\ell)\,d$ coefficients of one
-attempt gives \cref{eq:rejacc}.
+attempt gives \cref{eq:rejacc}. \textsc{PreSign} repeats the derivation at its own,
+tighter bound $\gamma-\kappa-1$: that is why the two expectations differ slightly, and
+why the gate below is applied to each separately.
 
 \paragraph{The run-validity gate in full.}
 Over a run's timed sign-class calls the measured mean attempts $\bar{A}$ must satisfy
@@ -330,15 +332,15 @@ to an output that its own holder's key controls, and no conflicting spend of a f
 outpoint is modelled. What the runs establish is therefore that the honest ordering
 settles both legs and that the witness leaks as the protocol requires --- not that a
 party who has already claimed is unable to race to respend its own funded outpoint.
-Figure~1 of \cite{esgin2020post} does not specify a funding or locking step, so
+Figure~1 in \cite{esgin2020post} does not specify a funding or locking step, so
 adversarial funding races lie outside both the figure and this experiment.
 
 Deploying instead on a real Bitcoin node is not a matter of effort. Bitcoin Script
 cannot verify a lattice signature, so configurations~2 and~3 could not settle there
-without a consensus change --- which is precisely the assumption \cite{esgin2020post}
-makes when it states its applications over a UTXO-based chain \emph{whose signature
-algorithm is replaced with a lattice-based signature scheme}, and the reason that
-sentence is stated as an assumption rather than left implicit.
+without a consensus change --- the setting in \cite{esgin2020post} instead assumes a
+UTXO-based chain \emph{whose signature algorithm is replaced with a lattice-based
+signature scheme}, which is why that sentence is stated as an assumption rather than
+left implicit.
 
 \section{Wire encoding and the typed codec}
 \label{app:serialize}
@@ -363,14 +365,14 @@ decoder --- is what rejects all \tamperFlips{} tampered signatures in
 
 One encoding decision is worth recording. Following FIPS~204 \cite{1274601}, the wire
 format carries not the challenge polynomial $c$ but only the digest $\tilde c$ from
-which it is derived, every consumer re-deriving
+which it is derived, verification re-deriving
 $c = \textsf{SampleInBall}(\tilde c)$ after decoding. This is a
-computation-versus-storage trade: storing the expanded polynomial would save the
-re-derivation at every decode, while storing the digest keeps the signature smaller.
+computation-versus-storage trade: storing the expanded polynomial would save that
+re-derivation on every verification, while storing the digest keeps the signature smaller.
 
-The digest \emph{width} is an implementation choice rather than a requirement of
-\cite{esgin2020post}, which specifies $H$ only as a random oracle onto the challenge set
-$C$ and fixes no encoding. It is therefore taken from FIPS~204, whose
+The digest \emph{width} is an implementation choice rather than a requirement of the LAS
+construction \cite{esgin2020post}, which specifies $H$ only as a random oracle onto the
+challenge set $C$ and fixes no encoding. It is therefore taken from FIPS~204, whose
 \textsf{SampleInBall} consumes a seed of $\lambda/4$ bytes, with $\lambda=128,192,256$
 for ML-DSA-44, -65 and -87 giving 32, 48 and 64~bytes. The width tracks the LAS
 parameter set and not the reference build mode, since the sweep compiles several LAS
@@ -386,7 +388,7 @@ security category.
 \section{The atomic-swap demonstration and its proof of knowledge}
 \label{app:swapdemo}
 
-The protocol defined in \cref{fig:swapflow} follows Figure~1 of
+The protocol defined in \cref{fig:swapflow} follows Figure~1 in
 \cite{esgin2020post} step for step, realised over the model ledger
 of \cref{app:utxomodel}. Two parties swap coins across two ledgers with no
 trusted third party and no swap-specific on-chain script --- ordinary output scripts
@@ -419,7 +421,7 @@ conflated with them --- with proving and verifying each completing
 well under a second. A dedicated test suite asserts completeness, rejection of every
 sampled single-byte tamper, rejection against a wrong statement, and that the prover
 refuses a non-ternary witness. The modelled ledger of \cref{app:utxomodel} additionally
-tests a separate timeout/refund edge case that Figure~1 of \cite{esgin2020post} omits. In
+tests a separate timeout/refund edge case that Figure~1 in \cite{esgin2020post} omits. In
 this one-chain test, a coin is funded to an output claimable by the counterparty and
 refundable by its funder after a timeout; the counterparty never responds, an early
 refund is rejected as a \emph{timing} failure rather than a cryptographic one, and after
@@ -562,8 +564,9 @@ and the value each takes at the four evaluated settings; the figures and tables 
 \cref{ch:results} refer back to these definitions rather than restating them. The
 notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and
 this build runs at $d=256$, the ring degree of the reused Dilithium NTT. Two entries
-are exceptions, the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$:
-\cite{esgin2020post} specifies $H$ only as a random oracle onto the challenge set $C$
+are exceptions, the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$: the
+LAS construction \cite{esgin2020post} specifies $H$ only as a random oracle onto the
+challenge set $C$
 and fixes no encoding, so both the digest and its width are implementation choices,
 taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serialize}).
 
@@ -574,8 +577,8 @@ taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serializ
   \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
   notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and this
   build runs at $d=256$, the ring degree of the reused Dilithium NTT. The exceptions are
-  the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$: \cite{esgin2020post}
-  specifies $H$ only as a random oracle onto the challenge set $C$ and fixes no encoding,
+  the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$: the LAS construction
+  \cite{esgin2020post} specifies $H$ only as a random oracle onto the challenge set $C$ and fixes no encoding,
   so both the digest and its width are implementation choices, taken from FIPS~204
   wherever a set aligns with an ML-DSA one (\cref{app:serialize}). The figure and table
   captions in \cref{ch:results} refer back to these names and values.}
@@ -949,8 +952,8 @@ venue's own kind --- a control coin on Bitcoin, a second escrow on Ethereum --- 
 by refunding either settled leg, since both were claimed. Each was refused before its own
 deadline and, once matured, returned the coin. The two deadlines are set as absolute
 UNIX-second values so their ordering is checkable, with the leg settled first carrying the
-shorter one, following the classical setup \cite{esgin2020post} recalls in its
-Section~4.1 --- the LAS choreography of its Figure~1 restates no timeout, so this is an
+shorter one, following the classical setup recalled in Section~4.1 of
+\cite{esgin2020post} --- the LAS choreography of Figure~1 restates no timeout, so this is an
 addition around that figure rather than part of it. The ordering is \emph{configured and
 checked, not enforced}: Bitcoin judges a timestamp locktime against median time past and
 the contract against \texttt{block.timestamp}, so the two are one numeric domain and not

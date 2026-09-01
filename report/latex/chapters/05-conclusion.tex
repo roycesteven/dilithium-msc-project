@@ -33,7 +33,7 @@ standard FIPS~204 verifier accepts the adapted signature. That route would halve
 signature at close to equal computation, yet leave $Y$ untouched, relocating rather than
 removing the communication bottleneck.
 
-Taking the protocol to a UTXO ledger --- the venue \cite{esgin2020post} assumes ---
+Taking the protocol to the UTXO setting assumed in \cite{esgin2020post}
 sharpens that conclusion: at application level the signature is not the dominant cost.
 The role-A proof consumes \cfgTwoProofPct\% of a Groth16 swap and \cfgThreeProofPct\% of
 a LaZer swap. Changing only the proof system, the \emph{post-quantum} prover is
@@ -91,8 +91,8 @@ parameter set and message length.
 Second, the applications are \textbf{exploratory demonstrators, not products}.
 Stage~2 measures over ledger models; the real-client runs are local, not live-network
 deployments. For the UTXO study this is partly forced: Bitcoin Script cannot verify a
-lattice signature, so the post-quantum configurations need the consensus change
-\cite{esgin2020post} assumes. The reported costs are implementation-level feasibility
+lattice signature, so the post-quantum configurations need a consensus change
+to realise the setting assumed in \cite{esgin2020post}. The reported costs are implementation-level feasibility
 estimates, not deployment figures or upper bounds.
 
 Third, concrete security of the chosen parameter set is \textbf{unanalysed by design}.
@@ -105,7 +105,7 @@ characterise a faithful, testable artefact, not a parameter set anyone should de
 The clearest change is \textbf{target selection for the application}. Too much effort
 went into Solidity before the gas cost was known. The framing should have been where a
 post-quantum swap actually spends, not whether one signature can be verified on chain.
-Starting from the UTXO setting \cite{esgin2020post} assumes would have reached
+Starting from the UTXO setting assumed in \cite{esgin2020post} would have reached
 \cref{sec:res-stage2} sooner, with the EVM retained as a gas-metered venue check.
 
 Second, \textbf{measurement discipline would come first}: the biased acceptance estimate
@@ -126,8 +126,8 @@ scheme was justified in writing: testing it took days, not weeks.
         on the exact relation. Deriving $Y$ from its seed hands over the witness. What is
         open is a different hard relation whose statement is small by construction.
   \item \textbf{Reduce the proof.} The route proposed here was measured and fails at this
-        scale. What \cite{esgin2020post} asks of $\pi$ in the swap is knowledge of a short
-        witness to $Y$; hiding that witness is required by the swap, while succinctness
+        scale. In the swap, $\pi$ must prove knowledge of a short witness to
+        $Y$ \cite{esgin2020post}; hiding that witness is required by the swap, while succinctness
         was this dissertation's added goal. Measured under LaBRADOR, that encoding loses
         to the deployed prover on size --- by the library's own estimate rather than a
         packed proof --- and on time outright: succinctness is asymptotic, and one

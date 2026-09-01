@@ -303,8 +303,38 @@ the base signature.** Results/evaluation must lead with this
   fairness / parameter-sensitivity* axis (§13.4). Never frame results around "across
   security parameter" or "as the scheme scales"; the across-parameter overhead chart is
   supporting material, not a primary body figure.
+  ⚠️ **The sweep CANNOT isolate lattice-dimension scaling, and here is the one-line proof**
+  (§2.6 said "whether the adaptor overhead scales with the lattice dimensions" until
+  2026-09-01): the paper set and D2 **share `(n,ℓ) = (4,4)`** and differ in `κ` (60 vs 39),
+  `γ` and digest width — four sets, three moving quantities, so no dimension effect is
+  separable. Settled wording: **"sensitivity to the parameter set"**.
 - **Timing rule:** per-operation timing is the PRIMARY timing result (§14.3) — never lead
   with cumulative / end-to-end time.
+  ⚠️ **FOUR SCOPES THAT LOOK LIKE UNIVERSALS AND ARE NOT** (each was a live absolute until
+  2026-09-01; relayed critique RIGHT every time). (a) **Only the TARGET-SETTING comparison
+  reports both boundaries** — the parameter sweep is **core-tier only** (`fig:overhead`'s own
+  caption, and `tab:timing` is "every CORE-TIER per-operation timing"), so never write "every
+  base-versus-LAS comparison shows both". (b) **Criterion reports a bootstrap 95% CI of the
+  mean, NOT a sample SD** (`tab:rust`'s caption is the authority) — "every timing is a mean ± SD"
+  contradicted our own table. Every *other* harness does report mean ± sample SD: C driver,
+  `fig:timing` error bars, classical baseline, Stage-2 swap, patched-node bench.
+  (c) **NEVER "the same code"** — `las.c` holds **verbatim local copies** of `basesig.c`'s
+  helpers rather than sharing them (deliberately: it preserves independent linkability at
+  bit-for-bit identical behaviour), so the paths run *identical*, not *shared*, code.
+  Settled form is `sec:eval-strategy`'s own: **"identical algorithm,
+  parameters and primitives"** — and scope it to the **base-versus-LAS** comparison, since
+  the optimised-Dilithium and classical baselines deliberately fix none of the three.
+  (d) **The packed-tier gap is NOT "each adaptor operation additionally decodes `Y`"** —
+  `tab:overhead-l3`'s caption *and* §3.2's body both said so. Only **PreSign and PreVerify**
+  add `Y`'s decode alone; **`las_adapt_packed` also decodes the witness and re-packs the
+  signature**, and `bench_levels.c`'s own printed NOTE states that split — read the
+  benchmark's note before attributing any gap (→ DO NOT REPEAT #1). Two claims died with
+  it: the premium is **several times** the core percentages, never "an order of magnitude"
+  (**a derived multiple is a claim — compute it, and never retype it into prose**), and
+  codec is **not** "the dominant computation cost": for packed **PreSign** the arithmetic
+  still is. ⚠️ **Before retargeting a `\cref`, check it is not that float's ONLY body
+  reference** — `fig:overhead` had exactly one, the very sentence the critique wanted
+  repointed, so the proposed fix would have orphaned it; the sweep claim now carries it.
 - **Presentation rule:** no table↔chart redundancy — the *chart* carries the body, the
   exact-number *table* goes to the appendix; **figures are embedded between paragraphs in
   the body**, never collected at a chapter end or in the appendix (Meeting 8, overrides the
@@ -326,7 +356,19 @@ the base signature.** Results/evaluation must lead with this
   are equal but advances and stems are not, and bold LM is ~15% wider per character. So name the
   optical size (`"LM Roman 12"` ahead of the family) and set **no figure text bold**.
   TikZ figures use `\normalsize` throughout — **widen a box or break a line, never
-  shrink the font**. ⚠️ `fig_criterion_presign` is **exempt and must not be touched** (Royce);
+  shrink the font**. ⚠️ **A MARK IS ARTWORK, NOT A LABEL, and the floor is a FLOOR** (Royce,
+  2026-09-01: *"harus pakai logo BTC dan ETH sungguhan"*): `fig:swapidea` carries the real
+  currency marks — Bitcoin as the asset `figures/bitcoin-symbol.{svg,pdf}` (self-contained:
+  its own disc, mark and colour), Ethereum as inline TikZ facets. Neither is rescaled to
+  satisfy a type sweep. ⚠️ **Do not go back to a font's capital `B`**: that version needed
+  hand-placed strokes, and drawn full height they filled the letter's counters white —
+  invisible in the source and at page scale, obvious only at 600 dpi, the render-never-reason
+  rule catching what no gate can. `#F7931A`/`#627EEA` are the marks' own brand colours, and
+  they arrive **differently**: Bitcoin's is inside the asset, Ethereum's is `\definecolor`d
+  locally in the figure (a `btcmark` definition was left dead by the asset switch and is
+  gone). Neither belongs to the report's semantic palette, which is never recoloured to a
+  brand.
+  ⚠️ `fig_criterion_presign` is **exempt and must not be touched** (Royce);
   its text is outlined, so the gate cannot judge it. Cost, paid knowingly: +4 pages, and
   §res-evm's two figures now take a text-free page each.
 - **⚠️ DECK ⊆ REPORT — the difference is PRESENTATION, not content (Royce, 2026-08-25).** No
@@ -368,6 +410,19 @@ the base signature.** Results/evaluation must lead with this
   was cut to fit — caveats kept, mechanism moved to `app:methoddetail`), and a float placed
   beside its own discussion rather than at the section head does not queue. **Re-check the
   whole PDF after any float edit** — placement is global, so a fix here creates one there.
+  ⚠️ **`tab:configs` was the same defect, found 2026-09-01** (p.30 of that build held the table
+  and nothing else). Cut the same way: the **duplicated** controlled-comparison mechanics went
+  (one matrix / one seed / identical relation, and the LAS knowledge-gap mechanism — all three
+  are in the two paragraphs above it), every **caveat** stayed. ⚠️ A caption cut is a
+  DUPLICATION cut; deleting a caveat to shorten one is Royce's call. ⚠️ The check needs no
+  visual inspection but it does need a CURRENT pdf — rebuild, then `pdftotext -f <p> -l <p>
+  report.pdf -` shows whether body text survives on that page. A stale pdf answers only for the
+  build it came from, which is all this instance proved: the defect predates the day's edits.
+  ⚠️ **Do NOT try to automate it by font size — captions here are set at BODY size (11.8pt),
+  not `\small`** (three detectors in a row gave wrong answers on 2026-09-01: size cannot split
+  caption from prose, and plotted figures carry 12pt interior text by the type-floor rule, so
+  axis labels read as body too). The reliable test is the recipe above: **head and tail of the
+  page** — a float-only page opens on figure/table content and ends inside its own caption.
 - **Criterion figure is NOT "reproduced unmodified"** — Criterion's 12-unit type renders at
   ~4 pt at `\linewidth`, and its key column spends a fifth of the width on five strings.
   `scripts/gen_criterion_figure.py` enlarges the type, **moves the legend from the right column
@@ -376,8 +431,13 @@ the base signature.** Results/evaluation must lead with this
   map** — gated by a coordinate-for-coordinate check (1358 interior coords unchanged); layout is
   derived from the file, so it asserts rather than silently mis-draw. Runs off a captured
   `evidence/criterion/*/presign_pdf.svg`, so the figure rebuilds without re-running the bench.
-  ⚠️ The caption must keep listing every one of those changes — the type, the legend, the crop
-  and the superscript; "nothing else was touched" is an overclaim while the fold is in the file.
+  ⚠️ The caption must list every change **that actually fired on the shipped SVG**, and the
+  count is part of that claim. ⚠️ **The superscript fold is INPUT-DEPENDENT** — it matched the
+  2026-07-30 plot's `Iterations (x 10³)`, but the 2026-08-28 run is slow enough that gnuplot
+  labels the axes plain `Iterations` / `Average time (ms)` with no exponent at all, so the
+  caption went from four changes to **three** (2026-09-01). Re-check the regenerated SVG rather
+  than trusting the previous caption; "nothing else was touched" stays an overclaim while the
+  fold is in the file.
 
 ### ⚠️ WORD COUNT — regenerate with `make -C report/latex wordcount`, never trust a stale file
 
@@ -412,18 +472,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-08-31 00:48 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-01 22:09 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`main`** · HEAD e8d2481 · 2026-08-28 · evidence 28_08 18:37
-- Working tree: 30 modified tracked file(s), 51 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
+- Branch **`main`** · HEAD cec9519 · 2026-08-31 · report deck 31_08 6:51 pm
+- Working tree: 33 modified tracked file(s), 53 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
 - Recent commits:
+  - `cec9519 2026-08-31 report deck 31_08 6:51 pm`
   - `e8d2481 2026-08-28 evidence 28_08 18:37`
   - `c80dacb 2026-08-28 28_08 18:36`
   - `c41bbb5 2026-08-27 deck report 27_08 19:05`
   - `9032d1d 2026-08-25 introductory material`
-  - `661e9cf 2026-08-25 Merge branch 'report'`
 
 ### Target parameter set — anchors parsed from source
 
@@ -437,9 +497,9 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - Stage-1 benchmark suite: `evidence/latest` → `runs/20260828_144608` (dir mtime 2026-08-28)
 - Stage-2 UTXO swap: `evidence/stage2/latest` → `latest` (dir mtime 2026-08-25)
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
-- Criterion micro-bench: `evidence/criterion/latest` → `latest` (dir mtime 2026-08-25)
+- Criterion micro-bench: `evidence/criterion/latest` → `20260901_215744` (dir mtime 2026-09-01)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8996** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8989** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -457,7 +517,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 ### Freshness tripwires
 
 - Stage-1 evidence (2026-08-28) is newer than the newest scheme source (2026-08-25) — measurements match the code.
-- `CLAUDE.md` hand-written sections last touched 2026-08-30.
+- `CLAUDE.md` hand-written sections last touched 2026-09-01.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -505,9 +565,16 @@ PreSign rejects at the **tighter** `γ−κ−1`; the ternary witness has `‖y�
 adapted `z = ẑ + y` satisfies `‖z‖∞ ≤ γ−κ` and clears ordinary Verify. **Loosen PreSign to
 `γ−κ` and adapted signatures can exceed the bound, so Verify rejects everything** —
 silently, probabilistically, two operations from the cause. `γ = κ·d·(n+ℓ)` governs the
-MSIS hardness parameter; acceptance ≈37% per attempt (`≈ e^{−1}`) for the simplified scheme
-without hint vector, measured directly via the `las_attempts` counter, **never inferred
-from timing ratios**.
+MSIS hardness parameter; **Sign's** acceptance is ≈37% per attempt (`≈ e^{−1}`) for the
+simplified scheme without hint vector, measured directly via the attempt counters —
+`base_attempts` (Sign) / `las_attempts` (PreSign) — **never inferred from timing ratios**.
+⚠️ **THAT CLOSED FORM IS SIGN'S, NOT THE SIGN CLASS'S** (unattributed in §2.6 *and in this
+line* until 2026-09-01; relayed critique RIGHT both times): per-coefficient acceptance
+`(2(γ−κ)+1)/(2γ+1)` uses **Sign's** bound, so `e^{−1}` and the **2.71875** gate constant are
+Sign's; **PreSign is the same derivation at `γ−κ−1`** → `(2(γ−κ)−1)/(2γ+1)`, ≈36% and
+**2.77483**. Scoping this line exposed a paired defect it had hidden — it named
+`las_attempts`, **PreSign's** counter, beside a **Sign** figure. Attribute the formula *and*
+the counter wherever either is written; `sec:res-rejection` quotes the two predictions apart.
 ✅ **`fig:rejcdf`'s SOLID curves are the measured empirical CDF** — the dashed pair stays the
 closed-form model, drawn as a reference — **as of the 2026-08-28 Stage-1 run, the first to
 carry `tables/rejection_histogram.csv`**. ⚠️ Check that file exists for the headline level
@@ -605,6 +672,20 @@ Groth16, (3) LAS + LaZer, from one pinned master seed.
 - **Attribution rule:** **2→3 is the controlled comparison** (same signature, same relation, only
   the prover differs — lead with it); 1→2/3 is a whole-stack comparison, *not* the cost of the PQ
   signature alone.
+- ⚠️ **`Tx::sighash()` HASHES NOTHING — the name is not a warrant** (`utxo.rs:144`; the report
+  called its output "the signature hash" until 2026-09-01, relayed critique RIGHT). It returns
+  the template's **canonical bytes**, and `serialize()` is exactly those bytes plus a
+  length-prefixed signature per input — so the signed message is **the template minus its
+  signature fields**. On a real **Bitcoin** ledger the message is instead the digest of that
+  spend's **own** sighash algorithm — BIP143 for SegWit v0, BIP341 for Taproot, never "BIP341"
+  as a blanket term (the rule the patched-client block already states) — and on the **EVM** leg
+  it is none of these but `AdaptorSwapBound.legMessage`. Keep the three wordings apart. Meeting
+  8's transaction-is-not-the-message ruling is this same point.
+- ⚠️ **Every claim about π is CONFIGURATION-SCOPED**: config 1 is `RoleAProof::NotRequired`
+  (`backend.rs:529`) and `protocol.rs` proves/verifies only under `Required`, while **PreVerify
+  runs in all three** — so "Bob pre-signs after π and the pre-signature verify" is false for the
+  classical config and contradicts `tab:configs`, which makes that absence a *finding*. Order in
+  code: π verify → PreVerify → u₂ PreSign.
 - `scripts/gen_bitcoin_tx_data.py` projects measured object sizes onto Bitcoin's real wire format
   (BIP141/144/341), self-checking against two published vB figures before emitting →
   `generated/btcmacros.tex` + `tab:btctx`; prose `docs/02-methodology/BITCOIN_TX_STRUCTURE.md`.
@@ -647,7 +728,26 @@ Groth16, (3) LAS + LaZer, from one pinned master seed.
   `ref/test/{test_contract,test_pcn,bench_app}.c` — pre-seven-type (`las_pp`/`las_pk`/`las_sk`/
   `las_sig`), superseded by the Rust evaluation. `STAGE1_ONLY=1` skips them and still regenerates
   the **Stage-1** artefacts — NOT "everything the report consumes": Stage-2, on-chain, Criterion
-  and Bitcoin figures come from their own runners. **`STAGE1_ONLY=1 scripts/run_benchmark_suite.sh`
+  and Bitcoin figures come from their own runners.
+  ⚠️ **`sync_report.sh` DOES NOT CLOSE THAT GAP EITHER, and the gap has already shipped a
+  self-contradicting page (2026-09-01).** It runs only `plot_las_paper_figures.py`,
+  `gen_report_data.py`, `gen_bitcoin_tx_data.py` and `gen_btc_measured_tx.py` — so of the six
+  macro files `report.tex` inputs, **`stage2macros`, `btcnodemacros` and `btclasbenchmacros` are
+  never regenerated by it**, nor is `fig_criterion_presign`. Consequence found live: `tab:rust`'s
+  Criterion column moved to the 2026-08-28 log while the figure beside it still came from the
+  captured 2026-07-30 run, so a caption reading *"this is the evidence behind the Criterion
+  column"* sat next to a plot disagreeing with that column by ~2.5×. **After any Stage-1 re-run,
+  regenerate the Criterion figure too** — `scripts/run_criterion_fig.sh --reuse` rebuilds it from
+  whatever is already in `target/criterion` **without** re-running the 15-minute bench, but only
+  after checking `target/criterion/<bench>/new/estimates.json` matches the table.
+  ⚠️ **A run id is not a code pin.** `evidence/stage2/latest` → `20260730_162109` (git `4aef1f7`),
+  and `RelationCircuit::generate_constraints` — the circuit configuration 2 actually proves — was
+  **rewritten** after it by the (since-dropped) amortisation work, so those macros were measured
+  against a different implementation than HEAD carries. Same class: the Stage-1 run's
+  `metadata.txt` records `git_commit c41bbb5` while its own `git_status` shows `bench_levels.c`
+  dirty, and that driver was only committed later in `c80dacb` — so the named commit does **not**
+  contain the code that produced the numbers. Read `git_status`, never just `git_commit`.
+  **`STAGE1_ONLY=1 scripts/run_benchmark_suite.sh`
   is the command that made `evidence/latest`, and the only one `app:repro` may print** — the bare
   runner builds the dead targets and aborts under `set -e` (fixed in the report 2026-08-12; the
   appendix also now names `test_serde_l3`, the target set, not the paper-dims `test_serde3`).
@@ -814,6 +914,13 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   still unanalysed** — that caveat never lapses. Bitcoin binds the transaction, **not the
   chain** (BIP341 sighash has no chain id) — the EVM leg does (`AdaptorSwapBound.legMessage`
   hashes `block.chainid`); state the asymmetry.
+  ⚠️ **THE MOMENT A FIGURE NAMES ETHEREUM IT OWES THE ESCROW (2026-09-01).** A generic
+  "second ledger" picture may draw payer→payee; naming the venue makes it a venue claim,
+  and here the ETH leg settles through `AdaptorSwapBound.claimBound` (adapted signature as
+  **calldata**, then `transfer` to the beneficiary) — so "an ordinary account-to-account
+  payment" contradicts our own `fig:evmtx`. Caught in `fig:swapidea`; both the drawn box and
+  the caption had it, so fix the **picture and its caption together**. Free to fix: figure
+  bodies and captions are outside the word count.
   ⚠️ **NEVER frame the two venues as a timeline** (Royce, 2026-08-21): "Ethereum yes /
   Bitcoin not yet" is misleading — it reads as Bitcoin lagging and catching up. The
   difference is **structural**: the EVM is programmable so verification is a contract you
@@ -822,6 +929,15 @@ scope and caveats: `docs/03-results/TWO_LEG_REAL_CLIENT_EXPERIMENT.md`. Runners
   (`03-results.tex`, `05-conclusion.tex`). Deck slide 10 now reads "Ethereum: deploy /
   Bitcoin: new rule". Naming a *specific* route (soft fork, OP_SUCCESS redefinition) on a
   slide is still barred — that would be a position on adoption.
+  ⚠️ **WHAT §4 OF THE PAPER ASSUMES — read `2020-845.md:420`, never paraphrase from memory**
+  (2026-09-01; two live report sentences were wrong). It assumes a UTXO chain *"where the
+  signature algorithm is replaced with a lattice-based signature scheme"* **and, explicitly,
+  that the chain supports the spending scripts the applications need** (signature and
+  hash-preimage verification, timing conditions) — so **"assumes only the venue" is FALSE**
+  and was deleted. It assumes that **end state**, never a **consensus change**: a consensus
+  change is one route to it, and attributing it to the paper contradicts this project's own
+  no-position-on-the-route rule above. Supported form: *"a consensus change to realise the
+  setting assumed in \cite{esgin2020post}"*.
   ⚠️ **SUPERSEDED 2026-08-18, do not reinstate:** "no opcode costing, not wired into the
   swap" — both now **FALSE** (cost measured by the patched-client benchmark below;
   `run_btc_two_leg.sh` settles a whole Fig. 1 swap). Purged from `app:btcnode` and the deck.
@@ -1169,10 +1285,14 @@ any of it.
    scope the fall (**"for comparable targets"**) — "estimates keep falling" unscoped re-opens
    the across-targets trap the caption exists to prevent.
    ⚠ **RENDER, NEVER REASON, ABOUT LAYOUT (2026-08-17)** — the previous session shipped voids and a
-   clipped table that were invisible from the markup. Windows Chrome is reachable from WSL and
-   screenshots any slide by deep link; the working command is in `VIDEO_PLAN.md` §3. A layout claim
-   without a screenshot is unverified — and after any **chrome** edit (stepper, eyebrow, logo band)
-   re-shoot ALL thirteen, not a sample: a 2026-08-20 stepper edit collided with exactly one
+   clipped table that were invisible from the markup. Deck: Windows Chrome from WSL, deep-linked
+   (command in `VIDEO_PLAN.md` §3). ⚠ **Report TikZ figures the same way — occlusion is what the
+   source cannot be trusted on**: render the page (`pdftoppm -f <page> -r 400 report.pdf`) after a
+   geometry change. `fig:swapflow`'s white payload labels sat at `text width=21mm` in an 18 mm gap
+   and painted over the neighbouring boxes' corners (2026-08-31, fixed by dropping `text width`
+   **there** — not a rule for figures that need controlled wrapping).
+   After any **chrome** edit (stepper, eyebrow, logo band)
+   re-shoot EVERY slide, not a sample: a 2026-08-20 stepper edit collided with exactly one
    eyebrow, on the one slide not sampled. Three further defects were invisible from the markup on
    2026-08-21 and only a screenshot found them: an SVG label wider than the rect drawn behind it,
    a `.tx` box **silently clipping** its last line under `overflow:hidden` (now `flex:none`, so an
@@ -1446,9 +1566,13 @@ meeting block here.
   `westerbaan2025pqinternet` / `cloudflare2026pqroadmap` stay **cited nowhere**, i.e. absent from
   the bibliography, until Royce says otherwise.
 - ✅ Accepted as they stand: structure, ≥5 objectives, contributions, critical reflection, 28
-  citations, the Ch.3/Ch.4 split; only subsection *titles* may need a tweak. Written comments
-  arrive on Overleaf as highlight+comment early the following week. **13 slides counted by Wang
-  himself** — closes M11's "you have 10 slides" question.
+  citations, the Ch.3/Ch.4 split; only subsection *titles* may need a tweak. **13 slides counted
+  by Wang himself** — closes M11's "you have 10 slides" question.
+- ⚠ **WRITTEN Overleaf comments have started arriving (first: 2026-08-31, "also need to cite some
+  isogeny-based adaptor signatures").** DONE in §1.2 — `tairi2021post` (Tairi, Moreno-Sanchez,
+  Maffei, FC 2021: IAS on CSI-FiSh, proved secure in QROM, **implemented and evaluated**, verified
+  in `2020-1345.pdf`). ⚠ It sits **after** "Their work is primarily theoretical", which judges
+  Esgin et al.\ alone — IAS is not theory-only, so never let that sentence drift onto it.
 - 📅 Report+slides+video to Wang **Fri 2026-08-28 17:00**; he reads Sun/Mon; optional meeting
   **Thu 2026-09-03**; submission **Fri 2026-09-04**.
 **Nothing in M12 authorises a new experiment; the M10 freeze stands.**
@@ -1583,6 +1707,13 @@ need to make sure that what you have done looks good, looks perfect, looks great
   deferred** — it must not reappear in the work queue or in future-work lists. Where paper and
   FIPS 204 differ on a *parameter*, follow FIPS 204 and say so. (This does not touch the
   notation rule: report *mathematics* still uses the paper's symbols.)
+  ⚠️ **NEVER cite the paper as PERMITTING it** (`tab:params`' caption said "which the paper
+  permits — only the *size* of `q` matters" until 2026-09-01; relayed critique RIGHT).
+  `2020-845.md:408` sets `q ≈ 2²⁴` **in order to meet** the M-SIS/M-LWE requirements and only
+  *then* says the concrete value may be chosen for a fast NTT — **a licence at a FIXED SIZE,
+  which does not cover changing the size**. Supported form, already used by `sec:impl` and
+  `sec:res-validity`: FIPS 204's `q≈2²³` rather than the paper's `q≈2²⁴`, correctness
+  unaffected (`q>2γ`), security margin changed.
 - **⚠️ The "hint optimisation" means building LAS on real NIST ML-DSA** (Royce, 2026-08-03) —
   **not** "shrinking statement `Y`", which is how Meeting 8 phrased it. Its purpose was
   evidential: turn an asserted design claim into a demonstration. **Done, and it corrected the
@@ -1729,6 +1860,21 @@ captions, figure labels — never one in isolation):
   table-column shorthand, never in equations.
 - challenge weight **`κ` is per parameter set** (60 / 39 / 49 / 60 for paper/D2/D3/D5) — never
   hard-code `κ=60` as a global.
+- **M-SIS is the KERNEL problem, so finding a short preimage of `Y` is NOT "the M-SIS problem"**
+  (2026-09-01, relayed critique RIGHT). Definition 1 asks for a short **non-zero** `v` with
+  `Av = 0`; the hardness of the relation runs through the paper's own **augmented** reduction
+  (`2020-845.md:226`) — `[A ∥ t]·(r,−1)ᵀ = 0`, hence its instance is `M-SIS_{n,n+ℓ+1}`, one
+  column wider than `A`. Report form: a sufficiently short preimage **yields an M-SIS solution
+  `(r',−1)ᵀ` for `[A | Y]`**. ⚠️ `sufficiently short` carries the norm bound `β` — dropping it
+  widens the claim. The two accompanying suggestions were DECLINED and the reasons hold for the
+  next such batch: (a) rewriting `Gen` as "a separate interface" was argued **from C comments**,
+  which this section bars — the paper says *Gen runs exactly as KeyGen* and `relation.c:5` cites
+  that same line; (b) the "missing" validation steps are **correct** (Alg. 2 steps 11/21/31, and
+  `las.c:532` / `las_ext`) but Adapt-runs-PreVerify and Ext's `A·s=Y` check are **already** in
+  the report (`02-methodology.tex:319`, `03-results.tex:110-111`, `05-conclusion.tex:125`), so
+  adding them to §2.1 buys duplication at a nil word headroom. **Grep the whole report before
+  accepting a "detail is missing" critique, not only before dismissing one.** Genuinely absent,
+  and Royce's call at ~4 words: PreVerify's own `‖ẑ‖∞ ≤ γ−κ−1` gate.
 - **`c` vs `c̃` — two objects; never merge them, never let `H` change type** (four drafts failed
   this on 2026-08-13). The paper's `H : {0,1}* → C` returns the challenge **polynomial** `c`;
   `c̃` is the digest **this implementation** derives it from, following FIPS 204's *pattern*
@@ -1742,6 +1888,11 @@ captions, figure labels — never one in isolation):
   ⚠ **A figure must show `SampleInBall` itself, not leave the link to the prose** (Wang,
   Meeting 10): he read the figure, saw `c`, and asked *"how did we get the `c`?"* — the two
   symbols side by side with no function between them read as a typo, not a derivation.
+  ⚠ **Only VERIFICATION re-derives `c` — "every consumer re-derives it" is the absolute-word
+  defect** (relayed critique RIGHT, 2026-09-01; fixed in `02-methodology.tex:200` **and**
+  `app:serialize`, which carried the same absolute plus "at every decode" — the codec derives
+  nothing). `las_ext` **never** derives `c`: it subtracts and checks `A·s=Y`. `las_adapt`
+  derives it only through the `las_preverify` it runs (`las.c:532`), never itself.
 - **`y` (mask) / `r'` (honest witness) / `s` (extracted) — THREE objects Algorithm 2 names,
   and the same trap as `c`/`c̃`** (Royce caught it 2026-08-21). The paper overloads `y`: the
   mask sampled at Step 2, *and* the pair component of `(Y,y)` — which Adapt parses `r' := y`
@@ -1752,6 +1903,19 @@ captions, figure labels — never one in isolation):
   *honest* `r'`. ⚠ **`fig:lasfuncs` must carry the response `ẑ = y + c·r` (Step 5)**: it was
   missing until 2026-08-21, so the panel named an output it never computed — a figure that
   states a function's inputs, bound and output must state the line producing that output.
+
+**⚠️ IN-TEXT CITATIONS ARE IEEE, AND THE NUMBER IS NEVER A WORD** (Royce, 2026-09-01;
+swept report-wide). Author-prominent mentions are **`Esgin et al.\ \cite{...}`** — never a
+full author list, and the bracket goes **immediately after the name**, not at sentence end.
+Otherwise the bracket postmodifies a real noun or follows a preposition (`Figure~1 in
+\cite{...}` — one form, `in` not `of`; `assumed in \cite{...}`); it may never be the subject
+of a verb (`[10] assumes`, `the venue [10] assumes`). Naming the authors is optional, so
+prefer the shorter prepositional form where *who* is not the point. ⚠️ Choosing that subject
+noun is a **claim**: it must be the thing that actually does the verb — the *application
+setting* assumes a venue, an *implementation detail* is unprescribed, and neither "LAS" nor
+"the specification" is a safe default (three drafts failed this on 2026-09-01). `\bibliographystyle`
+is `plain`; `ieeetr.bst` **is** installed if an IEEE reference *list* is ever wanted, but
+switching renumbers every citation, so it is Royce's call and needs a full rebuild.
 
 Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 
@@ -1826,7 +1990,7 @@ Be direct, evidence-based, scoped.
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **dilithium-msc-project** (8013 symbols, 14444 relationships, 535 execution flows).
+This project is indexed by GitNexus as **dilithium-msc-project** (8009 symbols, 14440 relationships, 535 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 

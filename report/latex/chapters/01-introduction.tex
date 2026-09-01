@@ -176,6 +176,12 @@ signature was selected.
   % title inside each lane's top strip and the "settles here" label in its bottom
   % strip, which is what stops the two colliding once the type is this size.  Widen a
   % box or move a row; never shrink the font back.
+  %
+  % The Ethereum mark's own colour, scoped to this figure so it cannot leak into the
+  % report's semantic palette, which it must never join.  Bitcoin needs no counterpart here:
+  % its #F7931A field is a path INSIDE figures/bitcoin-symbol.svg, not painted by TikZ, so a
+  % \definecolor{btcmark} was left dead by that change and is gone.
+  \definecolor{ethmark}{HTML}{627EEA}
   \begin{tikzpicture}[
       font=\normalsize,
       party/.style={draw, rounded corners=4pt, align=center, minimum width=50mm,
@@ -192,13 +198,46 @@ signature was selected.
     \node[party, fill=orange!10, draw=orange!65!black] (alice) at (38mm,0mm)
       {\textbf{Alice $(u_1)$}\\[-0.4mm]
        has 1 BTC\\[-0.4mm]
-       wants the other coin};
+       wants ETH};
     \node[party, fill=blue!8, draw=blue!60!black] (bob) at (102mm,0mm)
       {\textbf{Bob $(u_2)$}\\[-0.4mm]
-       has coin B\\[-0.4mm]
+       has ETH\\[-0.4mm]
        wants BTC};
-    \node[coin, fill=orange!70, draw=orange!80!black, text=white] at (6mm,0mm) {BTC};
-    \node[coin, fill=blue!60, draw=blue!70!black, text=white] at (134mm,0mm) {B};
+    % THE REAL CURRENCY MARKS, not the letters "BTC"/"ETH" (Royce, 2026-09-01).  The
+    % Bitcoin mark is the Bitcoin Design/Bitboy SVG symbol included as a figure asset,
+    % so the report no longer depends on a font-drawn approximation.  Ethereum stays as
+    % inline facets because that mark is already exact at this scale.  #F7931A and
+    % #627EEA are the ONLY literal brand colours here; every other colour in this figure
+    % is the report's own semantic palette and must never be recoloured to a brand.
+    %
+    % Bitcoin: include the actual SVG-derived mark, not a local font's capital B plus
+    % hand-drawn strokes.  The matching PDF is generated from figures/bitcoin-symbol.svg.
+    % ⚠ A MARK IS ARTWORK, NOT A LABEL: the "nothing smaller than the body's 12pt" rule is a
+    % FLOOR, so it says nothing about a logo's size.  Do not rescale either mark to satisfy
+    % a type sweep, and do not replace this asset with a font's capital B -- the earlier
+    % font-drawn version needed hand-placed strokes whose full-height form filled the
+    % letter's counters white, which only a 600dpi render showed.
+    \node[inner sep=0pt] at (6mm,0mm)
+      {\includegraphics[width=13mm]{figures/bitcoin-symbol}};
+    % Ethereum: the six facets of the diamond, ported coordinate-for-coordinate from the
+    % deck's SVG of the mark and pre-multiplied to mm (one SVG unit = 0.40mm), white at the
+    % mark's own three fill opacities over the blue disc.  The facets tile the diamond and
+    % do not overlap, so the opacities read as the mark's shading rather than as blending.
+    \node[coin, fill=ethmark, draw=ethmark!75!black] at (134mm,0mm) {};
+    \begin{scope}[shift={(134mm,0mm)}]
+      \fill[white, opacity=0.602]
+        (0mm,4.80mm)  -- (0mm,1.25mm)   -- (3.00mm,-0.09mm)  -- cycle;
+      \fill[white]
+        (0mm,4.80mm)  -- (-3.00mm,-0.09mm) -- (0mm,1.25mm)   -- cycle;
+      \fill[white, opacity=0.2]
+        (0mm,-1.83mm) -- (3.00mm,-0.09mm)  -- (0mm,1.25mm)   -- cycle;
+      \fill[white, opacity=0.602]
+        (-3.00mm,-0.09mm) -- (0mm,-1.83mm) -- (0mm,1.25mm)   -- cycle;
+      \fill[white, opacity=0.602]
+        (0mm,-2.39mm) -- (0mm,-4.80mm)  -- (3.00mm,-0.65mm)  -- cycle;
+      \fill[white]
+        (0mm,-4.80mm) -- (0mm,-2.39mm)  -- (-3.00mm,-0.65mm) -- cycle;
+    \end{scope}
 
     \node[lane, fill=orange!7, draw=orange!60!black] at (70mm,-33mm) {};
     \node[font=\normalsize\bfseries, anchor=west, orange!50!black] at (3mm,-24mm)
@@ -225,11 +264,18 @@ signature was selected.
 
     \node[lane, fill=blue!7, draw=blue!60!black] at (70mm,-83mm) {};
     \node[font=\normalsize\bfseries, anchor=west, blue!50!black] at (3mm,-74mm)
-      {Chain B: second UTXO ledger};
+      {Chain B: Ethereum account ledger};
+    % NOT "Bob account -> Alice account".  Naming Ethereum makes this a venue-specific
+    % claim, and on the EVM this project settles through an escrow contract:
+    % AdaptorSwapBound.claimBound verifies the adapted signature supplied as calldata and
+    % then transfers to the beneficiary.  fig:evmtx states the same thing -- the
+    % authorising transaction signature stays secp256k1 and the lattice signature rides in
+    % `data' as an argument to a contract -- so an ordinary account-to-account payment here
+    % would contradict this report's own results chapter.
     \node[tx, fill=blue!12, draw=blue!60!black] at (38mm,-84mm)
-      {Alice address\\on Chain B};
+      {Alice account\\on Ethereum};
     \node[tx, fill=white, draw=blue!60!black] at (102mm,-84mm)
-      {Bob output\\coin B};
+      {Bob's ETH in\\a swap escrow};
     \draw[->, line width=1pt, blue!65!black] (84mm,-84mm) -- (56mm,-84mm);
     \node[lbl, blue!45!black] at (70mm,-93mm) {$\mathrm{tx}_2$ settles here};
 
@@ -243,10 +289,13 @@ signature was selected.
   \end{tikzpicture}
   \caption[An atomic swap, in outline]{A motivation-level picture of an atomic
   swap, one concrete blockchain application of adaptor signatures. Alice and Bob trade
-  assets recorded on two different ledgers. Each payment is an ordinary transaction on
-  its own chain: $\mathrm{tx}_1$ moves Alice's Chain-A coin to an address Bob owns, while
-  $\mathrm{tx}_2$ moves Bob's Chain-B coin to an address Alice owns. No coin crosses
-  chains; the cross-chain object is the secret witness, which the counterparty extracts
+  assets recorded on two different ledgers: an unspent-transaction-output (UTXO) chain and
+  an account-based one. Each payment settles on its own chain:
+  $\mathrm{tx}_1$ moves Alice's bitcoin to an address Bob owns, while $\mathrm{tx}_2$
+  releases Bob's escrowed ether to an account Alice owns. The two venues place a lattice
+  signature differently, which is why the Ethereum leg settles through a contract rather
+  than as a plain payment (\cref{fig:evmtx}). No coin
+  crosses chains; the cross-chain object is the secret witness, which the counterparty extracts
   from the published signature using its matching pre-signature. Adaptor signatures provide this cryptographic link
   without requiring the swap condition to appear as a separate on-chain script. The two
   parties are named as in Esgin et al.\ \cite{esgin2020post}, whose $u_1$ and $u_2$ the
@@ -283,19 +332,24 @@ reuses.
 
 \paragraph{Adaptor signatures.}
 Introduced informally as ``scriptless scripts'' \cite{poelstra2017} and later formalised
-\cite{aumayr2021generalized}, the abstraction adds four algorithms to a base signature
---- \textsc{PreSign}, \textsc{PreVerify}, \textsc{Adapt}, \textsc{Extract} --- relative
-to a hard relation $(Y,y)$: a pre-signature can be \emph{adapted} into a full signature
-by anyone knowing the witness $y$, and publishing that signature lets anyone holding the
-pre-signature \emph{extract} $y$.
+\cite{aumayr2021generalized}, adaptor signatures add \textsc{PreSign}, \textsc{PreVerify},
+\textsc{Adapt} and \textsc{Extract} to a base signature, relative to a hard relation
+$(Y,y)$.
+% The mechanism is NOT restated here: sec:motivation gives it in application terms and
+% sec:construction defines all four functions with their equations.  This paragraph's
+% job is related-work positioning.
 
 \paragraph{Post-quantum adaptor signatures.}
-Esgin, Ersoy and Erkin proposed LAS, a lattice-based adaptor signature on a
-Dilithium-style base \cite{esgin2020post}; it is the design implemented here. Their work
+Esgin et al.\ \cite{esgin2020post} proposed LAS, a lattice-based adaptor signature on a
+Dilithium-style base; it is the design implemented here. Their work
 is primarily theoretical --- definitions, a construction and security proofs --- leaving
-the practical, benchmarked, blockchain-facing implementation open. poqeth studies how PQ
-primitives are integrated and costed on Ethereum
-\cite{kysil2025poqeth}, providing a template for the on-chain side.
+the practical, benchmarked, blockchain-facing implementation open.
+% IAS goes AFTER the "primarily theoretical" sentence, never before it: that judgement is
+% about Esgin et al. alone, and IAS itself reports an implementation and an evaluation.
+A second post-quantum route is isogeny-based: Tairi et al.\ \cite{tairi2021post} build IAS
+on CSI-FiSh, prove it secure in the quantum random oracle model, and report an
+implementation with measured costs. Kysil et al.\ \cite{kysil2025poqeth} put basic PQ
+signature verification on Ethereum, ruling out Dilithium for its key sizes.
 
 \paragraph{Classical baseline.}
 The natural answer to ``what does post-quantum cost'' is a comparison with a
@@ -321,7 +375,7 @@ protocol.
         unchanged and adding the adaptor operations and a byte-level wire encoding.
   \item Validate correctness and robustness through functional, serialization,
         tamper, and known-answer tests, including cross-validation by a second,
-        independent implementation checked against the same known-answer digest.
+        independent implementation checked against the same known-answer value.
   \item Benchmark LAS fairly --- at explicitly stated parameters, with repeated runs and
         reported variance --- against a simplified Dilithium baseline at identical
         parameters and a classical ECDSA-adaptor baseline, separating computation from
@@ -344,7 +398,7 @@ post-quantum adaptor signature, and measurements of its cost. Four findings carr
 % named as the abstract names it, the simplified Dilithium-style base at identical
 % parameters, never ECDSA, against which LAS is emphatically not cheap.  An unscoped version
 % of this sentence asserted more than the measurement supports on both counts.
-At the core tier, adaptor functionality proves close to free in computation over the
+At the core tier, adaptor functionality measures close to free in computation over the
 simplified Dilithium-style base at identical parameters, but expensive in communication:
 bytes, not time (\cref{sec:res-compute,sec:res-comm}). The LAS paper's simplified
 Dilithium-style base omits ML-DSA's hint and rounding machinery; this project tested
@@ -361,8 +415,12 @@ does not break (\cref{sec:res-stage2}). Native on-chain verification, first
 % stages branch on coefficient values, so one client receipt is not a bound over inputs.
 measured far above the transaction gas cap, fits under it once the same predicate is
 re-expressed --- under an unchecked registration invariant, at the one parameter set,
-message length and signature instance measured --- while a settled swap sits well inside an
-unspent-transaction-output (UTXO) chain's weight limit
+message length and signature instance measured --- while a settled swap sits well inside
+% NOT "a UTXO chain's weight limit".  Weight units are a Bitcoin/SegWit construct, not a
+% property every UTXO chain has, and the measured comparison in sec:res-txstruct is against
+% MAX_STANDARD_TX_WEIGHT -- Core's POLICY ceiling for a standard transaction, not a
+% consensus rule.  Both halves of the scope have to travel with the claim.
+Bitcoin's standard-transaction weight limit
 (\cref{sec:res-evm,sec:res-txstruct}). All
 five objectives were met (\cref{tab:objectives}), subject to two limits throughout: no
 concrete security is formally analysed, and nothing ran on a live network.

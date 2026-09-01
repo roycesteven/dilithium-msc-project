@@ -13,9 +13,14 @@ with its image $t = A\cdot r$. The hard relation $(Y,r')$ reuses exactly that st
 % which is the M-SIS one.  The clause that stood here also credited M-LWE with "keeping the
 % witness hidden": that is a security-analysis claim this project does not make, and the
 % paper assigns M-LWE to the signature setting rather than to the relation.
-so a statement is ``just another public key'': recovering a sufficiently short preimage of
-$Y$ under $A$ is the Module-SIS problem underlying the relation's hardness
-\cite{esgin2020post}. Esgin et al.\ \cite{esgin2020post}
+% NOT "finding a preimage IS the M-SIS problem": M-SIS (paper Definition 1) asks for a
+% short NON-ZERO KERNEL vector, so preimage-finding is not literally it.  The paper's own
+% reduction (Section 3, p.7) is the AUGMENTED one -- [A | t](r,-1)^T = 0 -- which is why
+% its instance is M-SIS_{n,n+ell+1}, one column wider than A.  Keep [A | Y] in the
+% sentence; "sufficiently short" carries the norm bound beta and must not be dropped.
+so a statement is ``just another public key'': a sufficiently short preimage $r'$ of $Y$
+under $A$ yields a Module-SIS solution $(r',-1)^{\top}$ for $[\,A \mid Y\,]$, hence the
+relation's hardness \cite{esgin2020post}. Esgin et al.\ \cite{esgin2020post}
 name this statement-generation step \textsc{Gen}: sample an independent ternary vector
 $r'$, compute $Y=A\,r'$, and
 return $(Y,r')$. Thus \textsc{Gen} is not a further primitive but \textsc{KeyGen}
@@ -149,7 +154,7 @@ built additively on the upstream CRYSTALS-Dilithium reference
 \cite{ducas2018crystals,pqcrystalsdilithium} at a pinned commit, and the same strategy is
 applied again in Rust (\cref{sec:rustport}). Neither is itself ``the reference'': both are
 \emph{modified, simplified} ML-DSA-style bases carrying the LAS layer of
-\textcite{esgin2020post}.
+\cite{esgin2020post}.
 
 Classifying every source file by how the reference is used (\cref{tab:reuse}) yields a
 clean split: the entire lattice core is reused unchanged, while the adaptor scheme,
@@ -192,7 +197,11 @@ Two decisions matter. Validation is \emph{asymmetric}: keys and witnesses are ch
 decode, a signature is not, so a tampered response is caught by Verify --- the entry
 point the tamper test attacks. And, following FIPS~204
 \cite{1274601}, a signature carries not the challenge polynomial $c$ but the digest
-$\tilde c$ from which every consumer re-derives it, under the standard's $\lambda/4$ rule
+% NOT "every consumer re-derives it": Extract consumes a signature and never derives c at
+% all (las_ext only subtracts and checks A s = Y), and Adapt derives it solely through the
+% PreVerify it runs.  Verification is the scope that holds; the same fix was owed in
+% app:serialize, which carried the identical absolute.
+$\tilde c$ from which verification re-derives it, under the standard's $\lambda/4$ rule
 (\cref{app:serialize}).
 
 \section{Testing methodology}
@@ -278,9 +287,9 @@ realism}: a memory-safe language is the plausible production vehicle.
 
 To make the timings comparable the two protocol drivers mirror each other exactly ---
 same repetition scheme, fixed seed, fixed message, success-path gating and rejection
-statistics. One caveat qualifies the port's independence: where \cite{esgin2020post} leaves
-an engineering choice open, Rust adopts the C implementation's, concretely an early-abort
-rejection check. Sharing that is what makes the two languages time the same algorithm, but
+statistics. One caveat qualifies the port's independence: Rust follows the C
+implementation's early-abort norm check, an implementation detail not prescribed by the
+LAS construction \cite{esgin2020post}. Sharing that is what makes the two languages time the same algorithm, but
 it is established by inspecting the two norm checks rather than by the automated evidence,
 which constrains outputs and rejection rates, not the work profile of a rejected attempt
 (\cref{app:methoddetail}).
@@ -296,14 +305,26 @@ Undocumented boundaries are a recognised benchmarking pitfall for lattice signat
 \cite{riou2026apples}, so every timing belongs to one of the three declared boundaries of
 \cref{tab:tiers}: a \emph{core tier} isolating the adaptor algebra from encoding, a
 \emph{packed tier} giving what an on-chain consumer pays, and, for the classical baseline
-alone, the \emph{hybrid} boundary its library exposes. Comparisons are made only within one
-boundary, and every base-versus-LAS comparison shows \emph{both}.
+alone, the \emph{hybrid} boundary its library exposes.
+% NOT "every base-versus-LAS comparison shows both": only the target-setting comparison
+% (tab:overhead-l3, and the prose around fig:timing) reports core AND packed.  The
+% parameter sweep is core-tier ONLY -- fig:overhead's own caption says so, and tab:timing
+% is introduced in app as "every CORE-TIER per-operation timing".
+Comparisons stay within one
+boundary; the primary base-versus-LAS comparison shows \emph{both}.
 
 
 \paragraph{Implementation of record, repeatability, and machine.}
 Unless a caption says otherwise, timings are the C implementation's, with the Rust results
-reported separately and never averaged with them (\cref{tab:rust}). Every timing is a mean
-$\pm$ sample standard deviation over the repetition scheme its caption states. All
+reported separately and never averaged with them (\cref{tab:rust}).
+% NOT "every timing is a mean +/- sample SD": tab:rust's own caption says the Criterion
+% column is a bootstrap 95% confidence interval of the mean, so the absolute contradicted
+% our own table.  Every OTHER harness does report mean +/- sample SD -- checked: the C
+% driver, fig:timing's error bars, the classical baseline, the Stage-2 swap and the
+% patched-node bench (app "btcLasVerifyUs +/- btcLasVerifySd").
+Driver timings are a mean
+$\pm$ sample standard deviation over each caption's repetitions; Criterion reports
+bootstrap 95\% confidence intervals. All
 non-random inputs are fixed, so variability comes only from rejection sampling and machine
 noise, never from input selection \cite{riou2026apples}. Toolchain, hardware and per-table
 commands: \cref{app:repro}.
@@ -313,16 +334,27 @@ Every operation is timed independently: they are split across parties, so a comb
 would average over costs never paid together and hide the per-operation overhead.
 
 \paragraph{The primary comparison: LAS against its own simplified base.}
-LAS is exactly its base signature plus four operations on the same code, parameters and
-primitives, so every comparison holds all three fixed and varies only the adaptor layer
-(justified in \cref{sec:eval-strategy}). Each adaptor operation is paired with the base
+% NOT "on the same code": las.c does not share basesig.c's helpers, it holds VERBATIM
+% local copies of them ("Keeping copies (not sharing) preserves independent linkability;
+% behaviour is bit-for-bit identical"), so the two paths run identical -- not shared --
+% code.  sec:eval-strategy already words this correctly as "identical algorithm,
+% parameters and primitives"; this sentence now matches it.  "every comparison" was also
+% too wide: the optimised-Dilithium and classical baselines deliberately fix none of it.
+LAS is exactly its base signature plus four operations at identical algorithm, parameters
+and primitives, so each base-versus-LAS comparison holds all three fixed and varies only
+the adaptor layer (justified in \cref{sec:eval-strategy}). Each adaptor operation is paired with the base
 operation it mirrors --- \textsc{Adapt} against \textsc{Verify}, since it runs a
 PreVerify before adding the witness --- and \textsc{Extract}, having no base analogue, is
 reported separately.
 
 \paragraph{Rejection sampling: the expected attempt count.}
 Sign-class operations restart until the response passes its norm bound, so no timing claim
-is meaningful without the attempt statistics. Each coefficient is accepted with probability
+is meaningful without the attempt statistics.
+% The numerator is SIGN's bound: PreSign rejects at gamma-kappa-1, so its per-coefficient
+% probability is (2(gamma-kappa)-1)/(2 gamma+1) and its expectation differs (2.719 vs
+% 2.775 attempts -- the separation sec:res-rejection quotes and the drivers assert
+% separately).  Unattributed, this read as the Sign-class formula.
+Sign accepts each coefficient with probability
 $\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$ \emph{independently of the secret} --- why the
 response is simulatable (\cref{app:methoddetail}) --- and an attempt succeeds only if all
 $(n+\ell)\,d$ pass:
@@ -350,7 +382,12 @@ correctness contract is asserted on the objects about to be timed, so no failure
 ever measured.
 
 \paragraph{Parameter sensitivity and component sizes.}
-To test whether the adaptor overhead scales with the lattice dimensions, the same
+% NOT "scales with the lattice dimensions": the sweep is not a dimension sweep.  The paper
+% set and Simplified Dilithium-II share (n,l) = (4,4) and differ in kappa (60 vs 39), gamma
+% and digest width, so no scaling in the dimensions can be isolated from it.  fig:overhead's
+% own caption already calls it "a secondary robustness check ... not a result about
+% scaling", and the never-frame-as-scaling rule is standing.
+To test the adaptor overhead's sensitivity to the parameter set, the same
 comparison is repeated at the four parameter sets of \cref{tab:params} (symbols in
 \cref{tab:notation}). Each key and signature is decomposed into components, so the
 \emph{cause} of a size difference can be identified, not merely its total stated.
@@ -360,8 +397,13 @@ comparison is repeated at the four parameter sets of \cref{tab:params} (symbols 
   \caption[Parameter sets used in the evaluation]{Parameter sets used in the evaluation. The \emph{LAS-2020/845 reference}
   set is \emph{paper-derived} rather than that paper's exact set: it takes the dimensions
   of \cite{esgin2020post}, a historical reference point corresponding to no ML-DSA set,
-  but runs at this build's modulus, which the paper permits --- only the \emph{size} of
-  $q$ matters, so the concrete value may be chosen for a fast NTT. The \emph{Simplified
+  % NOT "which the paper permits": that paper fixes $q\approx2^{24}$ *to meet* its M-SIS /
+  % M-LWE requirements and only then says the concrete value may be chosen for a fast NTT
+  % -- a licence at a FIXED SIZE, which does not cover changing the size.  Wording now
+  % matches sec:impl and sec:res-validity, which both already had it right.
+  but runs at FIPS~204's $q\approx 2^{23}$ \cite{1274601} rather than the
+  $q\approx 2^{24}$ of \cite{esgin2020post}: correctness is unaffected ($q>2\gamma$),
+  while the security margin changes. The \emph{Simplified
   Dilithium-II/III/V} sets reuse the dimensions of Dilithium modes~2/3/5, aligning the
   reusable ML-DSA primitives and the challenge-digest strength $\lvert\tilde c\rvert$
   with ML-DSA-44/65/87 while retaining LAS's own ternary secret distribution, rejection
@@ -403,7 +445,7 @@ fair counterpart of an adaptor signature being another adaptor signature.
 \label{sec:stage2method}
 
 This section defines the application protocol and the measurement boundary used for the
-Stage-2 results. The protocol follows Figure~1 of Esgin, Ersoy and Erkin
+Stage-2 results. The protocol follows Figure~1 in
 \cite{esgin2020post} over two UTXO ledgers; \cref{sec:res-app} later reports the execution
 evidence, while \cref{sec:res-stage2,sec:res-txstruct} report cost.
 
@@ -417,86 +459,118 @@ a model, not a node; the boundary is set out in \cref{app:utxomodel}.
 
 \paragraph{The protocol that is executed.}
 \Cref{fig:swapflow} is the run book implemented by the driver. Alice, written $u_1$ in the
-paper notation, holds the witness $y$ and therefore moves first; Bob, written $u_2$, only
-pre-signs after the proof $\pi$ and Alice's pre-signature have both verified. That proof is
+paper notation, holds the witness $y$ and therefore moves first;
+% Configuration 1 carries NO pi (backend.rs: RoleAProof::NotRequired), and protocol.rs
+% generates and verifies one only under RoleAProof::Required -- PreVerify runs in all
+% three.  Unscoped, this sentence contradicted tab:configs, which makes config 1's
+% absent proof a FINDING.  Order is the code's: pi verify, then PreVerify, then u2 PreSign.
+% Passive: two subjects with "have verified" reads as if they did the verifying.
+Bob, written $u_2$, only
+pre-signs after Alice's pre-signature and, in the LAS configurations, her proof $\pi$
+have been verified. That proof is
 part of the method, not decoration: it proves the statement has a short witness, closing
 the knowledge gap that would otherwise let a malicious first party leave an unadaptable
-pre-signature behind. Operationally, a pre-signature is only a wallet-to-wallet protocol
-message: no UTXO is spent while $\hat{\sigma}_i$ is being exchanged. A blockchain event
-occurs only when an adapted signature is placed in the transaction's ordinary signature
-field and that transaction is broadcast to its own ledger. The other ledger never verifies
+pre-signature behind. No UTXO is spent while the pre-signatures are
+exchanged: a settlement occurs only when a transaction carrying an adapted signature is
+broadcast to its own ledger. The other ledger never verifies
 a foreign transaction; atomicity comes from Bob observing $\sigma_2$ on ledger~B, extracting
 the witness, and using it to finish the spend on ledger~A.
+% NOT "the signature hash": Tx::sighash() (utxo.rs:144) HASHES NOTHING -- it returns the
+% template's canonical bytes, and serialize() is exactly those bytes plus a length-prefixed
+% signature per input, so the message is the template minus its signature fields.  The
+% function's NAME is not a warrant.  On Bitcoin the message really is a BIP341 sighash;
+% that is the next paragraph's scope, and it stays.
+The signed message $m_i$ is
+the template $\mathit{tx}_i$ serialized without its input signatures, not the settled
+transaction bytes.
 
-\begin{figure}[htbp]
+\begin{figure}[!ht]
   \centering
   % Type is \normalsize throughout: nothing inside a figure may be smaller than the
-  % body text.  The geometry below was re-derived for 12pt -- widths from the longest
-  % line in each box, row pitch from the tallest box -- so do not shrink the font back
-  % to fit a coordinate.
+  % body text.  The geometry below is a three-lane swimlane: actor lanes are
+  % structural, action boxes stay inside one lane, and cross-boundary arrows carry
+  % the data payloads.
   % The ledger boxes say "verifies $\sigma_i$", NEVER "validates witness": this report
   % uses "witness" for the secret $y$, which is never transmitted, so that wording read
   % as the ledger checking an object it never sees.
+  % Payload labels carry NO "text width": they are white-filled, so a label wider than
+  % the 18mm/16mm gap between two boxes paints over the neighbouring box's corner (it
+  % did, at text width=21mm).  Let them size to their content, and keep every line
+  % narrower than the gap -- "broadcast" alone is 18mm, which is why it says "publish".
   \begin{tikzpicture}[
       font=\normalsize,
-      party/.style={draw, rounded corners=3pt, align=center, minimum width=46mm,
-                    minimum height=12mm, line width=0.65pt},
-      msg/.style={draw, rounded corners=3pt, fill=orange!9, draw=orange!60!black,
-                  align=center, text width=68mm, minimum height=13mm,
-                  inner xsep=1mm, inner ysep=1mm, line width=0.6pt},
-      gate/.style={draw, rounded corners=3pt, fill=yellow!13, draw=yellow!55!black,
-                   align=center, text width=48mm, minimum height=16mm,
-                   inner xsep=1mm, inner ysep=1mm, line width=0.6pt},
-      chain/.style={draw, rounded corners=3pt, fill=blue!7, draw=blue!55!black,
-                    align=center, text width=50mm, minimum height=16mm,
-                    inner xsep=1mm, inner ysep=1mm, line width=0.6pt},
+      actor/.style={draw, rounded corners=3pt, align=center, text width=32mm,
+                    minimum height=10mm, inner xsep=1mm, inner ysep=1mm,
+                    line width=0.65pt, font=\bfseries\normalsize},
+      action/.style={draw, rounded corners=3pt, align=center, text width=32mm,
+                     minimum height=14mm, inner xsep=1mm, inner ysep=1mm,
+                     line width=0.6pt},
+      off/.style={action, fill=orange!9, draw=orange!60!black},
+      local/.style={action, fill=green!8, draw=green!45!black},
+      chain/.style={action, fill=blue!7, draw=blue!55!black},
+      payload/.style={align=center, fill=white, inner xsep=0.8mm,
+                      inner ysep=0.4mm},
+      flow/.style={->, line width=0.65pt, shorten >=0.7mm, shorten <=0.7mm},
+      lane/.style={draw=gray!45, rounded corners=2pt, line width=0.35pt},
       >={Stealth[]}]
 
-    \node[party, fill=orange!10, draw=orange!60!black] (u1) at (24mm,0mm)
-      {Alice $(u_1)$\\knows $y$};
-    \node[party, fill=blue!8, draw=blue!60!black] (u2) at (106mm,0mm)
-      {Bob $(u_2)$\\extracts later};
+    \draw[lane] (-18mm,7mm) rectangle (18mm,-92mm);
+    \draw[lane] (34mm,7mm) rectangle (70mm,-92mm);
+    \draw[lane] (86mm,7mm) rectangle (122mm,-92mm);
 
-    \node[msg] (m1) at (65mm,-17mm)
-      {\textbf{1. off-chain:} send $Y,\pi,\hat{\sigma}_1$\\
-       and unsigned $\mathit{tx}_1$ template};
-    \node[gate] (check) at (106mm,-36mm)
-      {abort gate\\verify $\pi$\\PreVerify $\hat{\sigma}_1$};
-    \draw[->, line width=0.65pt] (u1.south) |- (m1.west);
-    \draw[->, line width=0.65pt] (m1.east) -| (check.north);
+    \node[actor, fill=orange!10, draw=orange!60!black] (u1) at (0mm,0mm)
+      {Alice wallet\\$(u_1)$ knows $y$};
+    \node[actor, fill=blue!7, draw=blue!55!black] (ledgers) at (52mm,0mm)
+      {UTXO ledgers\\settle spends};
+    \node[actor, fill=yellow!13, draw=yellow!55!black] (u2) at (104mm,0mm)
+      {Bob wallet\\$(u_2)$ extracts $y'$};
 
-    \node[msg] (m2) at (65mm,-55mm)
-      {\textbf{2. off-chain:} send $\hat{\sigma}_2$\\
-       and unsigned $\mathit{tx}_2$ template};
-    \draw[->, line width=0.65pt] (check.south) |- (m2.east);
+    \node[off] (m1) at (0mm,-20mm)
+      {\textbf{1. off-chain}\\
+       Gen $(Y,y)$; prove $\pi$\\
+       \textsc{PreSign} $\hat{\sigma}_1$};
+    \node[off] (m2) at (104mm,-20mm)
+      {\textbf{2. off-chain}\\
+       verify $\pi$\\
+       \textsc{PreVerify} $\hat{\sigma}_1$\\
+       \textsc{PreSign} $\hat{\sigma}_2$};
+    \draw[flow] (m1.east) -- node[payload, above=1mm]
+      {$Y,\pi,\hat{\sigma}_1,\mathit{tx}_1$ template} (m2.west);
 
-    \node[gate, fill=green!8, draw=green!45!black] (adapt2) at (24mm,-74mm)
-      {Adapt with $y$\\attach $\sigma_2$\\broadcast $\mathit{tx}_2$};
-    \draw[->, line width=0.65pt] (m2.west) -| (adapt2.north);
+    \node[local] (adapt2) at (0mm,-49mm)
+      {\textsc{Adapt} $\hat{\sigma}_2$\\
+       with $y \to \sigma_2$};
+    \draw[flow]
+      (m2.south) -- (104mm,-36mm) -- node[payload, above=1mm]
+      {$\hat{\sigma}_2,\mathit{tx}_2$ template} (0mm,-36mm) -- (adapt2.north);
 
-    \node[chain] (chain2) at (65mm,-93mm)
-      {UTXO ledger B\\verifies $\sigma_2$\\settles $\mathit{tx}_2$};
-    \draw[->, line width=0.65pt] (adapt2.south) |- (chain2.west);
+    \node[chain] (chain2) at (52mm,-49mm)
+      {\textbf{3. on-chain}\\
+       UTXO ledger B\\
+       verifies $\sigma_2$\\
+       settles $\mathit{tx}_2$};
+    \draw[flow] (adapt2.east) -- node[payload, above=1mm]
+      {publish\\$\mathit{tx}_2+\sigma_2$} (chain2.west);
 
-    \node[gate, fill=green!8, draw=green!45!black] (extract) at (106mm,-112mm)
-      {read $\sigma_2$\\Extract $y'$\\Adapt $\hat{\sigma}_1$};
-    \draw[->, line width=0.65pt] (chain2.east) -| (extract.north);
+    \node[local] (extract) at (104mm,-49mm)
+      {\textsc{Extract} $y'$\\
+       \textsc{Adapt} $\hat{\sigma}_1 \to \sigma_1$};
+    \draw[flow] (chain2.east) -- node[payload, above=1mm]
+      {read\\$\sigma_2$} (extract.west);
 
-    \node[chain, fill=orange!7, draw=orange!60!black] (chain1) at (65mm,-131mm)
-      {UTXO ledger A\\verifies $\sigma_1$\\settles $\mathit{tx}_1$};
-    \draw[->, line width=0.65pt] (extract.south) |- (chain1.east);
+    \node[chain, fill=orange!7, draw=orange!60!black] (chain1) at (52mm,-78mm)
+      {\textbf{4. on-chain}\\
+       UTXO ledger A\\
+       verifies $\sigma_1$\\
+       settles $\mathit{tx}_1$};
+    \draw[flow]
+      (extract.south) -- (104mm,-78mm) -- node[payload, above=1mm]
+      {publish\\$\mathit{tx}_1+\sigma_1$} (chain1.east);
   \end{tikzpicture}
   \caption[The atomic-swap protocol used in the UTXO study]{The atomic-swap protocol used
-  in the UTXO study, adapted from Figure~1 of \cite{esgin2020post}. Only the two adapted
-  signatures reach ledgers, inside the ordinary signature/witness field of their own
-  transactions; $Y$, $\pi$, the unsigned templates and the pre-signatures are off-chain
-  protocol messages, and the witness $y$ is never transmitted. Step~1 gives Bob enough
-  evidence to decide whether to continue; step~2 gives Alice the pre-signature she can
-  adapt with $y$; once $\sigma_2$ is visible in the settled transaction on ledger~B, Bob
-  extracts $y'$ and adapts the first leg for ledger~A.
-  The signed message $m_i$ is the signature hash of the unsigned template
-  $\mathit{tx}_i$, not the transaction bytes themselves. \Cref{sec:res-app} reports the
-  assertions that this flow passed, and \cref{sec:res-stage2} measures its cost.}
+  in the UTXO study, adapted from Figure~1 in \cite{esgin2020post}. Protocol messages are
+  exchanged off-chain; only the completed spend transactions are submitted to the two UTXO
+  ledgers. The secret witness is never transmitted.}
   \label{fig:swapflow}
 \end{figure}
 \FloatBarrier
@@ -517,9 +591,14 @@ from the decoded transactions and checked against the weight accounting of
 
 One notational point matters once the venue is a real ledger. The swap protocol writes the
 signed object as $\mathit{tx}_i$, but a transaction is not a message: a signature commits to
-its \emph{signature hash}. Three objects are therefore kept distinct --- the unsigned
-template exchanged off-chain, its signature hash (the message passed to \textsc{PreSign}),
-and the settled transaction --- since conflating them would misreport communication cost.
+its \emph{signature hash}. Three objects are therefore kept distinct: the unsigned
+% NOT "its signature hash" for the middle object: in the model that object is Tx::sighash()'s
+% canonical bytes, which are not a digest (see the previous paragraph).  On a real ledger it
+% is a BIP341 sighash, which is why the sentence above keeps that term and this one does not.
+% The reason clause is KEPT -- it is the warrant for making the distinction at all, and the
+% Stage-2 byte counts depend on it -- but split off as its own sentence.
+template exchanged off-chain, the message derived from it that \textsc{PreSign} receives,
+and the settled transaction. Conflating them would misreport communication cost.
 
 \paragraph{Three configurations, and what is controlled.}
 The three configurations of \cref{tab:configs} each run the swap protocol end-to-end
@@ -539,21 +618,26 @@ question being answered by \cref{sec:res-classical}.
 
 \begin{table}[htbp]
   \centering
+  % CUT 2026-09-01: the caption had grown long enough to give the float a text-free page
+  % (p.30 of the previous build), which the no-float-only-page rule forbids and which an
+  % over-long caption is the usual cause of.  What went is DUPLICATION of the paragraph
+  % immediately above -- the one-matrix/one-seed/identical-relation mechanics, and the LAS
+  % knowledge-gap mechanism, which "The protocol that is executed" also states.  What STAYS
+  % is every caveat: finding-not-omission, the ECDSA contrast, the unmodified-baseline
+  % reason, and the DLEQ-is-not-pi scoping with its cost attribution.  Cutting any of those
+  % is Royce's call, not a tidy-up.  Note the reason runs gap -> no pi -> unmodified: the
+  % library carries no pi because the construction needs none, NOT the other way round.
   \caption[The three measured configurations]{The three configurations. Only the
-  $2\to3$ step is controlled: those two share one public matrix, prove the identical
-  relation, and receive byte-identical inputs from one pinned seed, so their difference
-  is the proof system alone. Configuration~1 carries \emph{no} role-A proof, and this
-  is a finding rather than an omission: LAS needs $\pi$ because of its knowledge gap
-  --- extraction returns a witness of the extended relation, which need not be ternary,
-  so without $\pi$ a malicious $u_1$ could claim and leave $u_2$ holding an unadaptable
-  pre-signature --- whereas an ECDSA adaptor has no such gap, since extraction recovers
-  the discrete logarithm exactly. The measured \texttt{secp256k1-zkp} construction
-  accordingly carries no $\pi$, and adding one would have measured a modified baseline
-  rather than the library as it stands. The DLEQ proof
-  carried \emph{inside} a \texttt{secp256k1-zkp} pre-signature is a different object
-  and is not counted as $\pi$: its author is the pre-signer, and its claim is
-  pre-signature well-formedness, not knowledge of the role-A statement witness $r'$.
-  Its cost is reported in the bytes by which a pre-signature exceeds a signature.}
+  $2\to3$ step is controlled, so those two differ in the proof system alone;
+  configuration~1 differs in signature scheme, relation and proof alike. Its missing
+  role-A proof is a finding rather than an omission: an ECDSA adaptor has no knowledge
+  gap, since extraction recovers the discrete logarithm exactly, so the unmodified
+  \texttt{secp256k1-zkp} construction needs no $\pi$ --- and adding one would have
+  measured a modified baseline rather than the library as it stands. The DLEQ proof
+  carried \emph{inside} its pre-signature is a different object and is not counted as
+  $\pi$: its author is the pre-signer, and its claim is pre-signature well-formedness,
+  not knowledge of the role-A statement witness $r'$. Its cost is reported in the bytes
+  by which a pre-signature exceeds a signature.}
   \label{tab:configs}
   \small
   \begin{tabular}{@{}lL{0.27\linewidth}L{0.30\linewidth}cc@{}}

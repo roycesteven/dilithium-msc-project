@@ -46,16 +46,20 @@ swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
   \end{tabular}
 \end{table}
 
+% Contain each section's float backlog to that section: without these barriers the
+% five floats of sec:res-compute drift forward and are read alongside the prose of
+% sec:res-rust and sec:res-comm.  Placement only -- no content is moved or cut.
+\FloatBarrier
 \section{Computation cost}
 \label{sec:res-compute}
 
 The primary computation result is the cost of the \emph{adaptor layer}. The two paths
 share algorithm, parameters and primitives, so any difference is purely the price of
 adaptor functionality (\cref{sec:benchmethod}). \Cref{tab:overhead-l3} reports it at
-\emph{both} boundaries and \cref{fig:timing} visualises the core tier: every adaptor
-operation at the target setting stays within single digits of its counterpart, Extract is the cheapest of all,
-and every operation completes in well under two milliseconds, signing and pre-signing
-dominating because of rejection sampling.
+\emph{both} boundaries and \cref{fig:timing} visualises the core tier, where every
+paired adaptor operation at the target setting stays within single digits of its
+counterpart, Extract is the cheapest of all,
+and every operation completes in well under two milliseconds.
 
 \begin{table}[htbp]
   \centering
@@ -74,9 +78,12 @@ dominating because of rejection sampling.
   \textsc{Gen} is not benchmarked separately because, for LAS, it executes
   exactly the same computation as \textsc{KeyGen}; the measured
   \textsc{KeyGen} timing therefore also gives the cost of relation generation.
-  Extract has no basic analogue. The packed-tier overheads are larger because
-  each adaptor operation additionally decodes the public-key-sized statement
-  $Y$ (\stmtBytesTarget~B) --- serialization, not adaptor arithmetic. Absolute
+  Extract has no basic analogue. The packed-tier overheads are larger because the
+  byte API does codec work the basic operation does not: PreSign and PreVerify
+  additionally decode the public-key-sized statement $Y$ (\stmtBytesTarget~B), and
+  Adapt additionally decodes $Y$ and the witness and re-encodes the adapted
+  signature --- serialization, not adaptor arithmetic. The core tier isolates the
+  adaptor computation itself. Absolute
   core-tier timings at every parameter set are in \cref{tab:timing} (appendix).}
   \label{tab:overhead-l3}
   \small
@@ -111,8 +118,8 @@ commitment shape with the extra $+Y$; Adapt ($+\ovAdapt\%$) runs a PreVerify the
 the witness vector; Extract merely subtracts $s=z-\hat z$ and checks $A\,s=Y$. None changes
 the asymptotic work. This is the headline of the standalone-signature evaluation:
 \emph{at the core tier} adaptor functionality is single-digit at the target setting and
-stays below $+\ovMaxAll\%$ across the parameter sweep. The two operations unique to an
-adaptor signature cost about a verification or less each (\cref{fig:overhead}).
+stays below $+\ovMaxAll\%$ across the parameter sweep (\cref{fig:overhead}). Adapt and
+Extract cost about a verification or less each (\cref{tab:overhead-l3}).
 
 \begin{figure}[htbp]
   \centering
@@ -135,12 +142,12 @@ adaptor signature cost about a verification or less each (\cref{fig:overhead}).
 \end{figure}
 
 At the packed boundary the premium grows to $+\packedOvPreSign\%$,
-$+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- an order of magnitude higher, and the
-gap is the statement's decode rather than adaptor arithmetic. The object dominating
-\emph{communication} cost thus reappears as the dominant \emph{computation} cost once
-bytes are included, so a deployment verifying from bytes should budget for the packed row
---- and reported lattice timings are notoriously sensitive to this boundary
-\cite{riou2026apples}.
+$+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$ --- several times the core-tier
+percentages. The increase is codec work on the adaptor's own objects rather than adaptor
+arithmetic: PreSign and PreVerify additionally decode the statement, while Adapt also
+decodes the witness and re-encodes the signature. A deployment working from bytes should
+budget for the packed row --- reported lattice timings are notoriously sensitive to this
+boundary \cite{riou2026apples}.
 
 \begin{table}[htbp]
   \centering
@@ -191,11 +198,12 @@ rather than estimated from a timing ratio, the run of record observed \rejAttBas
 ($+\ovPreSign\%$) should be read as of the same order as the prediction rather than as a
 precise constant; only the $\approx\!10^5$-call Criterion harness resolves it.
 
+\FloatBarrier
 \section{Cross-implementation check: C implementation versus Rust port}
 \label{sec:res-rust}
 
-The scheme exists twice (\cref{sec:rustport}), and the two implementations agree at every
-level at which they can be compared. At the byte level agreement is exact: the same packed
+The scheme exists twice (\cref{sec:rustport}), and at the byte level the two
+implementations agree exactly: the same packed
 sizes (public key \pkBytesTarget{}~B, signature \sigBytesTarget{}~B, checked
 programmatically on every Rust run) and the same pinned known-answer digest.
 % Digest value is not printed: pinned KAT digest = \katDigestHead\ldots\katDigestTail
@@ -220,17 +228,17 @@ leaving every one of those bytes unchanged.
   \input{generated/tab_rust}
 \end{table}
 
-Timing agreement is looser, the builds going through different compilers, but close:
-every operation agrees within about \rustCMaxDev\% (largest gap \rustCMaxDevOp). More
-importantly the central conclusion reproduces in both languages. At the core tier the Rust
+Absolute timings do not agree: every operation is slower in the Rust port, by up to
+\rustCMaxDev\% (\rustCMaxDevOp), and no cause for that gap has been measured. What
+reproduces is the comparison itself. At the core tier the Rust
 port measures $+\rustOvPreSign\%$, $\rustOvPreVerify\%$ and $+\rustOvAdapt\%$ --- all
 single-digit, like the C column beside them; the slightly \emph{negative} PreVerify figure is
 the measurement floor rather than a real speed-up, the genuine overhead at this scale
 being smaller than the gap between the two verify paths. The packed tier reproduces too
 ($+\rustPackedOvPreSign\%$, $+\rustPackedOvPreVerify\%$, $+\rustPackedOvAdapt\%$), all
 positive and in the C figures' order. Both ports pass the same rejection gate
-(\cref{fig:criterion}). The headline results are therefore properties of the algorithm,
-not of one codebase, compiler or harness.
+(\cref{fig:criterion}). The relative adaptor overheads, not the absolute timings, are
+therefore properties of the algorithm rather than of one codebase, compiler or harness.
 
 \begin{figure}[htbp]
   \centering
@@ -240,10 +248,10 @@ not of one codebase, compiler or harness.
   \critSamples{} timed samples
   (dots), the kernel-density estimate of the sampling distribution (shaded), the mean
   (vertical blue line), and Criterion's automatic outlier classification (mild /
-  severe, orange / red). Four presentational changes were made to Criterion's SVG on the
+  severe, orange / red). Three presentational changes were made to Criterion's SVG on the
   way to PDF --- the type enlarged, the legend moved from the right-hand column into the
-  row beneath the plot, the margins re-flowed and cropped to the result, and gnuplot's
-  three-part exponent rendered as the single glyph $10^{3}$; inside the plot frame the
+  row beneath the plot, and the margins re-flowed and cropped to the result; inside the
+  plot frame the
   coordinate map is the identity, so no plotted value, curve, mean, axis scale or outlier
   classification is altered. This is the evidence behind the Criterion column of
   \cref{tab:rust}: a well-formed, single-mode distribution whose spread comes from
@@ -252,6 +260,7 @@ not of one codebase, compiler or harness.
   \label{fig:criterion}
 \end{figure}
 
+\FloatBarrier
 \section{Communication cost and component breakdown}
 \label{sec:res-comm}
 
@@ -678,7 +687,7 @@ weight limit, not a gas limit, and one swap sits well inside it.
 Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
 verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340
 Schnorr and nothing else, so configurations 2 and 3 could not settle on Bitcoin as it
-stands; \cite{esgin2020post} assumes only the venue, a UTXO chain ``where the signature
+stands; the application setting in \cite{esgin2020post} assumes a UTXO chain ``where the signature
 algorithm is replaced with a lattice-based signature scheme'', and this study takes no
 position on which consensus route would deliver it. Separately, the objects collide with
 size limits: the signature is \btcSigOverElement$\times$ over the 520\,B
@@ -716,8 +725,8 @@ As a separate check on deployability, native on-chain LAS verification was
 \emph{implemented} and measured on a real Solidity stack: one claim transaction running
 full verification and releasing one leg's escrow costs $\approx$\gasLasVerifiedM{} million
 gas (\cref{tab:onchain}; \cref{fig:onchain}), $\approx$\gasRatioVerified{}$\times$ the
-classical claim and over the EIP-7825 cap. The application itself is built on the UTXO
-ledger \cite{esgin2020post} assumes (\cref{sec:stage2method}); this section measures what
+classical claim and over the EIP-7825 cap. The application is built on the UTXO
+setting assumed in \cite{esgin2020post} (\cref{sec:stage2method}); this section measures what
 a gas-metered venue charges for the same verification.
 
 That figure measures one \emph{implementation}, not the scheme. A restructured verifier
@@ -776,9 +785,15 @@ contrast with the application's own venue remains: the UTXO constraint is a tran
   \end{tabular}
 \end{table}
 
-\begin{figure}[!htbp]
+\clearpage
+\begingroup
+\setlength{\intextsep}{6pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{0pt}
+
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig_onchain}
+  \includegraphics[width=0.69\linewidth]{figures/fig_onchain}
   \caption[On-chain settlement gas for the four claim paths]{The claim paths of
   \cref{tab:onchain} on a logarithmic axis, which is what makes the spread legible. The
   dashed line is the EIP-7825 cap on the transaction gas limit ($16\,777\,216 = 2^{24}$):
@@ -790,14 +805,16 @@ contrast with the application's own venue remains: the UTXO constraint is a tran
   \cref{tab:onchain}.}
   \label{fig:onchain}
 \end{figure}
+\vspace{-0.5\baselineskip}
 
 % The Ethereum counterpart of fig:txstruct, which is Bitcoin-only. The point is
 % STRUCTURAL and must not be drawn as a timeline ("Bitcoin is behind"): the lattice
 % signature is in the field consensus itself checks on Bitcoin, and in a payload
 % consensus does not treat as a signature field on the EVM. Sizes: the calldata count is
 % the real client's MEASURED figure, from the same run tab:onchain reports.
-\begin{figure}[!htbp]
+\begin{figure}[H]
   \centering
+  \scalebox{0.69}{%
   \begin{tikzpicture}[
       font=\normalsize,
       fld/.style={draw, rounded corners=3pt, fill=black!3, align=center,
@@ -815,7 +832,8 @@ contrast with the application's own venue remains: the UTXO constraint is a tran
       {\texttt{data}\\LAS signature and verifier inputs\\\gasOptCalldata\,B};
     \node[off] (e4) at (60mm,-49mm)
       {off-chain only: $Y$, $\pi$, $\hat{\sigma}_1$, $\hat{\sigma}_2$, witness $y$};
-  \end{tikzpicture}
+  \end{tikzpicture}%
+  }
   \caption[The claim transaction on the EVM]{The same settlement on Ethereum: the claim
   transaction of the client run in \cref{tab:onchain}, read against the UTXO counterpart
   in \cref{fig:txstruct}. Neither venue gains a field from the adaptor layer, but the
@@ -828,6 +846,7 @@ contrast with the application's own venue remains: the UTXO constraint is a tran
   client receipt and is the whole calldata payload, not the signature alone.}
   \label{fig:evmtx}
 \end{figure}
+\endgroup
 
 \FloatBarrier
 \section{Threats to validity}

@@ -50,9 +50,12 @@
 % a lightweight TODO marker so gaps are visible while drafting
 \newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 
-% \textcite for the numeric plain style: renders as a plain \cite.
-% (biblatex-style name+cite is unavailable under \bibliographystyle{plain}.)
-\providecommand{\textcite}[1]{\cite{#1}}
+% In-text citations are IEEE-style throughout: a bracketed number, never used as a word
+% of the sentence. Where the authors are named the form is "Esgin et al.\ \cite{...}",
+% with the number immediately after the name; otherwise the number attaches to a noun or
+% a preposition ("Figure~1 in \cite{...}", "assumed in \cite{...}"). A \textcite shim
+% used to live here for name+cite rendering; it had one call site and rendered
+% identically to \cite, so both were removed rather than kept as a second spelling.
 
 % consistent maths shorthands used across chapters
 \newcommand{\Rq}{R_q}
