@@ -35,10 +35,12 @@
  * Adapt:     z = z_hat + r'     (standard Verify then sees Az-ct = w+Y)
  * Ext:       s = z - z_hat
  *
- * Stage note: in this build the challenge is stored as the polynomial c (the
- * c_tilde digest is expanded to c and kept); a later stage may instead store the
- * 32-byte c_tilde and re-derive c in the verifiers -- that changes the wire
- * format and is out of scope here.
+ * Wire note: the challenge travels as the DIGEST c_tilde (LAS_CTILDEBYTES wide,
+ * so per parameter set -- 48 B at the target setting, not 32); c is re-derived
+ * as SampleInBall(c_tilde) by the paths that verify -- las_preverify, and
+ * las_adapt through the las_preverify it runs.  las_ext derives no challenge at
+ * all: it subtracts and checks A*s == Y.  An earlier stage of this build stored
+ * the expanded polynomial c instead, which is what this note used to describe.
  */
 
 #include <stddef.h>

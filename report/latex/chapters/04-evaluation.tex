@@ -10,18 +10,22 @@ limitations that bound it. Judgement of \emph{what the artefact achieves} is mad
 \section{Evaluation strategy and its justification}
 \label{sec:eval-strategy}
 
-The aim was to establish what adaptor functionality \emph{costs}, so each measured
-difference had to be attributable to one cause. Four decisions follow, each tied to an
-objective.
+% "The aim" collided with sec:aims, which states a broader aim (implement, evaluate,
+% demonstrate).  The chapter opening four lines above cites that very label, so two
+% different things were called "the aim" within one page.  This is the evaluation
+% question, not the project aim.
+The central evaluation question was what adaptor functionality \emph{costs}, so each
+measured difference had to be attributable to one cause. Four decisions follow, each
+tied to an objective.
 
-\textbf{Correctness is established before any cost is reported} (objective~3). A fast
+Correctness is established before any cost is reported (objective~3). A fast
 but wrong scheme measures nothing, and no formal proof was in scope, so correctness rests
-on differential evidence: a pinned known-answer digest reproduced byte-for-byte by a
+on differential evidence: a pinned known-answer value reproduced byte-for-byte by a
 second, independently written implementation (\cref{sec:res-rust}). Internal
 self-consistency is not correctness --- \cref{sec:eval-challenges} gives a case where
 every primitive passed in isolation and the assembled whole was still wrong.
 
-\textbf{The primary comparison is controlled, not merely convenient} (objective~4).
+The primary comparison is controlled, not merely convenient (objective~4).
 LAS is measured against its own simplified base at identical algorithm, parameters and
 primitives, so the difference between the two paths is the adaptor layer and nothing
 else. Comparing instead against the optimised CRYSTALS-Dilithium reference would
@@ -29,13 +33,18 @@ confound the adaptor cost with parameter, packing and hint-vector differences; t
 comparison is therefore retained only as context, and the classical ECDSA adaptor only
 as a functionality-matched ``price of post-quantum'' baseline.
 
-\textbf{Every measurement declares its boundary.} Results are reported at two tiers
-(\cref{sec:benchmethod}), because an undeclared boundary is the commonest way a benchmark
-misleads --- as it did twice here before the tiers were fixed. For the same reason each
+% Two fixes, paid for within the paragraph.  (1) This was the one of the four decisions
+% that named no objective, weakening the decision-to-objective pattern the paragraph
+% above announces.  (2) "the commonest way a benchmark misleads" was an uncited
+% superlative about benchmarking in general; the em-dash clause already carries the only
+% warrant there is, which is local ("twice here").
+Every measurement declares its boundary (objective~4). Results are reported at two tiers
+(\cref{sec:benchmethod}), because an undeclared boundary misleads quietly --- as it did
+twice here before the tiers were fixed. For the same reason each
 run gates on a directly counted rejection rate against its closed-form prediction, rather
 than inferring acceptance from timing.
 
-\textbf{Metrics follow the venue} (objective~5). The application study reports execution
+Metrics follow the venue (objective~5). The application study reports execution
 time and communication bytes with off-chain messages counted, because the evaluated UTXO
 ledger has no gas metric --- and because off-chain messaging is where the post-quantum
 cost lands.
@@ -43,14 +52,20 @@ cost lands.
 \section{Achievement of the objectives}
 \label{sec:eval-objectives}
 
+% "two carry qualifications" was a count claim the two paragraphs below do not discharge:
+% objective 4's is a DEFENCE of how fairness was controlled, only objective 5's is a
+% qualification.  Same class as the theme-count fixed further down this chapter.
 \Cref{tab:objectives} sets out the evidence behind each objective. All five were met;
-two carry qualifications that matter.
+two need more than a table row.
 
 \begin{table}[htbp]
   \centering
-  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} against the
-           evidence reported in \cref{ch:results}. All five were met; the evidence
-           column states what each rests on.}
+  % Not all of it is in ch:results: objective 1 rests on sec:relatedwork (Chapter 1) and
+  % objective 2 on tab:reuse (appendix).  Captions are free of the word count, so naming
+  % the three homes costs nothing.
+  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} against its
+           evidence, which spans the introduction, \cref{ch:results} and the appendix.
+           All five were met; the evidence column states what each rests on.}
   \label{tab:objectives}
   \begin{tabular}{@{}p{0.24\textwidth}p{0.68\textwidth}@{}}
     \toprule
@@ -67,7 +82,7 @@ two carry qualifications that matter.
     3. Validation
       & Functional, serialization, tamper and known-answer tests pass
         (\cref{sec:res-correctness}); an independent Rust implementation reproduces
-        the wire format and the pinned digest byte-for-byte (\cref{sec:res-rust}). \\[3pt]
+        the wire format and the pinned value byte-for-byte (\cref{sec:res-rust}). \\[3pt]
     4. Fair benchmarking
       & Adaptor overhead isolated per operation at two declared tiers
         (\cref{tab:overhead-l3}); two further baselines, computation separated from

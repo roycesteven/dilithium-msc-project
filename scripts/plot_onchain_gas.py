@@ -88,14 +88,19 @@ def main():
         #
         # "Latin Modern Roman" is a family of OPTICAL SIZES -- lmroman9, 10, 12 and
         # 17 all answer to that one name and matplotlib picks among them, so the
-        # face is not pinned by naming the family.  It picked lmroman10 (and
-        # lmroman9 for the bold labels), which at 12pt are drawn WIDER and heavier
-        # than the lmroman12 the 12pt body is set in -- x-heights match, stems and
-        # advances do not, which is why the figure read as larger than the
-        # paragraph beside it.  Naming the optical size pins it to the body's own
-        # face; the family stays as the fallback for a machine without it.
+        # face is NOT pinned by naming the family: on this machine the bare family
+        # resolves to lmroman10, which at 12pt is drawn wider and heavier than the
+        # body and is what made this figure read as larger than the paragraph.
+        # The optical size must therefore be named.
+        #
+        # It is named "LM Roman 17", not the body's own lmroman12, because the
+        # reference is the OTHER PLOTTED FIGURES, not the paragraph in isolation
+        # (Royce, 2026-09-02): fig_timing / fig_overhead / fig_rejection_cdf all
+        # carry lmroman17, so an lmroman12 figure sat visibly heavier than its
+        # neighbours.  17 scaled to 12pt is the lighter, narrower of the two and is
+        # the one Royce read as closest to the paragraph on the page.
         "font.family": "serif",
-        "font.serif": ["LM Roman 12", "Latin Modern Roman", "DejaVu Serif"],
+        "font.serif": ["LM Roman 17", "Latin Modern Roman", "DejaVu Serif"],
         "mathtext.fontset": "cm",
         "font.size": PRINT_PT, "axes.labelsize": PRINT_PT,
         "axes.titlesize": PRINT_PT,

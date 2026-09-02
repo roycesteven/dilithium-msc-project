@@ -3,7 +3,7 @@
  * rust/fips204-las/src/serialize.rs.  Three private encoders, six typed wrapper
  * pairs over them (see serialize.h).  The response z is packed with FIPS BitPack
  * (b - w, LSB-first, byte-identical to the Rust conversion::bit_pack); the
- * challenge is the raw 32-byte digest c_tilde.  Ring-degree loops read LAS_D
+ * challenge is the raw digest c_tilde, LAS_CTILDEBYTES wide.  Ring-degree loops read LAS_D
  * (the LAS-file convention).
  */
 #include <string.h>
@@ -103,7 +103,8 @@ static int decode_ternary_vec(poly s[N_PLUS_ELL], const uint8_t in[SECRET_KEY_BY
   return 0;
 }
 
-/* c_tilde || BitPack(z): the raw 32-byte challenge digest, then the response z
+/* c_tilde || BitPack(z): the raw LAS_CTILDEBYTES-wide challenge digest (48 B at the
+ * target set, not 32 -- the width is per parameter set), then the response z
  * packed per-coefficient as the FIPS BitPack value (LAS_Z_OFFSET - z, i.e. b-w)
  * LSB-first -- byte-identical to the Rust conversion::bit_pack(z, gamma-kappa,
  * gamma-kappa).  bw_put is the byte-identical bit primitive, and the (n+ell)
@@ -117,7 +118,7 @@ static int encode_chal_response(uint8_t out[SIGNATURE_BYTES],
   unsigned int i, k;
   int32_t zz;
   memset(out, 0, SIGNATURE_BYTES);
-  memcpy(out, c_tilde, LAS_CTILDEBYTES);              /* raw 32-byte digest */
+  memcpy(out, c_tilde, LAS_CTILDEBYTES);              /* raw digest, per-set width */
   bp = 8u * (size_t)LAS_CTILDEBYTES;                  /* z region starts after the digest */
   for(i = 0; i < N_PLUS_ELL; ++i)                     /* response z / z_hat (FIPS BitPack) */
     for(k = 0; k < LAS_D; ++k) {
@@ -130,8 +131,9 @@ static int encode_chal_response(uint8_t out[SIGNATURE_BYTES],
 
 /* Inverse of encode_chal_response: raw digest out, then z decoded per-coeff as
  * z = LAS_Z_OFFSET - field (FIPS BitUnpack: b - field), byte-identical to the
- * Rust conversion::bit_unpack.  Its range is permissive (every field decodes in
- * range), so there is NO z rejection here -- a tampered z is caught at Verify.
+ * Rust conversion::bit_unpack.  PERMISSIVE, and not vacuously so: the valid band
+ * [0, LAS_Z_MAX] does not fill the LAS_Z_COEFF_BITS-wide field, so some fields decode
+ * to a z OUTSIDE the band.  There is NO z rejection here -- Verify's norm check owns it.
  * Always 0 (kept int for API symmetry with the validating pk/sk codecs). */
 static int decode_chal_response(uint8_t c_tilde[LAS_CTILDEBYTES],
                                 poly z[N_PLUS_ELL],

@@ -435,7 +435,7 @@ rej:                                         /* [REUSED]  sign.c:132: rej:  */
   /* ^[CHANGED] sign.c:186:
    *     pack_sig(sig, sig, &z, &h);
    * WHY: struct output storing the SAME challenge component upstream's pack_sig
-   * writes -- the 32-byte digest c_tilde (the challenge polynomial c is local
+   * writes -- the digest c_tilde, LAS_CTILDEBYTES wide (the polynomial c is local
    * only, see above); z was written into sig->z above; the byte encoding of the
    * whole (c_tilde, z) lives in ref/serialize.c instead. */
   return 0;                                  /* [REUSED]  sign.c:188: return 0; */
@@ -627,7 +627,7 @@ int base_verify_internal(const signature *sig,  /* paper σ: sig = (c, z), signa
   shake256_finalize(&state);                 /* [REUSED]  sign.c:351: shake256_finalize(&state); */
   shake256_squeeze(c_tilde, LAS_CTILDEBYTES, &state);
                                              /* [REUSED]  sign.c:352: shake256_squeeze(c2, CTILDEBYTES, &state);
-                                              * (32-byte challenge seed instead)        */
+                                              * (parameter-sized challenge seed instead) */
   /* [PAPER Alg.1] 18:     if c ≠ H(pk, w′, M), then return 0 */
   for(i = 0; i < LAS_CTILDEBYTES; ++i)
     if(c_tilde[i] != sig->c_tilde[i])

@@ -28,7 +28,7 @@
  * Encoding (see serialize.c):
  *   public key / statement Y : n     polys, 23 bits/coeff (value in [0,Q), Q<2^23)
  *   secret key / witness     : n+ell polys,  2 bits/coeff (ternary {-1,0,1})
- *   signature / pre-signature: c_tilde (32-byte challenge digest, raw) + response
+ *   signature / pre-signature: c_tilde (per-set challenge digest, raw) + response
  *                              (z or z_hat) packed with FIPS BitPack -- each coeff
  *                              (in [-(g-k), g-k]) as a LAS_Z_COEFF_BITS-bit field
  *                              b-w, LSB-first, byte-identical to the Rust

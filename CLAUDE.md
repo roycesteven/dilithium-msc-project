@@ -139,7 +139,7 @@ session that repeats one of these has failed even when its output looks right.
    **standardised basic layer / uneven exotic layer** (never "standardisation stops" — the cited
    warrant is about *implementations*, and M10 ordered that claim softened); and adaptor cost is
    **less overhead relative to each scheme's own base** (never "the cheaper one to add" — LAS is
-   dearer in absolute time and bytes); and the closing verdict may exempt only **the adaptor
+   more expensive in absolute time and bytes); and the closing verdict may exempt only **the adaptor
    layer** — *"what stops deployment is not the adaptor layer"*, **never "not performance"**,
    which contradicted `sec:reflection-shortfalls`' own *"what remains unsolved is cost"*.
    ⚠️ Two of the nine were defects *this file* had licensed and one was encoded as a
@@ -182,6 +182,16 @@ session that repeats one of these has failed even when its output looks right.
    artefact context separately, every time. Before filing any "already applied / suggestion
    only" verdict, check the EARLIER transcripts and **grep the artefacts for the claim**
    instead of trusting the previous entry.
+   ⚠️ **2026-09-02 — RIGHT ON FACTS, WRONG ON MECHANISM, and the split is the lesson.** Three
+   relayed points held: `fig:rejcdf` had **no `\cref` anywhere in the report** (a float with no
+   body reference — grep the label, never assume); "bold is a *size* defect" was wrong (bold
+   changes **weight and advance width** at the same point size, which is why a size gate passes
+   it); and a font ruling must be attributed to **Royce matching neighbouring figures**, not to
+   Wang's page comment that occasioned it. But the same batch's *layout* reasoning — trim
+   captions and shorten canvases to clear the float pages — was **refuted by building it**: both
+   moved the whitespace instead of removing it (see the float-page rule). **A relayed critique's
+   FACTS and its CAUSAL STORY are separate claims; verify them separately, and settle a layout
+   claim by building the page, never by argument.**
    ⚠️ **THE NOTES ARE THE SPOKEN SCRIPT, SO THEY HAVE A WORD BUDGET (2026-08-25).** Fused script
    and backup detail had reached **3,558 words — 471 wpm, unspeakable**. Every `data-notes` is now
    **`SPOKEN: … || BACKUP: …`**; only SPOKEN is delivered, `data-time` is **derived from it at
@@ -299,6 +309,13 @@ the base signature.** Results/evaluation must lead with this
   ⚠️ Never let it imply LAS is *faster* than ECDSA in absolute time (it is not — that is step 1),
   and never state step 1's `\clRatioSig` flatly as "the cost of post-quantum": it is **this
   build's simplified base**, and the FIPS 204 ML-DSA route measures a smaller signature.
+  ⚠️ **NOR "paid almost entirely in size"** (§3.4.1 said it until 2026-09-02; relayed critique
+  RIGHT). `tab:classical`'s own tier-matched compute column is **2.3–20×** before Adapt's
+  interface artefact, so the compute price is not near-negligible, and the paragraph's
+  boundary-matching decomposition rescues **Adapt alone** — Sign and Extract are untouched by
+  it. Settled: **"most pronounced in size"**. ⚠️ The trap underneath is a FUSION of two
+  different claims: *absolute* LAS latency is small (well under a millisecond) while the ratio
+  *against classical* is not — never let one warrant the other.
 - **NOT the focus:** the four parameter sets (paper / D2 / D3 / D5) are only a *secondary
   fairness / parameter-sensitivity* axis (§13.4). Never frame results around "across
   security parameter" or "as the scheme scales"; the across-parameter overhead chart is
@@ -332,7 +349,12 @@ the base signature.** Results/evaluation must lead with this
   it: the premium is **several times** the core percentages, never "an order of magnitude"
   (**a derived multiple is a claim — compute it, and never retype it into prose**), and
   codec is **not** "the dominant computation cost": for packed **PreSign** the arithmetic
-  still is. ⚠️ **Before retargeting a `\cref`, check it is not that float's ONLY body
+  still is. ⚠️ **Ch.5 RECAPS Ch.3, so scoping a Ch.3 wording is not done until the
+  CONCLUSION is re-grepped** — `05-conclusion.tex` still said "serialization rather than
+  arithmetic dominates" on 2026-09-02, weeks after the body was fixed and unnoticed by a
+  relayed audit of that very section. Settled everywhere: **the increase is codec work,
+  not arithmetic** (attribute the *gap*, never assert dominance).
+  ⚠️ **Before retargeting a `\cref`, check it is not that float's ONLY body
   reference** — `fig:overhead` had exactly one, the very sentence the critique wanted
   repointed, so the proposed fix would have orphaned it; the sweep claim now carries it.
 - **Presentation rule:** no table↔chart redundancy — the *chart* carries the body, the
@@ -349,12 +371,27 @@ the base signature.** Results/evaluation must lead with this
   **included at `width=\linewidth`, never a fraction of it**; ℓ/κ/γ go through mathtext (the
   text face carries no Greek). Gate: `scripts/check_figure_type.py` reads the sizes back out
   of the PDFs — **sizes only, so it passes a figure that is the wrong face or bold.**
-  ⚠️ **The family name does NOT pin the face, and BOLD is a size defect too** (2026-08-28,
-  `fig_onchain` rejected as "bigger than the caption and paragraph" while measuring 12pt):
-  *Latin Modern Roman* spans the optical sizes, and matplotlib took **lmroman10 + lmroman9-bold**
-  there (**lmroman17** in `plot_las_paper_figures.py`) against the body's **lmroman12** — x-heights
-  are equal but advances and stems are not, and bold LM is ~15% wider per character. So name the
-  optical size (`"LM Roman 12"` ahead of the family) and set **no figure text bold**.
+  ⚠️ **AND IT CANNOT SEE THE INCLUSION SCALE — it reads the FILE, not the page** (Royce caught
+  this on the page, 2026-09-02, after the gate had reported `fig_onchain.pdf sizes=[12.0] OK`).
+  `\includegraphics[width=0.69\linewidth]` and `\scalebox{0.69}{<tikzpicture>}` both painted
+  12pt type at **~8.3pt** beside a 12pt paragraph, and the gate stayed green. Both are removed;
+  `fig:evmtx`'s 104mm boxes fit the 145mm text width unscaled, so nothing had to be rewrapped.
+  **Grep for `\scalebox` and for `width=0.<n>\linewidth` — the gate will never flag either.**
+  ⚠️ `fig:onchain` no longer takes a text-free page — see the float-page rule below.
+  ⚠️ **The family name does NOT pin the face, and BOLD is a VISUAL-WEIGHT/WIDTH defect —
+  not a size defect** (2026-08-28, `fig_onchain` rejected as "bigger than the caption and
+  paragraph" while measuring 12pt): *Latin Modern Roman* spans the optical sizes and
+  matplotlib chooses among them, so the bare family is not a pin — it resolves to
+  **lmroman10 (+ lmroman9-bold)** here. Always name the optical size, and set **no figure
+  text bold**: bold LM is ~15% wider per character and much heavier at the *same* 12pt,
+  which is why a size gate passes it.
+  ⚠️ **THE PIN IS `"LM Roman 17"`, NOT the body's lmroman12 — Royce's decision, 2026-09-02,
+  after matching `fig_onchain` against the NEIGHBOURING figures, above all `fig:rejcdf`;
+  supersedes the 2026-08-28 "LM Roman 12" instruction.** The reference is the other figures,
+  not the paragraph in isolation: `fig_timing` / `fig_overhead` / `fig_rejection_cdf` all ship
+  lmroman17, so `fig_onchain`'s lmroman12 sat visibly heavier than its neighbours. Both plot
+  scripts now name 17, so a regeneration reproduces the shipped face instead of silently
+  switching to lmroman10 — **verify with `pdffonts`, which `check_figure_type.py` cannot see.**
   TikZ figures use `\normalsize` throughout — **widen a box or break a line, never
   shrink the font**. ⚠️ **A MARK IS ARTWORK, NOT A LABEL, and the floor is a FLOOR** (Royce,
   2026-09-01: *"harus pakai logo BTC dan ETH sungguhan"*): `fig:swapidea` carries the real
@@ -423,6 +460,24 @@ the base signature.** Results/evaluation must lead with this
   caption from prose, and plotted figures carry 12pt interior text by the type-floor rule, so
   axis labels read as body too). The reliable test is the recipe above: **head and tail of the
   page** — a float-only page opens on figure/table content and ends inside its own caption.
+  ✅ **What DOES automate is LEADING, not size** (2026-09-02): body baselines are **17.9pt**
+  apart, captions and tabular rows **13.5–14.9**, so a page with no run of ~17.9pt line gaps
+  carries no paragraph. `pdftotext -bbox` gives the baselines; count per page.
+  ⚠️ **§3.2 CANNOT BE FIXED BY PLACEMENT — THE ARITHMETIC IS THE CAUSE (measured 2026-09-02,
+  after Wang's "not sure if it is a good idea to have only one picture on page", 2026-08-31).**
+  `sec:res-compute` carries **five floats (~2000pt) against ~25 lines of prose (~450pt)**, and
+  LaTeX sets text top-down, so a float owns a page exactly where the prose has run out.
+  **Every remedy that frees space on the EARLIER pages makes it worse**, because the prose is
+  then consumed sooner: shorter figure canvases, trimmed captions and moving a paragraph
+  between two floats all measured as no better, and on a float page the freed height is
+  redistributed as white space *above* the figure. Source order and `[!ht]` change nothing at
+  all — floats queue and text flows past them regardless. `[H]` does force prose onto every
+  page and is the one thing that "works", at the price of a **near-empty page** wherever the
+  next float misses the remaining space; that is why `[H]` stays banned. What is left is a
+  trade Royce owns: the `\FloatBarrier` before §3.2 buys **two fewer** figure-only pages by
+  spending the bottom half of the chapter-opening page (**4 lone pages without it, 2 with**),
+  and beyond that only **removing an exhibit** helps — moving `tab:rejstats` to the appendix
+  measured 4→2 and both tables 4→1. Do not re-derive this; quote it.
 - **Criterion figure is NOT "reproduced unmodified"** — Criterion's 12-unit type renders at
   ~4 pt at `\linewidth`, and its key column spends a fifth of the width on five strings.
   `scripts/gen_criterion_figure.py` enlarges the type, **moves the legend from the right column
@@ -472,18 +527,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-01 22:09 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-02 16:45 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`main`** · HEAD cec9519 · 2026-08-31 · report deck 31_08 6:51 pm
-- Working tree: 33 modified tracked file(s), 53 untracked path(s) · vs `origin/main`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD a7dddb2 · 2026-09-01 · final report audit fixes 1/09 10:22pm
+- Working tree: 55 modified tracked file(s), 34 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `a7dddb2 2026-09-01 final report audit fixes 1/09 10:22pm`
   - `cec9519 2026-08-31 report deck 31_08 6:51 pm`
   - `e8d2481 2026-08-28 evidence 28_08 18:37`
   - `c80dacb 2026-08-28 28_08 18:36`
   - `c41bbb5 2026-08-27 deck report 27_08 19:05`
-  - `9032d1d 2026-08-25 introductory material`
 
 ### Target parameter set — anchors parsed from source
 
@@ -499,7 +554,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260901_215744` (dir mtime 2026-09-01)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8989** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **9095** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -516,8 +571,8 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ### Freshness tripwires
 
-- Stage-1 evidence (2026-08-28) is newer than the newest scheme source (2026-08-25) — measurements match the code.
-- `CLAUDE.md` hand-written sections last touched 2026-09-01.
+- ⚠ Source newer than Stage-1 evidence: `ref/serialize.c` (2026-09-02 16:44) > `evidence/latest` (2026-08-28 14:47). Numbers in the report may predate the code — re-run the suite before quoting them.
+- `CLAUDE.md` hand-written sections last touched 2026-09-02.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -643,8 +698,19 @@ KAT-locked to C byte-for-byte.
   the codec stays pure); it is the byte interface an on-chain verifier consumes, and it uses the
   codec internally. Wire form `c_tilde ‖ BitPack(z)`;
   **`z` dominates the signature** (share = macro, → rule 3).
+  ⚠️ **DESCRIBE `z`'s ENCODING MECHANICALLY — never "stored at full width", "not packed" or
+  "uncompressed"** (§3.4 carried the first until 2026-09-02; relayed critique RIGHT, and the
+  claim contradicted our own `app:serialize`, which already prints the width). `z` is
+  **bounded by the rejection bound**, then **centre-shifted by `LAS_Z_OFFSET` and BitPacked at
+  a fixed `LAS_Z_COEFF_BITS`** — 18/19 bits, selected from `2(γ−κ)`, against the 23-bit
+  `LAS_PK_COEFF_BITS` the modulus needs. ⚠️ **"Range-reduced" is NOT the fix** — it names a
+  different operation; say what the codec does. What is genuinely absent is **entropy coding**,
+  the only opening future work may claim. The same edit killed a companion absolute — "any
+  optimisation of LAS signatures is an optimisation of `z`", false for the `c_tilde` remainder:
+  `z` is the **main target** for signature size, never the only one.
 - Deterministic API + pinned KATs: `base_keygen_seed` / `base_sign_det` / `las_presign_det`, mask
-  seed `SHAKE256(tag‖sk‖[Y]‖M)`; reproducible across machines. ⚠️ **The digest absorbs FIVE
+  seed `SHAKE256(tag‖sk‖[Y]‖M)`; reproducible across machines. ⚠️ **The pinned known-answer value
+  (never call it a "digest" in report or deck prose — M12 Overleaf) covers FIVE
   objects over four fixed vectors — packed pk, sk, σ, σ̂, adapted σ — and nothing else** (C and
   Rust identical). PreVerify and Ext are *asserted*, never hashed, so never write that it
   "covers the four adaptor operations", nor that "any divergence would flip it": a hash
@@ -672,6 +738,14 @@ Groth16, (3) LAS + LaZer, from one pinned master seed.
 - **Attribution rule:** **2→3 is the controlled comparison** (same signature, same relation, only
   the prover differs — lead with it); 1→2/3 is a whole-stack comparison, *not* the cost of the PQ
   signature alone.
+  ⚠️ **`\cmpTimePctAbs` / `\cmpBytesPctAbs` ARE CONFIGURATION-LEVEL — never attach either to
+  "the prover" or "the proof"** (Ch.5 did until 2026-09-02; relayed critique RIGHT). The
+  generator derives them from `\cfgTwo/ThreeTotalMean` and `\cfgTwo/ThreeBytesTotal`
+  (`gen_stage2_data.py:157-162`), i.e. **end-to-end swap time** and **total communication per
+  swap**. The prover and the proof have their own, far larger ratios — the proof's is
+  `\stageTwoProofSizeRatio` — so a component subject beside a configuration figure understates
+  by orders of magnitude. Same class as the 2026-08-26 absolute-time-ordering-carried-to-an-
+  overhead-ratio defect: **check what the macro's INPUTS were before choosing its subject.**
 - ⚠️ **`Tx::sighash()` HASHES NOTHING — the name is not a warrant** (`utxo.rs:144`; the report
   called its output "the signature hash" until 2026-09-01, relayed critique RIGHT). It returns
   the template's **canonical bytes**, and `serialize()` is exactly those bytes plus a
@@ -1445,10 +1519,13 @@ all**, because Wang ruled the un-refined direction stays *discussion without act
 word-count-free is not a reason (a reviewing model proposed exactly this on 2026-08-11). Never
 write "loses on every axis" either (only three axes were measured). ⚠️ §reflection-achieved names
 **TWO** optimisations since 2026-08-19 (amortisation removed) and must NOT say both closed their
-direction: statement **truncation** did — say *truncation*, not "compression", since the seed
-candidate succeeds and leaks the witness — while the succinct-PQ one is closed **on cost, at this
-statement size, through our encoding** — the same section's own bullet says what is still open,
-and the two must agree. ⚠️ eprint 2020/845 asks of π **knowledge of a short witness to Y** (§4.1)
+direction: statement **truncation** did — say *truncation*, not a bare "compression", since the
+seed candidate succeeds and leaks the witness — while the succinct-PQ one is closed **on cost, at
+this statement size, through our encoding** — the same section's own bullet says what is still
+open, and the two must agree. ⚠️ **That bars the UNSCOPED word only: "compressing `Y` INSIDE THIS
+CONSTRUCTION" is closed outright and must NOT be narrowed to "truncation"** — `sec:future`'s own
+bullet closes *both* candidates (truncation fatal at both boundaries; the seed hands over the
+witness), which is the recorded verdict. Narrowing it would understate what was measured. ⚠️ eprint 2020/845 asks of π **knowledge of a short witness to Y** (§4.1)
 and notes π is costly in communication but adds no *on-chain storage* cost; it does **not** require
 succinctness (that was this project's own goal), and "NIZK" is its wording in the **PCN** section,
 not §4.1 — never attribute succinctness or the §4.1 ZK label to the paper. LaBRADOR size is labelled the library's estimate;
@@ -1568,11 +1645,34 @@ meeting block here.
 - ✅ Accepted as they stand: structure, ≥5 objectives, contributions, critical reflection, 28
   citations, the Ch.3/Ch.4 split; only subsection *titles* may need a tweak. **13 slides counted
   by Wang himself** — closes M11's "you have 10 slides" question.
+  ⚠️ **THAT ACCEPTANCE ANSWERS THE RECURRING "Ch.4 SHOULD HOLD THE REFLECTION" PROPOSAL**
+  (relayed critique 2026-09-02, DECLINED). Rubric 3.1.4 is *"Evaluation and/or Reflection"*, and
+  §3.1's own preamble says the criteria are **not section-heading requirements** (only Abstract
+  and Conclusion are) — so it is served by Ch.4 **plus** Ch.5's `sec:reflection` (M8 fixed that
+  title) **plus** Ch.3's testing and `sec:res-validity`. **Do not rename Ch.4 merely to mirror
+  rubric 3.1.4, and do not move reflection into it:** neither is required by the rubric, while
+  the present Ch.3/Ch.4/Ch.5 split was accepted by Wang. Ch.4 being the shortest chapter is
+  likewise not a defect on its own — M8 ruled word count need not track rubric weighting.
 - ⚠ **WRITTEN Overleaf comments have started arriving (first: 2026-08-31, "also need to cite some
   isogeny-based adaptor signatures").** DONE in §1.2 — `tairi2021post` (Tairi, Moreno-Sanchez,
   Maffei, FC 2021: IAS on CSI-FiSh, proved secure in QROM, **implemented and evaluated**, verified
   in `2020-1345.pdf`). ⚠ It sits **after** "Their work is primarily theoretical", which judges
   Esgin et al.\ alone — IAS is not theory-only, so never let that sentence drift onto it.
+  ⚠ **Second, same day: *"not sure if it is a good idea to have only one picture on page"*,
+  against `fig:onchain`** (Royce identified the anchor). Fixed by dropping the hand-forced
+  `\clearpage` + `[H]` around it and the barrier before `sec:res-validity`, so it is now set
+  with that section's prose. The comment is also the standing warrant for the float-page rule
+  in FOCUS — Wang reads text-free pages as a defect, so treat any new one as a review finding.
+  ⚠ **Third, 2026-08-31 10:24, on the objectives bullet: *"digest" in crypto is more relevant to
+  hash functions.*** Settled report-wide 2026-09-02, and it is a SPLIT, not a sweep: the KAT's
+  pinned reference is a **"known-answer value"** (short form **"the pinned value"** where the same
+  sentence already says *known-answer*), while **"digest" is RESERVED for an actual hash output** —
+  the challenge digest `c̃`, the BIP341/sighash digests, the benchmark's "32-byte digest", and
+  `tab:tests`' *"one SHAKE256 digest compared against a pinned 32-byte value"*, which is the
+  mechanism sentence and the model for the whole split. ⚠ Deck slide 8 and two `data-notes`
+  carried the same phrase — **grep the DECK whenever a report wording is settled**. ⚠ The value
+  genuinely *is* a hash, so this is a READABILITY ruling, not a correctness one: never "fix" it
+  back by arguing the term was accurate.
 - 📅 Report+slides+video to Wang **Fri 2026-08-28 17:00**; he reads Sun/Mon; optional meeting
   **Thu 2026-09-03**; submission **Fri 2026-09-04**.
 **Nothing in M12 authorises a new experiment; the M10 freeze stands.**
@@ -1985,7 +2085,20 @@ Be direct, evidence-based, scoped.
   · plain-English explainer: `docs/01-introduction/LAS_WALKTHROUGH.md` · build order:
   `docs/04-evaluation/PROJECT_HISTORY_EXPLAINED.md`.
 - **Assessment:** `MSc_Report_and_Video_Rubric.md` · writing guidance:
-  `docs/references/Lecture5_ResearchWriting_2026_Lin.md`, `muthesis_formatting_rules.md`.
+  `research_writing_guide.md`, `docs/references/Lecture5_ResearchWriting_2026_Lin.md`,
+  `muthesis_formatting_rules.md`.
+  ⚠️ **STANDING (Royce, 2026-09-02): consult `MSc_Report_and_Video_Rubric.md` AND
+  `research_writing_guide.md` on every report or deck edit** — *"so we can maintain high
+  quality of the report"*. They are the marking scheme, so they bind like a supervisor
+  ruling, and a rule of theirs is not satisfied by having read it once. The bindings that
+  bite most often here: **~8,000 words, 7,000–9,000 penalised outside** (references,
+  appendices and captions excluded — which is why appendix and caption edits are free);
+  **every acronym defined on first use**; sole-author voice **prefers a plain subject or
+  "the data show…" over an authorial "we"** — ⚠️ *not* a ban on the word, the guide keeps
+  reader-inclusive "we see that…"; **every equation numbered**; **no `1.2.1.2` heading
+  depth**; every figure **referred to in the body** and its caption **self-contained**.
+  ⚠️ Rubric §3.1 states the criteria are **not** section-heading requirements (only
+  Abstract and Conclusion are) — the standing answer to "rename Ch.4 to mirror 3.1.4".
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

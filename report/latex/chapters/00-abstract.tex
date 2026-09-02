@@ -14,7 +14,7 @@ The artefact is built \emph{additively}: the entire lattice core is reused uncha
 while the adaptor layer (PreSign, PreVerify, Adapt, Extract), a wire encoding, and the
 application are added as new code. It passes functional, serialization, tamper and
 known-answer tests, and an independent Rust implementation reproduces the wire format and
-pinned digest byte-for-byte under a different compiler and harness.
+pinned value byte-for-byte under a different compiler and harness.
 
 The primary comparison is LAS against its own simplified Dilithium-style base at
 identical parameters and primitives, which isolates the adaptor layer's cost; a classical

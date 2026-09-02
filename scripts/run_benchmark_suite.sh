@@ -298,4 +298,5 @@ fi
 echo
 echo "Run complete. Organised evidence in: $RUN_DIR"
 echo "  -> show paper_package/ to Wang (Stage-1); see MANIFEST.md for the full layout."
-echo "  -> report/latex synced to this run; rebuild the PDF with: make -C report/latex"
+echo "  -> report/latex: as reported by sync_report.sh above -- it DEFERS, leaving the"
+echo "     report untouched, until the Rust logs exist; rebuild with: make -C report/latex"

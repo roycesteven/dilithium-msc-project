@@ -53,7 +53,7 @@ governs the MSIS hardness parameter, not the acceptance rate.
 > `t_sign / t_verify` and reported ~23 % acceptance (~4.3 attempts). That
 > estimator is **biased**: one Sign attempt does `n+ℓ = 8` `c·r` products plus
 > `A·y`, whereas one Verify does only `n = 4` `c·t` products plus `A·z`, so a Sign
-> attempt is dearer than a Verify and the ratio over-counts attempts. The direct
+> attempt is more costly than a Verify and the ratio over-counts attempts. The direct
 > counter (~37 %, ~2.7 attempts) supersedes it and agrees with the `e^{-1}`
 > theory line — a small but honest example of preferring direct measurement to a
 > proxy.
@@ -483,4 +483,3 @@ Reproduce: `cd evm && forge test --match-contract LASVerifyCost -vv` (and
 `--gas-report` for the clean per-function figures).
 
 ---
-

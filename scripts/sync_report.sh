@@ -37,6 +37,26 @@ FIG="$ROOT/report/latex/figures"
 BUILD=no
 [ "${1:-}" = "--build" ] && BUILD=yes
 
+# --- 0. both halves of the evidence must exist before ANYTHING is rewritten ---
+# Step 2's gen_report_data.py parses the C and the Rust logs in ONE pass and dies on a
+# missing Rust log.  The three Rust logs are written by run_rust_bench_suite.sh and none
+# of them is tracked, so on a clean checkout all three are absent.  Bail out BEFORE step
+# 1 rather than part-way through: a run that refreshed the figures and then died on the
+# macros would leave report/latex HALF synced -- figures from this run beside macros from
+# the last one -- which is worse than not syncing at all.  Exit 0, because the C suite has
+# already saved its evidence and this is the documented order, not a failure.
+RUST_LOG_DIR="$ROOT/rust/fips204-las"
+RUST_MISSING=""
+for rlog in bench_levels_rust.log size_report_rust.log bench_las_criterion.log; do
+  [ -f "$RUST_LOG_DIR/$rlog" ] || RUST_MISSING="$RUST_MISSING $rlog"
+done
+if [ -n "$RUST_MISSING" ]; then
+  echo "sync_report.sh: DEFERRED -- missing Rust log(s):$RUST_MISSING" >&2
+  echo "  report/latex left untouched (figures and generated/*.tex unchanged)." >&2
+  echo "  Run scripts/run_rust_bench_suite.sh next; its own sync then does both halves." >&2
+  exit 0
+fi
+
 # --- 1. figures: evidence/latest -> report names ---------------------------
 declare -A FIGMAP=(
   ["paper_package/communication_components_paper.pdf"]="fig_components.pdf"

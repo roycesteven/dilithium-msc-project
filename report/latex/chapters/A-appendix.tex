@@ -3,7 +3,7 @@
 
 This appendix carries the supporting implementation, methodology and reproducibility
 material that would interrupt the main report if presented in full: the commands needed to
-reproduce the evaluation, the derivations deferred from \cref{ch:methodology}, the
+reproduce the benchmarks and tests, the derivations deferred from \cref{ch:methodology}, the
 representative \textsc{PreSign}, \textsc{Adapt} and \textsc{Extract} routines,
 supplementary benchmark data, and the real-client blockchain experiments. The complete
 source and evidence artefacts remain in the project repository.
@@ -11,7 +11,17 @@ source and evidence artefacts remain in the project repository.
 \section{Building and reproducing the benchmarks}
 \label{app:repro}
 
-The evaluation is reproducible from the commands below. The upstream Dilithium
+% SCOPE, not decoration.  This section reproduces the benchmarks and tests; the Stage-2
+% swap, the on-chain measurements and the real-client node runs have their own runners and
+% evidence paths in the later sections, which an unscoped "the evaluation is reproducible
+% from the commands below" claimed as well.  NOT labelled "Stage-1": the same listing also
+% builds test_zkp3, test_swap3 and the LaZer library, which are application targets.
+The benchmarks and tests are reproducible from the commands below; the application
+experiments --- the Stage-2 swap, the on-chain measurements and the real-client node runs
+--- are recorded with their own evidence paths in the later sections of this appendix.
+This report's numbers are regenerated from the C and the Rust logs together, so on a clean
+checkout the C suite saves its evidence and defers the report sync, leaving the report
+untouched; running the Rust suite next completes it. The upstream Dilithium
 reference is pinned at the repository's initial commit (\texttt{2374d22}); the
 classical baseline library is the BlockstreamResearch \texttt{secp256k1-zkp}
 \texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}; the proof-of-knowledge library
@@ -23,10 +33,16 @@ toolchain is the system compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-
 the Rust toolchain is stable \texttt{rustc} (the committed run used 1.96.0) in
 release profile.
 
+% "runs the tests and benchmarks below" was wrong twice over: STAGE1_ONLY=1 does NOT run
+% the application targets listed individually further down, and the sync no longer always
+% regenerates -- on a clean checkout it defers until the Rust logs exist.
 \begin{lstlisting}[language=bash,caption={Fair benchmark and tests (first-stage
-evaluation). The suite script runs the Stage-1 tests and benchmarks below, saves the
-logs and parsed tables as a timestamped evidence run, and regenerates this report's
-Stage-1 figures, tables and inline numbers from that run.},label={lst:benchfair}]
+evaluation). The suite script saves the Stage-1 C logs and parsed tables as a timestamped
+evidence run; the application targets listed individually below are outside that subset.
+It then calls the report sync, which regenerates this report's figures, tables and inline
+numbers from the C and the Rust logs together --- so on a clean checkout, where the Rust
+logs do not yet exist, that step defers and leaves the report untouched until the suite in
+\cref{lst:rust} has run.},label={lst:benchfair}]
 # the supported evidence pipeline: Stage-1 tests + benchmarks, then report sync.
 # STAGE1_ONLY=1 skips the four application targets -- test_contract3, test_pcn3 and
 # bench_app3, superseded pre-seven-type files that no longer compile, and test_swap3,
@@ -71,8 +87,8 @@ cd third_party/lazer && make lazer.h liblazer.a
 
 The Rust port is reproduced with the standard Cargo tooling; the test gate runs
 first because the benchmarks refuse to time unverified code, and the known-answer
-test asserts the same pinned digest as the C implementation.
-% Digest value is not printed: pinned KAT digest = \katDigestHead\ldots\katDigestTail
+test asserts the same pinned value as the C implementation.
+% Value is not printed: pinned KAT digest = \katDigestHead\ldots\katDigestTail
 
 \begin{lstlisting}[language=bash,caption={Rust port: test gate, statistical
 benchmark, protocol driver, and size report (one suite script, or the four steps
@@ -82,7 +98,9 @@ scripts/run_rust_bench_suite.sh
 
 # or individually:
 cd rust/fips204-las
-cargo test --lib --tests                    # gate: includes the pinned KAT digest
+# conversion::tests cover the vendored crate's hint/Power2Round helpers, which the
+# LAS port does not use (it has its own serialize.rs), so the gate skips them
+cargo test --lib --tests -- --skip conversion::tests  # gate: known-answer value
 cargo bench --bench las_bench               # Criterion.rs statistical harness
 cargo run --release --example bench_levels  # protocol driver (mirrors the C driver)
 cargo run --release --example size_report   # packed component sizes
@@ -225,7 +243,13 @@ discrete-logarithm-equality proof --- whereas the LAS pre-signature shares the s
 format exactly.
 
 \paragraph{What the restructured on-chain verifier changes, and how it was checked.}
-The two \texttt{claimLASVerified*} rows of \cref{tab:onchain} decide the same predicate as
+% NEVER state this equivalence flatly: it holds only under the registration invariant,
+% which neither verifier checks, and where the invariant fails a DIFFERENT predicate is
+% decided.  The next paragraph sets the invariant out; this sentence must not assert the
+% equivalence before the reader reaches it.
+Subject to the registration invariant set out in the next paragraph, which neither
+verifier checks, the two \texttt{claimLASVerified*} rows of \cref{tab:onchain} decide the
+same predicate as
 \texttt{base\_verify}: decode, norm bound, $w'=A\vecz-c\,t$, and the SHAKE256 challenge
 check. The first mirrors those steps directly from the vendored ZKNox primitives and is
 validated against the C reference. The second re-expresses them: the public key is
@@ -353,12 +377,17 @@ deliberately \emph{asymmetric}, and the asymmetry is worth stating precisely bec
 decides where a bad object is caught. Decoding rejects a public-key or statement
 coefficient $\ge q$ and the invalid ternary code, but a signature decodes
 \emph{permissively}: $\tilde c$ is copied raw and $z$ is read with the FIPS~204
-\textsf{BitUnpack} of \cite{1274601}, under which every field value is in range by
-construction, so there is no decode-time norm test to fail. The norm rejection belongs
-to Verify, which recomputes the challenge from the decoded response and compares
-digests. Encoding is the strict direction: it refuses a non-ternary secret or witness
-and a response exceeding $\gamma-\kappa$, so a malformed object cannot be produced by
-this implementation even though one can be handed to it. The byte-level entry point
+% NOT "every field value is in range by construction" -- that was false at every
+% parameter set.  The valid band [0, 2(gamma-kappa)] never fills the fixed-width field
+% carrying it, so a large minority of field values decode to an OUT-OF-BAND z.  The
+% permissiveness is real, not vacuous, which is exactly why Verify owns the norm test.
+\textsf{BitUnpack} of \cite{1274601}. The response band $[0,2(\gamma-\kappa)]$ does not
+fill the fixed-width field that carries it, so some byte strings decode to a $z$ outside
+the valid band. That is intentional: there is no decode-time norm test to fail. The norm
+rejection belongs to Verify, which recomputes the challenge from the decoded response and
+compares digests. Encoding is the strict direction: it refuses a non-ternary secret or
+witness and a response exceeding $\gamma-\kappa$, so the serializer cannot emit an
+out-of-band response, even though one can be handed to the decoder. The byte-level entry point
 \texttt{base\_verify\_packed} decides the predicate over these bytes, and it --- not the
 decoder --- is what rejects all \tamperFlips{} tampered signatures in
 \cref{sec:res-correctness}.
@@ -414,7 +443,9 @@ Because LaZer proves per-partition binary coefficients or exact Euclidean norms,
 ternary statement is encoded by binary decomposition,
 $[\mathbf{A} \mid -\mathbf{A}]\,(r_{+}\,\|\,r_{-}) = Y$ with both halves proven binary,
 which is equivalent to knowledge of a ternary preimage $r' = r_{+} - r_{-}$. The
-generated parameter set reports a knowledge error below $2^{-\piKnowledgeError}$ under
+% "below" asserted a STRICT bound; the generated LaZer header states "knowledge error
+% <= 2^(-127.0)", so the bound is non-strict.
+generated parameter set reports a knowledge error at most $2^{-\piKnowledgeError}$ under
 Module-SIS and a proof size of \piProofBytes\,B --- the parameter set's own figure, larger
 than the proof bytes observed on the wire in \cref{tab:stage2-comm} and not to be
 conflated with them --- with proving and verifying each completing
@@ -444,7 +475,7 @@ than a page.
     shaped the implementation. A seventh, cross-cutting difficulty --- reproducing the
     C scheme byte-for-byte in Rust, down to how each language's uniform sampler
     discards rejected blocks --- is discussed with the cross-validation results
-    (\cref{sec:res-rust}); the pinned digest is what turned it into a mechanical
+    (\cref{sec:res-rust}); the pinned known-answer value is what turned it into a mechanical
     process. One caveat belongs with the gas figure of challenge~5: the reused ZKNox
     primitives come from a self-described non-production library, so the measurement is
     the honest cost of \emph{a} numerically-correct verifier, not an endorsement of
@@ -528,7 +559,7 @@ the evaluation.
   \caption[The four test types]{The four test types, what each asserts, and what it
   would catch. The functional suite's statement-binding clause --- that a pre-signature
   \emph{fails} basic verify --- is the tripwire that distinguishes an adaptor signature
-  from a signature; the known-answer digest is what the second implementation is
+  from a signature; the known-answer value is what the second implementation is
   checked against (\cref{sec:rustport}).}
   \label{tab:tests}
   \small
@@ -547,12 +578,18 @@ the evaluation.
       & 256 random instances; exact round-trip for keys and every signature variant
       & encoder/decoder asymmetry \\[3pt]
     Tamper
+      % SCOPED to match app:serialize, which this row contradicted: the SIGNATURE decoder
+      % is deliberately permissive (Verify rejects a tampered z), while the public-key and
+      % secret-key decoders do reject malformed input.  "Malformed encodings must be
+      % rejected" asserted the first case too.
       & every one of the \tamperFlips{} bytes of a valid packed signature flipped in
-        turn; all must break verification; malformed encodings must be rejected
-      & a decoder that trusts its input \\[3pt]
+        turn; all must break verification; malformed public-key and secret-key
+        encodings rejected at decode
+      & a verifier that accepts tampered bytes; a key decoder that trusts its input \\[3pt]
     Known-answer
-      & all inputs fixed, deterministic API, packed bytes of every object folded into
-        one SHAKE256 digest compared against a pinned 32-byte value
+      & all inputs fixed, deterministic API, packed bytes of the public key, secret key,
+        ordinary signature, pre-signature and adapted signature folded into one SHAKE256
+        digest compared against a pinned 32-byte value
       & any unintended change to sampling, algebra or encoding, on any machine \\
     \bottomrule
   \end{tabular}
@@ -596,7 +633,8 @@ taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serializ
     $d$        & ring degree ($X^{d}+1$)                                            & 256 (all sets) \\
     $q$        & modulus from the reused NTT, $q\approx 2^{23}$                     & 8\,380\,417 (all sets) \\
     $c$        & challenge polynomial, the output of $H$: $\lVert c\rVert_1=\kappa$ and
-                 $\inftynorm{c}=1$. Re-derived on decode, never transmitted
+                 $\inftynorm{c}=1$. Expanded from $\tilde c$ by the signing and
+                 verifying paths after decoding, never transmitted
                & element of $\Rq$ (all sets) \\
     $\tilde c$ & challenge \emph{digest}: the SHAKE256 output this implementation derives
                  the challenge from, following FIPS~204's pattern
@@ -656,16 +694,82 @@ than folded into a single tier.
 % non-floating listing and put the section out of reading order.
 \FloatBarrier
 
-\section{Full benchmark data tables}
+\section{Supporting benchmark evidence}
 \label{app:tables}
 
 The tables in \cref{ch:results} carry the primary results; this section gives the
-supporting data at every parameter set, produced by the commands above
-(\cref{lst:benchfair}). \Cref{tab:timing} lists every core-tier per-operation timing
-with its standard deviation (the data plotted in \cref{fig:timing}, and the source of
-the core block of \cref{tab:overhead-l3}); \cref{tab:components} gives the component
-byte sizes at every parameter set (the target setting is the body table
-\cref{tab:complete-l3}).
+supporting computation data produced by the commands above (\cref{lst:benchfair}).
+
+\subsection{Supplementary computation and rejection-sampling evidence}
+\label{app:compute-support}
+
+\Cref{tab:overhead-l3,fig:timing} are the primary computation result in the main text.
+The supporting exhibits here give the parameter-sensitivity and rejection-sampling
+evidence behind the same conclusion: \cref{fig:overhead} shows that the core-tier
+adaptor overhead remains below $+\ovMaxAll\%$ across the full sweep, while
+\cref{tab:rejstats,fig:rejcdf} compare the measured rejection behaviour with the
+geometric model and the validity gate.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_overhead}
+  \caption[Adaptor overhead across the parameter sets (sensitivity check)]{Parameter
+  sensitivity of the adaptor overhead: each LAS adaptor operation as a percentage over the
+  basic operation it mirrors, at the four parameter sets of \cref{tab:params}. PreSign is
+  paired with Sign; PreVerify and Adapt with Verify; Extract has no basic analogue and is
+  omitted. Core tier only, and the premium remains small across the sweep: all
+  target-setting adaptor operations are single-digit, and the maximum over all parameter
+  sets is $+\ovMaxAll\%$. This is a secondary robustness check on the headline of
+  \cref{fig:timing}, not a result about scaling: the primary comparison remains the
+  per-operation overhead at the target setting, \cref{tab:overhead-l3}. The absolute
+  timings behind every bar are in \cref{tab:timing}.}
+  \label{fig:overhead}
+\end{figure}
+
+\begin{table}[htbp]
+  \centering
+  \caption[Rejection-sampling statistics: model vs measurement]{Rejection-sampling
+  statistics at the target setting \emph{Simplified Dilithium-III}: the closed-form
+  geometric model of \cref{eq:rejacc} against every measured sample. ``Mean'' is
+  attempts per call and ``Accept.''\ is the per-attempt acceptance rate --- the two
+  quantities every source records, and the ones the model predicts. The per-call
+  \emph{dispersion} is recorded in the source CSV rather than repeated here. The C driver is the
+  implementation of record; the Rust protocol driver and the Criterion harness are
+  the independent samples of \cref{sec:rustport}. Every measured row passes the
+  five-standard-error validity gate of \cref{sec:benchmethod}.}
+  \label{tab:rejstats}
+  \small
+  \input{generated/tab_rejstats}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig_rejection_cdf}
+  \caption[Cumulative probability of acceptance at the target setting]{The
+  probability that a sign-class call has been accepted \emph{within} $k$
+  rejection-sampling attempts, at the target setting \emph{Simplified
+  Dilithium-III}. \textbf{The solid curves are measured}: the empirical
+  distribution of the same 2000-call sample \cref{tab:rejstats} summarises,
+  counted per attempt on the C implementation --- basic Sign (blue) under the
+  bound $\gamma-\kappa$, LAS PreSign (orange) under the tighter
+  $\gamma-\kappa-1$. The dashed lines are the closed-form geometric model of
+  \cref{eq:rejacc} for those two bounds, predicting first-attempt acceptance of
+  $36.8\%$ and $36.0\%$ respectively. The two measured curves are nearly
+  coincident, which is exactly why the PreSign-versus-Sign timing gap is so small.
+  Both pass $90\%$ within six attempts --- five clears it for Sign but not for
+  PreSign, whose bound is the tighter of the two --- and then flatten: allowing
+  many more attempts buys almost nothing.}
+  \label{fig:rejcdf}
+\end{figure}
+
+\FloatBarrier
+
+\subsection{Complete timing and component tables}
+
+\Cref{tab:timing} lists every core-tier per-operation timing with its standard deviation
+(the data plotted in \cref{fig:timing}, and the source of the core block of
+\cref{tab:overhead-l3}); \cref{tab:components} gives the component byte sizes at every
+parameter set (the target setting is the body table \cref{tab:complete-l3}).
 
 \begin{table}[htbp]
   \centering

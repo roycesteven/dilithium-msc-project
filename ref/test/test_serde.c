@@ -12,8 +12,9 @@
  *                   NOT (the statement-binding tripwire survives serialisation);
  *   - tamper:       flipping the low bit of every byte of a packed signature makes
  *                   it fail to verify;
- *   - validation:   pack rejects out-of-range inputs and unpack rejects malformed
- *                   bytes (coeff >= Q, non-ternary code, z outside the valid band).
+ *   - validation:   pack rejects out-of-range inputs; unpack rejects malformed
+ *                   key encodings (coeff >= Q, non-ternary code); signature
+ *                   decoding is permissive and Verify enforces the response norm.
  *
  * It also prints the MEASURED packed sizes (these realise the "theoretical packed"
  * figures quoted in docs/LAS.md Section 8).
@@ -224,9 +225,10 @@ int main(void) {
     memset(skbuf, 0xFF, sizeof skbuf);
     CHECK(unpack_secret_key(&tsk, skbuf) == -1, "unpack_sk must reject code 3");
 
-    /* The signature's challenge c_tilde is 32 raw bytes and its response z uses
-     * the upstream FIPS BitUnpack: both decode permissively (any bytes / any
-     * 19-bit field are in range), so there is NO decode-time rejection for a
+    /* The signature's challenge c_tilde is LAS_CTILDEBYTES of raw bytes and z uses
+     * the upstream FIPS BitUnpack: both decode permissively -- any bytes, and any
+     * field value, INCLUDING the many that fall outside the valid response band,
+     * since the band does not fill the field -- so there is NO decode-time rejection for a
      * signature -- a tampered (c_tilde, z) is caught at Verify instead (the
      * tamper loop above exercises exactly that via base_verify_packed). */
     printf("validation: unpack rejects coeff>=Q (pk) and code-3 sk; sig decode is upstream-permissive\n");

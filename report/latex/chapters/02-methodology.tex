@@ -212,7 +212,7 @@ full in \cref{tab:tests}. Functional tests assume an honest caller and assert th
 adaptor cycle, including the \emph{tripwire} clause --- a pre-signature must \emph{fail}
 basic verification --- which is what distinguishes an adaptor signature from a signature.
 Serialization and tamper tests assume a hostile caller; the known-answer test assumes a
-different machine, and its digest is what the second implementation is checked against
+different machine, and its pinned value is what the second implementation is checked against
 (\cref{sec:rustport}).
 
 \section{An independent second implementation: the Rust port}
@@ -661,5 +661,5 @@ rank-one constraint system (\cref{app:methoddetail}).
 Because gas does not exist on this venue, the axes are execution time and communication
 cost, the latter counting \emph{off-chain} protocol messages, not only what reaches a
 ledger. Sizes are observed from the transmitted buffers rather than computed, and these
-timings sit at the \textbf{packed tier}, so they are not comparable with core-tier figures
+timings sit at the packed tier, so they are not comparable with core-tier figures
 elsewhere. One-time costs are excluded and reported separately (\cref{app:methoddetail}).

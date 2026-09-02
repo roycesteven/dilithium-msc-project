@@ -4,7 +4,7 @@
 # (the Rust counterpart of scripts/run_benchmark_suite.sh).
 #
 # Runs the four steps of rust/fips204-las/BENCHMARKING.md in order, saves each
-# tool's stdout to the crate's committed log files (the canonical Rust
+# tool's stdout to the crate's log files (untracked; the canonical Rust
 # evidence locations, parsed by scripts/gen_report_data.py), then syncs the
 # report so it reflects this run. Logs are captured, never hand-edited.
 #
@@ -43,5 +43,5 @@ cargo run --release --example size_report 2>&1 | tee size_report_rust.log
 "$ROOT/scripts/sync_report.sh"
 
 echo
-echo "Rust run complete. Committed logs updated in rust/fips204-las/."
+echo "Rust run complete. Logs written (untracked) in rust/fips204-las/."
 echo "  -> report/latex synced; rebuild the PDF with: make -C report/latex"

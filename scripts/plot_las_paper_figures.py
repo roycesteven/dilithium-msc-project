@@ -119,9 +119,16 @@ def _style():
         # paragraph beside it.  lmodern is what report.tex loads, so setting the
         # figures in Latin Modern Roman makes "the same as the paragraph" true by
         # appearance and not just by measurement.
+        #
+        # The OPTICAL SIZE is named, not just the family: lmroman9/10/12/17 all
+        # answer to "Latin Modern Roman" and matplotlib chooses among them, so the
+        # bare family is not a pin -- it resolves to lmroman10 here, while the
+        # figures shipped in the report carry lmroman17.  Naming 17 makes a
+        # regeneration reproduce the shipped face instead of silently changing it,
+        # and 17 is the face fig_onchain was matched TO (Royce, 2026-09-02).
         plt.rcParams.update({
             "font.family": "serif",
-            "font.serif": ["Latin Modern Roman", "DejaVu Serif"],
+            "font.serif": ["LM Roman 17", "Latin Modern Roman", "DejaVu Serif"],
             "mathtext.fontset": "cm",
         })
     plt.rcParams.update({

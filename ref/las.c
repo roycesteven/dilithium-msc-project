@@ -271,7 +271,7 @@ rej:                                         /* [REUSED]  las.c:279: rej: */
 
   /* Write signature */
   /* [PAPER Alg.2] 7:      return σ̂ = (c, ẑ) */
-  memcpy(presig->c_tilde, c_tilde, LAS_CTILDEBYTES);  /* store the 32-byte challenge digest; c is local */
+  memcpy(presig->c_tilde, c_tilde, LAS_CTILDEBYTES);  /* store the challenge digest; c is local */
   return 0;                                  /* [REUSED]  las.c:339: return 0; */
   /* [PAPER Alg.2] 8:  end procedure */
 }
