@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  2 SEP 2026 16:49
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  2 SEP 2026 23:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -901,16 +901,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 112--112
 
  [6
 
-]
-Package microtype Info: Character `029' is missing
-(microtype)             in font `T1/lmr/m/sc/14.4'.
-(microtype)             Ignoring protrusion settings for this character.
- (./chapters/00-abstract.tex
-Underfull \hbox (badness 10000) in paragraph at lines 114--3
-
- []
-
-[7
+] (./chapters/00-abstract.tex [7
 
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvip
 s/lm/lm-mathit.enc}]) [8] [9
@@ -970,12 +961,12 @@ SHAKE256,
 
 [21] [22] [23] [24]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 421.
+(Font)              <10.95> on input line 434.
  [25{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}]
-[26] [27] [28] [29]) (./chapters/03-results.tex [30]
+[26] [27] [28]) (./chapters/03-results.tex [29] [30]
 Chapter 3.
 (./generated/tab_overhead_target.tex)
-<figures/fig_timing.pdf, id=716, 412.6617pt x 354.12299pt>
+<figures/fig_timing.pdf, id=721, 412.6617pt x 354.12299pt>
 File: figures/fig_timing.pdf Graphic file (type pdf)
 <use figures/fig_timing.pdf>
 Package pdftex.def Info: figures/fig_timing.pdf  used on input line 87.
@@ -986,7 +977,7 @@ Package pdftex.def Info: figures/fig_timing.pdf  used on input line 87.
 
 pdfTeX warning: pdflatex (file ./figures/fig_criterion_presign.pdf): PDF inclus
 ion: found PDF version <1.7>, but at most version <1.5> allowed
-<figures/fig_criterion_presign.pdf, id=841, 935.29424pt x 668.21893pt>
+<figures/fig_criterion_presign.pdf, id=846, 935.29424pt x 668.21893pt>
 File: figures/fig_criterion_presign.pdf Graphic file (type pdf)
 <use figures/fig_criterion_presign.pdf>
 Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line 
@@ -995,7 +986,7 @@ Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line
 [35] (./generated/tab_complete_target.tex) [36 <./figures/fig_criterion_presign
 .pdf>] [37] (./generated/tab_classical.tex) [38] [39] [40] [41] [42] [43]
 (./generated/tab_btctx_measured.tex) [44] [45] [46] [47]
-<figures/fig_onchain.pdf, id=1003, 412.6617pt x 284.02109pt>
+<figures/fig_onchain.pdf, id=1009, 412.6617pt x 284.02109pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
 Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 732.
@@ -1015,13 +1006,56 @@ Chapter 5.
 
 ] [55]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-20.
+17.
  (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [56] [57{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]) (./chapters/A-appe
-ndix.tex [58]
+) [56{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}]) (./report.bbl [57]
+Underfull \hbox (badness 2181) in paragraph at lines 9--12
+[]\T1/lmr/m/n/12 (+20) National In-sti-tute of Stan-dards and Tech-nol-ogy (NIS
+T), T. Dang,
+ []
+
+[58
+
+]
+Underfull \hbox (badness 1675) in paragraph at lines 78--82
+\T1/lmr/m/n/12 (+20) Soft-ware li-brary, 2026.  []$\T1/lmtt/m/n/12 https : / / 
+github . com / BlockstreamResearch /
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 78--82
+\T1/lmtt/m/n/12 secp256k1-[]zkp$[]\T1/lmr/m/n/12 (+20) , com-mit 95b9835 (3 Jun
+e 2026), ven-dored at
+ []
+
+[59]
+Underfull \hbox (badness 10000) in paragraph at lines 143--151
+[]\T1/lmr/m/n/12 (+20) Bitcoin Core de-vel-op-ers, ``Trans-ac-tion re-lay and m
+in-ing pol-
+ []
+
+
+Underfull \hbox (badness 5802) in paragraph at lines 143--151
+\T1/lmr/m/n/12 (+20) icy lim-its (\T1/lmtt/m/n/12 src/policy/policy.h\T1/lmr/m/
+n/12 (+20) ).'' Source code, 2026.  []$\T1/lmtt/m/n/12 https :
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 143--151
+\T1/lmtt/m/n/12 / / github . com / bitcoin / bitcoin / blob / v31 . 1 / src / p
+olicy / policy . h$[]\T1/lmr/m/n/12 (+20) ;
+ []
+
+
+Underfull \hbox (badness 2980) in paragraph at lines 143--151
+\T1/lmtt/m/n/12 MAX_STANDARD_TX_WEIGHT\T1/lmr/m/n/12 (+20) , \T1/lmtt/m/n/12 MA
+X_STANDARD_P2WSH_STACK_ITEM_SIZE \T1/lmr/m/n/12 (+20) and
+ []
+
+[60]) (./chapters/A-appendix.tex [61]
 Appendix A.
-[59
+[62
 
 ] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
@@ -1033,94 +1067,57 @@ Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 45.
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/lmtt/b/n' tried instead on input line 54.
- [60] [61]
-[62] [63]
-Overfull \hbox (0.97295pt too wide) in paragraph at lines 195--210
+ [63] [64]
+[65] [66] [67]
+Overfull \hbox (0.97295pt too wide) in paragraph at lines 245--260
 \T1/lmr/m/n/12 (-20) --- the expensive ingredient in a rank-one constraint syst
 em. The public linear map is
  []
 
-[64] [65] [66]
-Overfull \hbox (18.38214pt too wide) in paragraph at lines 307--324
-\T1/lmtt/m/n/12 scripts/derive_onchain_d5_bound.py\T1/lmr/m/n/12 (-20) , run \T
-1/lmtt/m/n/12 evidence/onchain_d5bound/\T1/lmr/m/n/12 (-20) ). What
- []
-
-[67] [68]
-Overfull \hbox (8.02162pt too wide) in paragraph at lines 417--417
-[]\T1/lmr/bx/n/17.28 (-20) The atomic-swap demon-stra-tion and its proof
- []
-
-[69] [70] [71] [72] [73] [74]
-Overfull \vbox (46.63821pt too high) has occurred while \output is active []
-
-
-[75] [76]
-<figures/fig_overhead.pdf, id=1408, 412.6617pt x 404.712pt>
+[68] [69] [70] [71] [72] [73] [74] [75] [76] [77] [78] [79] [80]
+(./generated/tab_rejstats.tex)
+<figures/fig_overhead.pdf, id=1478, 412.6617pt x 404.712pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
-Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 715.
-(pdftex.def)             Requested size: 412.56496pt x 404.61838pt.
- (./generated/tab_rejstats.tex)
-<figures/fig_rejection_cdf.pdf, id=1425, 412.6617pt x 346.89601pt>
+Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 802.
+(pdftex.def)             Requested size: 297.04727pt x 291.3245pt.
+<figures/fig_rejection_cdf.pdf, id=1485, 412.6617pt x 346.89601pt>
 File: figures/fig_rejection_cdf.pdf Graphic file (type pdf)
 <use figures/fig_rejection_cdf.pdf>
-Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 747.
+Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 813.
 
-(pdftex.def)             Requested size: 412.56496pt x 346.81575pt.
- [77] [78 <./figures/fig_overhead.pdf>] [79 <./figures/fig_rejection_cdf.pdf>] 
-(./generated/tab_timing.tex)
-(./generated/tab_components.tex) [80
-
-] [81]
+(pdftex.def)             Requested size: 297.04727pt x 249.70671pt.
+ [81 <./figures/fig_overhead.pdf>]
+(./generated/tab_timing.tex
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10> on input line 5.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <7> on input line 5.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 5.
+) (./generated/tab_components.tex) [82 <./figures/fig_rejection_cdf.pdf>] [83]
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2023/02/27 1.9 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2023/02/27 1.9 (Carsten Heinz)
-) [82] [83]
-[84] [85] [86] [87] [88]) (./report.bbl [89]
-Underfull \hbox (badness 10000) in paragraph at lines 27--35
-[]\T1/lmr/m/n/12 (+20) Bitcoin Core de-vel-op-ers.  Trans-ac-tion re-lay and mi
-n-ing pol-
- []
-
-
-Underfull \hbox (badness 3449) in paragraph at lines 27--35
-\T1/lmr/m/n/12 (+20) icy lim-its (\T1/lmtt/m/n/12 src/policy/policy.h\T1/lmr/m/
-n/12 (+20) ).  Source code, 2026.  []$\T1/lmtt/m/n/12 https :
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 27--35
-\T1/lmtt/m/n/12 / / github . com / bitcoin / bitcoin / blob / master / src / po
-licy / policy . h$[]\T1/lmr/m/n/12 (+20) ;
- []
-
-[90
-
-] [91]
-Underfull \hbox (badness 4366) in paragraph at lines 137--141
-[]\T1/lmr/m/n/12 (+20) Andrew Poel-stra.  Script-less scripts.  Pre-sen-ta-tion
-, Mi-lan Bit-
- []
-
-[92]) [93] (./report.aux)
+) [84] [85]
+[86] [87] [88] [89]) [90] [91] (./report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `report.out' has not changed.
-(rerunfilecheck)             Checksum: 7498C30889579F426C3CF6B4DC2FFA8C;12384.
+(rerunfilecheck)             Checksum: D701605658134F88CCEBA30760914B89;12360.
  ) 
 Here is how much of TeX's memory you used:
- 29392 strings out of 476182
- 533762 string characters out of 5795595
- 2230975 words of memory out of 5000000
- 50008 multiletter control sequences out of 15000+600000
- 696332 words of font info for 313 fonts, out of 8000000 for 9000
+ 29511 strings out of 476182
+ 535401 string characters out of 5795595
+ 2212975 words of memory out of 5000000
+ 50062 multiletter control sequences out of 15000+600000
+ 736847 words of font info for 361 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,14n,87p,1003b,2232s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,87p,1003b,2203s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/ty
 pe1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmbxi10.pfb></
 usr/share/texmf/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1
@@ -1137,10 +1134,10 @@ blic/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmtk10.pfb></usr/shar
 e/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public/l
 m/lmtt12.pfb></usr/share/texmf/fonts/type1/public/lm/lmtti10.pfb></usr/share/te
 xlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (93 pages, 876702 bytes).
+Output written on report.pdf (91 pages, 877636 bytes).
 PDF statistics:
- 1997 PDF objects out of 2073 (max. 8388607)
- 1524 compressed objects within 16 object streams
- 411 named destinations out of 1000 (max. 500000)
- 74243 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 1994 PDF objects out of 2073 (max. 8388607)
+ 1528 compressed objects within 16 object streams
+ 414 named destinations out of 1000 (max. 500000)
+ 94723 words of extra memory for PDF output out of 106986 (max. 10000000)
 

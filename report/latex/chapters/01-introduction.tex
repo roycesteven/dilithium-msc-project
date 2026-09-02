@@ -400,9 +400,9 @@ post-quantum adaptor signature, and measurements of its cost. Four findings carr
 % of this sentence asserted more than the measurement supports on both counts.
 At the core tier, adaptor functionality measures close to free in computation over the
 simplified Dilithium-style base at identical parameters, but expensive in communication:
-bytes, not time (\cref{sec:res-compute,sec:res-comm}). The LAS paper's simplified
-Dilithium-style base omits ML-DSA's hint and rounding machinery; this project tested
-whether they could coexist with the adaptor layer. \textsc{PreSign} and
+bytes, not time (\cref{sec:res-compute,sec:res-comm}). The base in \cite{esgin2020post}
+simplifies Dilithium by omitting its hint and rounding machinery. On the full
+ML-DSA path, \textsc{PreSign} and
 \textsc{PreVerify} require adaptor-specific algorithms, yet
 an unmodified FIPS~204 verifier accepts the adapted signature (\cref{sec:res-mldsa}). At
 application scale the bottleneck is not the signature but the zero-knowledge proof, leaving

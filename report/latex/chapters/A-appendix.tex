@@ -106,6 +106,25 @@ cargo run --release --example bench_levels  # protocol driver (mirrors the C dri
 cargo run --release --example size_report   # packed component sizes
 \end{lstlisting}
 
+% The ML-DSA experiment is a TEST + BENCHMARK, so it falls inside this section's claim
+% ("the benchmarks and tests are reproducible from the commands below") -- whose carve-out
+% names only the application experiments.  It is NOT run by run_benchmark_suite.sh (checked:
+% no mldsa reference in it), and before this listing no runner and no evidence path for it
+% appeared anywhere in the report, while sec:res-mldsa quotes nine measured macros from it.
+% Evidence paths stay printed: the path is part of the warrant.
+The ML-DSA adaptor experiment of \cref{sec:res-mldsa} has its own runner and its own
+evidence stream, because it measures a different construction: its logs are kept apart
+from the suite above and its numbers are never mixed with them.
+
+\begin{lstlisting}[language=bash,caption={The ML-DSA adaptor experiment: hint diagnostic,
+adaptor contract and head-to-head benchmark against the implementation of record, at all
+three parameter sets. Evidence is written to \texttt{evidence/mldsa\_hint/}; the variants
+and measurement design are set out in \cref{app:methoddetail}.},label={lst:mldsa}]
+# diagnostic + contract + benchmark at ML-DSA-44, -65 and -87
+scripts/run_mldsa_hint_experiment.sh
+# --mode N restricts to one parameter set; --skip-bench runs correctness only
+\end{lstlisting}
+
 \section{The timing-benchmark procedure}
 \label{app:benchalg}
 
@@ -190,6 +209,37 @@ PreSign. The gate is a consistency check on the observed rejection rate, not a p
 of sampler correctness: it provides evidence that the rejection behaviour is
 consistent with theory and that rejection-sampling variation is sufficiently
 controlled for the reported mean.
+
+% SCOPE, verified against ref/test/bench_mldsa_compare.c:1-42 before writing: the two
+% CONSTRUCTIONS run SEQUENTIALLY in the one process ("construction A in full, then
+% construction B (sequentially, NOT interleaved)"); only the base-vs-adaptor PAIRS inside
+% each construction are interleaved per repetition.  Writing "ML-DSA and the simplified
+% construction were interleaved" would claim the drift cancellation the source explicitly
+% says it does not get, and the drift caveat travels with the figure.
+% NITER = 200 in BOTH test_mldsa_hint.c:47 and test_mldsa_las.c:33, quoted through the
+% macro -- never retype the number.
+\paragraph{The design of the ML-DSA compatibility experiment.}
+Whether the optimisations the base of \cite{esgin2020post} omits can carry an adaptor layer
+(\cref{sec:res-mldsa}) is settled by three variants of one implementation built on
+FIPS~204 \cite{1274601} with the hint vector, Power2Round and high/low-bit split all
+enabled. A matched \emph{control} removes the statement and is otherwise the same
+instrumented code, standing to the ML-DSA construction exactly as the base signature stands
+to LAS: same file, same helpers, only the statement differs. A \emph{naive} variant changes
+one line, hashing the challenge over the shifted commitment while the committed high bits,
+the low-bits rejection test and \textsc{MakeHint} still use $w$. A \emph{repaired} variant
+moves that entire path onto $w+Y$ and tightens \textsc{PreSign}'s rejection bound by the
+witness norm. The stock FIPS~204 \texttt{crypto\_sign\_verify} is never modified: it is the
+acceptance oracle, which is what allows the decisive row to be read as a property of the
+construction rather than of a re-implemented verifier. The control is a precondition rather
+than a result --- were its signatures not accepted by that unmodified verifier, and did it
+not reproduce FIPS~204's published repetition rates, the mirror would be wrong and nothing
+else in the section interpretable. The diagnostic and the itemised adaptor contract each run
+over \mldsaIters{} randomised iterations per variant, at each of ML-DSA-44, -65 and -87.
+Cost is measured by the procedure of \cref{app:benchalg}, both constructions in one process
+on one machine under one toolchain; within each construction the base and adaptor calls are
+paired and interleaved per repetition, so drift is common-mode there, whereas the two
+constructions themselves run in sequence, leaving drift between those two blocks a caveat
+rather than something the design cancels.
 
 \paragraph{The Groth16 circuit.}
 No pairing-based proof of this lattice statement was available to reuse, so the
@@ -316,9 +366,9 @@ value-dependent branch --- and adds one measured quantity: the difference betwee
 challenge-preimage absorptions, taken against a fixed-size memory arena so that the
 scratch allocated inside the timed call cancels rather than inflating the difference. That
 this measured difference clears the gap the other terms leave is what the result rests on
-(gate \texttt{evm/test/LASShakeGrowth.t.sol}, arithmetic
-\texttt{scripts/derive\_onchain\_d5\_bound.py}, run
-\texttt{evidence/onchain\_d5bound/}). What follows is that one transaction is exceeded at
+(gate \texttt{evm/test/\allowbreak LASShakeGrowth.t.sol}, arithmetic
+\texttt{scripts/\allowbreak derive\_onchain\_\allowbreak d5\_bound.py}, run
+\texttt{evidence/\allowbreak onchain\_d5bound/}). What follows is that one transaction is exceeded at
 that set; no gas total for it follows, a lower bound not being a value, and neither does
 any claim about what further optimisation would achieve there.
 
@@ -414,7 +464,7 @@ its own ternary secret distribution, rejection bounds, exact hint-free relation 
 adaptor algorithms --- so it is not a claim that the scheme is ML-DSA-65 or inherits its
 security category.
 
-\section{The atomic-swap demonstration and its proof of knowledge}
+\section{The atomic-swap demonstration and proof of knowledge}
 \label{app:swapdemo}
 
 The protocol defined in \cref{fig:swapflow} follows Figure~1 in
@@ -607,9 +657,15 @@ challenge set $C$
 and fixes no encoding, so both the digest and its width are implementation choices,
 taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serialize}).
 
-\begin{table}[H]
-  \centering
-  \caption[Security and scheme parameter notation]{Security and scheme parameters: the symbol, its meaning, and the value(s)
+% Caption plus body is taller than one text page, so this is a longtable (breaks
+% across pages with a repeated header) rather than a forced [H] float: under [H] it
+% overflowed the text area and left the preceding page half empty.
+\begingroup
+\small
+\singlespacing
+\setlength{\LTcapwidth}{\textwidth}
+\begin{longtable}{@{}l L{0.45\linewidth} L{0.31\linewidth}@{}}
+  \caption[Security and scheme parameter notation]{\normalsize Security and scheme parameters: the symbol, its meaning, and the value(s)
   it takes across the parameter sets, \emph{listed in the row order of}
   \cref{tab:params} (LAS-2020/845 reference; Simplified Dilithium-II; -III; -V). The
   notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and this
@@ -619,13 +675,23 @@ taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serializ
   so both the digest and its width are implementation choices, taken from FIPS~204
   wherever a set aligns with an ML-DSA one (\cref{app:serialize}). The figure and table
   captions in \cref{ch:results} refer back to these names and values.}
-  \label{tab:notation}
-  \small
-  \begin{tabular}{@{}l L{0.45\linewidth} L{0.31\linewidth}@{}}
+  \label{tab:notation} \\
     \toprule
     Symbol & Meaning & Value(s): LAS-2020/845 reference, Simplified Dilithium-II/III/V \\
     \midrule
-    $n$        & module rank: rows of $A$, length of public key $t$                 & 4, 4, 6, 8 \\
+    \endfirsthead
+    \multicolumn{3}{@{}l@{}}{\emph{\tablename~\thetable{} --- continued from the
+      previous page}} \\[2pt]
+    \toprule
+    Symbol & Meaning & Value(s): LAS-2020/845 reference, Simplified Dilithium-II/III/V \\
+    \midrule
+    \endhead
+    \midrule
+    \multicolumn{3}{@{}r@{}}{\emph{continued on the next page}} \\
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    $n$      & module rank: rows of $A$, length of public key $t$                 & 4, 4, 6, 8 \\
     $\ell$     & extra columns of $A'$ (secret-vector extension)                    & 4, 4, 5, 7 \\
     $M=n+\ell$ & response dimension (number of polynomials in $z,\hat z,y$)         & 8, 8, 11, 15 \\
     $\kappa$   & challenge Hamming weight (number of $\pm1$ in $c$; Dilithium $\tau$) & 60, 39, 49, 60 \\
@@ -646,9 +712,8 @@ taken from FIPS~204 wherever a set aligns with an ML-DSA one (\cref{app:serializ
                  ML-DSA-aligned sets; a project choice at the LAS-2020/845 reference set,
                  which that rule does not cover
                & 32 (project choice),\ 32,\ 48,\ 64 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\end{longtable}
+\endgroup
 
 Notation fixes the symbols and parameter values used to describe each operation; it
 does not fix what a timing includes. \Cref{tab:tiers} closes that gap with the three
@@ -677,7 +742,7 @@ than folded into a single tier.
         and encode of every output (\cref{sec:serialize})
       & what a wire or on-chain consumer pays per call with nothing cached; one
         operation's byte boundary, \emph{not} a whole-protocol cost \\[3pt]
-    Hybrid native API (classical only)
+    Hybrid API (classical)
       & the boundary \texttt{secp256k1-zkp} itself exposes: PreSign, PreVerify, Adapt
         and Extract pack or parse the 162-byte pre-signature \emph{inside} the timed
         call; KeyGen, Sign and Verify exchange parsed structs with the wire codecs
@@ -697,6 +762,13 @@ than folded into a single tier.
 \section{Supporting benchmark evidence}
 \label{app:tables}
 
+\begingroup
+\setlength{\floatsep}{7pt plus 1pt minus 2pt}
+\setlength{\textfloatsep}{7pt plus 1pt minus 2pt}
+\setlength{\intextsep}{5pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{0pt}
+
 The tables in \cref{ch:results} carry the primary results; this section gives the
 supporting computation data produced by the commands above (\cref{lst:benchfair}).
 
@@ -710,55 +782,39 @@ adaptor overhead remains below $+\ovMaxAll\%$ across the full sweep, while
 \cref{tab:rejstats,fig:rejcdf} compare the measured rejection behaviour with the
 geometric model and the validity gate.
 
-\begin{figure}[htbp]
+% tab:rejstats is placed before the plots so the numerical check sits under the prose
+% that introduces it; the plots below are intentionally narrowed to avoid one-exhibit
+% pages in the appendix.
+\begin{table}[!htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig_overhead}
-  \caption[Adaptor overhead across the parameter sets (sensitivity check)]{Parameter
-  sensitivity of the adaptor overhead: each LAS adaptor operation as a percentage over the
-  basic operation it mirrors, at the four parameter sets of \cref{tab:params}. PreSign is
-  paired with Sign; PreVerify and Adapt with Verify; Extract has no basic analogue and is
-  omitted. Core tier only, and the premium remains small across the sweep: all
-  target-setting adaptor operations are single-digit, and the maximum over all parameter
-  sets is $+\ovMaxAll\%$. This is a secondary robustness check on the headline of
-  \cref{fig:timing}, not a result about scaling: the primary comparison remains the
-  per-operation overhead at the target setting, \cref{tab:overhead-l3}. The absolute
-  timings behind every bar are in \cref{tab:timing}.}
-  \label{fig:overhead}
-\end{figure}
-
-\begin{table}[htbp]
-  \centering
-  \caption[Rejection-sampling statistics: model vs measurement]{Rejection-sampling
-  statistics at the target setting \emph{Simplified Dilithium-III}: the closed-form
-  geometric model of \cref{eq:rejacc} against every measured sample. ``Mean'' is
-  attempts per call and ``Accept.''\ is the per-attempt acceptance rate --- the two
-  quantities every source records, and the ones the model predicts. The per-call
-  \emph{dispersion} is recorded in the source CSV rather than repeated here. The C driver is the
-  implementation of record; the Rust protocol driver and the Criterion harness are
-  the independent samples of \cref{sec:rustport}. Every measured row passes the
-  five-standard-error validity gate of \cref{sec:benchmethod}.}
+  \caption[Rejection-sampling statistics: model vs measurement]{\small
+  Target-setting rejection statistics: the geometric model of \cref{eq:rejacc}
+  against every measured sample. ``Mean'' is attempts per call and ``Accept.''\ is
+  per-attempt acceptance; every measured row passes the five-standard-error gate
+  of \cref{sec:benchmethod}.}
   \label{tab:rejstats}
   \small
   \input{generated/tab_rejstats}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
   \centering
-  \includegraphics[width=\linewidth]{figures/fig_rejection_cdf}
-  \caption[Cumulative probability of acceptance at the target setting]{The
-  probability that a sign-class call has been accepted \emph{within} $k$
-  rejection-sampling attempts, at the target setting \emph{Simplified
-  Dilithium-III}. \textbf{The solid curves are measured}: the empirical
-  distribution of the same 2000-call sample \cref{tab:rejstats} summarises,
-  counted per attempt on the C implementation --- basic Sign (blue) under the
-  bound $\gamma-\kappa$, LAS PreSign (orange) under the tighter
-  $\gamma-\kappa-1$. The dashed lines are the closed-form geometric model of
-  \cref{eq:rejacc} for those two bounds, predicting first-attempt acceptance of
-  $36.8\%$ and $36.0\%$ respectively. The two measured curves are nearly
-  coincident, which is exactly why the PreSign-versus-Sign timing gap is so small.
-  Both pass $90\%$ within six attempts --- five clears it for Sign but not for
-  PreSign, whose bound is the tighter of the two --- and then flatten: allowing
-  many more attempts buys almost nothing.}
+  \includegraphics[width=0.72\linewidth]{figures/fig_overhead}
+  \caption[Adaptor overhead across the parameter sets (sensitivity check)]{\small
+  Core-tier adaptor overhead across the four parameter sets of \cref{tab:params}.
+  PreSign is compared with Sign; PreVerify and Adapt with Verify; Extract is
+  omitted. Exact timings are in \cref{tab:timing}; target-setting overheads are in
+  \cref{tab:overhead-l3}.}
+  \label{fig:overhead}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.72\linewidth]{figures/fig_rejection_cdf}
+  \caption[Cumulative probability of acceptance at the target setting]{\small
+  Cumulative acceptance within $k$ rejection-sampling attempts at the target
+  setting. Solid curves are the C sample in \cref{tab:rejstats}; dashed curves are
+  the \cref{eq:rejacc} model for Sign and the tighter PreSign bound.}
   \label{fig:rejcdf}
 \end{figure}
 
@@ -769,38 +825,34 @@ geometric model and the validity gate.
 \Cref{tab:timing} lists every core-tier per-operation timing with its standard deviation
 (the data plotted in \cref{fig:timing}, and the source of the core block of
 \cref{tab:overhead-l3}); \cref{tab:components} gives the component byte sizes at every
-parameter set (the target setting is the body table \cref{tab:complete-l3}).
+parameter set (with the target setting reported in \cref{tab:complete-l3}).
 
-\begin{table}[htbp]
+\begin{table}[!htbp]
   \centering
-  \caption[Per-operation timing across the parameter sets]{Per-operation timing,
-  reported independently ($\mu$s per operation; mean $\pm$ sample standard deviation
-  over \benchReps{} repetitions $\times$ \benchItersSign{} sign-class /
-  \benchItersVerify{} verify-class iterations; \texttt{bench\_levels}, machine of record in
-  \cref{sec:benchmethod}). KeyGen, Sign, and Verify \emph{are} the basic signature and
-  are reused unchanged by LAS; PreSign, PreVerify, Adapt, and Extract are the four
-  adaptor operations. Public-parameter Setup, a one-time global cost, runs in
-  \setupMin--\setupMax\,$\mu$s and is omitted. Parameter sets and symbols: \cref{tab:params,tab:notation}.}
+  \caption[Per-operation timing across the parameter sets]{\small
+  Core-tier timings ($\mu$s per operation; mean $\pm$ sample standard deviation)
+  from \texttt{bench\_levels}. KeyGen, Sign and Verify are the reused basic
+  operations; PreSign, PreVerify, Adapt and Extract are LAS adaptor operations.
+  Setup is a one-time cost and is omitted.}
   \label{tab:timing}
-  \small
+  \footnotesize
   \setlength{\tabcolsep}{5pt}
   \input{generated/tab_timing}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[!htbp]
   \centering
-  \caption[LAS objects by component (packed bytes)]{LAS objects by component (packed bytes; \texttt{bench\_levels}). The
-  LAS-2020/845 reference set shares the Simplified Dilithium-II dimensions. The challenge
-  travels only as its digest $\tilde c$, whose width this implementation takes from
-  FIPS~204's $\lambda/4$ rule at each aligned set (\cref{tab:notation}); the response $z$
-  grows with $n+\ell$ and dominates the signature at every setting. The target-setting column is the body table
+  \caption[LAS objects by component (packed bytes)]{\small
+  Packed LAS component sizes. The challenge travels as the digest $\tilde c$,
+  while $z$ dominates each signature. The target-setting column corresponds to
   \cref{tab:complete-l3}.}
   \label{tab:components}
-  \small
+  \footnotesize
   \input{generated/tab_components}
 \end{table}
 
 \FloatBarrier
+\endgroup
 
 \section{Auditing the reuse claim}
 \label{app:diff}

@@ -182,7 +182,7 @@ Following \cite{esgin2020post}, the base signature omits Dilithium's hint vector
 Power2Round and high/low-bit decomposition, hashing the full commitment $w$ rather
 than its high bits. This keeps the exact identity $A\vecz - c\,t = w$ available, at the cost of larger keys and
 signatures. Whether those optimisations can coexist with an adaptor layer was not assumed
-but \emph{tested} (\cref{sec:res-mldsa}). The modulus is reused too: the reference NTT fixes
+but \emph{tested} (\cref{sec:res-mldsa}; design in \cref{app:methoddetail}). The modulus is reused too: the reference NTT fixes
 $q=8\,380\,417\approx 2^{23}$, FIPS~204's own modulus \cite{1274601}, rather than the
 $q\approx 2^{24}$ of \cite{esgin2020post} --- correctness is unaffected since
 $q>2\gamma$, and only the Module-SIS/LWE margin differs. No module depends on a
@@ -203,6 +203,13 @@ point the tamper test attacks. And, following FIPS~204
 % app:serialize, which carried the identical absolute.
 $\tilde c$ from which verification re-derives it, under the standard's $\lambda/4$ rule
 (\cref{app:serialize}).
+% BRIDGE, deliberately claiming nothing beyond "an experiment exists": NOT "measured on a
+% real-gas harness", which would fuse the two things tab:onchain's own caption separates
+% ("the under-the-cap claim in the text rests on a client receipt rather than on this
+% table").  By not asserting predicate equivalence here, the sentence owes no registration
+% invariant -- sec:res-evm and app:methoddetail carry both.
+An on-chain verifier consumes that interface;
+\cref{sec:res-evm} evaluates one in Solidity.
 
 \section{Testing methodology}
 \label{sec:testing}
@@ -212,7 +219,7 @@ full in \cref{tab:tests}. Functional tests assume an honest caller and assert th
 adaptor cycle, including the \emph{tripwire} clause --- a pre-signature must \emph{fail}
 basic verification --- which is what distinguishes an adaptor signature from a signature.
 Serialization and tamper tests assume a hostile caller; the known-answer test assumes a
-different machine, and its pinned value is what the second implementation is checked against
+different machine, and its digest is what the second implementation is checked against
 (\cref{sec:rustport}).
 
 \section{An independent second implementation: the Rust port}
@@ -278,12 +285,18 @@ construction (\cref{fig:repostructure}).
   \label{fig:repostructure}
 \end{figure}
 
-The port serves three purposes. \emph{Cross-validation}: short of a formal proof, the
+% CUT 2026-09-02: the third purpose ("Deployment realism: a memory-safe language is the
+% plausible production vehicle") was the weakest of the three -- unmeasured, required by no
+% objective, and load-bearing nowhere else in the report (grepped: it was the only
+% occurrence).  The two warrants that the evidence actually rests on are KEPT IN FULL: the
+% correctness argument's "short of a formal proof" clause is the REASON cross-validation
+% counts, and agreement DEFENDS the C numbers -- it does not "detect" artefacts, since
+% detection is what disagreement would do.
+The port serves two purposes. \emph{Cross-validation}: short of a formal proof, the
 strongest practical argument for correctness is a second implementation agreeing on pinned
 vectors. \emph{An independent
 benchmark methodology}: Criterion.rs \cite{criterionrs} shares no timing code with the C
-harness, so agreement defends the C numbers against harness artefacts. \emph{Deployment
-realism}: a memory-safe language is the plausible production vehicle.
+harness, so agreement defends the C numbers against harness artefacts.
 
 To make the timings comparable the two protocol drivers mirror each other exactly ---
 same repetition scheme, fixed seed, fixed message, success-path gating and rejection
@@ -330,8 +343,8 @@ noise, never from input selection \cite{riou2026apples}. Toolchain, hardware and
 commands: \cref{app:repro}.
 
 \paragraph{Per-operation reporting, not cumulative.}
-Every operation is timed independently: they are split across parties, so a combined figure
-would average over costs never paid together and hide the per-operation overhead.
+Operations are timed separately because the parties pay them separately; a cumulative
+figure would hide the per-operation overhead.
 
 \paragraph{The primary comparison: LAS against its own simplified base.}
 % NOT "on the same code": las.c does not share basesig.c's helpers, it holds VERBATIM
@@ -458,14 +471,13 @@ every configuration and any measured difference is the cryptography, not the led
 a model, not a node; the boundary is set out in \cref{app:utxomodel}.
 
 \paragraph{The protocol that is executed.}
-\Cref{fig:swapflow} is the run book implemented by the driver. Alice, written $u_1$ in the
-paper notation, holds the witness $y$ and therefore moves first;
+\Cref{fig:swapflow} is the run book implemented by the driver. Alice, $u_1$ in \cite{esgin2020post}, holds the witness $y$ and therefore moves first;
 % Configuration 1 carries NO pi (backend.rs: RoleAProof::NotRequired), and protocol.rs
 % generates and verifies one only under RoleAProof::Required -- PreVerify runs in all
 % three.  Unscoped, this sentence contradicted tab:configs, which makes config 1's
 % absent proof a FINDING.  Order is the code's: pi verify, then PreVerify, then u2 PreSign.
 % Passive: two subjects with "have verified" reads as if they did the verifying.
-Bob, written $u_2$, only
+Bob, $u_2$, only
 pre-signs after Alice's pre-signature and, in the LAS configurations, her proof $\pi$
 have been verified. That proof is
 part of the method, not decoration: it proves the statement has a short witness, closing
@@ -588,6 +600,12 @@ transaction cost is not modelled but read from two \emph{mined} regtest transact
 client's own size, weight and virtual size, with the field decomposition reconstructed
 from the decoded transactions and checked against the weight accounting of
 \cite{bip141,bip144,bip341} (\cref{sec:res-txstruct}).
+% "two stages" is app:btcnode's OWN count and wording ("in two stages that must not be
+% conflated"), not a fresh count claim -- more than two runs sit under that label.
+% "consensus rule", never "patched verifier": a patched node is not Bitcoin, and the
+% standing framing is that the blocker is a consensus rule, not engineering.
+Those two transactions come from different stages: carriage past a stock node, and
+settlement under an experimental consensus rule on a patched one (\cref{app:btcnode}).
 
 One notational point matters once the venue is a real ledger. The swap protocol writes the
 signed object as $\mathit{tx}_i$, but a transaction is not a message: a signature commits to
@@ -652,10 +670,16 @@ question being answered by \cref{sec:res-classical}.
 \end{table}
 
 \paragraph{The Groth16 circuit.}
+% TRIMMED 2026-09-02 to pay for the two bridges above.  This paragraph restated
+% app:methoddetail's Groth16 paragraph almost word for word, and that section's own
+% contract is that "the body states the decisions and this appendix justifies them in
+% full".  The DECISION (no reusable proof, so the circuit is new) and the REASON it is
+% cheap (linear WITH PUBLIC COEFFICIENTS -- the qualifier is what rules out
+% witness--witness multiplication, so it is not droppable) both stay; only the appendix's
+% own explanation of why that ingredient is the expensive one goes.
 No pairing-based proof of this lattice statement was available to reuse, so the circuit is
 new, and cheaper than the statement suggests: $r' \mapsto A r'$ is \emph{linear with public
-coefficients}, needing no witness--witness multiplication, the expensive ingredient in a
-rank-one constraint system (\cref{app:methoddetail}).
+coefficients} (\cref{app:methoddetail}).
 
 \paragraph{Measurement.}
 Because gas does not exist on this venue, the axes are execution time and communication

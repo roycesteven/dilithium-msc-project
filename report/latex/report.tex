@@ -111,7 +111,7 @@
 
 \beforeabstract          % title page, table of contents, list of tables/figures
 \prefacesection{Abstract}
-\abstracttitle
+% \abstracttitle
 \input{chapters/00-abstract}
 \afterabstract           % declaration + copyright pages (auto-generated)
 
@@ -142,11 +142,12 @@ I would like to express my sincere gratitude to my supervisor, Dr. Zhipeng Wang,
 % so the appendix and bibliography are fenced off from texcount here (captions
 % are excluded by the -sum weights in the Makefile's `wordcount` target).
 %TC:ignore
+
+
+\bibliographystyle{ieeetr}      % numeric [1] style; ships with TeX Live (IEEEtran.bst not installed)
+\bibliography{refs}
 \appendix
 \input{chapters/A-appendix}
-
-\bibliographystyle{plain}      % numeric [1] style; ships with TeX Live (IEEEtran.bst not installed)
-\bibliography{refs}
 %TC:endignore
 
 \end{document}

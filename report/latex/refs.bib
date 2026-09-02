@@ -1,33 +1,44 @@
 @article{buser2023survey,
-  title={A survey on exotic signatures for post-quantum blockchain: Challenges and research directions},
-  author={Buser, Maxime and Dowsley, Rafael and Esgin, Muhammed and Gritti, Cl{\'e}mentine and Kasra Kermanshahi, Shabnam and Kuchta, Veronika and Legrow, Jason and Liu, Joseph and Phan, Rapha{\"e}l and Sakzad, Amin and others},
+  title={A Survey on Exotic Signatures for Post-quantum Blockchain: Challenges and Research Directions},
+  author={Buser, Maxime and Dowsley, Rafael and Esgin, Muhammed and Gritti, Cl{\'e}mentine and Kasra Kermanshahi, Shabnam and Kuchta, Veronika and Legrow, Jason and Liu, Joseph and Phan, Rapha{\"e}l and Sakzad, Amin and Steinfeld, Ron and Yu, Jiangshan},
   journal={ACM Computing Surveys},
   volume={55},
   number={12},
   pages={1--32},
   year={2023},
-  publisher={ACM New York, NY}
+  doi={10.1145/3572771},
+  publisher={Association for Computing Machinery (ACM)}
 }
 
 @inproceedings{esgin2020post,
   title={Post-quantum adaptor signatures and payment channel networks},
   author={Esgin, Muhammed F and Ersoy, O{\u{g}}uzhan and Erkin, Zekeriya},
-  booktitle={European Symposium on Research in Computer Security},
+  booktitle={Computer Security -- ESORICS 2020},
   pages={378--397},
   year={2020},
-  organization={Springer}
+  doi={10.1007/978-3-030-59013-0_19},
+  publisher={Springer International Publishing}
 }
 
 @article{ducas2018crystals,
-  title={Crystals-dilithium: A lattice-based digital signature scheme},
-  author={Ducas, L{\'e}o and Kiltz, Eike and Lepoint, Tancrede and Lyubashevsky, Vadim and Schwabe, Peter and Seiler, Gregor and Stehl{\'e}, Damien},
-  journal={IACR transactions on cryptographic hardware and embedded systems},
+  title={{CRYSTALS-Dilithium}: A lattice-based digital signature scheme},
+  author={Ducas, L{\'e}o and Kiltz, Eike and Lepoint, Tancr{\`e}de and Lyubashevsky, Vadim and Schwabe, Peter and Seiler, Gregor and Stehl{\'e}, Damien},
+  journal={IACR Transactions on Cryptographic Hardware and Embedded Systems},
+  volume={2018},
+  number={1},
   pages={238--268},
-  year={2018}
+  year={2018},
+  doi={10.46586/tches.v2018.i1.238-268}
 }
 
+% NIST's own recommended citation, exported from tsapps.nist.gov (pub_id 958463 =
+% bibcite 1274601). The ONLY change is the extra brace pair: the corporate name
+% contains " and ", which BibTeX parses as an author separator, so the reference
+% rendered as two authors ("National Institute of Standards, Technology (NIST)").
+% NOTE: BibTeX has no comment syntax INSIDE an entry -- these lines must stay
+% outside the braces, where everything between entries is ignored.
 @misc{1274601,
-  author = {National Institute of Standards and Technology (NIST) and Thinh Dang and Jacob Lichtinger and Yi-Kai Liu and Carl Miller and Dustin Moody and Rene Peralta and Ray Perlner and Angela Robinson},
+  author = {{National Institute of Standards and Technology (NIST)} and Thinh Dang and Jacob Lichtinger and Yi-Kai Liu and Carl Miller and Dustin Moody and Rene Peralta and Ray Perlner and Angela Robinson},
   title = {Module-Lattice-Based Digital Signature Standard},
   year = {2024},
   month = aug,
@@ -39,14 +50,15 @@
 
 
 @article{shor1999polynomial,
-  title={Polynomial-time algorithms for prime factorization and discrete logarithms on a quantum computer},
-  author={Shor, Peter W},
-  journal={SIAM review},
+  title={Polynomial-Time Algorithms for Prime Factorization and Discrete Logarithms on a Quantum Computer},
+  author={Shor, Peter W.},
+  journal={SIAM Review},
   volume={41},
   number={2},
   pages={303--332},
   year={1999},
-  publisher={SIAM}
+  doi={10.1137/S0036144598347011},
+  publisher={Society for Industrial \& Applied Mathematics (SIAM)}
 }
 
 
@@ -54,10 +66,11 @@
 @inproceedings{aumayr2021generalized,
   title={Generalized channels from limited blockchain scripts and adaptor signatures},
   author={Aumayr, Lukas and Ersoy, Oguzhan and Erwig, Andreas and Faust, Sebastian and Host{\'a}kov{\'a}, Kristina and Maffei, Matteo and Moreno-Sanchez, Pedro and Riahi, Siavash},
-  booktitle={International Conference on the Theory and Application of Cryptology and Information Security},
+  booktitle={Advances in Cryptology -- ASIACRYPT 2021},
   pages={635--664},
   year={2021},
-  organization={Springer}
+  doi={10.1007/978-3-030-92075-3_22},
+  publisher={Springer International Publishing}
 }
 
 @misc{poelstra2017,
@@ -78,26 +91,31 @@
 @inproceedings{lyubashevsky2012lattice,
   title={Lattice signatures without trapdoors},
   author={Lyubashevsky, Vadim},
-  booktitle={Annual International Conference on the Theory and Applications of Cryptographic Techniques},
+  booktitle={Advances in Cryptology -- EUROCRYPT 2012},
   pages={738--755},
   year={2012},
-  organization={Springer}
+  doi={10.1007/978-3-642-29011-4_43},
+  publisher={Springer Berlin Heidelberg}
 }
 
 @inproceedings{kysil2025poqeth,
-  title={poqeth: Efficient, post-quantum signature verification on Ethereum},
+  title={poqeth: Efficient, post-quantum signature verification on {Ethereum}},
   author={Kysil, Ruslan and Seres, Istv{\'a}n Andr{\'a}s and Kutas, P{\'e}ter and Kelecs{\'e}nyi, N{\'a}ndor},
   booktitle={Proceedings of the 20th ACM Asia Conference on Computer and Communications Security},
+  series={ASIA CCS '25},
   pages={327--343},
-  year={2025}
+  year={2025},
+  doi={10.1145/3708821.3736193},
+  publisher={ACM}
 }
 
 @misc{secp256k1zkp,
   author       = {{Blockstream Research}},
-  title        = {{secp256k1-zkp}: ECDSA adaptor signature module},
+  title        = {{secp256k1-zkp}: {ECDSA} adaptor signature module},
   howpublished = {Software library},
-  year         = {2024},
-  note         = {\url{https://github.com/BlockstreamResearch/secp256k1-zkp}, commit 95b9835}
+  year         = {2026},
+  note         = {\url{https://github.com/BlockstreamResearch/secp256k1-zkp}, commit 95b9835
+                  (3 June 2026), vendored at \texttt{third\_party/secp256k1-zkp}}
 }
 
 @misc{riou2026apples,
@@ -113,7 +131,9 @@
   title        = {{CRYSTALS-Dilithium} reference implementation},
   howpublished = {Software repository},
   year         = {2023},
-  note         = {\url{https://github.com/pq-crystals/dilithium}, commit 2374d22}
+  note         = {\url{https://github.com/pq-crystals/dilithium}; the pristine upstream
+                  tree is vendored in this project, imported at repository commit
+                  2374d22 and preserved on the \texttt{dilithium-baseline} branch}
 }
 
 @misc{fips204crate,
@@ -128,8 +148,9 @@
   author       = {Heisler, Brook and Aparicio, Jorge and contributors},
   title        = {{Criterion.rs}: statistics-driven micro-benchmarking for {Rust}},
   howpublished = {Software repository},
-  year         = {2025},
-  note         = {\url{https://github.com/criterion-rs/criterion.rs}, version 0.8.2}
+  year         = {2026},
+  note         = {\url{https://github.com/criterion-rs/criterion.rs}, version 0.8.2
+                  (released 4 February 2026)}
 }
 
 @misc{fournier2019adaptor,
@@ -160,10 +181,10 @@
 }
 
 @misc{bip144,
-  author       = {Lau, Johnson and Wuille, Pieter},
+  author       = {Lombrozo, Eric and Wuille, Pieter},
   title        = {{BIP} 144: Segregated Witness (Peer Services)},
   howpublished = {Bitcoin Improvement Proposal},
-  year         = {2015},
+  year         = {2016},
   note         = {\url{https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki};
                   defines the marker/flag and witness serialisation format}
 }
@@ -189,8 +210,11 @@
   title        = {Transaction relay and mining policy limits (\texttt{src/policy/policy.h})},
   howpublished = {Source code},
   year         = {2026},
-  note         = {\url{https://github.com/bitcoin/bitcoin/blob/master/src/policy/policy.h};
-                  \texttt{MAX\_STANDARD\_TX\_WEIGHT}, \texttt{MAX\_STANDARD\_P2WSH\_STACK\_ITEM\_SIZE}}
+  note         = {\url{https://github.com/bitcoin/bitcoin/blob/v31.1/src/policy/policy.h};
+                  \texttt{MAX\_STANDARD\_TX\_WEIGHT},
+                  \texttt{MAX\_STANDARD\_P2WSH\_STACK\_ITEM\_SIZE} and
+                  \texttt{MAX\_STANDARD\_TAPSCRIPT\_STACK\_ITEM\_SIZE}, both 80\,B.
+                  Pinned to v31.1, the release the node experiments run}
 }
 
 @misc{eip8051,
@@ -203,8 +227,9 @@
 }
 
 @misc{eip7773,
-  author       = {Tim Beiko},
-  title        = {{EIP-7773}: Hardfork Meta --- Glamsterdam},
+  author       = {Tim Beiko and Alex Stokes and Ansgar Dietrichs and Nixo and
+                  Parithosh Jayanthi},
+  title        = {{EIP-7773}: Hardfork Meta --- {Glamsterdam}},
   howpublished = {Ethereum Improvement Proposals, no.~7773},
   year         = {2024},
   note         = {Records which proposals are scheduled for, or declined from, the
@@ -233,15 +258,21 @@
   note         = {\url{https://arxiv.org/abs/2505.15917}}
 }
 
-@misc{babbush2026securing,
-  author       = {Ryan Babbush and Adam Zalcman and Craig Gidney and Michael Broughton
-                  and Tanuj Khattar and Hartmut Neven and Thiago Bergamaschi and
-                  Justin Drake and Dan Boneh},
-  title        = {Securing Elliptic Curve Cryptocurrencies against Quantum
-                  Vulnerabilities: Resource Estimates and Mitigations},
-  howpublished = {Cryptology ePrint Archive, Paper 2026/625},
-  year         = {2026},
-  note         = {\url{https://eprint.iacr.org/2026/625}}
+@article{babbush2026securing,
+  author    = {Babbush, Ryan and Zalcman, Adam and Gidney, Craig and Broughton, Michael
+               and Khattar, Tanuj and Neven, Hartmut and Bergamaschi, Thiago and
+               Drake, Justin and Boneh, Dan},
+  title     = {Securing Elliptic Curve Cryptocurrencies against Quantum
+               Vulnerabilities: Resource Estimates and Mitigations},
+  journal   = {PRX Quantum},
+  volume    = {7},
+  number    = {3},
+  year      = {2026},
+  month     = aug,
+  doi       = {10.1103/j3xf-bw18},
+  publisher = {American Physical Society (APS)},
+  note      = {Preprint: Cryptology ePrint Archive, Paper 2026/625,
+               \url{https://eprint.iacr.org/2026/625}}
 }
 
 @misc{nistir8547,
@@ -286,6 +317,8 @@
   title={Post-quantum adaptor signature for privacy-preserving off-chain payments},
   author={Tairi, Erkan and Moreno-Sanchez, Pedro and Maffei, Matteo},
   booktitle={Financial Cryptography and Data Security},
+  pages={131--150},
   year={2021},
-  organization={Springer}
+  doi={10.1007/978-3-662-64331-0_7},
+  publisher={Springer Berlin Heidelberg}
 }

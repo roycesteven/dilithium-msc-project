@@ -1,46 +1,46 @@
 This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: report.aux
-The style file: plain.bst
+The style file: ieeetr.bst
 Database file #1: refs.bib
 You've used 27 entries,
-            2118 wiz_defined-function locations,
-            640 strings with 10136 characters,
-and the built_in function-call counts, 9170 in all, are:
-= -- 883
-> -- 536
-< -- 5
-+ -- 214
-- -- 186
-* -- 554
-:= -- 1526
-add.period$ -- 102
+            1876 wiz_defined-function locations,
+            627 strings with 10167 characters,
+and the built_in function-call counts, 6148 in all, are:
+= -- 564
+> -- 336
+< -- 0
++ -- 124
+- -- 97
+* -- 421
+:= -- 916
+add.period$ -- 45
 call.type$ -- 27
-change.case$ -- 173
+change.case$ -- 27
 chr.to.int$ -- 0
 cite$ -- 27
-duplicate$ -- 281
-empty$ -- 694
-format.name$ -- 186
-if$ -- 1946
+duplicate$ -- 232
+empty$ -- 610
+format.name$ -- 97
+if$ -- 1481
 int.to.chr$ -- 0
 int.to.str$ -- 27
-missing$ -- 8
-newline$ -- 155
-num.names$ -- 54
-pop$ -- 262
+missing$ -- 9
+newline$ -- 102
+num.names$ -- 27
+pop$ -- 141
 preamble$ -- 1
-purify$ -- 146
+purify$ -- 0
 quote$ -- 0
-skip$ -- 231
+skip$ -- 171
 stack$ -- 0
-substring$ -- 337
-swap$ -- 77
-text.length$ -- 5
+substring$ -- 243
+swap$ -- 69
+text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 108
+type$ -- 0
 warning$ -- 0
-while$ -- 73
+while$ -- 51
 width$ -- 29
-write$ -- 317
+write$ -- 274

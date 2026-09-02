@@ -38,8 +38,8 @@
 \contentsline {paragraph}{The protocol that is executed.}{27}{section*.27}%
 \contentsline {paragraph}{What a settled transaction contains, and what the adaptor layer changes.}{28}{section*.28}%
 \contentsline {paragraph}{Three configurations, and what is controlled.}{29}{section*.29}%
-\contentsline {paragraph}{The Groth16 circuit.}{30}{section*.30}%
-\contentsline {paragraph}{Measurement.}{30}{section*.31}%
+\contentsline {paragraph}{The Groth16 circuit.}{29}{section*.30}%
+\contentsline {paragraph}{Measurement.}{29}{section*.31}%
 \contentsline {chapter}{\numberline {3}Results and discussion}{31}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Correctness and robustness}{31}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Computation cost}{31}{section.3.2}%
@@ -70,34 +70,35 @@
 \contentsline {subsection}{\numberline {5.2.1}What was achieved}{55}{subsection.5.2.1}%
 \contentsline {subsection}{\numberline {5.2.2}What fell short}{56}{subsection.5.2.2}%
 \contentsline {subsection}{\numberline {5.2.3}What would be done differently}{56}{subsection.5.2.3}%
-\contentsline {section}{\numberline {5.3}Future work}{57}{section.5.3}%
-\contentsline {chapter}{\numberline {A}Supporting evidence and reproducibility}{59}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{59}{section.A.1}%
-\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{62}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Methodology details}{63}{section.A.3}%
-\contentsline {paragraph}{Why the per-attempt acceptance probability is secret-independent.}{63}{section*.39}%
-\contentsline {paragraph}{The run-validity gate in full.}{63}{section*.40}%
-\contentsline {paragraph}{The Groth16 circuit.}{64}{section*.41}%
-\contentsline {paragraph}{Measurement invariants of the UTXO study.}{64}{section*.42}%
-\contentsline {paragraph}{Matching the boundaries of the classical comparison.}{64}{section*.43}%
-\contentsline {paragraph}{What the restructured on-chain verifier changes, and how it was checked.}{65}{section*.44}%
-\contentsline {paragraph}{The registration invariant, and what is \emph {not} enforced.}{65}{section*.45}%
-\contentsline {paragraph}{Carrying the one-transaction result to the neighbouring parameter sets.}{66}{section*.46}%
-\contentsline {paragraph}{One deliberate exception to reproducibility.}{67}{section*.47}%
-\contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{68}{section.A.4}%
-\contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{68}{section.A.5}%
-\contentsline {section}{\numberline {A.6}The atomic-swap demonstration and its proof of knowledge}{70}{section.A.6}%
-\contentsline {section}{\numberline {A.7}The six implementation challenges}{71}{section.A.7}%
-\contentsline {section}{\numberline {A.8}Test types and parameter notation}{73}{section.A.8}%
-\contentsline {section}{\numberline {A.9}Supporting benchmark evidence}{76}{section.A.9}%
-\contentsline {subsection}{\numberline {A.9.1}Supplementary computation and rejection-sampling evidence}{77}{subsection.A.9.1}%
-\contentsline {subsection}{\numberline {A.9.2}Complete timing and component tables}{80}{subsection.A.9.2}%
-\contentsline {section}{\numberline {A.10}Auditing the reuse claim}{81}{section.A.10}%
-\contentsline {section}{\numberline {A.11}Selected code listings: PreSign, Adapt and Extract}{82}{section.A.11}%
-\contentsline {section}{\numberline {A.12}Settling on a real node}{85}{section.A.12}%
-\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{85}{section*.48}%
-\contentsline {paragraph}{Verification on a patched node.}{86}{section*.49}%
-\contentsline {paragraph}{A whole swap, not a single spend.}{86}{section*.50}%
-\contentsline {paragraph}{One swap across two kinds of ledger.}{87}{section*.51}%
-\contentsline {paragraph}{What the rule charges a validating node.}{88}{section*.52}%
-\contentsline {chapter}{Bibliography}{90}{appendix*.53}%
+\contentsline {section}{\numberline {5.3}Future work}{56}{section.5.3}%
+\contentsline {chapter}{Bibliography}{58}{chapter*.39}%
+\contentsline {chapter}{\numberline {A}Supporting evidence and reproducibility}{62}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{62}{section.A.1}%
+\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{65}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Methodology details}{66}{section.A.3}%
+\contentsline {paragraph}{Why the per-attempt acceptance probability is secret-independent.}{66}{section*.40}%
+\contentsline {paragraph}{The run-validity gate in full.}{67}{section*.41}%
+\contentsline {paragraph}{The design of the ML-DSA compatibility experiment.}{67}{section*.42}%
+\contentsline {paragraph}{The Groth16 circuit.}{68}{section*.43}%
+\contentsline {paragraph}{Measurement invariants of the UTXO study.}{68}{section*.44}%
+\contentsline {paragraph}{Matching the boundaries of the classical comparison.}{68}{section*.45}%
+\contentsline {paragraph}{What the restructured on-chain verifier changes, and how it was checked.}{69}{section*.46}%
+\contentsline {paragraph}{The registration invariant, and what is \emph {not} enforced.}{69}{section*.47}%
+\contentsline {paragraph}{Carrying the one-transaction result to the neighbouring parameter sets.}{70}{section*.48}%
+\contentsline {paragraph}{One deliberate exception to reproducibility.}{71}{section*.49}%
+\contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{72}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{72}{section.A.5}%
+\contentsline {section}{\numberline {A.6}The atomic-swap demonstration and proof of knowledge}{74}{section.A.6}%
+\contentsline {section}{\numberline {A.7}The six implementation challenges}{75}{section.A.7}%
+\contentsline {section}{\numberline {A.8}Test types and parameter notation}{77}{section.A.8}%
+\contentsline {section}{\numberline {A.9}Supporting benchmark evidence}{80}{section.A.9}%
+\contentsline {subsection}{\numberline {A.9.1}Supplementary computation and rejection-sampling evidence}{80}{subsection.A.9.1}%
+\contentsline {subsection}{\numberline {A.9.2}Complete timing and component tables}{82}{subsection.A.9.2}%
+\contentsline {section}{\numberline {A.10}Auditing the reuse claim}{83}{section.A.10}%
+\contentsline {section}{\numberline {A.11}Selected code listings: PreSign, Adapt and Extract}{84}{section.A.11}%
+\contentsline {section}{\numberline {A.12}Settling on a real node}{86}{section.A.12}%
+\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{87}{section*.50}%
+\contentsline {paragraph}{Verification on a patched node.}{87}{section*.51}%
+\contentsline {paragraph}{A whole swap, not a single spend.}{88}{section*.52}%
+\contentsline {paragraph}{One swap across two kinds of ledger.}{89}{section*.53}%
+\contentsline {paragraph}{What the rule charges a validating node.}{90}{section*.54}%

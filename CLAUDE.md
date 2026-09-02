@@ -460,9 +460,40 @@ the base signature.** Results/evaluation must lead with this
   caption from prose, and plotted figures carry 12pt interior text by the type-floor rule, so
   axis labels read as body too). The reliable test is the recipe above: **head and tail of the
   page** — a float-only page opens on figure/table content and ends inside its own caption.
-  ✅ **What DOES automate is LEADING, not size** (2026-09-02): body baselines are **17.9pt**
+  ✅ **What DOES automate is LEADING, not size** (2026-09-02): body lines sit **17.9pt**
   apart, captions and tabular rows **13.5–14.9**, so a page with no run of ~17.9pt line gaps
-  carries no paragraph. `pdftotext -bbox` gives the baselines; count per page.
+  carries no paragraph. Use `pdftotext **-bbox-layout**` (plain `-bbox` emits no `<line>`
+  attributes) and difference successive `yMin`s — those are **line-box coordinates, a proxy
+  for leading**, exact only while line heights are uniform, which body text is.
+  ⚠️ **IT FALSE-NEGATIVES ON FIGURE PAGES, so it catches TABLE-only pages and not much else**
+  (2026-09-02): a `figure`+`\caption` page passed it cleanly because captions here are set at
+  **body** size and leading, so a long caption reads as paragraphs. The head-and-tail recipe
+  above is still the decider for figures; use the scan only to shortlist. Known hits are
+  `tab:challenges`' longtable continuation and a listing page — both non-floats, both fine.
+  ⚠️ **`[H]` IS SAFE ONLY WHILE THE OBJECT FITS THE SPACE LEFT AT ITS PLACEMENT POINT —
+  fitting on a fresh page does not prevent whitespace** (2026-09-02, appendix). A `[H]` table
+  taller than what remains is pushed whole to the next page, so `tab:notation` left p73
+  two-thirds empty *and* still overflowed p74 by 46.6pt (`Overfull \vbox`): both defects, one
+  cause. Fix = **`longtable`, on `tab:challenges`' pattern** (`\begingroup\small
+  \singlespacing`, `\normalsize` caption, `\endfirsthead`/`\endhead`/`\endfoot`/
+  `\endlastfoot`) — not a float, so reading order round the neighbouring `[H]` tables holds.
+  ⚠️ Honest scope: it removed the overfull and the table-only page, but the whitespace
+  **moved** — `tab:tiers` fits a page yet not p74's remainder, so it starts p75 and leaves
+  p74 half empty. `tab:tests`/`tab:tiers` stay `[H]`; converting one is a fresh trade, not a
+  repair. → §3.2's arithmetic.
+  ⚠️ **SOURCE ORDER *DOES* MOVE FLOATS — §3.2's "source order changes nothing at all" is that
+  section's measurement, NOT a law** (2026-09-02). In `app:compute-support` the queue is
+  `fig:overhead`, `tab:rejstats`, `fig:rejcdf` against ~6 lines of prose, and with the table
+  second it was deferred to a page of its own and sat **stranded mid-page**, white above and
+  below. **`tab:rejstats` is now placed FIRST, before `fig:overhead` — do not restore the old
+  order** (a source comment says why): the table is then set under the prose that introduces
+  it. Honest scope, since it is a trade and not an elimination: exhibit-only pages stayed
+  **2** — what changed is that both are now full-width figures with substantial captions,
+  which fill their page, instead of a small stranded table. Float *numbering* is unaffected
+  (separate counters), so `tab:rejstats` is still A.5 and the prose's topic grouping stands.
+  ⚠️ **A long evidence path breaks with `\allowbreak` inside `\texttt`, NEVER `\path{}`** —
+  **tikz owns `\path`** here (loaded before hyperref's `url`), so the obvious fix does not
+  compile as intended; `\nolinkurl` works but breaks the report's uniform `\texttt` convention.
   ⚠️ **§3.2 CANNOT BE FIXED BY PLACEMENT — THE ARITHMETIC IS THE CAUSE (measured 2026-09-02,
   after Wang's "not sure if it is a good idea to have only one picture on page", 2026-08-31).**
   `sec:res-compute` carries **five floats (~2000pt) against ~25 lines of prose (~450pt)**, and
@@ -497,7 +528,12 @@ the base signature.** Results/evaluation must lead with this
 ### ⚠️ WORD COUNT — regenerate with `make -C report/latex wordcount`, never trust a stale file
 
 A stale `word.count` once drove several sessions of trimming against the wrong number.
-Always regenerate before reasoning about budget. Mechanics that matter:
+Always regenerate before reasoning about budget. ⚠️ That target runs **texcount only** —
+it writes `word.count` and never invokes LaTeX — so it measures rather than builds, and
+Royce directed running it directly (2026-09-02). **Measure between cuts, never trim by
+estimate**: a derived delta landed within 2 words that day, but only the real count
+separates 9,002 from 8,999, and the last 30 words took three measured passes.
+Mechanics that matter:
 - Body only: `%TC:ignore` fences in `report.tex` exclude the frontmatter TODO, the
   **appendix** and the bibliography; `-sum=1,1,0,0,0` excludes **captions**. Appendix and
   captions are FREE, and the rubric agrees.
@@ -514,6 +550,19 @@ Always regenerate before reasoning about budget. Mechanics that matter:
   ⚠️ `PROGRESS.md` still carries a "trim to 8,000" next-action written against the old
   stale count — that is not a separate agreed target; confirm with Royce before spending
   effort below the 9,000 ceiling.
+- **⚠️ TWO SECTIONS ARE OFF THE TABLE FOR TRIMMING (Royce, 2026-09-02).** **`sec:structure`
+  ("Dissertation structure") STAYS** — deleting it was proposed as the cheapest cut and
+  refused outright; the research writing guide's "may describe the structure" makes it
+  optional, which is *not* a licence to remove it. **`sec:contributions` compresses only
+  lightly**: M12 accepted contributions *as they stand*, and every remaining sentence
+  carries a mandatory scope (the tier, the named base, the EVM registration invariant and
+  instance/message scope), so a relayed "cut 50–70 words here" yielded ~6. Plan word
+  budgets against Ch.5 and genuine duplication, never against these two.
+  ⚠️ **A compression can silently drop a CITATION's warrant, and dates decide it**: rewriting
+  §1.4's base sentence lost the attribution to \cite{esgin2020post} entirely, and the repair
+  attempt then hung that 2020 citation on a claim phrased in **ML-DSA** terms — a standard
+  published in 2024, which the paper cannot warrant. Settled form: *"The base in
+  \cite{esgin2020post} simplifies Dilithium by omitting its hint and rounding machinery."*
 - **⚠️ TRIMMING MUST NOT COST QUALITY (Royce, 2026-08-05).** Cut filler, never signal. Two
   traps, both sprung once: (1) **a dropped qualifier can silently BROADEN a claim** — deleting
   "methodological" from "if one *methodological* result deserves to outlive this dissertation"
@@ -527,18 +576,18 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-02 16:45 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-02 23:11 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD a7dddb2 · 2026-09-01 · final report audit fixes 1/09 10:22pm
-- Working tree: 55 modified tracked file(s), 34 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 9ec1980 · 2026-09-02 ·  2/09/2026 4:58pm
+- Working tree: 22 modified tracked file(s), 35 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `9ec1980 2026-09-02  2/09/2026 4:58pm`
   - `a7dddb2 2026-09-01 final report audit fixes 1/09 10:22pm`
   - `cec9519 2026-08-31 report deck 31_08 6:51 pm`
   - `e8d2481 2026-08-28 evidence 28_08 18:37`
   - `c80dacb 2026-08-28 28_08 18:36`
-  - `c41bbb5 2026-08-27 deck report 27_08 19:05`
 
 ### Target parameter set — anchors parsed from source
 
@@ -554,7 +603,7 @@ Always regenerate before reasoning about budget. Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260901_215744` (dir mtime 2026-09-01)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **9095** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8999** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -1236,6 +1285,20 @@ binary); runner `run_mldsa_hint_experiment.sh` → `evidence/mldsa_hint/<ts>/`, 
   version.
 - **Caveat that travels with it:** functional demonstration only — the security of committing to
   `HighBits(w+Y)` is NOT analysed.
+- ⚠️ **ITS RUNNER IS OUTSIDE `run_benchmark_suite.sh`, YET INSIDE `app:repro`'s CLAIM** (fixed
+  2026-09-02). The suite has no `mldsa` reference, while `app:repro` says *"the benchmarks and
+  tests are reproducible from the commands below"* and carves out only the **application**
+  experiments — so this test+benchmark sat inside a claim whose command was missing, with no
+  runner and no evidence path anywhere in `report/latex` though `sec:res-mldsa` quotes nine
+  measured macros. Now `lst:mldsa` + a design paragraph in `app:methoddetail` (appendix ⇒ **zero
+  words**). **Any new test/benchmark runner goes into `app:repro` with its evidence path, in the
+  same edit.**
+- ⚠️ **The two CONSTRUCTIONS run SEQUENTIALLY in one process; only the base-vs-adaptor PAIRS
+  inside each are interleaved** (`bench_mldsa_compare.c:1-16`). "ML-DSA and the simplified
+  construction were interleaved" claims a drift cancellation the source says it does not get, so
+  the A-block/B-block drift caveat travels with the figure. `\mldsaIters` is **200 per variant at
+  each parameter set, never the experiment's total** (`NITER` in `test_mldsa_hint.c:47` *and*
+  `test_mldsa_las.c:33`); the benchmark is a different sample (5 reps × 500/1000).
 - **`Y` is byte-identical in both** constructions (`K` full-width polynomials either way) while
   ML-DSA halves signature and public key — so **`Y` becomes the dominant remaining size target**
   (corrected 2026-08-17: "must target Y, *not the signature*" overshot the data — the payload
@@ -1293,9 +1356,13 @@ do not re-add it to any status list or work queue.
 people's* work → may stay.**
 
 **Reproducibility spine:** `README.md` = build/run entry point, delegating to
-`docs/A-appendix/REPRODUCE_LAS_{C,RUST}.md`. ⚠️ The upstream pin `2374d22` is **not in README**
-(it says only "pinned commit") — cite `FUNCTION_MAP.md`, `CODE_DIFF_VIEW.md` or
-`REPRODUCE_LAS_C.md` for it. `docs/02-methodology/FUNCTION_MAP.md` classifies every Dilithium
+`docs/A-appendix/REPRODUCE_LAS_{C,RUST}.md`. ⚠️ **`2374d22` IS THIS REPOSITORY'S OWN IMPORT
+COMMIT, NOT AN UPSTREAM `pq-crystals/dilithium` COMMIT** — "Initial commit: add Dilithium
+reference code", 2026-06-02, an ancestor of HEAD here, and the tip of `dilithium-baseline`
+(verified by `git log` 2026-09-02; this line called it "the upstream pin" until then, and
+`refs.bib` printed it as `pq-crystals/dilithium, commit 2374d22`, which reads as upstream).
+Say **imported/vendored at repository commit**. It is **not in README** (which says only
+"pinned commit") — cite `FUNCTION_MAP.md`, `CODE_DIFF_VIEW.md` or `REPRODUCE_LAS_C.md`. `docs/02-methodology/FUNCTION_MAP.md` classifies every Dilithium
 function call-as-is / modify / new — headline: **zero upstream Dilithium source functions
 modified** (the `Makefile` does gain additive targets; keep that qualifier). Two-branch diff =
 `dilithium-baseline` (pristine) vs `main`, mapped in `CODE_DIFF_VIEW.md`. Each runner under
@@ -2013,9 +2080,33 @@ of a verb (`[10] assumes`, `the venue [10] assumes`). Naming the authors is opti
 prefer the shorter prepositional form where *who* is not the point. ⚠️ Choosing that subject
 noun is a **claim**: it must be the thing that actually does the verb — the *application
 setting* assumes a venue, an *implementation detail* is unprescribed, and neither "LAS" nor
-"the specification" is a safe default (three drafts failed this on 2026-09-01). `\bibliographystyle`
-is `plain`; `ieeetr.bst` **is** installed if an IEEE reference *list* is ever wanted, but
-switching renumbers every citation, so it is Royce's call and needs a full rebuild.
+"the specification" is a safe default (three drafts failed this on 2026-09-01).
+⚠️ **THE LIST IS A SEPARATE QUESTION FROM THE IN-TEXT FORM, and `plain` SORTS ALPHABETICALLY**
+— numbering does **not** follow first appearance (verified 2026-09-02: Aumayr is [1] while
+Shor, the opening citation, renders [23]). That is a real gap against
+`research_writing_guide.md`'s numerical style (*"in order of appearance"*), but **not
+separately imposed by muthesis.cls or the rubric**: the class records *"no particular rules…
+I would recommend the alpha style"* and rubric 3.1.6 asks only for consistency — so a relayed
+"blocking FAIL" on ordering was right on **every fact** and wrong on **strength** (→ the M12
+recording-strength rule); Royce settled it as **recommended, not blocking**. Installed
+`ieeetr.bst` is **unsorted**, so it buys IEEE formatting *and* first-appearance order in one
+line; `unsrt` buys order only. `IEEEtran.bst` is genuinely absent. Switching renumbers every
+citation ⇒ **Royce's call**, full rebuild. ⚠️ **Case-mangling is NOT fixed by switching**:
+`plain` *and* `ieeetr` both `change.case$` titles, so proper nouns need brace protection in
+`refs.bib` either way (`{Glamsterdam}`, `{ECDSA}`, `{Ethereum}`, `{CRYSTALS-Dilithium}` all
+rendered lower-case until 2026-09-02).
+
+**⚠️ CANONICAL METADATA, NEVER HAND-WRITTEN (Royce, 2026-09-02).** When an authoritative
+source publishes BibTeX, take it; do not compose fields by hand. Priority: **(1) official
+publisher / NIST BibTeX · (2) DOI-negotiated publisher metadata · (3) DBLP as fallback ·
+(4) repo tag/commit for software.** ⚠️ **(2) BEATS (3), and they disagree** — DBLP normalises
+names and paginations, so it invented "LeGrow, Jason T." and "251:1--251:32" where ACM's own
+record says `Legrow, Jason` and `1--32`; adopting DBLP would have been a regression. Fetch with
+`curl -sL -H "Accept: application/x-bibtex" "https://doi.org/<doi>"` — the URL **must** be
+quoted, or the shell reads `<doi>` as a redirection. ⚠️ A cited DOI can be **superseded**:
+TCHES moved `10.13154/…` → `10.46586/…`. ⚠️ **Classic BibTeX has no `%`-style comments inside
+an entry**: `%` is not a database comment character there and may pass through as data,
+potentially breaking the generated LaTeX. Keep comments between entries, above `@type{...}`.
 
 Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 
