@@ -22,7 +22,7 @@ Correctness is established before any cost is reported (objective~3). A fast
 but wrong scheme measures nothing, and no formal proof was in scope, so correctness rests
 on differential evidence: a pinned known-answer value reproduced byte-for-byte by a
 second, independently written implementation (\cref{sec:res-rust}). Internal
-self-consistency is not correctness --- \cref{sec:eval-challenges} gives a case where
+self-consistency is not correctness: \cref{sec:eval-challenges} gives a case where
 every primitive passed in isolation and the assembled whole was still wrong.
 
 The primary comparison is controlled, not merely convenient (objective~4).
@@ -39,14 +39,14 @@ as a functionality-matched ``price of post-quantum'' baseline.
 % superlative about benchmarking in general; the em-dash clause already carries the only
 % warrant there is, which is local ("twice here").
 Every measurement declares its boundary (objective~4). Results are reported at two tiers
-(\cref{sec:benchmethod}), because an undeclared boundary misleads quietly --- as it did
+(\cref{sec:benchmethod}), because an undeclared boundary misleads quietly, as it did
 twice here before the tiers were fixed. For the same reason each
 run gates on a directly counted rejection rate against its closed-form prediction, rather
 than inferring acceptance from timing.
 
 Metrics follow the venue (objective~5). The application study reports execution
 time and communication bytes with off-chain messages counted, because the evaluated UTXO
-ledger has no gas metric --- and because off-chain messaging is where the post-quantum
+ledger has no gas metric, and because off-chain messaging is where the post-quantum
 cost lands.
 
 \section{Achievement of the objectives}
@@ -99,7 +99,7 @@ two need more than a table row.
 Objective~4's fairness claim rests on control rather than assertion: in Stage~1 the two
 compared paths share algorithm, parameters and primitives, and in Stage~2 the two LAS
 configurations share one public matrix and receive byte-identical inputs, verified at run
-time. The measurements are then defended from two independent directions --- a
+time. The measurements are then defended from two independent directions: a
 closed-form gate on the rejection rate, and re-measurement under a different compiler and
 an independent statistical harness.
 
@@ -115,20 +115,20 @@ rather than assumed, and it is what the comparison contributes. That ceiling lat
 % introduction carries the same two scopings, so leaving them out here would have made the
 % chapter that JUDGES the objective the least scoped statement of it in the report.
 \emph{implementation} rather than the scheme: a claim transaction running a restructured
-verifier was mined inside the cap --- under \cref{tab:onchain}'s registration invariant,
+verifier was mined inside the cap, under \cref{tab:onchain}'s registration invariant,
 at the target set, message length and signature instance measured
 (\cref{sec:res-evm}). The venue decision therefore rests on cost, not impossibility.
 
 \section{Implementation challenges}
 \label{sec:eval-challenges}
 
-Turning the simplified-Dilithium base into LAS was conceptually small --- four added
-operations and one extra term in a hash --- but the six problems of \cref{tab:challenges}
+Turning the simplified-Dilithium base into LAS was conceptually small (four added
+operations and one extra term in a hash), but the six problems of \cref{tab:challenges}
 consumed most of the engineering effort. Three themes recur. Two are failures that
 \emph{pass every local test}: a loosened PreSign bound leaves the adaptor operations
 working while breaking ordinary verification two steps later, and a doubly-transformed
 public matrix produces a verifier whose parts agree with each other but not with the C
-implementation --- both caught only by checking outside the component, which is why
+implementation; both caught only by checking outside the component, which is why
 \cref{sec:eval-strategy} treats internal self-consistency as insufficient.
 
 % "The last" implied the three themes enumerated all six rows of tab:challenges; they do
@@ -146,8 +146,8 @@ not the same interface.
 
 The validity threats of \cref{sec:res-validity} bound what the results \emph{mean}. Two
 further limitations belong to the artefact rather than the measurement. The hint-free
-construction yields larger keys and signatures than optimised Dilithium ---
-cryptographic optimisation given up for a transparent, testable artefact --- and
+construction yields larger keys and signatures than optimised Dilithium
+(cryptographic optimisation given up for a transparent, testable artefact), and
 \cref{sec:res-mldsa} quantifies that price and shows it recoverable in principle, though
 only for the signature and not the statement. Configuration~2 instead gives up post-quantum assurance for a controlled
 comparison: it is the intermediate point that makes the proof-system comparison possible,

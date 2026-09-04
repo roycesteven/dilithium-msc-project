@@ -9,8 +9,8 @@ core is reused unchanged; the adaptor layer, wire encoding and application are n
 code; functional, serialization, tamper and known-answer tests pass; Rust reproduces the
 pinned value byte-for-byte; and a two-party, two-chain swap runs.
 
-The central question --- what adaptor functionality costs over a plain signature, and
-what post-quantum operation costs over a classical one --- is answered with measured data
+The central question (what adaptor functionality costs over a plain signature, and
+what post-quantum operation costs over a classical one) is answered with measured data
 at declared boundaries. Adaptor functionality has small core-tier overhead at the target
 setting ($+\ovPreSign\%$, $+\ovPreVerify\%$ and $+\ovAdapt\%$ for PreSign, PreVerify and
 Adapt respectively), with a $+\ovMaxAll\%$ core-tier maximum across the sweep, rising to
@@ -24,7 +24,7 @@ The implementation
 followed the LAS paper's simplified Dilithium-style base. Rebuilding the adaptor path on
 ML-DSA showed that simplification is not functionally required for final
 verification (\cref{sec:res-mldsa}). \textsc{PreSign} and \textsc{PreVerify} do require
-adaptor-specific algorithms --- the naive port fails outright --- but \textsc{Verify} does
+adaptor-specific algorithms (the naive port fails outright), but \textsc{Verify} does
 not: a
 % "at equal computation" overstated sec:res-mldsa, whose measured finding is that
 % per-signature cost is "close to equal" -- ML-DSA restarts about twice as often, each
@@ -50,8 +50,8 @@ scope: no concrete security is formally analysed, and nothing settled on a live 
 \subsection{What was achieved}
 \label{sec:reflection-achieved}
 
-The central choice --- to build \emph{additively} on a standardised reference
-rather than reimplement lattice arithmetic --- paid off twice. It made the implementation
+The central choice, to build \emph{additively} on a standardised reference
+rather than reimplement lattice arithmetic, paid off twice. It made the implementation
 tractable, and it made provenance auditable: the security-critical arithmetic
 is byte-for-byte the published CRYSTALS-Dilithium reference, with a two-branch diff.
 Being language-agnostic, it also made the second
@@ -124,14 +124,14 @@ scheme: testing it took days, not weeks.
   \item \textbf{Reduce the proof.} $\pi$ must prove knowledge of a short witness to
         $Y$ \cite{esgin2020post}; hiding it is required by the swap, while succinctness
         was this dissertation's added goal. Measured under LaBRADOR, that encoding loses
-        to the deployed prover on size --- by the library's own estimate rather than a
-        packed proof --- and on time outright: succinctness is asymptotic, and one
+        to the deployed prover on size (by the library's own estimate rather than a
+        packed proof) and on time outright: succinctness is asymptotic, and one
         instance is too small to reach it. What remains open is a proof small at
         \emph{this} scale.
   \item \textbf{Reduce the cost of one-transaction verification.} Fitting under the cap
         was proposed here and then answered, though only for one signature
-        instance and message length at both measured sets --- verification alone at the
-        smaller --- with the largest exceeded by derivation (\cref{sec:res-evm}). Fitting is not the same as being worth doing:
+        instance and message length at both measured sets (verification alone at the
+        smaller) with the largest exceeded by derivation (\cref{sec:res-evm}). Fitting is not the same as being worth doing:
         settlement remains far above a classical claim, and the hash is the dominant
         measured term. A draft ML-DSA verification precompile covers NIST level~II
         only \cite{eip8051}, and was declined from the next scheduled upgrade

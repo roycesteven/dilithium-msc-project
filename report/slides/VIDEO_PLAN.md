@@ -46,7 +46,7 @@ never going to be spoken — do not re-merge them.
 ⚠ **The key-map overlay now defaults to OFF** — it is drawn over the page, so it used to sit in
 shot for the whole take. Press `H` while rehearsing, and it stays hidden when you record.
 
-**A section stepper (Why · Method · Results · Implications) sits top-right**, lighting the part the
+**A section stepper (Why · Method · Results · Takeaways) sits top-right**, lighting the part the
 current slide belongs to; the title slide shows none. That is Wang's "where are we?" marker — the
 thin progress bar says how *far*, not *where*.
 
@@ -66,11 +66,11 @@ about eight seconds of footer margin, so the timed rehearsal decides, not this n
 ⚠ **`data-time` is a rehearsal budget, not computed by `gen_slides.py`.** Re-count the SPOKEN
 half after every narration edit and adjust the budget deliberately. The M12 rehearsal ran
 ≈10:40, and 150 wpm was the figure that made the old budget look safe when it was not. The
-current SPOKEN script is **822 words**; at the measured **112 wpm** that is about **7:20** of
+current SPOKEN script is **797 words**; at the measured **112 wpm** that is about **7:07** of
 speech, leaving the remaining deck budget for beat presses, breaths and slide transitions.
 The count sits above Meeting 10's "more or less 10" because later feedback kept distinct
 beats visible: the quantum urgency (2), the transaction structures of both venues (11), the
-deployment verdict with implications for Bitcoin and blockchain developers (15), and the
+deployment verdict with takeaways for Bitcoin and blockchain developers (15), and the
 split cost/check slides that prevent mixed reading directions.
 
 The deck prints each slide's planned time and the running clock in its own footer; the table
@@ -93,7 +93,7 @@ top-right stepper lights.
 | 12 | **DEMO B — a real Bitcoin client** | Results | 0:34 | *complement*: the node differential (2 beats, 1 press) |
 | 13 | Does it fit on chain? | Results | 0:26 | the EVM cap result plus two shortcuts tested rather than hand-waved |
 | 14 | Does the adaptor need a simplified base? | Results | 0:16 | the functional ML-DSA-65 boundary check |
-| 15 | **Verdict — what it means in practice** | Implications | 0:41 | **the close**: the three questions answered, the verdict, and one consequence per audience |
+| 15 | **Takeaways — what it means in practice** | Takeaways | 0:41 | **the close**: the three questions answered, the verdict, and one consequence per audience |
 
 **If you run long**, cut in this order: slide 13's shortcut sentence after the gas answer
 → slide 14's Esgin-background sentence → slide 10's final size-target sentence.
@@ -254,7 +254,7 @@ UA default `1em`. Check that on any new text element before blaming the layout.
 |---|---|---|
 | Use of the medium | 40 % | the protocol stepped and broken on screen (7); the node differential drawn as a two-column verdict (12); the quantum timeline, the swap scenario, the signature stack with its migration arrow, the HTLC-vs-adaptor contrast, the four functions and the architecture each drawn and built in stages (2–6); the adaptor-layer cost drawn as bars on shared scales (8–9); both transaction structures laid out field by field (11); every chart generated from the evidence rather than screenshotted; talking-head overlay; no terminal transcripts anywhere |
 | Complementing the report | 40 % | slide 7 makes the protocol *watchable* — the abort gate, a pre-signature refused, the witness falling out of a published signature — where the report can only assert that each step was asserted; slide 12 puts the patched and stock verdicts side by side as one contrast, which the appendix can only state in prose; slide 15 turns the results into consequences **for a named audience**, which the dissertation never does |
-| Presentation | 20 % | planned 7:52 deck budget, 822 spoken words, and an on-screen clock; a section stepper for orientation; a clear beginning (2–4), middle (5–14), end (15) |
+| Presentation | 20 % | planned 7:52 deck budget, 797 spoken words, and an on-screen clock; a section stepper for orientation; a clear beginning (2–4), middle (5–14), end (15) |
 
 ---
 

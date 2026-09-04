@@ -306,7 +306,7 @@ signature was selected.
 Cross-chain exchange first relied on custodial intermediaries; hash-time-locked contracts
 removed the custodian by locking both transfers under one hash preimage, so claiming one
 leg reveals the preimage unlocking the other. Such contracts need explicit
-on-chain script support, place a common hash on both chains --- linking the legs --- and
+on-chain script support, place a common hash on both chains (linking the legs) and
 enlarge the transactions. Moving the lock into the signature answers all three
 \cite{poelstra2017,aumayr2021generalized}: settlements look like ordinary single-signer
 payments, atomicity is retained, and the witness reaches only the counterparty holding
@@ -325,7 +325,7 @@ CRYSTALS-Dilithium is a lattice signature in the ``Fiat--Shamir with aborts'' fa
 \cite{ducas2018crystals,lyubashevsky2012lattice}, its security reducing to the Module
 Learning With Errors and Module Short Integer Solution problems. It samples a masked
 commitment, derives a challenge by hashing, computes a response, and \emph{rejects and
-retries} when the response would leak the secret --- the rejection-sampling step
+retries} when the response would leak the secret: the rejection-sampling step
 characterising the family. Its reference implementation provides the polynomial
 arithmetic, number-theoretic transform (NTT) and SHAKE-based sampling this project
 reuses.
@@ -342,7 +342,7 @@ $(Y,y)$.
 \paragraph{Post-quantum adaptor signatures.}
 Esgin et al.\ \cite{esgin2020post} proposed LAS, a lattice-based adaptor signature on a
 Dilithium-style base; it is the design implemented here. Their work
-is primarily theoretical --- definitions, a construction and security proofs --- leaving
+is primarily theoretical (definitions, a construction and security proofs), leaving
 the practical, benchmarked, blockchain-facing implementation open.
 % IAS goes AFTER the "primarily theoretical" sentence, never before it: that judgement is
 % about Esgin et al. alone, and IAS itself reports an implementation and an evaluation.
@@ -361,8 +361,8 @@ implementations exist \cite{secp256k1zkp}; this project benchmarks against one
 \label{sec:aims}
 
 \paragraph{Aim.}
-To implement and evaluate a post-quantum exotic signature scheme --- a lattice-based
-adaptor signature reusing the CRYSTALS-Dilithium primitives --- and to demonstrate it
+To implement and evaluate a post-quantum exotic signature scheme (a lattice-based
+adaptor signature reusing the CRYSTALS-Dilithium primitives) and to demonstrate it
 in a post-quantum blockchain atomic-swap application. The work is positioned as
 \emph{systems implementation and evaluation}: it does not propose a new cryptographic
 protocol.
@@ -376,13 +376,13 @@ protocol.
   \item Validate correctness and robustness through functional, serialization,
         tamper, and known-answer tests, including cross-validation by a second,
         independent implementation checked against the same known-answer value.
-  \item Benchmark LAS fairly --- at explicitly stated parameters, with repeated runs and
-        reported variance --- against a simplified Dilithium baseline at identical
+  \item Benchmark LAS fairly (at explicitly stated parameters, with repeated runs and
+        reported variance) against a simplified Dilithium baseline at identical
         parameters and a classical ECDSA-adaptor baseline, separating computation from
         communication cost across the five standard signature metrics.
   \item Demonstrate an end-to-end post-quantum atomic swap using the implementation
-        --- following the protocol of \cite{esgin2020post}, including its
-        zero-knowledge proof of knowledge $\pi$ --- and discuss its feasibility.
+        (following the protocol of \cite{esgin2020post}, including its
+        zero-knowledge proof of knowledge $\pi$) and discuss its feasibility.
 \end{enumerate}
 
 \section{Contributions}
@@ -414,8 +414,8 @@ does not break (\cref{sec:res-stage2}). Native on-chain verification, first
 % signature instance belongs in the scope for the reason sec:res-evm gives: two verifier
 % stages branch on coefficient values, so one client receipt is not a bound over inputs.
 measured far above the transaction gas cap, fits under it once the same predicate is
-re-expressed --- under an unchecked registration invariant, at the one parameter set,
-message length and signature instance measured --- while a settled swap sits well inside
+re-expressed (under an unchecked registration invariant, at the one parameter set,
+message length and signature instance measured) while a settled swap sits well inside
 % NOT "a UTXO chain's weight limit".  Weight units are a Bitcoin/SegWit construct, not a
 % property every UTXO chain has, and the measured comparison in sec:res-txstruct is against
 % MAX_STANDARD_TX_WEIGHT -- Core's POLICY ceiling for a standard transaction, not a

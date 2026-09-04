@@ -184,7 +184,7 @@ than its high bits. This keeps the exact identity $A\vecz - c\,t = w$ available,
 signatures. Whether those optimisations can coexist with an adaptor layer was not assumed
 but \emph{tested} (\cref{sec:res-mldsa}; design in \cref{app:methoddetail}). The modulus is reused too: the reference NTT fixes
 $q=8\,380\,417\approx 2^{23}$, FIPS~204's own modulus \cite{1274601}, rather than the
-$q\approx 2^{24}$ of \cite{esgin2020post} --- correctness is unaffected since
+$q\approx 2^{24}$ of \cite{esgin2020post}; correctness is unaffected since
 $q>2\gamma$, and only the Module-SIS/LWE margin differs. No module depends on a
 mode-specific constant, so identical code runs at every parameter set.
 
@@ -194,7 +194,7 @@ mode-specific constant, so identical code runs at every parameter set.
 A deployable scheme exchanges \emph{bytes}, not in-memory structs, so a bit-packed wire
 encoding, a typed codec and a verify-from-bytes entry point were implemented.
 Two decisions matter. Validation is \emph{asymmetric}: keys and witnesses are checked on
-decode, a signature is not, so a tampered response is caught by Verify --- the entry
+decode, a signature is not, so a tampered response is caught by Verify, the entry
 point the tamper test attacks. And, following FIPS~204
 \cite{1274601}, a signature carries not the challenge polynomial $c$ but the digest
 % NOT "every consumer re-derives it": Extract consumes a signature and never derives c at
@@ -216,8 +216,8 @@ An on-chain verifier consumes that interface;
 
 Four test types cover progressively weaker assumptions about the environment, stated in
 full in \cref{tab:tests}. Functional tests assume an honest caller and assert the whole
-adaptor cycle, including the \emph{tripwire} clause --- a pre-signature must \emph{fail}
-basic verification --- which is what distinguishes an adaptor signature from a signature.
+adaptor cycle, including the \emph{tripwire} clause (a pre-signature must \emph{fail}
+basic verification), which is what distinguishes an adaptor signature from a signature.
 Serialization and tamper tests assume a hostile caller; the known-answer test assumes a
 different machine, and its digest is what the second implementation is checked against
 (\cref{sec:rustport}).
@@ -298,7 +298,7 @@ vectors. \emph{An independent
 benchmark methodology}: Criterion.rs \cite{criterionrs} shares no timing code with the C
 harness, so agreement defends the C numbers against harness artefacts.
 
-To make the timings comparable the two protocol drivers mirror each other exactly ---
+To make the timings comparable the two protocol drivers mirror each other exactly:
 same repetition scheme, fixed seed, fixed message, success-path gating and rejection
 statistics. One caveat qualifies the port's independence: Rust follows the C
 implementation's early-abort norm check, an implementation detail not prescribed by the
@@ -356,8 +356,8 @@ figure would hide the per-operation overhead.
 LAS is exactly its base signature plus four operations at identical algorithm, parameters
 and primitives, so each base-versus-LAS comparison holds all three fixed and varies only
 the adaptor layer (justified in \cref{sec:eval-strategy}). Each adaptor operation is paired with the base
-operation it mirrors --- \textsc{Adapt} against \textsc{Verify}, since it runs a
-PreVerify before adding the witness --- and \textsc{Extract}, having no base analogue, is
+operation it mirrors (\textsc{Adapt} against \textsc{Verify}, since it runs a
+PreVerify before adding the witness), and \textsc{Extract}, having no base analogue, is
 reported separately.
 
 \paragraph{Rejection sampling: the expected attempt count.}
@@ -590,7 +590,7 @@ transaction bytes.
 \paragraph{What a settled transaction contains, and what the adaptor layer changes.}
 Of the adaptor-protocol objects exchanged by
 the swap, only the adapted signature $\sigma$ reaches a ledger, occupying the slot in
-which an ordinary signature already appears --- since SegWit
+which an ordinary signature already appears: since SegWit
 \cite{bip141}, a segregated \emph{witness} field. The statement $Y$, the proof $\pi$ and
 both pre-signatures stay off-chain, while the witness $y$ is never transmitted: $u_2$
 derives it from the published $\sigma$ and its own pre-signature. The construction
@@ -618,28 +618,22 @@ its \emph{signature hash}. Three objects are therefore kept distinct: the unsign
 template exchanged off-chain, the message derived from it that \textsc{PreSign} receives,
 and the settled transaction. Conflating them would misreport communication cost.
 
-\paragraph{Three configurations, and what is controlled.}
-The three configurations of \cref{tab:configs} each run the swap protocol end-to-end
-across two ledgers. The \emph{role-A} proof is the proof of knowledge $\pi$ the protocol
-places on the wire immediately after $Y$, claiming a witness to $Y$ exists and is short.
-Only the $2\to3$ step is controlled: both LAS configurations share one expansion of the
-public matrix, derive all key material from one pinned seed, and prove the
-\emph{identical} relation
-$\exists\, r' : A r' = t' \wedge \inftynorm{r'} \le 1$ --- the hard relation of the
-statement/witness pair, \emph{not} the signer's key pair, and including the norm bound,
-since proving only $A r' = t'$ would fail to close the knowledge gap. This is verified
-rather than assumed: a configuration whose two halves disagree on a \emph{relation
-binding} each computes independently refuses to run (\cref{app:methoddetail}).
-The $1\to2$ step is not controlled --- it changes the signature scheme, the relation and
-whether a role-A proof exists --- so it is a whole-stack comparison, the signature-only
-question being answered by \cref{sec:res-classical}.
-
+% PLACED BEFORE ITS OWN PARAGRAPH, 2026-09-04, and do not move it back after the prose.
+% Declared last (its old position, after "Measurement") this table had NO text left in the
+% chapter to flow beside it -- section 2.8's three closing paragraphs all set on the page
+% above, and \chapter{Results and discussion} then forces a new page -- so it was deferred
+% onto a page of its own (p.30 of the 2026-09-04 build), which the no-float-only-page rule
+% forbids and which Wang asked about for the second time in M13.  The cause was the CHAPTER
+% ENDING, not an over-long caption: the caption was already cut on 2026-09-01 and cutting it
+% further would mean deleting a caveat, which is Royce's call.  Same remedy as tab:rejstats
+% in app:compute-support: put the float ahead of the prose that introduces it so the prose
+% sets underneath.
 \begin{table}[htbp]
   \centering
   % CUT 2026-09-01: the caption had grown long enough to give the float a text-free page
   % (p.30 of the previous build), which the no-float-only-page rule forbids and which an
   % over-long caption is the usual cause of.  What went is DUPLICATION of the paragraph
-  % immediately above -- the one-matrix/one-seed/identical-relation mechanics, and the LAS
+  % immediately below -- the one-matrix/one-seed/identical-relation mechanics, and the LAS
   % knowledge-gap mechanism, which "The protocol that is executed" also states.  What STAYS
   % is every caveat: finding-not-omission, the ECDSA contrast, the unmodified-baseline
   % reason, and the DLEQ-is-not-pi scoping with its cost attribution.  Cutting any of those
@@ -650,7 +644,7 @@ question being answered by \cref{sec:res-classical}.
   configuration~1 differs in signature scheme, relation and proof alike. Its missing
   role-A proof is a finding rather than an omission: an ECDSA adaptor has no knowledge
   gap, since extraction recovers the discrete logarithm exactly, so the unmodified
-  \texttt{secp256k1-zkp} construction needs no $\pi$ --- and adding one would have
+  \texttt{secp256k1-zkp} construction needs no $\pi$, and adding one would have
   measured a modified baseline rather than the library as it stands. The DLEQ proof
   carried \emph{inside} its pre-signature is a different object and is not counted as
   $\pi$: its author is the pre-signer, and its claim is pre-signature well-formedness,
@@ -668,6 +662,22 @@ question being answered by \cref{sec:res-classical}.
     \bottomrule
   \end{tabular}
 \end{table}
+
+\paragraph{Three configurations, and what is controlled.}
+The three configurations of \cref{tab:configs} each run the swap protocol end-to-end
+across two ledgers. The \emph{role-A} proof is the proof of knowledge $\pi$ the protocol
+places on the wire immediately after $Y$, claiming a witness to $Y$ exists and is short.
+Only the $2\to3$ step is controlled: both LAS configurations share one expansion of the
+public matrix, derive all key material from one pinned seed, and prove the
+\emph{identical} relation
+$\exists\, r' : A r' = t' \wedge \inftynorm{r'} \le 1$: the hard relation of the
+statement/witness pair, \emph{not} the signer's key pair, and including the norm bound,
+since proving only $A r' = t'$ would fail to close the knowledge gap. This is verified
+rather than assumed: a configuration whose two halves disagree on a \emph{relation
+binding} each computes independently refuses to run (\cref{app:methoddetail}).
+The $1\to2$ step is not controlled (it changes the signature scheme, the relation and
+whether a role-A proof exists), so it is a whole-stack comparison, the signature-only
+question being answered by \cref{sec:res-classical}.
 
 \paragraph{The Groth16 circuit.}
 % TRIMMED 2026-09-02 to pay for the two bridges above.  This paragraph restated

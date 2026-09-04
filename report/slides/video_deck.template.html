@@ -792,11 +792,11 @@
     <div id="bar"></div>
     <img id="uomlogo" src="{{UOM_LOGO}}" alt="The University of Manchester">
     <div id="parts">
-      <span data-part="why">Why</span><span data-part="method">Method</span><span data-part="results">Results</span><span data-part="implications">Implications</span>
+      <span data-part="why">Why</span><span data-part="method">Method</span><span data-part="results">Results</span><span data-part="takeaways">Takeaways</span>
     </div>
 
     <!-- ============================ 1 ============================ -->
-    <section class="slide title" data-title="Title" data-time="0:13" data-notes="SPOKEN: Hello, I&#x27;m Royce Steven. My project asks a practical question: if blockchains move to post-quantum signatures, can cross-chain swaps keep their scriptless trick, and what does that cost? ">
+    <section class="slide title" data-title="Title" data-time="0:13" data-notes="SPOKEN: Hello, I&#x27;m Royce Steven. My project asks a practical question: if blockchains move to post-quantum signatures, can the adaptor-signature trick behind cross-chain swaps move with them, and what does that cost? ">
       <h1 class="headline big">Implementing a Post-Quantum Secure<br>Adaptor Signature Scheme in Blockchains</h1>
       <div class="rule"></div>
       <!-- "built on" rather than "on": the scheme is layered on Dilithium's reference
@@ -1505,7 +1505,7 @@
          wording contradicted the report.  What the verdict may exempt is the ADAPTOR
          LAYER -- the thing this project added -- not deployment cost in general. -->
     <!-- ============================ 13 ============================ -->
-    <section class="slide" data-part="implications" data-title="Verdict: what it means in practice" data-time="0:41" data-notes="SPOKEN: So, back to the three questions. Can we build it? Yes. What does it cost? Little extra adaptor computation, but many more bytes. Can a chain use it? Ethereum can, barely, through a contract. Bitcoin needs a new consensus rule. My conclusion is that the adaptor layer is not the blocker. The hard parts are verification cost and platform integration. Thank you. || BACKUP: C and Rust agree byte for byte on a pinned known-answer value. The signature is about {{clRatioSig}} times larger than the ECDSA adaptor baseline. The Bitcoin rule costs {{btcLasVerifyUs}} microseconds per input, about {{btcLasRatioSchnorr}} times a Schnorr check -- and that ratio OVERSTATES it, because the levels are not matched. One set down, verification alone is charged {{gasDTwoCapPct}} percent of the cap. The proof is {{cfgThreeProofPct}} percent of end-to-end swap time, so optimise the proof and the statement, not the adaptor functions. Every figure carries its warrant -- measured, derived, or cited; anything else is an open question and is said to be one.">
+    <section class="slide" data-part="takeaways" data-title="Takeaways: what it means in practice" data-time="0:41" data-notes="SPOKEN: So, the takeaways answer the three questions. Can we build it? Yes. What does it cost? Little extra adaptor computation, but many more bytes. Can a chain use it? Ethereum can, barely, through a contract. Bitcoin needs a new consensus rule. My conclusion is that the adaptor layer is not the blocker. The hard parts are verification cost and platform integration. Thank you. || BACKUP: C and Rust agree byte for byte on a pinned known-answer value. The signature is about {{clRatioSig}} times larger than the ECDSA adaptor baseline. The Bitcoin rule costs {{btcLasVerifyUs}} microseconds per input, about {{btcLasRatioSchnorr}} times a Schnorr check -- and that ratio OVERSTATES it, because the levels are not matched. One set down, verification alone is charged {{gasDTwoCapPct}} percent of the cap. The proof is {{cfgThreeProofPct}} percent of end-to-end swap time, so optimise the proof and the statement, not the adaptor functions. Every figure carries its warrant -- measured, derived, or cited; anything else is an open question and is said to be one.">
       <h1 class="headline"><strong class="hi">Deployment</strong> is constrained by verification cost and platform integration, not by <strong class="hb">adaptor-layer overhead</strong>.</h1>
       <div class="v3">
         <div class="col bt">

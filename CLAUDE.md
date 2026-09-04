@@ -447,11 +447,18 @@ the base signature.** Results/evaluation must lead with this
   was cut to fit — caveats kept, mechanism moved to `app:methoddetail`), and a float placed
   beside its own discussion rather than at the section head does not queue. **Re-check the
   whole PDF after any float edit** — placement is global, so a fix here creates one there.
-  ⚠️ **`tab:configs` was the same defect, found 2026-09-01** (p.30 of that build held the table
-  and nothing else). Cut the same way: the **duplicated** controlled-comparison mechanics went
-  (one matrix / one seed / identical relation, and the LAS knowledge-gap mechanism — all three
-  are in the two paragraphs above it), every **caveat** stayed. ⚠️ A caption cut is a
-  DUPLICATION cut; deleting a caveat to shorten one is Royce's call. ⚠️ The check needs no
+  ⚠️ **A FLOAT DECLARED IN A CHAPTER'S LAST PARAGRAPHS HAS NOTHING TO FLOW BESIDE IT — the
+  `\chapter` boundary is a hard barrier, and no caption cut can fix that** (`tab:configs`,
+  diagnosed and FIXED 2026-09-04, Royce naming p.30 as "1 problem nyata"). It was cut for
+  length on 2026-09-01 on the assumption an over-long caption was the cause; **that did not
+  clear it, and the assumption was wrong** — declared after *all* of §2.8's remaining prose,
+  the table missed the page's remainder and the next `\chapter` then forced a new page, so it
+  was deferred onto one of its own. Fix = **declare the float BEFORE the paragraph that
+  introduces it** (`tab:rejstats`' remedy; a source comment says why), which sets prose above
+  *and* below it — Wang's own M13 test. Measured: p.30 resolved, **no new** exhibit-only page,
+  exactly one float moved, word count and page count unchanged. ⚠️ A caption cut is a
+  DUPLICATION cut; deleting a caveat to shorten one is Royce's call — and check the float's
+  POSITION IN THE CHAPTER before blaming its caption at all. ⚠️ The check needs no
   visual inspection but it does need a CURRENT pdf — rebuild, then `pdftotext -f <p> -l <p>
   report.pdf -` shows whether body text survives on that page. A stale pdf answers only for the
   build it came from, which is all this instance proved: the defect predates the day's edits.
@@ -576,18 +583,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-02 23:11 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-04 13:22 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD 9ec1980 · 2026-09-02 ·  2/09/2026 4:58pm
-- Working tree: 22 modified tracked file(s), 35 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 86fb0fd · 2026-09-02 · 2/09 11:35pm
+- Working tree: 386 modified tracked file(s), 41 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `86fb0fd 2026-09-02 2/09 11:35pm`
   - `9ec1980 2026-09-02  2/09/2026 4:58pm`
   - `a7dddb2 2026-09-01 final report audit fixes 1/09 10:22pm`
   - `cec9519 2026-08-31 report deck 31_08 6:51 pm`
   - `e8d2481 2026-08-28 evidence 28_08 18:37`
-  - `c80dacb 2026-08-28 28_08 18:36`
 
 ### Target parameter set — anchors parsed from source
 
@@ -598,7 +605,7 @@ Mechanics that matter:
 
 ### Latest measured evidence (pointers only — never retype a number)
 
-- Stage-1 benchmark suite: `evidence/latest` → `runs/20260828_144608` (dir mtime 2026-08-28)
+- Stage-1 benchmark suite: `evidence/latest` → `runs/20260904_130107` (dir mtime 2026-09-04)
 - Stage-2 UTXO swap: `evidence/stage2/latest` → `latest` (dir mtime 2026-08-25)
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260901_215744` (dir mtime 2026-09-01)
@@ -615,13 +622,14 @@ Mechanics that matter:
 
 ### Supervisor meetings on record
 
-- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 (`meetingN_cleaned_transcript.md`)
+- Cleaned transcripts present: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 (`meetingN_cleaned_transcript.md`)
 - Merged into `las-context-consolidated.md` (the objectives spec): meetings 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+- ⚠ **NOT in that file**: meeting 13 — read the transcript/summary directly before planning work it touches
 
 ### Freshness tripwires
 
-- ⚠ Source newer than Stage-1 evidence: `ref/serialize.c` (2026-09-02 16:44) > `evidence/latest` (2026-08-28 14:47). Numbers in the report may predate the code — re-run the suite before quoting them.
-- `CLAUDE.md` hand-written sections last touched 2026-09-02.
+- Stage-1 evidence (2026-09-04) is newer than the newest scheme source (2026-09-02) — measurements match the code.
+- `CLAUDE.md` hand-written sections last touched 2026-09-04.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -1635,7 +1643,7 @@ about order, ask Royce rather than silently reordering.
 
 ## Supervisor rulings in force
 
-Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10, **§19A = M11**, **§19B = M12**).
+Spec: `las-context-consolidated.md` (**§15A = M6**, §16 = M7, §17 = M8, §18 = M9, §19 = M10, **§19A = M11**, **§19B = M12**, **§19C = M13**).
 Transcripts: `meetingN_cleaned_transcript.md` (+ `meeting8_summary.md`). **Read §16 before
 planning application work.** ⚠ **M6 was merged into the spec 2026-08-15** (Royce) — it is
 *lettered* 15A, not numbered, so §16–§19 keep the numbers cited across CLAUDE.md and `docs/`;
@@ -1643,8 +1651,48 @@ its per-item delivery **status matrix** stays in
 `docs/04-evaluation/SUPERVISOR_DELIVERABLES_GAP.md` §1. Supersedes the old "meeting 6 is not in
 that file" warning — the spec now covers every meeting.
 
+**Meeting 13 (2026-09-03, date FIXED by four independent facts — the last supervision before
+submission) — LATEST WORD.** Transcript `meeting13_cleaned_transcript.md`; detail §19C. ✅ Diarised
+and attributable, but **word accuracy is the worst of the series** and most items point at a shared
+screen, so several anchors are **unidentified — settle them on the rendered page, never by
+inference.** Verdict: *"it looks good to me in general. The only thing is that I would like to
+confirm that the word count is under the limit."* **No new structural, content or citation
+requirement was introduced** — which is **not** a formal approval, and **not** "everything else was
+optional".
+- ⚠ **Two directive items.** (a) An **Overleaf display defect** — a number rendering where he did
+  not expect it, unfixed by a from-scratch recompile (*"just try to fix it"*); **referent
+  unrecoverable, Royce identifies it.** (b) **No exhibit owns a whole page** — his second asking
+  (2026-08-31 Overleaf comment was the first), so priority up, modality unchanged; his test is *"if
+  you have some text below or above it, it's fine"*. ✅ **DISCHARGED 2026-09-04**: whole-document
+  audit run after the prose em-dash cleanup, `tab:configs` moved ahead of its own paragraph (→ the
+  float-page rule), and every remaining hit is a non-float (longtable continuation, code listings).
+- ✅ **Discharged in the meeting:** the chain-B coin, the isogeny citation, **"digest"** (*"not a
+  big issue"* — the known-answer-value split stands), no abstract title, appendix after the
+  bibliography, appendix uncounted, and **bold is fine**.
+- 💡 **Recommendations only** (do not promote): de-crowd the four-box figure (`fig:lasfuncs`?
+  anchor unconfirmed — keep M8's side-by-side and the type floor); `fig:whynow` **(a) may go, (b)
+  stays**, conditional on Royce wanting to simplify and costing four citations + an M12 deliverable
+  for **zero** words; table↔figure redundancy **tolerated** (*"even if it's redundant, it's fine"*).
+- ⚠ **AI-polish tell in the prose** — *"AI tools like to generate too many such kind of things.
+  It's too obvious."* The noun is **unrecoverable**: dashes ⇒ cosmetic, one targeted per-occurrence
+  sweep; **hedges ⇒ DO NOT sweep** (a dropped qualifier widens a claim; this repo already restored
+  hedges once). Personal preference, not a defect finding.
+- ⚠ **DECK: say "adaptor signatures"** — he rejected *scriptless swaps* (no visible link to the
+  adaptor signature) **and** *atomic swap* (*"we can also use… hash-lock techniques"*). He prefers
+  the new conceptual deck (`deck_baru.html`) but *"both are fine"*; of the technical one, *"at least
+  you can guarantee it's technically right"*. ⚠ **Project consequence, not his ruling:**
+  `check_deck_subset.py` reads `video_deck.template.html`, so a hand-built deck is outside the
+  deck ⊆ report gate and outside the generator. Hedged: per-slide section titles and **Takeaways**
+  over **Implications**; fewer colours on the transaction slide (highlight only what changed); use
+  the report's own swap figure on the slide.
+- ⚠ **Under 8:00 restated, and Royce's spoken "7:45" IS the deck's derived `data-time` sum** — so
+  it is not runtime evidence; only a timed full rehearsal settles it, and the conceptual deck has
+  never been rehearsed. 📅 Submission **Fri 2026-09-04**; extension available, deliberately unused.
+**Nothing in M13 authorises a new experiment; the M10 freeze stands.**
+
 **Meeting 12 (2026-08-27, date inferred from file metadata + the meeting's own date arithmetic
-— FULL video rehearsal, then the report's introduction) — LATEST WORD.** Transcript
+— FULL video rehearsal, then the report's introduction) — superseded as latest word by M13.**
+Transcript
 `meeting12_cleaned_transcript.md`. ✅ Source is a **diarised Teams export**, so unlike M11 these
 are attributable; the ASR still garbles every domain term (`lattice`→"latest",
 `PreSign`→"Resign") — check its §A before quoting. **Video CONTENT ACCEPTED, LENGTH REJECTED**;

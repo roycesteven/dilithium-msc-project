@@ -1417,6 +1417,102 @@ deck-only verification does not discharge a project rule written over every diag
 rule says *every*, the check enumerates the artefacts. Concrete prices are **not** owed in the
 report figure: that was the deck-specific suggestion.
 
+## 19C. Meeting-13 directives [M13, 2026-09-03 — the last supervision: report reviewed, slides polished; merged 2026-09-04]
+
+Transcript `meeting13_cleaned_transcript.md`. ✅ **Diarised source**, labels corroborated by
+content throughout, so these are attributable without re-listening. ⚠ **Word accuracy is the worst
+of the series**, and much of the meeting is two people pointing at a shared screen, so several
+items name something the audio never identifies — those are marked *anchor unconfirmed* and must
+be settled on the rendered page, never by inference from the transcript. Date is fixed by four
+independent facts (M12 scheduled Thursday 2026-09-03; *"the deadline is tomorrow"* against the
+Friday 2026-09-04 submission; the source file's mtime; the word count read aloud). Nothing here
+authorises a new experiment; the M10 freeze is untouched.
+
+**Verdict: an overall positive pre-submission assessment, not a formal approval.** His words were
+*"I think it looks good to me in general. The only thing is that I would like to confirm that the
+word count is under the limit."* **No new structural, content or citation requirement was
+introduced.** ⚠ **That is not the same as "everything else was optional":** two report-side items are directive in form — **fix the
+Overleaf display defect** (*"just try to fix it"*) and **don't let one exhibit own a whole page** —
+and the word-limit check is a condition he stated outright. The *remaining* report comments are
+recommendations, conditional suggestions, or confirmations that the current state is acceptable,
+which makes §19B.1's strength rule the operative one for reading this meeting.
+
+### 19C.1 Report — what is DISCHARGED
+
+Three Overleaf comments were closed in the meeting: the other coin on chain B (*"you have already
+updated it… much clearer"*), the isogeny-based adaptor-signature citation (accepted at p.17), and
+**"digest"** — closed as *"not a big issue"* once Royce explained the check compares C and Rust
+outputs. The repo's 2026-09-02 split (**known-answer value** for the KAT; *digest* reserved for
+actual hash outputs) stands. Also confirmed applied: **no abstract title**, **appendix after the
+bibliography**, appendix white space fine, and **the appendix is not counted**. **Bold is fine** —
+he cleared it when Royce raised it.
+
+### 19C.2 Report — the two directive items, and the recommendations
+
+- **Open defect: a number renders where he did not expect it, and a from-scratch recompile did not
+  clear it.** Still unresolved during the meeting. **The referent is not recoverable from audio —
+  Royce must identify the affected object on the rendered page; do not infer the anchor from the
+  transcript.**
+- **One exhibit must not own a page** — restated from his 2026-08-31 Overleaf comment, so this is
+  the **second** asking (priority up, modality unchanged). His own test is the operative one: *"if
+  you have some text below or above it, it's fine"*, and moving an exhibit to the appendix is a
+  remedy he proposed himself. ⚠ **Satisfied only in the build he reviewed on 2026-09-03.** Float
+  placement is global and any later prose, caption or punctuation edit can move one, so **the final
+  PDF still owes a whole-document float-only-page audit**; the recorded float arithmetic explains
+  *why*, and is never a licence to skip the render check.
+- **De-crowd the four-box figure** (recommendation) — *"there are four boxes, there are some
+  overlaps… better to make them more isolated."* Anchor unconfirmed; `fig:lasfuncs` is the only
+  four-box candidate. Any redraw keeps M8's side-by-side grouping and the type floor (widen a box,
+  never shrink type).
+- **`fig:whynow` (a) MAY go, (b) STAYS** — and the order of the exchange is the point: unprompted
+  he said *"for me, I think it's fine… but it is up to you"*, and only when Royce pressed for a
+  simplification did he name (a). ⚠ Deleting (a) would strand the four quantum citations and undo
+  an M12 deliverable, for **zero** word saving — Royce's call, not a directive.
+- **Table↔figure redundancy: declined to enforce** — *"if you would like to keep them both, that's
+  fine… the most important thing is to keep your word count less than the word limit"*, and *"even
+  if it's redundant, it's fine."* This project's own chart-in-body/table-in-appendix rule is
+  unaffected; he simply did not press it on the last day.
+- **Remove the AI-polish tell from the prose** — *"maybe you have used AI tools to help you polish
+  the words… they like to generate too many such kind of things. It's too obvious."* ⚠ The noun is
+  **unrecoverable** and the two readings demand opposite edits: dashes/hyphens is cosmetic and safe
+  — do it as **one targeted, per-occurrence sweep** preserving technical compounds — while
+  **hedges must not be swept**, since a dropped qualifier widens a claim and this repo has already
+  had to restore hedges once. Stated as a personal preference, not a defect finding.
+
+### 19C.3 Slides and delivery
+
+- **Say "adaptor signatures"** — the strongest deck outcome, reached by elimination: he could not
+  see the link between *scriptless swaps* and the adaptor signature, and rejected Royce's fallback
+  *atomic swap* with a reason — *"for atomic swap we can also use other things… like hash-lock
+  techniques."* ⚠ The phrase is in neither deck's visible text today; the terminology stands
+  regardless of where it appeared.
+- **The new conceptual deck is preferred** (*"I prefer the current version you just shared with
+  me"*) but the technical one is not rejected: *"both are fine"*, the high-level one *"if you don't
+  have time"*, and of the technical one *"at least you can guarantee it's technically right."*
+  ⚠ Project-level consequence, **not his ruling**: `check_deck_subset.py` reads
+  `video_deck.template.html`, so a hand-built deck sits outside the deck ⊆ report gate and outside
+  the generator that keeps slides and report on one evidence run.
+- **Section titles per slide, and "Takeaways" over "Implications"** — both **hedged**, so both are
+  recommendations: *"**maybe** you can add a title such as 'Takeaways'"*, and *"Yeah, 'Takeaways',
+  **I think**… **if I understand correctly**"*. His reason is stated as experience: *"sometimes I
+  might get lost. I don't know if this is your method, if this is your result."* Partly satisfied
+  already, and he said so mid-thread.
+- **Presentation is highlighting, not reading** — *"when we are presenting, it does not mean that
+  you will read all the text… the presentation is different from reading."*
+- **Fewer colours on the transaction slide** (hedged, time-boxed): leave unmodified fields alone,
+  highlight only what changed. **Use the report's own swap diagram** on the slide rather than a
+  bespoke one — *"you are not writing your report, you are doing the slides."*
+- **Under 8:00, and practise it.** ⚠ Royce's spoken *"7 minutes 45 seconds"* is **exactly** the
+  deck's derived `data-time` sum, so it may be the planning budget rather than a delivery — the
+  derived-as-measured trap M12 already sprang at ≈10:40. Only a timed full rehearsal settles it,
+  and the new conceptual deck has never been rehearsed.
+
+### 19C.4 Mechanics
+
+Submission **Friday 2026-09-04**; an extension exists and Royce chose not to use it; the platform
+allows several submissions, and Wang's instruction was simply to *"make sure that you can fully
+submit it."*
+
 ## 20. Reference links
 
 - LAS spec: https://eprint.iacr.org/2020/845

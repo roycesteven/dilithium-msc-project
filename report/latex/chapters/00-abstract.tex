@@ -3,9 +3,9 @@
 
 Blockchains authenticate transactions with elliptic-curve signatures, which a large
 quantum computer would break. Basic post-quantum signatures are now standardised, but
-the \emph{exotic} signatures that give blockchains their advanced features --- in
+the \emph{exotic} signatures that give blockchains their advanced features (in
 particular \emph{adaptor signatures}, the cryptographic core of atomic swaps and
-payment channels --- remain unevenly implemented in the post-quantum setting. This
+payment channels) remain unevenly implemented in the post-quantum setting. This
 dissertation implements and evaluates one such scheme, LAS, a lattice-based adaptor
 signature, by reusing the CRYSTALS-Dilithium reference primitives, and demonstrates it
 end-to-end in a post-quantum atomic swap.
@@ -23,7 +23,7 @@ baseline. At the target core measurement boundary the adaptor layer adds small
 compute overheads: PreSign, PreVerify and Adapt add $+\ovPreSign\%$,
 $+\ovPreVerify\%$ and $+\ovAdapt\%$ over the basic operations they mirror, and stay below
 $+\ovMaxAll\%$ across the parameter sweep. The real cost is
-\emph{communication} --- the signature is \zPctTarget\% lattice response vector, and an
+\emph{communication}: the signature is \zPctTarget\% lattice response vector, and an
 adaptor swap additionally transmits a public-key-sized statement, which each adaptor
 operation must also decode, raising the computation premium to
 $+\packedOvPreSign$--$\packedOvAdapt\%$ once encoding is counted.

@@ -38,8 +38,8 @@
 \contentsline {paragraph}{The protocol that is executed.}{27}{section*.27}%
 \contentsline {paragraph}{What a settled transaction contains, and what the adaptor layer changes.}{28}{section*.28}%
 \contentsline {paragraph}{Three configurations, and what is controlled.}{29}{section*.29}%
-\contentsline {paragraph}{The Groth16 circuit.}{29}{section*.30}%
-\contentsline {paragraph}{Measurement.}{29}{section*.31}%
+\contentsline {paragraph}{The Groth16 circuit.}{30}{section*.30}%
+\contentsline {paragraph}{Measurement.}{30}{section*.31}%
 \contentsline {chapter}{\numberline {3}Results and discussion}{31}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Correctness and robustness}{31}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Computation cost}{31}{section.3.2}%
@@ -62,7 +62,7 @@
 \contentsline {chapter}{\numberline {4}Evaluation}{50}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Evaluation strategy and its justification}{50}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Achievement of the objectives}{51}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Implementation challenges}{51}{section.4.3}%
+\contentsline {section}{\numberline {4.3}Implementation challenges}{52}{section.4.3}%
 \contentsline {section}{\numberline {4.4}Limitations}{53}{section.4.4}%
 \contentsline {chapter}{\numberline {5}Conclusion and future work}{54}{chapter.5}%
 \contentsline {section}{\numberline {5.1}Conclusions}{54}{section.5.1}%
