@@ -1,0 +1,26 @@
+output,role,source_csv,metric,setting_filter,units,script
+parameter_sets_paper.tex,Table 1 (main),parameter_sets.csv,"n, ell, M=n+ell, kappa, gamma, N, Q",all settings,dimensionless,plot_las_paper_figures.py
+per_operation_timing_paper.pdf/.png,Figure 1 (main),primary_timing.csv,"mean time per operation (independent ops, not cumulative)",Simplified Dilithium-III (headline),microseconds,plot_las_paper_figures.py
+communication_components_paper.pdf/.png,Figure 2 (main),communication_components.csv,serialized object size,Simplified Dilithium-III (headline),bytes,plot_las_paper_figures.py
+adaptor_overhead_paper.pdf/.png,"appendix (multi-setting scaling; NOT main, NOT a security comparison)",adaptor_overhead.csv,overhead of LAS operation vs the matching basic operation,all settings,percent,plot_las_paper_figures.py
+rejection_sampling_paper.pdf/.png,"appendix (optional, supporting)",rejection_sampling.csv,acceptance per attempt,all settings,percent,plot_las_paper_figures.py
+rejection_acceptance_cdf_paper.pdf/.png,main (cumulative acceptance within k attempts; Meeting-7 replacement for the per-attempt mass figure),parameter_sets.csv + rejection_sampling.csv,"P(accepted within k), measured curve plus geometric model",Simplified Dilithium-III (headline),percent,plot_las_paper_figures.py
+rejection_attempts_distribution_paper.pdf/.png,appendix (per-attempt mass function; superseded in the body by rejection_acceptance_cdf_paper),parameter_sets.csv + rejection_sampling.csv,P(exactly k attempts) model; measured mean/p50/p95/max overlaid,Simplified Dilithium-III (headline),percent,plot_las_paper_figures.py
+KEY_FINDINGS.md,main (text summary),adaptor_overhead.csv + communication_components.csv + primary_timing.csv,2-3 sentence overhead summary,Simplified Dilithium-III (headline),text,plot_las_paper_figures.py
+timing_timeline_base_vs_las.pdf/.png,appendix/debug (cumulative timing; not main),primary_timing.csv,cumulative path time,all settings,microseconds,plot_las_benchmarks.py
+protocol_step_timeline.pdf/.png,appendix/debug (cumulative timing; not main),primary_timing.csv,cumulative step time,all settings,microseconds,plot_las_benchmarks.py
+computation_component_absolute.pdf/.png,debug (internal component attribution),computation_components.csv,inner-step time,L3-like,microseconds,plot_las_benchmarks.py
+component_scaling_vs_level.pdf/.png,debug (internal component attribution),computation_components.csv,inner-step scaling,all settings,microseconds,plot_las_benchmarks.py
+verify_ext_attribution_vs_level.pdf/.png,debug (internal component attribution),computation_components.csv,Verify/Ext decomposition,all settings,microseconds,plot_las_benchmarks.py
+timing_overhead_clean.pdf/.png,debug (superseded by Figure 3),adaptor_overhead.csv,overhead pairs,L3-like,percent,plot_las_benchmarks.py
+communication_summary_clean.pdf/.png,debug (mixes Stage-1 sizes with Stage-2 payloads),communication_components.csv,payload totals,L3-like,bytes,plot_las_benchmarks.py
+acceptance_vs_level.pdf/.png,appendix (superseded by rejection_sampling_paper),rejection_sampling.csv,acceptance per attempt,all settings,percent,plot_las_benchmarks.py
+application_atomic_swap_payload_breakdown.pdf/.png,appendix (Stage-2 application),application_atomic_swap.csv,atomic-swap payload,L3-like,bytes,plot_las_benchmarks.py
+application_multihop_payload_vs_k.pdf/.png,appendix (Stage-2 AMHL/multi-hop),application_multihop_amhl.csv,multi-hop payload vs K,L3-like,bytes,plot_las_benchmarks.py
+application_multihop_presign_time_vs_k.pdf/.png,appendix (Stage-2 AMHL/multi-hop),application_multihop_amhl.csv,multi-hop pre-sign time vs K,L3-like,milliseconds,plot_las_benchmarks.py
+application_multihop_norm_vs_k.pdf/.png,appendix (Stage-2 AMHL/multi-hop),application_multihop_amhl.csv,witness norm vs bound vs K,L3-like,infinity-norm,plot_las_benchmarks.py
+per_operation_timing_report.pdf/.png,debug (duplicate of Figure 1),primary_timing.csv,per-operation time,all settings,microseconds,plot_las_benchmarks.py
+communication_components_clean_report.pdf/.png,debug (duplicate of Figure 2),communication_components.csv,component sizes,L3-like,bytes,plot_las_benchmarks.py
+adaptor_overhead_vs_level_report.pdf/.png,debug (duplicate of Figure 3),adaptor_overhead.csv,overhead,all settings,percent,plot_las_benchmarks.py
+parameter_sets_report.pdf/.png,debug (parameter PNG; use Table 1 instead),parameter_sets.csv,parameter table image,all settings,dimensionless,plot_las_benchmarks.py
+parameter_sets.pdf/.png,debug (parameter PNG; use Table 1 instead),parameter_sets.csv,parameter table image,all settings,dimensionless,plot_las_benchmarks.py

@@ -1,0 +1,49 @@
+level,component,mean_us,sd_us
+paper,A-product / commitment w,26.156,0.057
+paper,challenge hash,26.702,0.06
+paper,c*r one response poly,2.846,0.017
+paper,c*r all LAS_M polys,24.541,0.034
+paper,norm check,1.098,0.011
+paper,w + Y,2.413,0.013
+paper,z_hat + r',2.471,0.009
+paper,c*t all LAS_N pk polys,20.247,0.055
+paper,KeyGen sample r,4.804,0.037
+paper,Ext s = z - z_hat,2.473,0.014
+paper,Ext A*s,26.16,0.073
+paper,Ext t'==A*s check,0.257,0.005
+L2,A-product / commitment w,23.047,0.028
+L2,challenge hash,26.367,0.025
+L2,c*r one response poly,2.478,0.018
+L2,c*r all LAS_M polys,21.441,0.014
+L2,norm check,1.09,0.009
+L2,w + Y,2.406,0.019
+L2,z_hat + r',2.466,0.008
+L2,c*t all LAS_N pk polys,17.899,0.013
+L2,KeyGen sample r,4.755,0.013
+L2,Ext s = z - z_hat,2.469,0.019
+L2,Ext A*s,23.057,0.026
+L2,Ext t'==A*s check,0.254,0.0
+L3,A-product / commitment w,36.574,0.016
+L3,challenge hash,40.012,0.038
+L3,c*r one response poly,2.744,0.388
+L3,c*r all LAS_M polys,29.989,0.046
+L3,norm check,1.463,0.011
+L3,w + Y,3.952,0.006
+L3,z_hat + r',3.383,0.005
+L3,c*t all LAS_N pk polys,26.933,0.022
+L3,KeyGen sample r,5.266,0.021
+L3,Ext s = z - z_hat,3.384,0.014
+L3,Ext A*s,36.629,0.086
+L3,Ext t'==A*s check,0.383,0.005
+L5,A-product / commitment w,60.882,0.049
+L5,challenge hash,52.851,0.232
+L5,c*r one response poly,2.829,0.012
+L5,c*r all LAS_M polys,44.227,0.018
+L5,norm check,2.036,0.006
+L5,w + Y,4.811,0.011
+L5,z_hat + r',4.65,0.014
+L5,c*t all LAS_N pk polys,38.491,0.036
+L5,KeyGen sample r,7.147,0.015
+L5,Ext s = z - z_hat,4.632,0.014
+L5,Ext A*s,60.604,0.082
+L5,Ext t'==A*s check,0.515,0.009
