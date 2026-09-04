@@ -122,7 +122,7 @@ boundary \cite{riou2026apples}.
 Signing and pre-signing take longer than verification because of rejection sampling,
 intrinsic to the Fiat--Shamir-with-aborts family rather than a defect here.
 \Cref{eq:rejacc} predicts 2.719 attempts per Sign and 2.775 per PreSign, the latter
-restarting about $2\%$ more often because its bound is tighter by one; counted directly
+expected to restart about $2\%$ more often because its bound is tighter by one; counted directly
 rather than estimated from a timing ratio, the run of record observed \rejAttBase{} and
 \rejAttLas{}. The supporting rejection table and CDF are deferred to
 Appendix~\ref{app:compute-support}: \cref{tab:rejstats,fig:rejcdf} show that measured
@@ -162,8 +162,8 @@ leaving every one of those bytes unchanged.
   \input{generated/tab_rust}
 \end{table}
 
-Absolute timings do not agree: every operation is slower in the Rust port, by up to
-\rustCMaxDev\% (\rustCMaxDevOp), and no cause for that gap has been measured. What
+Absolute timings do not agree: neither port is uniformly faster, the largest gap is
+\rustCMaxDev\% (\rustCMaxDevOp), and no cause for it has been measured. What
 reproduces is the comparison itself. At the core tier the Rust
 port measures $+\rustOvPreSign\%$, $\rustOvPreVerify\%$ and $+\rustOvAdapt\%$, all
 single-digit, like the C column beside them; the slightly \emph{negative} PreVerify figure is

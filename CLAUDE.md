@@ -583,18 +583,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-04 13:22 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-04 17:38 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD 86fb0fd · 2026-09-02 · 2/09 11:35pm
-- Working tree: 386 modified tracked file(s), 41 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 5abb6ec · 2026-09-04 · 04_09__14_09
+- Working tree: 8 modified tracked file(s), 42 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `5abb6ec 2026-09-04 04_09__14_09`
   - `86fb0fd 2026-09-02 2/09 11:35pm`
   - `9ec1980 2026-09-02  2/09/2026 4:58pm`
   - `a7dddb2 2026-09-01 final report audit fixes 1/09 10:22pm`
   - `cec9519 2026-08-31 report deck 31_08 6:51 pm`
-  - `e8d2481 2026-08-28 evidence 28_08 18:37`
 
 ### Target parameter set — anchors parsed from source
 
@@ -605,12 +605,12 @@ Mechanics that matter:
 
 ### Latest measured evidence (pointers only — never retype a number)
 
-- Stage-1 benchmark suite: `evidence/latest` → `runs/20260904_130107` (dir mtime 2026-09-04)
+- Stage-1 benchmark suite: `evidence/latest` → `runs/20260904_134842` (dir mtime 2026-09-04)
 - Stage-2 UTXO swap: `evidence/stage2/latest` → `latest` (dir mtime 2026-08-25)
 - On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260901_215744` (dir mtime 2026-09-01)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8999** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8998** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -782,7 +782,22 @@ KAT-locked to C byte-for-byte.
   divergence without evidence** (compiler, machine load and build profile are all guesses until
   measured). What survives independently of it, and is what the claims must rest on: the KAT
   byte-agreement and the *relative* adaptor overheads. So re-read `\rustCMaxDev` against
-  §`sec:res-rust`'s own wording after every Stage-1 run. Live status → `PROGRESS.md`.
+  §`sec:res-rust`'s own wording after every Stage-1 run.
+  ✅ **SETTLED 2026-09-04 by RE-RUNNING, which answers what `PROGRESS.md` left open (re-run vs
+  rewrite): absolute C-vs-Rust timing is RUN-SENSITIVE, not a stable property of either port** —
+  `\rustCMaxDev` moved by more than an order of magnitude across evidence runs, and **the cause
+  is still not established**, so infer no fixed cross-language speed ranking: quote the current
+  measured gap and say the cause was not measured. The sentence that died with it was an
+  absolute — *"every operation is slower in the Rust port"* — which the regenerated `tab:rust`
+  contradicted on its own page once some operations came back faster in Rust. Settled wording:
+  **"neither port is uniformly faster, the largest gap is …, and no cause for it has been
+  measured"**; re-read that sentence, not just the macro, after every Stage-1 run.
+  ⚠️ **A SMALL MEASURED OVERHEAD CAN CROSS ZERO WITHOUT IMPLYING A SPEED-UP** — the accepted
+  evidence itself carries negative PreVerify figures, which `sec:res-rust` already words as the
+  measurement floor. The rejection gate checks attempt counts, never timing sign, so a small
+  negative is **not** a failed run and **not** a reason to re-run. Re-run only for an
+  independently identified validity problem (a machine that was not quiet, a failed gate),
+  **never to obtain the expected sign** — that is selecting runs by outcome.
 
 **Stage 2 — the application (complete, Bitcoin/UTXO).** `rust/las-swap/` = eprint 2020/845 §4.1
 Fig. 1 atomic swap over a UTXO ledger model (ledger takes the signature algorithm as a parameter,
@@ -1682,7 +1697,15 @@ optional".
   the new conceptual deck (`deck_baru.html`) but *"both are fine"*; of the technical one, *"at least
   you can guarantee it's technically right"*. ⚠ **Project consequence, not his ruling:**
   `check_deck_subset.py` reads `video_deck.template.html`, so a hand-built deck is outside the
-  deck ⊆ report gate and outside the generator. Hedged: per-slide section titles and **Takeaways**
+  deck ⊆ report gate and outside the generator. ⚠️ **THAT COST A LIVE CONTRADICTION 2026-09-04:
+  the hand-built deck's benchmark region is LITERAL rather than generator-backed, so a Stage-1
+  re-run left it quoting the previous run while the report moved to the new one — six stale
+  values there, and neither gate could see any of them.** After ANY re-run, hand-sync that
+  region against the regenerated macros, and sync **all four representations together** —
+  visible label, `title=` tooltip, spoken `data-notes`, and the **bar width**, which is derived
+  (a bar reads as a fraction of the classical ratio's own overhead, so a moved `\clOvPreSignX`
+  moves the LAS comparison widths on that slide).
+  Hedged: per-slide section titles and **Takeaways**
   over **Implications**; fewer colours on the transaction slide (highlight only what changed); use
   the report's own swap figure on the slide.
 - ⚠ **Under 8:00 restated, and Royce's spoken "7:45" IS the deck's derived `data-time` sum** — so
