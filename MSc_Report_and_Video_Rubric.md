@@ -55,7 +55,13 @@ This section is expected to clearly present a concise summary of the project’s
 
 - Does the abstract give an appropriate executive summary of the work? 
 
-c
+## **3.1.2 Introductory Material (20%)** 
+
+You should clearly describe the project setting, scoping the subject area with proper citations and figures, and stating the objectives. 
+
+- Does the work effectively establish the context (why this project matters), and clearly explain the subject area (what this project is about), with proper citations/figures? 
+
+- Are the project objectives clearly stated, coherent and appropriate? 
 
 ## **3.1.3 Methodology (20%)** 
 
