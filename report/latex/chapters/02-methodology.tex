@@ -1,12 +1,120 @@
 \chapter{Methodology}
 \label{ch:methodology}
 
-\section{The LAS construction}
+\section{From a base signature to a lattice adaptor signature}
 \label{sec:construction}
 
+% ORDER IS DELIBERATE (2026-09-05): concept, then figure, then algebra, then the bound as
+% a CONSEQUENCE of Adapt, then the bridge into sec:impl.  The section previously opened on
+% Rq and the Module-SIS relation, which asked a non-specialist reader to hold the objects
+% before knowing what they are for (rubric 3.1.2, and M10's "assume the audience have some
+% computer science background in general, but not very specific for crypto").
+A signature scheme offers three operations: \textsc{KeyGen} produces a key pair,
+\textsc{Sign} signs a message, and \textsc{Verify} accepts or rejects. LAS keeps such a
+base signature and adds a public statement $Y$, its secret witness $r'$, and four
+operations. A pre-signature is locked to $Y$: it passes \textsc{PreVerify} but not the
+base \textsc{Verify} until a party knowing $r'$ unlocks it with \textsc{Adapt}, and
+publishing the unlocked signature lets anyone holding the pre-signature
+\textsc{Extract} the witness. \Cref{fig:lasfuncs}
+shows that arrangement before the algebra.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      font=\normalsize,
+      box/.style={draw, rounded corners, align=center, minimum height=11mm,
+                  inner sep=4pt},
+      base/.style={box, text width=88mm},
+      opbox/.style={box, text width=25mm, minimum height=20mm},
+      ann/.style={font=\normalsize\itshape, align=center, text width=32mm},
+      >={Stealth[]}]
+
+    % NOT "reused unchanged": at implementation level the base signature is PROJECT code
+    % (a simplified, hint-free construction) built over reused Dilithium primitives, so
+    % that label overclaimed.  This figure is conceptual, so it names the functionality.
+    % Function NAMES are bold, explanatory lines are not, so the flow can be scanned.
+    % Bold is fine here (M13, discharged): the no-bold rule is about PLOTTED figures,
+    % where Latin Modern bold is ~15% wider against the body face.
+    % ⚠ \textbf WITHOUT \textsc.  Latin Modern has no T1/lmr/bx/sc, so \textbf{\textsc{..}}
+    % silently fell back to bx/n ("Font shape `T1/lmr/bx/sc' undefined ... using
+    % `T1/lmr/bx/n'") -- the small caps were dropped anyway and the log carried a warning.
+    % Plain bold is what actually rendered, and it matches the four operation boxes below,
+    % which are \textbf too.  Do not reinstate \textsc here expecting bold small caps.
+    \node[base] (base) at (0mm,0mm)
+      {Base signature functionality\\
+       \textbf{KeyGen}\qquad \textbf{Sign}\qquad
+       \textbf{Verify}};
+
+    % 32mm between centres, not 28.  An opbox is 25mm of text plus inner sep=4pt on
+    % each side, so its border box is ~27.8mm: at 28mm spacing the four boxes almost
+    % touched, which is the crowding Wang asked about in M13 ("four boxes ... some
+    % overlaps ... more isolated").  32mm leaves a visible ~4mm channel between them.
+    % The four functions stay side by side (M8) and no type is shrunk (the type floor).
+    % MERGED 2026-09-05 (Royce): the separate data-flow figure that stood after
+    % eq:signbound is gone, and its minimal algebra moved into these four boxes.  The two
+    % drawings repeated one flow at two levels of detail -- one too abstract, one too
+    % detailed -- so this keeps THIS layout (M8's four functions side by side) and takes
+    % only the per-function algebra and the two external inputs from the other.
+    %
+    % ⚠ c~ IS DELIBERATELY ABSENT, AND SampleInBall GOES WITH IT.  Wang's Meeting-10 fix
+    % (transcript S28) was for a drawing that showed `c' and `c~' with no function
+    % between them: he asked "we have c -- but how did we get the c?".  The trigger is
+    % the UNEXPLAINED c~, so a figure carrying `c' alone cannot raise it -- `c' is
+    % defined in this section's prose as H(pk, w+Y, M).  If c~ is ever put back on this
+    % drawing, SampleInBall must come back with it.
+    % NO ALGEBRA HERE, DELIBERATELY.  This figure answers "what changes when a base
+    % signature becomes LAS?"; the equations follow it in the prose, so a reader meets
+    % them already knowing what each operation is for.  Every box names its output.
+    \node[opbox] (ps) at (-48mm,-31mm)
+      {\textbf{PreSign}\\lock to $Y$\\$\to\hat{\sigma}$};
+    \node[opbox] (pv) at (-16mm,-31mm)
+      {\textbf{PreVerify}\\check $\hat{\sigma}$};
+    \node[opbox] (ad) at (16mm,-31mm)
+      {\textbf{Adapt}\\unlock with $r'$\\$\to\sigma$};
+    \node[opbox] (ex) at (48mm,-31mm)
+      {\textbf{Extract}\\from $\sigma$ and\\matching $\hat{\sigma}$\\$\to$ witness};
+
+    \draw[->] (ps) -- (pv);
+    \draw[->] (pv) -- (ad);
+    \draw[->] (ad) -- (ex);
+
+    % The two external inputs, kept from the merged figure.  Y is hashed into the
+    % challenge by BOTH PreSign and PreVerify; r' is Adapt's alone.
+    %
+    % ⚠ Y IS PLACED ABSOLUTELY, NOT WITH "above=of ps" -- that overlapped the base box on
+    % the rendered page.  The base box is 11mm high centred at 0 plus a 4pt inset, so its
+    % bottom edge is ~-6.9mm; "above=8mm of ps" put this label's TOP at ~-4mm, i.e. ~3mm
+    % inside it, and horizontally the base spans +-45mm against this label's -64..-32mm.
+    % anchor=north at -9mm clears the base by ~2mm and still leaves a gap above ps
+    % (north -21mm).  Re-render after changing the base box height or this label's lines.
+    % One line, not two: anchored north, so dropping "(into the hash)" lifts the label's
+    % BOTTOM edge and widens the gap to PreSign without moving the picture's bounding box
+    % -- no page re-flow.  The hash mechanism is stated in the prose below, where the
+    % algebra is; this figure is deliberately conceptual.
+    \node[ann, anchor=north] (Y) at (-48mm,-9mm) {statement $Y$};
+    \draw[->, dashed] (Y) -- (ps);
+    \draw[->, dashed] (Y) -| (pv);
+    \node[ann, below=8mm of ad] (wit) {witness $r'$\\(secret)};
+    \draw[->, dashed] (wit) -- (ad);
+  \end{tikzpicture}
+  \caption[The four functions LAS adds to the base signature]{What changes when a base
+  signature becomes an adaptor signature. Base \textsc{Sign} and \textsc{Verify} remain
+  the signature interface; LAS adds \textsc{PreSign} and \textsc{PreVerify}, which lock
+  signing to the public statement $Y$, \textsc{Adapt}, which unlocks a pre-signature
+  $\hat{\sigma}$ using the secret witness $r'$ to give an ordinary signature $\sigma$,
+  and \textsc{Extract}, which recovers a witness from $\sigma$ together with its
+  matching pre-signature. \textsc{Gen} produces $(Y,r')$ from the same key-generation
+  relation. Extraction needing \emph{both} objects is why publishing $\sigma$ reveals
+  the witness only to a party already holding $\hat{\sigma}$, which is the step an atomic
+  swap uses. The algebra of each operation follows in the text.}
+  \label{fig:lasfuncs}
+\end{figure}
+
 LAS is a lattice adaptor signature whose base is a simplified, Dilithium-style
-Fiat--Shamir-with-aborts signature \cite{esgin2020post,ducas2018crystals}. All objects
-live in $\Rq = \mathbb{Z}_q[X]/(X^d+1)$, the public matrix has the form
+% NOT "all objects": the message, the digest c~ and the integer parameters are not in Rq,
+% and the very next clause puts A in Rq^{n x (n+ell)} rather than in Rq.
+Fiat--Shamir-with-aborts signature \cite{esgin2020post,ducas2018crystals}. Vectors and
+matrices are over $\Rq = \mathbb{Z}_q[X]/(X^d+1)$, the public matrix has the form
 $A = [\,I_n \mid A'\,] \in \Rq^{\,n\times(n+\ell)}$, and a key pair is a short secret $r$
 with its image $t = A\cdot r$. The hard relation $(Y,r')$ reuses exactly that structure,
 % The hardness attribution follows the paper's own Section-3 hard-relation explanation,
@@ -18,15 +126,15 @@ with its image $t = A\cdot r$. The hard relation $(Y,r')$ reuses exactly that st
 % reduction (Section 3, p.7) is the AUGMENTED one -- [A | t](r,-1)^T = 0 -- which is why
 % its instance is M-SIS_{n,n+ell+1}, one column wider than A.  Keep [A | Y] in the
 % sentence; "sufficiently short" carries the norm bound beta and must not be dropped.
-so a statement is ``just another public key'': a sufficiently short preimage $r'$ of $Y$
+so a statement is structurally another public key: a sufficiently short preimage $r'$ of $Y$
 under $A$ yields a Module-SIS solution $(r',-1)^{\top}$ for $[\,A \mid Y\,]$, hence the
 relation's hardness \cite{esgin2020post}. Esgin et al.\ \cite{esgin2020post}
 name this statement-generation step \textsc{Gen}: sample an independent ternary vector
 $r'$, compute $Y=A\,r'$, and
 return $(Y,r')$. Thus \textsc{Gen} is not a further primitive but \textsc{KeyGen}
 with its public key $t$ relabelled as the statement $Y$ and its secret $r$
-relabelled as the witness $r'$. \emph{Key generation is shared}, so LAS is exactly the
-base signature plus four adaptor operations. The implementation mirrors that split:
+relabelled as the witness $r'$. \emph{Key generation is shared.} The implementation
+mirrors that split:
 \texttt{relation\_gen} implements \textsc{Gen}, while \texttt{las.c} and
 \texttt{las.rs} hold the adaptor layer alone.
 
@@ -38,142 +146,59 @@ $c = H(\mathit{pk}, w + Y, M)$, keeps the response $\hat{\vecz} = y + c\,r$, and
 the \emph{tighter} bound
 $\gamma-\kappa-1$; \textsc{PreVerify}, which recomputes $w' = A\hat{\vecz} - c\,t$ and checks
 $c = H(\mathit{pk}, w'+Y, M)$; % NOT "$r' := y$": Algorithm 2 parses the pair that way, but this report reserves $y$ for
-% the mask alone (see fig:flow's caption).  Writing the paper's local parse here made the
+% the mask alone (see fig:lasfuncs' caption).  Writing the paper's local parse here made the
 % sentence read as Adapt adding the masking randomness.
 \textsc{Adapt}, which adds the witness $r'$,
 $\vecz \leftarrow \hat{\vecz} + r'$, producing a signature the base verifier accepts; and
 \textsc{Extract}, which recovers $s = \vecz - \hat{\vecz}$ (\cref{fig:lasfuncs}).
 
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}[
-      font=\normalsize,
-      box/.style={draw, rounded corners, align=center, minimum height=11mm,
-                  inner sep=4pt},
-      base/.style={box, text width=88mm},
-      opbox/.style={box, text width=25mm, minimum height=18mm},
-      note/.style={font=\normalsize\itshape, align=center},
-      wire/.style={box, text width=104mm, minimum height=10mm},
-      >={Stealth[]}]
 
-    \node[base] (base) at (0mm,0mm)
-      {Base signature reused unchanged\\
-       \textsc{KeyGen}\qquad \textsc{Sign}\qquad \textsc{Verify}};
-
-    % 32mm between centres, not 28.  An opbox is 25mm of text plus inner sep=4pt on
-    % each side, so its border box is ~27.8mm: at 28mm spacing the four boxes almost
-    % touched, which is the crowding Wang asked about in M13 ("four boxes ... some
-    % overlaps ... more isolated").  32mm leaves a visible ~4mm channel between them.
-    % The four functions stay side by side (M8) and no type is shrunk (the type floor).
-    \node[opbox] (ps) at (-48mm,-31mm)
-      {PreSign\\locked $\hat{\sigma}$};
-    \node[opbox] (pv) at (-16mm,-31mm)
-      {PreVerify\\check $\hat{\sigma}$};
-    \node[opbox] (ad) at (16mm,-31mm)
-      {Adapt\\$\hat{\sigma}+r'$\\$\to\sigma$};
-    \node[opbox] (ex) at (48mm,-31mm)
-      {Extract\\$\sigma-\hat{\sigma}$\\$\to s$};
-
-    \draw[->] (ps) -- (pv);
-    \draw[->] (pv) -- (ad);
-    \draw[->] (ad) -- (ex);
-
-    % Centred over the two boxes it feeds, so neither dashed arrow crosses the other.
-    \node[note] (hash) at (-32mm,-15mm) {statement $Y$\\in challenge hash};
-    \draw[->, dashed] (hash) -- (ps);
-    \draw[->, dashed] (hash) -- (pv);
-
-    \node[note] (wit) at (16mm,-53mm) {secret witness $r'$};
-    \draw[->, dashed] (wit) -- (ad);
-
-    \node[wire] at (0mm,-70mm)
-      {wire challenge\\
-       transmit $\tilde c$; recompute $c=\textsf{SampleInBall}(\tilde c)$};
-  \end{tikzpicture}
-  \caption[The four functions LAS adds to the base signature]{The four functions LAS
-  adds around an unchanged base signature. \textsc{PreSign} and \textsc{PreVerify} bind
-  the public statement $Y$ into the challenge; \textsc{Adapt} uses the witness $r'$ to
-  turn the pre-signature into an ordinary signature; and \textsc{Extract} recovers a
-  witness from that ordinary signature and the matching pre-signature. The implementation
-  transmits $\tilde c$ and re-derives $c$ with \textsf{SampleInBall}.}
-  \label{fig:lasfuncs}
-\end{figure}
-
+% The bound is framed as a CONSEQUENCE of Adapt rather than announced as "the subtle
+% design point": adding r' is what puts the adapted response at risk of the base bound.
+Adding $r'$ during \textsc{Adapt} imposes one constraint: the adapted response must still
+clear the base verifier's norm bound.
+% NOT "accept iff": base Verify also recomputes the commitment and compares the
+% challenge, so this equation states the NORM condition alone, not the whole predicate.
 \begin{equation}
   \label{eq:signbound}
-  \text{accept iff } \inftynorm{\vecz} \le \gamma-\kappa,
+  \text{norm condition: } \inftynorm{\vecz} \le \gamma-\kappa,
   \qquad \gamma = \kappa\, d\,(n+\ell).
 \end{equation}
 
-The subtle design point is the bound budget. An \emph{honest} witness is ternary, so
+An \emph{honest} witness is ternary, so
 $\inftynorm{r'}\le 1$, and because \textsc{PreSign} rejects at $\gamma-\kappa-1$ the response
-after \textsc{Adapt} clears \cref{eq:signbound}; loosening it to $\gamma-\kappa$ would let
+after \textsc{Adapt} clears \cref{eq:signbound}; loosening it to $\gamma-\kappa$ could let
 adapted signatures exceed the bound and be rejected.
-\Cref{fig:flow} shows the data flow.
 
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}[
-      node distance=7mm and 5mm,
-      box/.style={draw, rounded corners, align=center, minimum height=8mm,
-                  inner sep=3pt, font=\normalsize},
-      ann/.style={font=\normalsize\itshape, align=center, text width=32mm},
-      >={Stealth[]}]
-    \node[box] (ps)  {PreSign\\$\hat{\vecz}=y+c\,r$\\$\hat{\sigma}=(\tilde c,\hat{\vecz})$};
-    \node[box, right=of ps] (pv) {PreVerify};
-    \node[box, right=of pv] (ad) {Adapt\\$\vecz=\hat{\vecz}+r'$};
-    \node[box, right=of ad] (vf) {Verify /\\Publish $\sigma$};
-    \node[box, right=of vf] (ex) {Extract\\$s=\vecz-\hat{\vecz}$};
-    \draw[->] (ps) -- (pv);
-    \draw[->] (pv) -- (ad);
-    \draw[->] (ad) -- (vf);
-    \draw[->] (vf) -- (ex);
-    % statement Y enters at PreSign and PreVerify (hashed into the challenge)
-    \node[ann, above=of ps] (Y) {statement $Y$\\(into the hash)};
-    \draw[->, dashed] (Y) -- (ps);
-    \draw[->, dashed] (Y) -| (pv);
-    % witness y enters at Adapt; is revealed by Extract
-    \node[ann, below=of ad] (y) {witness $r'$\\(secret)};
-    \draw[->, dashed] (y) -- (ad);
-    % anchored to ex's right edge so the wrapped annotation grows leftwards and cannot
-    % push the picture's bounding box past \textwidth at 12pt.  That offset puts yo's
-    % centre left of ex.south, so a straight connector would be DIAGONAL: every
-    % connector in this figure is vertical or horizontal only, so the link is routed as
-    % an orthogonal staircase (down, across, down) rather than by re-centring the node,
-    % which would grow the bounding box to the right.
-    \node[ann, text width=38mm, anchor=north east] (yo) at ([yshift=-7mm]ex.south east)
-      {$s$, recovered only with\\the matching pre-signature};
-    \draw[->, dashed] (ex.south) -- ++(0mm,-3.5mm) -| (yo.north);
-  \end{tikzpicture}
-  \caption[The LAS adaptor data flow]{The LAS adaptor data flow, in the symbols of
-  \cref{fig:lasfuncs}: $y$ is PreSign's mask, $r'$ the honest witness, $s$ what Extract
-  recovers, and $c=\textsf{SampleInBall}(\tilde c)$, with $\tilde c$ the transmitted
-  challenge digest. The statement $Y$ is folded into the challenge
-  hash during PreSign and PreVerify; the witness is added by Adapt to turn the
-  pre-signature into a base signature; and publishing that signature lets anyone
-  holding the pre-signature run Extract to recover it. This last step is what an atomic
-  swap uses.}
-  \label{fig:flow}
-\end{figure}
+The construction therefore separates what an implementation may reuse from what it must
+add: the lattice arithmetic is common to both paths, while statement handling and the
+four adaptor operations form a layer above it.
 
-\section{Implementation strategy: reuse, do not reinvent}
+\section{Implementation strategy: reuse the lattice core, isolate the adaptor layer}
 \label{sec:impl}
 
-The guiding principle is that an exotic scheme equals a basic scheme plus extra functions,
-so the lattice arithmetic should be \emph{reused}, not rewritten. The implementation is
+% Opens as a CONSEQUENCE of sec:construction's closing bridge rather than restating the
+% basic-plus-extras principle a third time (the section title and sec:construction's
+% opening both carry it now).  ⚠ "without modifying upstream functions" is the accurate
+% claim -- the simplified base is PROJECT code built over reused primitives, so this must
+% never be phrased as upstream Sign/KeyGen being reused untouched.
+That split determines the implementation strategy. The Dilithium polynomial, NTT and hash
+primitives are reused without modifying any upstream function, and the simplified base
+signature and the LAS operations are built around them. The implementation is
 built additively on the upstream CRYSTALS-Dilithium reference
 \cite{ducas2018crystals,pqcrystalsdilithium} at a pinned commit, and the same strategy is
 applied again in Rust (\cref{sec:rustport}). Neither is itself ``the reference'': both are
 \emph{modified, simplified} ML-DSA-style bases carrying the LAS layer of
 \cite{esgin2020post}.
 
-Classifying every source file by how the reference is used (\cref{tab:reuse}) yields a
-clean split: the entire lattice core is reused unchanged, while the adaptor scheme,
-serialization, application integration, and evaluation harnesses are project-specific
-additions. No upstream function is modified; the low-level Dilithium arithmetic and hash
-primitives are reused unchanged. The vendored
-\texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer \cite{lazer} are unmodified too, the
-latter behind a dedicated bridge.
+% The source-file inventory prose that stood here restated tab:reuse, which the figure
+% below now shows as a dependency stack; the per-file classification stays in the
+% appendix as the evidence rather than being narrated twice.
+\Cref{fig:reusestack} sets out that boundary, with the per-file classification in
+\cref{tab:reuse}. The vendored
+\texttt{secp256k1-zkp} \cite{secp256k1zkp} and LaZer \cite{lazer} are also used unmodified.
+LaZer is accessed through a dedicated bridge.
+
 
 \paragraph{Data types and the matrix product.}
 LAS is a self-contained module over the reference's degree-$d$ polynomial type. Because
@@ -192,12 +217,70 @@ secrets and witnesses, and a rejection sampler uniform on $[-\gamma,\gamma]$ for
 Following \cite{esgin2020post}, the base signature omits Dilithium's hint vector,
 Power2Round and high/low-bit decomposition, hashing the full commitment $w$ rather
 than its high bits. This keeps the exact identity $A\vecz - c\,t = w$ available, at the cost of larger keys and
-signatures. Whether those optimisations can coexist with an adaptor layer was not assumed
-but \emph{tested} (\cref{sec:res-mldsa}; design in \cref{app:methoddetail}). The modulus is reused too: the reference NTT fixes
+signatures. \Cref{sec:res-mldsa} tests whether those optimisations can coexist with an
+adaptor layer (design in \cref{app:methoddetail}). The modulus is reused too: the reference NTT fixes
 $q=8\,380\,417\approx 2^{23}$, FIPS~204's own modulus \cite{1274601}, rather than the
 $q\approx 2^{24}$ of \cite{esgin2020post}; correctness is unaffected since
 $q>2\gamma$, and only the Module-SIS/LWE margin differs. No module depends on a
 mode-specific constant, so identical code runs at every parameter set.
+
+With the in-memory construction fixed, the next requirement is a canonical byte
+representation and a verification interface that consumes those bytes.
+
+\begin{figure}[htbp]
+  \centering
+  % A DEPENDENCY STACK, not a three-column reused/omitted/added split: the columns
+  % suggested the three categories are parallel, when in fact each layer is built on the
+  % one above it.  ⚠ Never label the middle layer "Dilithium KeyGen/Sign/Verify reused":
+  % it is PROJECT code implementing the simplified construction over reused primitives.
+  % ⚠ No module COUNT here -- fig:repostructure once miscounted the LAS layer as five
+  % modules when it is six, so this figure names functions and leaves counting to it.
+  \begin{tikzpicture}[
+      font=\normalsize,
+      lyr/.style={draw, rounded corners, align=center, text width=104mm,
+                  minimum height=15mm, inner sep=4pt},
+      >={Stealth[]}, node distance=7mm]
+
+    % "and modulus": q is a PARAMETER, not a primitive, but it is reused rather than
+    % chosen -- the reference NTT fixes it -- so it belongs in this layer under a heading
+    % that does not call it a primitive.
+    \node[lyr] (prim)
+      {\textbf{Reused upstream primitives and modulus}\\
+       polynomial type and NTT \quad SHAKE256 \quad \texttt{SampleInBall} \quad
+       $q=8\,380\,417$};
+    \node[lyr, below=of prim] (base)
+      {\textbf{Project simplified base construction}\\
+       \textsc{KeyGen}, \textsc{Sign}, \textsc{Verify} over the full commitment $w$;\\
+       no hint vector, no Power2Round, no high/low-bit split};
+    % ⚠ THE SAMPLERS ARE NOT LISTED HERE.  Both are project additions, but neither is
+    % adaptor-specific: the ternary sampler serves secrets AND witnesses, and the mask
+    % sampler is used by base Sign as well as PreSign.  Putting them in this box read as
+    % "the adaptor layer owns them".  The prose in this section classifies them correctly.
+    \node[lyr, below=of base] (las)
+      {\textbf{Project LAS adaptor layer}\\
+       \textsc{Gen} and the hard relation \quad \textsc{PreSign} \quad
+       \textsc{PreVerify}\\
+       \textsc{Adapt} \quad \textsc{Extract}};
+    \node[lyr, below=of las] (out)
+      {\textbf{Built on that layer}\\
+       serialization and the byte interface \quad tests \quad
+       benchmarks \quad UTXO swap};
+
+    \draw[->] (prim) -- (base);
+    \draw[->] (base) -- (las);
+    \draw[->] (las) -- (out);
+  \end{tikzpicture}
+  \caption[What is reused, what is simplified, and what the project adds]{The
+  implementation boundary, as a dependency stack. The lattice primitives are reused from
+  the pinned upstream reference and \emph{no upstream function is modified}. The
+  simplified base signature is project code written over those primitives, not upstream
+  \textsc{Sign} and \textsc{Verify} reused untouched: it omits the hint vector,
+  Power2Round and the high/low-bit split so that the exact verification identity the LAS
+  construction needs stays available. The adaptor layer is added above that base, and the
+  serialization, testing, benchmarking and application work is built on the result. The
+  per-file classification is \cref{tab:reuse}.}
+  \label{fig:reusestack}
+\end{figure}
 
 \section{Serialization and the on-chain interface}
 \label{sec:serialize}
@@ -225,7 +308,10 @@ An on-chain verifier consumes that interface;
 \section{Testing methodology}
 \label{sec:testing}
 
-Four test types cover progressively weaker assumptions about the environment, stated in
+% NOT "progressively weaker": tab:tests' four types are not ordered by assumption
+% strength -- the known-answer test fixes every input and a deterministic API, which is
+% the STRONGEST environmental assumption of the four, not the weakest.
+Four test types exercise different assumptions about the environment, stated in
 full in \cref{tab:tests}. Functional tests assume an honest caller and assert the whole
 adaptor cycle, including the \emph{tripwire} clause (a pre-signature must \emph{fail}
 basic verification), which is what distinguishes an adaptor signature from a signature.
@@ -240,6 +326,30 @@ The complete scheme was implemented a second time in Rust on the same reuse prin
 layered on a fixed version of the \texttt{fips204} crate \cite{fips204crate}, with the LAS
 layer added as new modules. The wire format is byte-identical to the C encoder's by
 construction (\cref{fig:repostructure}).
+
+
+% CUT 2026-09-02: the third purpose ("Deployment realism: a memory-safe language is the
+% plausible production vehicle") was the weakest of the three -- unmeasured, required by no
+% objective, and load-bearing nowhere else in the report (grepped: it was the only
+% occurrence).  The two warrants that the evidence actually rests on are KEPT IN FULL: the
+% correctness argument's "short of a formal proof" clause is the REASON cross-validation
+% counts, and agreement DEFENDS the C numbers -- it does not "detect" artefacts, since
+% detection is what disagreement would do.
+The port serves two purposes. \emph{Cross-validation}: short of a formal proof, a second
+implementation reproducing the pinned vectors is practical evidence of correctness. \emph{An independent
+benchmark methodology}: Criterion.rs \cite{criterionrs} shares no timing code with the C
+harness, so agreement provides evidence that the C results are not timing-harness
+artefacts.
+
+To make the timings comparable the two protocol drivers mirror each other exactly:
+same repetition scheme, fixed seed, fixed message, success-path gating and rejection
+statistics. One caveat qualifies the port's independence: Rust follows the C
+implementation's early-abort norm check, an implementation detail not prescribed by the
+LAS construction \cite{esgin2020post}. Using the same early-abort check keeps the
+rejected-attempt work profile comparable across the two languages. This was established by
+inspecting the two norm checks, not by the automated evidence, which constrains outputs and
+rejection rates but not rejected-attempt work
+(\cref{app:methoddetail}).
 
 \begin{figure}[htbp]
   \centering
@@ -295,27 +405,6 @@ construction (\cref{fig:repostructure}).
   classification is \cref{tab:reuse}.}
   \label{fig:repostructure}
 \end{figure}
-
-% CUT 2026-09-02: the third purpose ("Deployment realism: a memory-safe language is the
-% plausible production vehicle") was the weakest of the three -- unmeasured, required by no
-% objective, and load-bearing nowhere else in the report (grepped: it was the only
-% occurrence).  The two warrants that the evidence actually rests on are KEPT IN FULL: the
-% correctness argument's "short of a formal proof" clause is the REASON cross-validation
-% counts, and agreement DEFENDS the C numbers -- it does not "detect" artefacts, since
-% detection is what disagreement would do.
-The port serves two purposes. \emph{Cross-validation}: short of a formal proof, a second
-implementation reproducing the pinned vectors is practical evidence of correctness. \emph{An independent
-benchmark methodology}: Criterion.rs \cite{criterionrs} shares no timing code with the C
-harness, so agreement defends the C numbers against harness artefacts.
-
-To make the timings comparable the two protocol drivers mirror each other exactly:
-same repetition scheme, fixed seed, fixed message, success-path gating and rejection
-statistics. One caveat qualifies the port's independence: Rust follows the C
-implementation's early-abort norm check, an implementation detail not prescribed by the
-LAS construction \cite{esgin2020post}. Sharing that is what makes the two languages time the same algorithm, but
-it is established by inspecting the two norm checks rather than by the automated evidence,
-which constrains outputs and rejection rates, not the work profile of a rejected attempt
-(\cref{app:methoddetail}).
 
 \section{Benchmarking methodology and fair comparison}
 \label{sec:benchmethod}
@@ -390,11 +479,15 @@ $(n+\ell)\,d$ pass:
 \end{equation}
 the last step using the design choice $\gamma=\kappa\,d\,(n+\ell)$ from
 \cite{esgin2020post}, made exactly so the expected number of restarts is ``about $e<3$''.
-Expected attempts are $1/p_{\mathrm{acc}}$, and PreSign's bound being tighter by one, it is
-\emph{expected} to restart slightly more often before any adaptor arithmetic is counted.
+% "before any adaptor arithmetic is counted" read as runtime ORDERING; the point is causal
+% attribution -- the extra restarts are the bound's, not the adaptor algebra's.
+Expected attempts are $1/p_{\mathrm{acc}}$, and PreSign's tighter bound gives it a slightly
+higher expected attempt count, which must not be read as adaptor arithmetic.
 
 \paragraph{Rejection sampling: the run-validity gate.}
-Because the attempt count is geometric, per-call timings are heavy-tailed and averages
+% NOT "heavy-tailed": a geometric distribution's tail decays exponentially, so it is
+% light-tailed.  The property the gate actually needs is the skew.
+Because the attempt count is geometric, per-call timings are right-skewed and averages
 over too few calls can drift several percent on rejection luck alone
 \cite{riou2026apples}. The drivers therefore treat the attempt statistics as a
 \emph{validity gate}: measured mean attempts must match the closed-form expectation within
@@ -490,7 +583,7 @@ a model, not a node; the boundary is set out in \cref{app:utxomodel}.
 Bob, $u_2$, only
 pre-signs after Alice's pre-signature and, in the LAS configurations, her proof $\pi$
 have been verified. That proof is
-part of the method, not decoration: it proves the statement has a short witness, closing
+a required step of the method: it proves the statement has a short witness, closing
 the knowledge gap that would otherwise let a malicious first party leave an unadaptable
 pre-signature behind. No UTXO is spent while the pre-signatures are
 exchanged: a settlement occurs only when a transaction carrying an adapted signature is
@@ -658,8 +751,9 @@ and the settled transaction. Conflating them would misreport communication cost.
   measured a modified baseline rather than the library as it stands. The DLEQ proof
   carried \emph{inside} its pre-signature is a different object and is not counted as
   $\pi$: its author is the pre-signer, and its claim is pre-signature well-formedness,
-  not knowledge of the role-A statement witness $r'$. Its cost is reported in the bytes
-  by which a pre-signature exceeds a signature.}
+  not knowledge of the role-A statement witness $r'$. Its cost is included in the bytes
+  by which a pre-signature exceeds a signature, which are not split between proof and
+  structure: that excess carries the nonce commitments as well.}
   \label{tab:configs}
   \small
   \begin{tabular}{@{}lL{0.27\linewidth}L{0.30\linewidth}cc@{}}

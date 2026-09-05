@@ -192,7 +192,7 @@ lies wholly inside every such shifted window, because the displacement has magni
 most $\kappa$. Each coefficient is thus accepted with probability exactly
 $\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$, independently of the secret --- which is
 precisely why rejection sampling makes the published response simulatable, and hence
-why it leaks nothing about $r$. Raising this to the $(n+\ell)\,d$ coefficients of one
+why its distribution is independent of $r$. Raising this to the $(n+\ell)\,d$ coefficients of one
 attempt gives \cref{eq:rejacc}. \textsc{PreSign} repeats the derivation at its own,
 tighter bound $\gamma-\kappa-1$: that is why the two expectations differ slightly, and
 why the gate below is applied to each separately.
@@ -375,8 +375,7 @@ any claim about what further optimisation would achieve there.
 
 The Dilithium-II and Dilithium-III figures are each one signature instance, for the same
 reason those two stages resist an upper bound, and variation across instances is
-unquantified at every set: nothing here supports calling it negligible, and nothing here
-supports calling it material. The Dilithium-V statement is not an instance at all, but a
+unquantified at every set, so its magnitude remains unknown in both directions. The Dilithium-V statement is not an instance at all, but a
 bound assembled from Dilithium-III measurements and one measured absorption difference.
 
 \paragraph{One deliberate exception to reproducibility.}
@@ -571,7 +570,7 @@ than a page.
         compile.
       & Forced prefixed parameters and a documented C--Rust--paper name map. \\[3pt]
     4. Benchmarking a variable-time scheme fairly
-      & Rejection sampling makes sign-class timings heavy-tailed. An acceptance rate
+      & Rejection sampling makes sign-class timings right-skewed. An acceptance rate
         inferred from a timing ratio was biased ($\approx\!23\%$ where direct counting
         gives \rejAccBase\%), and the two languages' base signing paths initially used
         different norm-check strategies \emph{inside} the timed loop --- invisible to the
@@ -773,7 +772,10 @@ than folded into a single tier.
 The tables in \cref{ch:results} carry the primary results; this section gives the
 supporting computation data produced by the commands above (\cref{lst:benchfair}).
 
-\subsection{Supplementary computation and rejection-sampling evidence}
+% Short TOC title: the full heading ran the width of the contents line, swallowing the
+% leader dots and pushing the page number out.  The heading in the appendix is unchanged.
+\subsection[Computation and rejection-sampling evidence]
+           {Supplementary computation and rejection-sampling evidence}
 \label{app:compute-support}
 
 \Cref{tab:overhead-l3,fig:timing} are the primary computation result in the main text.
@@ -825,8 +827,14 @@ geometric model and the validity gate.
 
 \Cref{tab:timing} lists every core-tier per-operation timing with its standard deviation
 (the data plotted in \cref{fig:timing}, and the source of the core block of
-\cref{tab:overhead-l3}); \cref{tab:components} gives the component byte sizes at every
-parameter set (with the target setting reported in \cref{tab:complete-l3}).
+% NOT "at every parameter set": tab:components is generated from
+% communication_components.csv and carries THREE columns (Simplified Dilithium-II, -III,
+% -V).  tab:params defines FOUR sets -- the LAS-2020/845 reference set has no column
+% here -- so the old wording was literally false about its own table.  Fix the sentence,
+% never add a column to a generated table to make a sentence true.
+\cref{tab:overhead-l3}); \cref{tab:components} gives the component byte sizes at the
+three Simplified Dilithium parameter sets (with the target setting reported in
+\cref{tab:complete-l3}).
 
 \begin{table}[!htbp]
   \centering

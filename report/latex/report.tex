@@ -19,6 +19,14 @@
 %   texcount -1 -sum -relaxed -inc report.tex > word.count
 \documentclass[12pt,MSc,wordcount,anon]{muthesis}
 
+% Silences "PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed",
+% raised by figures/fig_criterion_presign.pdf.  Raising the TARGET is deliberate rather
+% than re-saving that figure at 1.5: it is the exempt Criterion plot whose text is
+% outlined (the type gate cannot judge it), so it must not be rewritten.  PDF 1.7 is
+% ISO 32000-1 and universally readable, and pdfTeX is the engine here, so the primitive
+% applies; it must stay in the preamble, before any page is shipped out.
+\pdfminorversion=7
+
 % ---- packages (keep minimal; add as needed) ----
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -103,8 +111,7 @@
 % -- he judged it too specific for a general reader -- so the instantiation (a lattice
 % adaptor signature on Dilithium, demonstrated in an atomic swap) is stated in the
 % abstract and introduction instead.
-\title{Implementing a Post-Quantum Secure\\
-       Adaptor Signature Scheme in Blockchains}
+\title{Implementing a Post-Quantum Secure Adaptor Signature Scheme in Blockchains}
 \author{Royce Steven}
 \stuid{14202489}
 \submitdate{2026}

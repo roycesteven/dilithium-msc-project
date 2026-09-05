@@ -3,17 +3,17 @@
 \contentsline {figure}{\numberline {1.2}{\ignorespaces An atomic swap, in outline}}{15}{figure.1.2}%
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {2.1}{\ignorespaces The four functions LAS adds to the base signature}}{20}{figure.2.1}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces The LAS adaptor data flow}}{21}{figure.2.2}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Implementation structure and C/Rust correspondence}}{23}{figure.2.3}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces What is reused, what is simplified, and what the project adds}}{22}{figure.2.2}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Implementation structure and C/Rust correspondence}}{24}{figure.2.3}%
 \contentsline {figure}{\numberline {2.4}{\ignorespaces The atomic-swap protocol used in the UTXO study}}{28}{figure.2.4}%
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Adaptor overhead per operation: basic signature vs LAS}}{34}{figure.3.1}%
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Criterion.rs sampling distribution for PreSign}}{36}{figure.3.2}%
 \contentsline {figure}{\numberline {3.3}{\ignorespaces Standard payment versus adaptor swap settlement}}{44}{figure.3.3}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces On-chain settlement gas for the four claim paths}}{49}{figure.3.4}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces The claim transaction on the EVM}}{50}{figure.3.5}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces On-chain settlement gas for the four claim paths}}{48}{figure.3.4}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces The claim transaction on the EVM}}{49}{figure.3.5}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{82}{figure.A.1}%
-\contentsline {figure}{\numberline {A.2}{\ignorespaces Cumulative probability of acceptance at the target setting}}{83}{figure.A.2}%
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Adaptor overhead across the parameter sets (sensitivity check)}}{81}{figure.A.1}%
+\contentsline {figure}{\numberline {A.2}{\ignorespaces Cumulative probability of acceptance at the target setting}}{82}{figure.A.2}%

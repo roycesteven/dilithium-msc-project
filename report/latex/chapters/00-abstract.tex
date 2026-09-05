@@ -29,14 +29,14 @@ operation must also decode, raising the computation premium to
 $+\packedOvPreSign$--$\packedOvAdapt\%$ once encoding is counted.
 
 A further experiment tests whether the adaptor layer can coexist with ML-DSA's hint and
-rounding machinery. PreSign and PreVerify require adaptor-specific changes, but the
-standard FIPS~204 verifier accepts the adapted signature unchanged. This route roughly
+rounding machinery. PreSign and PreVerify require adaptor-specific algorithms, but the
+unmodified FIPS~204 verifier accepts the adapted signature. This route roughly
 halves the signature at close to equal computation while leaving the statement untouched,
 relocating rather than removing the communication bottleneck.
 
 Taking the protocol to a UTXO ledger, the setting the original construction assumes,
-sharpens the conclusion: measured across three configurations, the signature is at the
-application level not the dominant cost. The zero-knowledge proof of knowledge
+sharpens the conclusion: measured across three configurations, at the application level
+the signature is not the dominant cost. The zero-knowledge proof of knowledge
 consumes \cfgThreeProofPct--\cfgTwoProofPct\% of each post-quantum swap, and substituting
 a lattice prover for a pairing-based one
 makes the swap \emph{faster} while making it larger. Native on-chain verification also

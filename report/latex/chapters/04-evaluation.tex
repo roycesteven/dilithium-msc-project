@@ -18,9 +18,9 @@ The central evaluation question was what adaptor functionality \emph{costs}, so 
 measured difference had to be attributable to one cause. Four decisions follow, each
 tied to an objective.
 
-Correctness is established before any cost is reported (objective~3). A fast
-but wrong scheme measures nothing, and no formal proof was in scope, so correctness rests
-on differential evidence: a pinned known-answer value reproduced byte-for-byte by a
+Correctness is established before any cost is reported (objective~3). Performance is
+meaningless without correctness, and no formal proof was in scope, so correctness rests
+principally on differential evidence: a pinned known-answer value reproduced byte-for-byte by a
 second, independently written implementation (\cref{sec:res-rust}). Internal
 self-consistency is not correctness: \cref{sec:eval-challenges} gives a case where
 every primitive passed in isolation and the assembled whole was still wrong.
@@ -37,7 +37,10 @@ as a functionality-matched ``price of post-quantum'' baseline.
 % above announces.  (2) "the commonest way a benchmark misleads" was an uncited
 % superlative about benchmarking in general; the em-dash clause already carries the only
 % warrant there is, which is local ("twice here").
-Every measurement declares its boundary (objective~4). Results are reported at two tiers
+% NOT "two tiers": sec:benchmethod declares THREE boundaries -- core, packed, and the
+% hybrid one the classical library exposes -- so the count contradicted that section.
+Every measurement declares its boundary (objective~4). Results are reported at declared
+boundaries
 (\cref{sec:benchmethod}), because an undeclared boundary misleads quietly, as it did
 twice here before the tiers were fixed. For the same reason each
 run gates on a directly counted rejection rate against its closed-form prediction, rather
@@ -95,16 +98,25 @@ two need more than a table row.
   \end{tabular}
 \end{table}
 
+% SCOPE: only configurations 2 and 3 share one public matrix and byte-identical inputs
+% (backend.rs "configurations()": they share one LasParams, hence one A, and derive key
+% material from one master seed).  Configuration 1 is secp256k1 and has no lattice matrix
+% at all, so the unscoped version claimed a control the study explicitly does not have --
+% sec:res-stage2 says "only the 2->3 step is controlled" on its own page.
 For Objective~4, the standalone-signature evaluation holds algorithm, parameters and
-primitives fixed, and the application study shares one public matrix and byte-identical
-inputs, verified at run time. The measurements are then defended from two independent directions: a
+primitives fixed, and the application's controlled $2\to3$ comparison shares one public
+matrix and byte-identical inputs, verified at run time. The measurements are then defended from two independent directions: a
 closed-form gate on the rejection rate, and re-measurement under a different compiler and
 an independent statistical harness.
 
 Objective~5 was met in the UTXO setting assumed in \cite{esgin2020post}, with a gas-metered
 venue measured against it. On a local EVM a
-\emph{complete}, validated native LAS verifier was measured at
-$\approx$\gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the EIP-7825
+% tab:onchain's own caption says its rows are --gas-report CHARGES, "not transaction
+% totals and not client measurements", so putting the figure straight against a
+% per-transaction cap conflated the two accounting boundaries that caption separates.
+\emph{complete}, validated native LAS verifier was charged
+$\approx$\gasLasVerifiedM{} million gas in \cref{tab:onchain}'s \texttt{--gas-report}
+accounting, already above the EIP-7825
 per-transaction cap. That ceiling later proved to bound the
 % "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and that
 % equivalence holds only under the registration invariant no contract checks (tab:onchain).
@@ -121,7 +133,10 @@ at the target set, message length and signature instance measured
 
 Turning the simplified-Dilithium base into LAS was conceptually small (four added
 operations and one extra term in a hash), but the six problems of \cref{tab:challenges}
-consumed most of the engineering effort. Three themes recur. Two are failures that
+% "Two are failures ... Two more are ... The third" read as 2+2+1 items rather than as
+% three THEMES, two of which have two instances.  Numbering the themes removes the
+% arithmetic a reader can falsify; the colons still enumerate the instances.
+consumed most of the engineering effort. Three themes recur. The first is failures that
 \emph{pass every local test}: a loosened PreSign bound leaves the adaptor operations
 working while breaking ordinary verification two steps later, and a doubly-transformed
 public matrix produces a verifier whose parts agree with each other but not with the C
@@ -131,11 +146,13 @@ implementation; both caught only by checking outside the component, which is why
 % "The last" implied the three themes enumerated all six rows of tab:challenges; they do
 % not -- rows 2 and 3 are one-offs, which is what "recur" already licenses.  Numbering the
 % theme instead of calling it the last removes a count a reader can falsify.
-Two more are measurement artefacts that would have biased the headline
+The second is measurement artefacts that would have biased the headline
 result had they survived, and are why every boundary is now declared and every run
-gated. The third is asymptotic rather than arithmetic, and generalises past this project:
-in constraint-system libraries the ergonomic interface and the scalable interface are
-not the same interface.
+% NOT "generalises past this project: in constraint-system libraries...".  The evidence is
+% one library's behaviour, so the plural generalisation was unwarranted.
+gated. The third is asymptotic rather than arithmetic: in the constraint-system library
+used here, the ergonomic interface and the scalable interface were not the same
+interface.
 
 
 \section{Limitations}
@@ -146,7 +163,10 @@ further limitations belong to the artefact rather than the measurement. The hint
 construction yields larger keys and signatures than optimised Dilithium
 (cryptographic optimisation given up for a transparent, testable artefact), and
 \cref{sec:res-mldsa} quantifies that price and shows it recoverable in principle, though
-only for the signature and not the statement. Configuration~2 instead gives up post-quantum assurance for a controlled
+% NOT "not a stack anyone should deploy": a normative absolute the evidence does not
+% carry.  What is supported is that it is not fully post-quantum.
+only for the signature and not the statement. Configuration~2 instead gives up end-to-end
+post-quantum assurance for a controlled
 comparison: it is the intermediate point that makes the proof-system comparison possible,
-not a stack anyone should deploy, since a post-quantum signature does not protect a swap
+not a fully post-quantum stack, since a post-quantum signature does not protect a swap
 whose fairness rests on a pairing assumption.

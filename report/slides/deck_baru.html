@@ -1252,7 +1252,7 @@
          and the classical comparison were two vertical stacks sitting side by
          side, which is the mix that was banned.  Each is now its own slide and
          each reads straight down. -->
-    <section class="slide" data-part="evaluation" data-title="Evaluation: timing cost" data-time="0:30" data-notes="SPOKEN: There are two costs here. Moving from classical signatures to post-quantum signatures is expensive. Adding the adaptor layer on top of the post-quantum base is not. That second step is what I measured: paired, interleaved runs, with rejection attempts counted directly. The adaptor overhead stays in single digits. || BACKUP: step one&#x27;s factor of 72 is THIS build&#x27;s simplified base -- the FIPS 204 path measures a smaller signature, which the ML-DSA slide shows -- so never state it flatly as the price of post-quantum. The rejection rate is COUNTED, never inferred from a timing ratio -- inferring it produced a wrong figure early on -- at 2.696 attempts per Sign against 2.804 per PreSign.">
+    <section class="slide" data-part="evaluation" data-title="Evaluation: timing cost" data-time="0:30" data-notes="SPOKEN: There are two costs here. Moving from classical signatures to post-quantum signatures is expensive. Adding the adaptor layer on top of the post-quantum base is not. That second step is what I measured: paired, interleaved runs, with rejection attempts counted directly. At the core tier, the adaptor overhead stays in single digits. || BACKUP: step one&#x27;s factor of 72 is THIS build&#x27;s simplified base -- the FIPS 204 path measures a smaller signature, which the ML-DSA slide shows -- so never state it flatly as the price of post-quantum. The rejection rate is COUNTED, never inferred from a timing ratio -- inferring it produced a wrong figure early on -- at 2.696 attempts per Sign against 2.804 per PreSign.">
       <h1 class="headline">Post-quantum is the expensive step. The <strong class="hi">adaptor layer</strong> on top is not.</h1>
       <div class="lad" style="flex:1;min-height:0;justify-content:center">
         <div class="rung">
@@ -1404,14 +1404,14 @@
          2 slide terpisah -- jangan campur vertikal dan horizontal").  This was two
          vertical stacks of cards sitting side by side.  Each question now gets its
          own slide and each reads straight down. -->
-    <section class="slide" data-part="results" data-title="Result: EVM fit" data-time="0:26" data-notes="SPOKEN: Can full LAS verification fit in one EVM transaction? Yes for one Dilithium-3 instance, but barely: 97.8 percent of the cap. I tested two shortcuts; neither fixed this scale. || BACKUP: statement truncation failed at Extract every time. The tested succinct post-quantum proof route lost to the deployed prover at this relation size. One parameter set down, verification alone is charged 65 percent; at the largest set one transaction is exceeded, and that is arithmetic, never a measured total.">
-  <h1 class="headline">One full EVM verification fits — <strong class="hi">barely</strong>.</h1>
+    <section class="slide" data-part="results" data-title="Result: EVM fit" data-time="0:26" data-notes="SPOKEN: Can full LAS verification fit in one EVM transaction? Yes for one Dilithium-3 instance, but barely: 97.8 percent of the cap. I tested two shortcuts; neither fixed this scale. || BACKUP: statement truncation failed at Extract every time. The tested succinct post-quantum proof route lost to the deployed prover on size and on time at this relation size. One parameter set down, verification alone is charged 65 percent; at the largest set one transaction is exceeded, and that is arithmetic, never a measured total.">
+  <h1 class="headline">One full EVM verification fits, <strong class="hi">barely</strong>.</h1>
   <div class="cols c1 stretch" style="flex:1;min-height:0">
     <div class="card tint-ok" style="gap:12px;justify-content:center;padding:18px 0 18px 22px">
       <h3 style="font-size:32px;line-height:1.12">Measured whole claim</h3>
       <div style="display:grid;grid-template-columns:1fr 150px;gap:18px;align-items:center;margin-top:6px">
         <div class="mtrack" style="height:42px;border-radius:8px"><div class="mfill" style="width:97.8%;font-size:24px">97.8% used</div></div>
-        <div style="font-size:28px;font-weight:800;color:var(--warn);line-height:1.1;text-align:right">2.2%<br><span style="font-size:21px;font-weight:400;color:var(--muted)">left</span></div>
+        <div style="font-size:28px;font-weight:800;color:var(--warn);line-height:1.1;text-align:right">2.2%<br><span style="font-size:22px;font-weight:400;color:var(--muted)">left</span></div>
       </div>
       <p style="font-size:25px;color:var(--muted);margin:0">Local Osaka EVM · one Simplified Dilithium-III signature instance</p>
     </div>

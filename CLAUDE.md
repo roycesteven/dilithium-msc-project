@@ -583,18 +583,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-05 01:43 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-05 14:35 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD c4064a2 · 2026-09-04 ·  4/09 7:15 pm
-- Working tree: 505 modified tracked file(s), 37 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 0e6da21 · 2026-09-05 · Remove accidental benchmark artifacts and restore rubric
+- Working tree: 19 modified tracked file(s), 37 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `0e6da21 2026-09-05 Remove accidental benchmark artifacts and restore rubric`
+  - `4465a86 2026-09-05 report final 1cd`
+  - `24abd32 2026-09-05 report final 1`
   - `c4064a2 2026-09-04  4/09 7:15 pm`
   - `3cc7fae 2026-09-04 4/09 6:28pm`
-  - `5abb6ec 2026-09-04 04_09__14_09`
-  - `86fb0fd 2026-09-02 2/09 11:35pm`
-  - `9ec1980 2026-09-02  2/09/2026 4:58pm`
 
 ### Target parameter set — anchors parsed from source
 
@@ -610,7 +610,7 @@ Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260904_215518` (dir mtime 2026-09-04)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260904_214411` (dir mtime 2026-09-04)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8975** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8965** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -2145,11 +2145,19 @@ captions, figure labels — never one in isolation):
   ⚠ **A figure must show `SampleInBall` itself, not leave the link to the prose** (Wang,
   Meeting 10): he read the figure, saw `c`, and asked *"how did we get the `c`?"* — the two
   symbols side by side with no function between them read as a typo, not a derivation.
+  **Since the 2026-09-05 split, `fig:flow` discharges that, not `fig:lasfuncs`** — which is
+  now a structural view carrying neither symbol, so the question cannot arise from it. The
+  relation is drawn **standalone, with no connector**: it is a definition, and **both** boxes
+  it sits under derive it.
   ⚠ **Only VERIFICATION re-derives `c` — "every consumer re-derives it" is the absolute-word
   defect** (relayed critique RIGHT, 2026-09-01; fixed in `02-methodology.tex:200` **and**
   `app:serialize`, which carried the same absolute plus "at every decode" — the codec derives
   nothing). `las_ext` **never** derives `c`: it subtracts and checks `A·s=Y`. `las_adapt`
   derives it only through the `las_preverify` it runs (`las.c:532`), never itself.
+  ⚠️ **That scopes CONSUMERS OF A WIRE OBJECT — PreSign derives `c` as well**, from the digest
+  it just computed (`las.c:250`; `sample_in_ball` is called by `presign_internal` *and*
+  `preverify_internal` in `las.rs`). Never delete or re-anchor a PreSign-side derivation on
+  the strength of the "only verification" phrase; it bars *re*-derivation claims, not this one.
 - **`y` (mask) / `r'` (honest witness) / `s` (extracted) — THREE objects Algorithm 2 names,
   and the same trap as `c`/`c̃`** (Royce caught it 2026-08-21). The paper overloads `y`: the
   mask sampled at Step 2, *and* the pair component of `(Y,y)` — which Adapt parses `r' := y`

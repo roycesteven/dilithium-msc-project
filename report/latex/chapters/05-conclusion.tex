@@ -82,8 +82,13 @@ First, on-chain settlement was measured, then solved narrowly, and still not
 % that it is out of the dissertation -- and it pointed at an artefact no chapter or appendix
 % describes any more, app:naysayer having been deleted with it.
 deployed. The first Solidity verifier sat far above the cap. The wrong lesson followed:
-the gap was treated as structural because SHAKE256 is not EVM-native. Re-expressing
-the same computation closed it (\cref{sec:res-evm}). What remains unsolved is cost:
+the gap was treated as structural because SHAKE256 is not EVM-native.
+% The equivalence IS the same-predicate claim, and tab:onchain records that nothing checks
+% the registration invariant it rests on.  The introduction and ch:evaluation both carry
+% this scope, so the conclusion cannot be the one place stating it flatly.  "Restructuring
+% the verifier" is sec:res-evm's own word for it.
+Restructuring the verifier closed it, under an unchecked registration
+invariant (\cref{sec:res-evm}). What remains unsolved is cost:
 settlement is far more expensive than a classical claim, and the thin margin holds for one
 signature instance and message length.
 
@@ -95,7 +100,10 @@ estimates, not deployment figures or upper bounds.
 
 Third, concrete security of the chosen parameter set is unanalysed by design.
 This sanctioned scope bounds what the numbers mean: they
-characterise a faithful, testable artefact, not a parameter set anyone should deploy.
+% NOT "not a parameter set anyone should deploy": a normative absolute the evidence does
+% not carry.  What is supported is that this study does not establish its security.
+characterise a faithful, testable artefact, not a parameter set whose deployment security
+this study establishes.
 
 \subsection{What would be done differently}
 \label{sec:reflection-differently}
@@ -113,7 +121,16 @@ scheme: testing it took days, not weeks.
 \section{Future work}
 \label{sec:future}
 
+% PAGINATION, not style: the last two lines of this list were spilling onto a page of
+% their own, which reads as a pagination artefact rather than a chapter ending.  Tightening
+% the inter-item spacing across five long items recovers a few lines and pulls them back.
+% ⚠ The lengths are set INSIDE the list, after \begin{itemize} and before the first \item:
+% set before the environment they would be overwritten, because \list re-initialises
+% \itemsep and \parsep from the class defaults (enumitem is not loaded in this document).
+% ⚠ No font or margin change -- both are barred; this only removes inter-item leading.
 \begin{itemize}
+  \setlength{\itemsep}{0pt}
+  \setlength{\parsep}{0pt}
   \item \textbf{A statement that is small by design.} With the signature halved and $Y$
         untouched (\cref{sec:res-mldsa}), the statement is the dominant object.
         Compressing $Y$ \emph{inside} this construction was tested and fails at both
@@ -142,6 +159,12 @@ scheme: testing it took days, not weeks.
         sound; whether it preserves ML-DSA's unforgeability argument is unexamined, and
         is the prerequisite before that route could be recommended over the simplified
         scheme.
+  % One line of the final bullet was still orphaned onto a page of its own after the
+  % itemsep/parsep tightening above.  ⚠ Placed BEFORE the last \item on purpose: it acts
+  % on whichever page it executes on, and after \end{itemize} TeX may already have moved
+  % to the next page.  Pagination-dependent -- re-check on rebuild and remove if the
+  % orphan has moved.
+  \enlargethispage{\baselineskip}
   \item \textbf{Take the UTXO study to a live network.} \emph{Signet} would supply the
         classical configuration with the fees, propagation and confirmation latency the
         model cannot.

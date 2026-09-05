@@ -99,7 +99,7 @@ and every operation completes in well under two milliseconds.
   \label{fig:timing}
 \end{figure}
 
-At the core boundary the adaptor layer is almost free, and the reasons are structural.
+At the core boundary the adaptor layer adds little work, and the reasons are structural.
 PreSign ($+\ovPreSign\%$ over Sign) runs the same reject loop, adding only $Y$ to the
 commitment and a tighter bound; PreVerify ($+\ovPreVerify\%$) recomputes the same
 commitment shape with the extra $+Y$; Adapt ($+\ovAdapt\%$) runs a PreVerify then adds
@@ -165,9 +165,14 @@ Absolute timings do not agree: neither port is uniformly faster, the largest gap
 \rustCMaxDev\% (\rustCMaxDevOp), and no cause for it has been measured. What
 reproduces is the comparison itself. At the core tier the Rust
 port measures $+\rustOvPreSign\%$, $\rustOvPreVerify\%$ and $+\rustOvAdapt\%$, all
-single-digit, like the C column beside them; the slightly \emph{negative} PreVerify figure is
-the measurement floor rather than a real speed-up, the genuine overhead at this scale
-being smaller than the gap between the two verify paths. The packed tier reproduces too
+single-digit, like the C column beside them; the slightly \emph{negative} PreVerify figure
+% Two unmeasured claims dropped here: "the genuine overhead at this scale being smaller
+% than the gap between the two verify paths" asserted the TRUE overhead's size, and
+% "the measurement floor" named a CAUSE nothing measured.  What the run supports is only
+% that the difference is too small to read as a speed-up.
+% ⚠ The value stays as \rustOvPreVerify and is never typed as a literal: it moves between
+% evidence runs, so a hardcoded figure would go stale while the macro beside it updates.
+is too small to read as a real speed-up. The packed tier reproduces too
 ($+\rustPackedOvPreSign\%$, $+\rustPackedOvPreVerify\%$, $+\rustPackedOvAdapt\%$), all
 positive and in the C figures' order. Both protocol drivers pass the same rejection-rate
 gate (\cref{sec:benchmethod}). The same qualitative result, small adaptor-layer overhead,
@@ -177,20 +182,23 @@ appears in both implementations and under the independent Criterion harness
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/fig_criterion_presign}
-  \caption[Criterion.rs sampling distribution for PreSign]{The statistical harness's
-  own report for PreSign at the target setting, reproduced from Criterion.rs:
-  \critSamples{} timed samples
-  (dots), the kernel-density estimate of the sampling distribution (shaded), the mean
-  (vertical blue line), and Criterion's automatic outlier classification (mild /
-  severe, orange / red). Four presentational changes were made to Criterion's SVG: the
-  type enlarged, the legend moved from the right-hand column into the row beneath the
-  plot, the margins re-flowed and cropped, and gnuplot's three-part exponent rendered as
-  the single glyph $10^{3}$. Inside the plot frame the coordinate map
-  is the identity, so no plotted value, curve, mean, axis scale or outlier
-  classification is altered. This is the evidence behind the Criterion column of
-  \cref{tab:rust}: a well-formed, single-mode distribution whose spread is consistent
-  with rejection sampling and runtime noise, with 14 of the \critSamples{} samples
-  classified as outliers (9 mild, 5 severe).}
+  % ⚠ THE CHANGE LIST AND ITS COUNT ARE PART OF THE CLAIM, and the exponent fold is
+  % INPUT-DEPENDENT: it did not fire on the 2026-08-28 run (caption was three changes)
+  % and does fire again on 20260904_214411, whose SVG contains ">Iterations (x 10<"
+  % split across tspans.  Re-check the shipped SVG before trusting this count.
+  % Outlier figures verified against that run's log: "Found 14 outliers among 300
+  % measurements", 1 low severe + 6 low mild + 3 high mild + 4 high severe = 9 mild, 5
+  % severe.  Dropped here as interpretation rather than observation: "well-formed",
+  % "single-mode", and "spread is consistent with rejection sampling and runtime noise".
+  \caption[Criterion.rs sampling distribution for PreSign]{Criterion.rs sampling
+  distribution for PreSign at the target setting: \critSamples{} timed samples (dots),
+  the kernel-density estimate (shaded), the mean (vertical blue line), and Criterion's
+  automatic outlier classification (mild / severe, orange / red). Four presentational
+  changes were made to Criterion's SVG: the type enlarged, the legend repositioned
+  beneath the plot, the margins re-flowed and cropped, and the exponent notation
+  redrawn; plotted values, coordinates, scales and outlier classifications are
+  unchanged. Of the \critSamples{} samples, 14 are classified as outliers (9 mild, 5
+  severe). This is the evidence behind the Criterion column of \cref{tab:rust}.}
   \label{fig:criterion}
 \end{figure}
 
@@ -232,7 +240,10 @@ the adaptor layer additionally transmits a public-key-sized statement $Y$ and a
 signature-sized pre-signature, the only objects a basic signature does not send; the
 swap also carries $\pi$.
 
-The cost of LAS is not adaptor computation but
+% NOT "not adaptor computation": the very next sentence prints a positive compute
+% overhead, and the packed tier is several times it.  Communication DOMINATES; it is not
+% the only cost.
+The dominant cost of LAS is
 communication, specifically $z$ and $Y$. At the core tier, the adaptor operations add
 at most $+\ovMaxAll\%$ of compute, while the objects on the wire are kilobytes. That matters more
 in a blockchain setting than ``the signature is \sigBytesTarget{} bytes'': bytes reaching
@@ -266,7 +277,8 @@ differences.
   post-quantum cost here. Timings $\mu$s/op (mean $\pm$ SD, machine of record); sizes in
   bytes. The two libraries draw their measurement boundaries differently, so the final
   column is \emph{tier-matched}: each LAS row taken at whichever of its two tiers
-  corresponds to the classical library's boundary for that operation. Why that matching is
+  corresponds to the classical library's boundary for that operation. The bold LAS entry
+  in each row is the one that column uses. Why that matching is
   necessary, the boundaries themselves, the repetition counts, and the object-level
   differences behind the size rows are set out in \cref{app:methoddetail}. The two
   classical adaptor-layer ratios quoted in the text are each taken over \emph{their own}
@@ -313,11 +325,16 @@ omitted optimisations can coexist with the adaptor layer: the four adaptor opera
 built around NIST ML-DSA \emph{as FIPS~204 specifies it} \cite{1274601}, all three
 optimisations enabled. Three findings follow; the second pinpoints the boundary.
 
+% This paragraph's closing line was orphaned at the top of the next page.  Executed here
+% it enlarges the page the paragraph STARTS on, which is the one that must absorb it.
+% ⚠ Pagination-dependent: re-check on rebuild and remove if the orphan has moved.
+% "genuinely" dropped as filler in the same edit; it narrowed nothing.
+\enlargethispage{\baselineskip}
 The naive port fails outright. Adding the statement to the challenge hash and
 changing nothing else (treating the hint machinery as a black box) yields
 pre-signatures that do not pre-verify at all (\mldsaNaiveP{}/\mldsaIters{}), because the
 transmitted hint reconstructs $\mathrm{HighBits}(w)$ while the challenge committed to
-$\mathrm{HighBits}(w+Y)$. Some modification is therefore genuinely unavoidable.
+$\mathrm{HighBits}(w+Y)$. Some modification is therefore unavoidable.
 
 But the verifier is not what must change. Once the \emph{whole} commitment path
 moves onto $w+Y$ (the committed high bits, the low-bits rejection test \emph{and}
@@ -390,16 +407,21 @@ role-A proof consumes \cfgTwoProofPct{}\% of end-to-end time in configuration~2 
 signature workload (two key generations, a statement, two pre-signatures, a
 pre-verification, two adaptations, an extraction and two settlements) costs
 \cfgTwoNonProofUs{}\,$\mu$s, about \stageTwoCryptoRatio{}$\times$ the classical swap's
-\cfgOneNonProofUs{}\,$\mu$s. That increase stays millisecond-scale, while a proof of
-hundreds of milliseconds decides whether the protocol feels instantaneous. Even at the packed tier the signature workload is not the bottleneck;
-the post-quantum penalty is not where intuition puts it.
+% Two rhetorical clauses cut: "a proof of hundreds of milliseconds decides whether the
+% protocol feels instantaneous" (which also typed a magnitude into prose) and "the
+% post-quantum penalty is not where intuition puts it".  The measured finding is the
+% sentence that remains.
+\cfgOneNonProofUs{}\,$\mu$s. That increase stays millisecond-scale: even at the packed
+tier the signature workload is not the bottleneck.
 
 \begin{table}[htbp]
   \centering
   \caption[Per-phase execution time of the swap]{Per-phase execution time of one
   complete swap, mean $\pm$ sample SD over \stageTwoRuns{} swaps
   % Run metadata is not printed: Stage-2 evidence run = \stageTwoRunId{}
-  ($\mu$s; \stageTwoCpu{}). Dashes mark phases a
+  ($\mu$s; \stageTwoCpu{}). Unlike the Stage-1 tables, these timings are the \emph{Rust}
+  implementation's: the Stage-2 driver is a Rust program built on the port of
+  \cref{sec:rustport}. Dashes mark phases a
   configuration does not have. End-to-end is context, not the headline.}
   \label{tab:stage2-time}
   \small
@@ -426,7 +448,9 @@ the post-quantum penalty is not where intuition puts it.
   \end{tabular}
 \end{table}
 
-\paragraph{The controlled comparison inverts the expected trade-off.} Replacing Groth16
+% Heading made informative rather than rhetorical, but KEEPS "controlled": 2->3 is the
+% one controlled comparison in the study and leading with that is the attribution rule.
+\paragraph{The controlled comparison: LaZer proves faster, Groth16 proves smaller.} Replacing Groth16
 with LaZer (same signature, same $\mathbf{A}$, same inputs) makes the swap
 \emph{faster} by \cmpTimePctAbs{}\% while making it \emph{larger} by
 \cmpBytesPctAbs{}\%: roughly three times as quick to produce a proof, yet emitting one about
@@ -438,15 +462,15 @@ a 23-bit modulus into a 254-bit pairing-friendly field. Verification runs the ot
 (\cfgTwoProofVerifyMean{}\,$\mu$s against \cfgThreeProofVerifyMean{}), succinctness
 paying off exactly where it is designed to.
 
-\paragraph{Configuration~2's trade is worse than it looks.} Shor breaks Groth16's
+\paragraph{Groth16 does not provide a post-quantum proof layer.} Shor breaks Groth16's
 pairing-group discrete logarithms, so its proof is precisely the component a
 post-quantum adversary attacks: a
 post-quantum signature does not protect a swap whose fairness rests on a classical proof.
 Groth16 also needs a \emph{trusted, per-circuit} setup (\cfgTwoSetupTime{}) whose secret
+% The closing sentence here restated all four points the two preceding paragraphs had
+% just made (faster end-to-end, no trusted party, quantum vulnerability removed, paid for
+% in bytes and verification time), so it was duplication rather than a summary.
 must be destroyed for soundness, whereas LaZer's parameters are transparent.
-Configuration~3 is thus not merely the post-quantum option: it is faster end-to-end,
-needs no trusted party and removes a quantum vulnerability, paying in bytes and in slower
-proof verification.
 
 \begin{table}[htbp]
   \centering
@@ -513,8 +537,7 @@ The sizes above are the model ledger's own encoding (\cref{app:utxomodel}). What
 settled swap costs on a Bitcoin client is read from two \emph{mined} transactions: an
 ordinary payment, and one leg of the swap of \cref{app:btcnode}. \Cref{fig:txstruct}
 compares them structurally and \cref{tab:btctx} field by field. Both were mined on
-regtest, the swap leg on the node carrying the experimental rule: the sizes are real, on
-regtest rather than mainnet.
+regtest, the swap leg on the node carrying the experimental rule.
 
 \begin{figure}[htbp]
   \centering
@@ -598,17 +621,17 @@ regtest rather than mainnet.
 \end{table}
 
 \paragraph{The witness discount absorbs more than half of the post-quantum penalty.}
-This rests on a transaction structure Bitcoin did not originally have. Before SegWit
+Before SegWit
 \cite{bip141,bip144} a signature travelled in the input script, where every byte was billed
 alike; the segregated witness bills witness bytes at one weight unit against four, and
 Taproot \cite{bip341} supplies the script-path spend the swap input uses. Derived from the two mined transactions, the post-quantum settlement is
 \btcMeasRawRatio$\times$ the classical one in raw bytes; in virtual size (what fees are
 charged on) only \btcMeasVsizeRatio$\times$, a post-quantum signature being
-\emph{entirely} witness data. That decision, taken long before anyone considered lattice
-signatures on Bitcoin, removes \btcMeasDiscountSaving\,\% of the size penalty; on the
-original structure the same settlement would pay the undiscounted rate throughout. It is a concrete argument for
+\emph{entirely} witness data. The discount removes \btcMeasDiscountSaving\,\% of the size
+penalty; on the original structure the same settlement would pay the undiscounted rate
+throughout. It has no counterpart
 % Keep the venue argument on transaction weight; gas is handled in sec:res-evm.
-UTXO chains as the venue, with no counterpart on the EVM, where calldata carries no
+on the EVM, where calldata carries no
 comparable discount; \cref{sec:res-evm} measures what a gas-metered venue charges.
 
 \paragraph{It fits the weight limits, not the element-size or verification rules.}
@@ -616,8 +639,10 @@ The mined settlement weighs \btcMeasLasWeight{}\,WU against the
 \btcMaxStdWeight{}\,WU standardness limit, \btcMeasPctStd\,\% of it. The limit is a
 weight limit, not a gas limit, and one settlement transaction sits well inside it.
 
-Two obstacles survive, neither caused by the adaptor layer. No deployed consensus rule
-verifies a lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340
+% "No deployed consensus rule" quantified over every chain in existence, which nothing
+% here evidences; the colon that follows only ever scoped it to Bitcoin Script anyway.
+Two obstacles survive, neither caused by the adaptor layer. Bitcoin's deployed consensus
+rules verify no lattice signature: Script offers \texttt{OP\_CHECKSIG} over ECDSA or BIP-340
 Schnorr and nothing else, so configurations 2 and 3 could not settle on Bitcoin as it
 stands; the application setting in \cite{esgin2020post} assumes a UTXO chain ``where the signature
 algorithm is replaced with a lattice-based signature scheme'', and this study takes no
@@ -642,8 +667,12 @@ rule, an \texttt{OP\_SUCCESS} opcode \cite{bip342} over the byte interface of
 signature, \btcSwapControls{} mutations tried being refused by it and accepted by an
 unmodified node, the control attributing the refusals to the new rule. The blocker is a consensus rule, not
 engineering. Its cost was measured: one verification runs
+% The ratio was quoted bare in the body while its direction of bias sat only in
+% app:btcnode: secp256k1's engineering match is Simplified Dilithium-II, but the node runs
+% Dilithium-III, so the pairing charges the lattice side at a stronger setting.
 \btcLasVerifyUs\,$\mu$s against the curve baseline, a BIP340 Schnorr
-check's \btcSchnorrVerifyUs\,$\mu$s (\btcLasRatioSchnorr$\times$), and a signature that
+check's \btcSchnorrVerifyUs\,$\mu$s (\btcLasRatioSchnorr$\times$, an overstatement at
+unmatched levels), and a signature that
 fails late costs about as much as one that verifies. The valid-path latency corresponds to a
 derived serial rate of \btcLasSerialRateK{}k LAS verifications/s on this machine, not
 whole-node or network throughput. A patched node is not Bitcoin, so that
@@ -673,7 +702,9 @@ thin margin. Verification alone at \emph{Simplified Dilithium-II}, charged as on
 transaction, is \gasDTwoCapPct\% of the cap; at \emph{Simplified Dilithium-V} one
 transaction is exceeded, derived rather than measured (\cref{app:methoddetail}). The
 contrast with the application's own venue remains: the UTXO constraint is a transaction
-\emph{weight} limit one settlement sits well inside (\cref{sec:res-txstruct}).
+\emph{weight} limit one settlement sits well inside (\cref{sec:res-txstruct}). The same
+distinction is structural, not only numerical: \cref{fig:evmtx} sets the EVM claim
+transaction against the UTXO counterpart in \cref{fig:txstruct}.
 
 \begin{table}[!htbp]
   \centering
@@ -721,10 +752,12 @@ contrast with the application's own venue remains: the UTXO constraint is a tran
   \end{tabular}
 \end{table}
 
-The same venue distinction is structural as well as numerical:
-\cref{fig:evmtx} shows that the EVM keeps the authorising transaction signature
-classical and carries the lattice verifier inputs as contract data, unlike the UTXO
-settlement structure of \cref{fig:txstruct}.
+% The one-sentence bridge that stood here was merged into the end of the paragraph above
+% (2026-09-05): it introduced no new argument, and standing alone after tab:onchain it
+% left the section reading table -> one-line filler -> figure.  Merging also dissolves the
+% "of fig. 3.3." orphan at its source -- the sentence is no longer the last thing before
+% the float -- so the \enlargethispage that targeted it is removed rather than left
+% behind, a stray one being worse than the orphan it was meant to fix.
 
 % Keep these as ordinary floats so they can share nearby body text.
 \begingroup
@@ -788,6 +821,10 @@ settlement structure of \cref{fig:txstruct}.
 \section{Threats to validity}
 \label{sec:res-validity}
 
+% This paragraph's tail ("across long payment paths.") was stranded under fig:evmtx's
+% caption on the next page; the paragraph begins on the page this enlarges.
+% ⚠ Pagination-dependent: re-check on rebuild and remove if the orphan has moved.
+\enlargethispage{\baselineskip}
 Several factors qualify these results. All timings are machine-dependent, mitigated by
 reporting standard deviations, fixing one machine and compiler, emphasising ratios over
 absolutes, and by the cross-implementation check (\cref{sec:res-rust}). The parameter

@@ -10,7 +10,11 @@ elliptic-curve discrete logarithm problem, which Shor's algorithm solves in poly
 time on a sufficiently large quantum computer \cite{shor1999polynomial}, allowing an
 adversary to forge signatures and spend other users' funds. A published 2026 estimate
 puts secp256k1 key recovery within minutes at fewer than $500{,}000$ physical qubits
-\cite{babbush2026securing}, and NIST disallows quantum-vulnerable signatures at this
+% NIST IR 8547 is an INITIAL PUBLIC DRAFT (Nov 2024; comment period closed Jan 2025, no
+% final version), which is what the refs.bib entry records.  "NIST disallows" stated a
+% draft transition plan as a rule already in force; "would disallow" cannot be misread.
+\cite{babbush2026securing}, and NIST's draft transition schedule would disallow
+quantum-vulnerable signatures at this
 strength after 2035 \cite{nistir8547}. A
 chain cannot treat that as distant: its record is permanent, so a break reaches keys
 already exposed, and changing how it verifies signatures requires a coordinated
@@ -70,10 +74,17 @@ tested, measured artefact is the problem this project addresses.
     \node[head] at (-14mm,-14mm) {\textbf{Classical}\\breaks under Shor};
     \node[head] at (40mm,-14mm) {\textbf{Post-quantum}\\quantum-resistant};
 
-    \node[row] at (-52mm,-34mm) {Basic\\{\normalfont just sign}};
+    % ⚠ ANCHORED EAST, NOT CENTRED -- centred at -52mm these labels OVERLAPPED the
+    % Classical column on the rendered page.  A row node is 31mm of text plus ~1.2mm
+    % inner sep each side, so centred at -52mm its right edge reached ~-35.3mm, while a
+    % cell (44mm text, 1.5mm xsep, centred at -14mm) starts at -37.5mm: ~2.2mm inside it.
+    % anchor=east at -40mm pins the right edge and leaves a 2.5mm channel; the labels
+    % then extend to ~-73.4mm, still inside \textwidth.  Re-render if the cell width,
+    % the cell centre or these labels' width changes.
+    \node[row, anchor=east] at (-40mm,-34mm) {Basic\\{\normalfont just sign}};
     % "sign + a condition" describes the ADAPTOR only: multi-signatures change who must
     % authorise and aggregate signatures compress, so that label mis-defined the class.
-    \node[row] at (-52mm,-60mm) {Exotic\\{\normalfont extra functionality}};
+    \node[row, anchor=east] at (-40mm,-60mm) {Exotic\\{\normalfont extra functionality}};
 
     \node[cell, fill=black!5, draw=black!55] at (-14mm,-34mm)
       {\textbf{ECDSA / Schnorr}\\current chain authentication};
@@ -328,9 +339,15 @@ on CSI-FiSh, prove it secure in the quantum random oracle model, and report an
 implementation with measured costs. Kysil et al.\ \cite{kysil2025poqeth} put basic PQ
 signature verification on Ethereum, ruling out Dilithium for its key sizes.
 
+% PAGINATION ONLY, and pagination-state-dependent: this paragraph's closing
+% "(\cref{ch:methodology})." was falling alone at the top of the next page.  One extra
+% line on THIS page pulls it back.  ⚠ \enlargethispage acts on whichever page it is
+% executed on, so if the widow moves after a content edit this must be re-checked and
+% removed rather than left in place -- it is not a permanent setting.
+\enlargethispage{\baselineskip}
 \paragraph{Classical baseline.}
 The natural answer to ``what does post-quantum cost'' is a comparison with a
-\emph{classical adaptor} signature, not merely plain ECDSA. Mature ECDSA-adaptor
+\emph{classical adaptor} signature rather than plain ECDSA. Mature ECDSA-adaptor
 implementations exist \cite{secp256k1zkp}; this project benchmarks against one
 (\cref{ch:methodology}).
 
@@ -375,24 +392,28 @@ post-quantum adaptor signature, and measurements of its cost. Four findings carr
 % named as the abstract names it, the simplified Dilithium-style base at identical
 % parameters, never ECDSA, against which LAS is emphatically not cheap.  An unscoped version
 % of this sentence asserted more than the measurement supports on both counts.
-At the core tier, adaptor functionality measures close to free in computation over the
-simplified Dilithium-style base at identical parameters, but expensive in communication:
-bytes, not time (\cref{sec:res-compute,sec:res-comm}). The base in \cite{esgin2020post}
+% "close to free ... bytes, not time" stated an impression where a measured shape exists,
+% and the slogan invited the fusion this project has to keep apart: small ABSOLUTE latency
+% is not a small ratio against classical.  Single-digit is sec:res-compute's own shape and
+% is still scoped to the CORE tier; the packed premium is several times it.
+At the core tier, adaptor functionality adds single-digit percentage overhead in
+computation over the simplified Dilithium-style base at identical parameters, but is
+expensive in communication (\cref{sec:res-compute,sec:res-comm}). The base in \cite{esgin2020post}
 simplifies Dilithium by omitting its hint and rounding machinery. On the full
 ML-DSA path, \textsc{PreSign} and
 \textsc{PreVerify} require adaptor-specific algorithms, yet
 an unmodified FIPS~204 verifier accepts the adapted signature (\cref{sec:res-mldsa}). At
-application scale the bottleneck is not the signature but the zero-knowledge proof, leaving
+application scale the zero-knowledge proof dominates execution time, leaving
 the fully post-quantum swap the faster of the two such configurations and the only one Shor
-does not break (\cref{sec:res-stage2}). Native on-chain verification, first
+does not break (\cref{sec:res-stage2}). Native on-chain verification first
 % "THE SAME PREDICATE" IS TRUE ONLY UNDER THE REGISTRATION INVARIANT.  tab:onchain records
 % that neither verifier row checks it and that where it fails a DIFFERENT predicate is
 % decided, so stating the equivalence flatly here contradicted this report's own table.  The
 % signature instance belongs in the scope for the reason sec:res-evm gives: two verifier
 % stages branch on coefficient values, so one client receipt is not a bound over inputs.
-measured far above the transaction gas cap, fits under it once the same predicate is
-re-expressed (under an unchecked registration invariant, at the one parameter set,
-message length and signature instance measured) while a settled swap sits well inside
+measured far above the transaction gas cap. Re-expressing the same predicate brings it
+under, at the one parameter set, message length and signature instance measured, and
+under an unchecked registration invariant. A settled swap sits well inside
 % NOT "a UTXO chain's weight limit".  Weight units are a Bitcoin/SegWit construct, not a
 % property every UTXO chain has, and the measured comparison in sec:res-txstruct is against
 % MAX_STANDARD_TX_WEIGHT -- Core's POLICY ceiling for a standard transaction, not a
@@ -400,7 +421,7 @@ message length and signature instance measured) while a settled swap sits well i
 Bitcoin's standard-transaction weight limit
 (\cref{sec:res-evm,sec:res-txstruct}). All
 five objectives were met (\cref{tab:objectives}), subject to two limits throughout: no
-concrete security is formally analysed, and nothing ran on a live network.
+concrete security is formally analysed, and no experiment ran on a live network.
 
 \section{Dissertation structure}
 \label{sec:structure}
