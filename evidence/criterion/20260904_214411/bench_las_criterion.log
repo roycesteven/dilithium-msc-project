@@ -1,0 +1,174 @@
+    Finished `bench` profile [optimized + debuginfo] target(s) in 0.10s
+     Running benches/las_bench.rs (target/release/deps/las_bench-524f79fed9b70396)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen
+Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Warming up for 3.0000 s
+Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Collecting 300 samples in estimated 60.493 s (1.5M iterations)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/KeyGen: Analyzing
+Algorithm 1 - ordinary lattice-based signature/KeyGen
+                        time:   [40.350 µs 40.407 µs 40.471 µs]
+                        change: [−9.1720% −8.9870% −8.8087%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 29 outliers among 300 measurements (9.67%)
+  25 (8.33%) high mild
+  4 (1.33%) high severe
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Warming up for 3.0000 s
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Collecting 300 samples in estimated 67.150 s (181k iterations)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Sign: Analyzing
+Algorithm 1 - ordinary lattice-based signature/Sign
+                        time:   [367.66 µs 369.17 µs 370.69 µs]
+                        change: [−9.4455% −8.5768% −7.7202%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 12 outliers among 300 measurements (4.00%)
+  3 (1.00%) low severe
+  2 (0.67%) low mild
+  6 (2.00%) high mild
+  1 (0.33%) high severe
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Warming up for 3.0000 s
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Collecting 300 samples in estimated 60.698 s (813k iterations)
+Benchmarking Algorithm 1 - ordinary lattice-based signature/Verify: Analyzing
+Algorithm 1 - ordinary lattice-based signature/Verify
+                        time:   [74.157 µs 74.196 µs 74.237 µs]
+                        change: [−9.1973% −8.9406% −8.7173%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 9 outliers among 300 measurements (3.00%)
+  6 (2.00%) high mild
+  3 (1.00%) high severe
+
+rejection gate [Algorithm 1 Sign]: 188791 calls, measured 2.7349 attempts/call (acceptance 36.56%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.0249 => OK
+Benchmarking Algorithm 2 - LAS adaptor signature/PreSign
+Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Collecting 300 samples in estimated 68.527 s (181k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/PreSign: Analyzing
+Algorithm 2 - LAS adaptor signature/PreSign
+                        time:   [376.24 µs 377.57 µs 378.93 µs]
+                        change: [−10.039% −9.0533% −8.1513%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 14 outliers among 300 measurements (4.67%)
+  1 (0.33%) low severe
+  6 (2.00%) low mild
+  3 (1.00%) high mild
+  4 (1.33%) high severe
+Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify
+Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Collecting 300 samples in estimated 60.977 s (813k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/PreVerify: Analyzing
+Algorithm 2 - LAS adaptor signature/PreVerify
+                        time:   [74.575 µs 74.629 µs 74.686 µs]
+                        change: [−9.0397% −8.8122% −8.6240%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 5 outliers among 300 measurements (1.67%)
+  2 (0.67%) high mild
+  3 (1.00%) high severe
+Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify)
+Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Collecting 300 samples in estimated 61.952 s (813k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify): Analyzing
+Algorithm 2 - LAS adaptor signature/Adapt (including its internal PreVerify)
+                        time:   [75.922 µs 75.998 µs 76.092 µs]
+                        change: [−8.8165% −8.6763% −8.5213%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 21 outliers among 300 measurements (7.00%)
+  1 (0.33%) low mild
+  9 (3.00%) high mild
+  11 (3.67%) high severe
+Benchmarking Algorithm 2 - LAS adaptor signature/Extract
+Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Collecting 300 samples in estimated 60.387 s (2.2M iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature/Extract: Analyzing
+Algorithm 2 - LAS adaptor signature/Extract
+                        time:   [27.692 µs 27.728 µs 27.766 µs]
+                        change: [−9.0123% −8.8635% −8.7261%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 19 outliers among 300 measurements (6.33%)
+  17 (5.67%) high mild
+  2 (0.67%) high severe
+
+rejection gate [Algorithm 2 PreSign]: 188791 calls, measured 2.7794 attempts/call (acceptance 35.98%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.0255 => OK
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/KeyGen_packed
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/KeyGen_packed: Warming up for 3.0000 s
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/KeyGen_packed: Collecting 300 samples in estimated 66.530 s (452k iterations)
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/KeyGen_packed: Analyzing
+Algorithm 1 - ordinary signature (packed / end-to-end)/KeyGen_packed
+                        time:   [147.43 µs 147.49 µs 147.55 µs]
+                        change: [−9.4502% −9.2414% −9.0536%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 39 outliers among 300 measurements (13.00%)
+  2 (0.67%) low mild
+  31 (10.33%) high mild
+  6 (2.00%) high severe
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Sign_packed
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Sign_packed: Warming up for 3.0000 s
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Sign_packed: Collecting 300 samples in estimated 60.613 s (135k iterations)
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Sign_packed: Analyzing
+Algorithm 1 - ordinary signature (packed / end-to-end)/Sign_packed
+                        time:   [438.10 µs 440.00 µs 441.92 µs]
+                        change: [−9.8423% −8.7630% −7.6693%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 18 outliers among 300 measurements (6.00%)
+  3 (1.00%) low severe
+  6 (2.00%) low mild
+  6 (2.00%) high mild
+  3 (1.00%) high severe
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Verify_packed
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Verify_packed: Warming up for 3.0000 s
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Verify_packed: Collecting 300 samples in estimated 63.762 s (587k iterations)
+Benchmarking Algorithm 1 - ordinary signature (packed / end-to-end)/Verify_packed: Analyzing
+Algorithm 1 - ordinary signature (packed / end-to-end)/Verify_packed
+                        time:   [107.51 µs 107.55 µs 107.59 µs]
+                        change: [−9.7185% −9.5303% −9.3415%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 27 outliers among 300 measurements (9.00%)
+  2 (0.67%) low mild
+  14 (4.67%) high mild
+  11 (3.67%) high severe
+
+rejection gate [Algorithm 1 Sign (packed tier)]: 143641 calls, measured 2.7258 attempts/call (acceptance 36.69%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.0285 => OK
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreSign_packed
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreSign_packed: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreSign_packed: Collecting 300 samples in estimated 80.347 s (135k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreSign_packed: Analyzing
+Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreSign_packed
+                        time:   [593.02 µs 594.92 µs 596.84 µs]
+                        change: [−12.055% −10.689% −9.5539%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 17 outliers among 300 measurements (5.67%)
+  6 (2.00%) low severe
+  7 (2.33%) low mild
+  4 (1.33%) high mild
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreVerify_packed
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreVerify_packed: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreVerify_packed: Collecting 300 samples in estimated 64.652 s (452k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreVerify_packed: Analyzing
+Algorithm 2 - LAS adaptor signature (packed / end-to-end)/PreVerify_packed
+                        time:   [139.17 µs 139.44 µs 139.75 µs]
+                        change: [−12.794% −11.868% −10.997%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 14 outliers among 300 measurements (4.67%)
+  5 (1.67%) high mild
+  9 (3.00%) high severe
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Adapt_packed (including its internal PreVe...
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Adapt_packed (including its internal PreVe...: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Adapt_packed (including its internal PreVe...: Collecting 300 samples in estimated 64.472 s (406k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Adapt_packed (including its internal PreVe...: Analyzing
+Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Adapt_packed (including its internal PreVe...
+                        time:   [155.66 µs 155.98 µs 156.31 µs]
+                        change: [−16.506% −15.219% −13.974%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 11 outliers among 300 measurements (3.67%)
+  4 (1.33%) high mild
+  7 (2.33%) high severe
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Extract_packed
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Extract_packed: Warming up for 3.0000 s
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Extract_packed: Collecting 300 samples in estimated 62.621 s (858k iterations)
+Benchmarking Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Extract_packed: Analyzing
+Algorithm 2 - LAS adaptor signature (packed / end-to-end)/Extract_packed
+                        time:   [72.556 µs 72.605 µs 72.665 µs]
+                        change: [−9.8678% −9.6171% −9.3890%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 29 outliers among 300 measurements (9.67%)
+  15 (5.00%) high mild
+  14 (4.67%) high severe
+
+rejection gate [Algorithm 2 PreSign (packed tier)]: 143641 calls, measured 2.7649 attempts/call (acceptance 36.17%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.0293 => OK

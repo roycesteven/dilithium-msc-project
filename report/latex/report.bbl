@@ -5,6 +5,20 @@ P.~W. Shor, ``Polynomial-time algorithms for prime factorization and discrete
   logarithms on a quantum computer,'' {\em SIAM Review}, vol.~41, no.~2,
   pp.~303--332, 1999.
 
+\bibitem{babbush2026securing}
+R.~Babbush, A.~Zalcman, C.~Gidney, M.~Broughton, T.~Khattar, H.~Neven,
+  T.~Bergamaschi, J.~Drake, and D.~Boneh, ``Securing elliptic curve
+  cryptocurrencies against quantum vulnerabilities: Resource estimates and
+  mitigations,'' {\em PRX Quantum}, vol.~7, Aug. 2026.
+\newblock Preprint: Cryptology ePrint Archive, Paper 2026/625,
+  \url{https://eprint.iacr.org/2026/625}.
+
+\bibitem{nistir8547}
+D.~Moody, R.~Perlner, A.~Regenscheid, A.~Robinson, and D.~Cooper, ``Transition
+  to post-quantum cryptography standards.'' NIST Internal Report 8547, initial
+  public draft, Nov. 2024.
+\newblock \url{https://csrc.nist.gov/pubs/ir/8547/ipd}.
+
 \bibitem{1274601}
 {National Institute of Standards and Technology (NIST)}, T.~Dang,
   J.~Lichtinger, Y.-K. Liu, C.~Miller, D.~Moody, R.~Peralta, R.~Perlner, and
@@ -21,20 +35,6 @@ M.~Buser, R.~Dowsley, M.~Esgin, C.~Gritti, S.~Kasra~Kermanshahi, V.~Kuchta,
   J.~Legrow, J.~Liu, R.~Phan, A.~Sakzad, R.~Steinfeld, and J.~Yu, ``A survey on
   exotic signatures for post-quantum blockchain: Challenges and research
   directions,'' {\em ACM Computing Surveys}, vol.~55, no.~12, pp.~1--32, 2023.
-
-\bibitem{babbush2026securing}
-R.~Babbush, A.~Zalcman, C.~Gidney, M.~Broughton, T.~Khattar, H.~Neven,
-  T.~Bergamaschi, J.~Drake, and D.~Boneh, ``Securing elliptic curve
-  cryptocurrencies against quantum vulnerabilities: Resource estimates and
-  mitigations,'' {\em PRX Quantum}, vol.~7, Aug. 2026.
-\newblock Preprint: Cryptology ePrint Archive, Paper 2026/625,
-  \url{https://eprint.iacr.org/2026/625}.
-
-\bibitem{nistir8547}
-D.~Moody, R.~Perlner, A.~Regenscheid, A.~Robinson, and D.~Cooper, ``Transition
-  to post-quantum cryptography standards.'' NIST Internal Report 8547, initial
-  public draft, Nov. 2024.
-\newblock \url{https://csrc.nist.gov/pubs/ir/8547/ipd}.
 
 \bibitem{valenta2026pqauth}
 L.~Valenta and K.~Guthrie, ``Post-quantum authentication to origins is now

@@ -1,0 +1,26 @@
+No files changed, compilation skipped
+Script ran successfully.
+
+## Setting up 1 EVM.
+
+==========================
+
+Chain 31337
+
+Estimated gas price: 2.000000001 gwei
+
+Estimated total gas used for script: 5376800
+
+Estimated amount required: 0.0107536000053768 ETH
+
+==========================
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /home/melly/dilithium-msc-project/evm/broadcast/OneTxClaim.s.sol/31337/run-latest.json
+
+Sensitive values saved to: /home/melly/dilithium-msc-project/evm/cache/OneTxClaim.s.sol/31337/run-latest.json
+

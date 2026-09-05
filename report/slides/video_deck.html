@@ -1283,7 +1283,7 @@
          and the classical comparison were two vertical stacks sitting side by
          side, which is the mix that was banned.  Each is now its own slide and
          each reads straight down. -->
-    <section class="slide" data-part="results" data-title="Cost in time" data-time="0:30" data-notes="SPOKEN: There are two costs here. Moving from classical signatures to post-quantum signatures is expensive. Adding the adaptor layer on top of the post-quantum base is not. That second step is what I measured: paired, interleaved runs, with rejection attempts counted directly. The adaptor overhead stays in single digits. || BACKUP: step one&#x27;s factor of 72 is THIS build&#x27;s simplified base -- the FIPS 204 path measures a smaller signature, which the ML-DSA slide shows -- so never state it flatly as the price of post-quantum. The rejection rate is COUNTED, never inferred from a timing ratio -- inferring it produced a wrong figure early on -- at 2.696 attempts per Sign against 2.804 per PreSign.">
+    <section class="slide" data-part="results" data-title="Cost in time" data-time="0:30" data-notes="SPOKEN: There are two costs here. Moving from classical signatures to post-quantum signatures is expensive. Adding the adaptor layer on top of the post-quantum base is not. That second step is what I measured: paired, interleaved runs, with rejection attempts counted directly. The adaptor overhead stays in single digits. || BACKUP: step one&#x27;s factor of 72 is THIS build&#x27;s simplified base -- the FIPS 204 path measures a smaller signature, which the ML-DSA slide shows -- so never state it flatly as the price of post-quantum. The rejection rate is COUNTED, never inferred from a timing ratio -- inferring it produced a wrong figure early on -- at 2.662 attempts per Sign against 2.817 per PreSign.">
       <h1 class="headline">Post-quantum is the expensive step. The <strong class="hi">adaptor layer</strong> on top is not.</h1>
       <div class="lad" style="flex:1;min-height:0;justify-content:center">
         <div class="rung">
@@ -1300,8 +1300,8 @@
         <div class="ladarrow">&#8595; step 2 &#183; <b>what this project measured</b>: against LAS&#8217;s own post-quantum base</div>
         <div class="rung s2">
           <span class="n">step 2</span>
-          <span class="t"><b>post-quantum ADAPTOR (LAS)</b>, at Simplified Dilithium-III: PreSign +2.2% &#183; PreVerify +5.1% &#183; Adapt +7.4%</span>
-          <span class="c">+8.2% max in sweep</span>
+          <span class="t"><b>post-quantum ADAPTOR (LAS)</b>, at Simplified Dilithium-III: PreSign +1.8% &#183; PreVerify +7.4% &#183; Adapt +7.7%</span>
+          <span class="c">+7.7% max in sweep</span>
         </div>
       </div>
     </section>
@@ -1312,24 +1312,24 @@
          adaptor layers.  It is DERIVED from the classical harness's single mixed
          native-API tier, which is why the LAS byte-tier figure is quoted beside
          it: the claim has to survive the conservative pairing, and at
-         +15.8% against x4.5 it does.
+         +19.7% against x4.6 it does.
          Never let this slide imply LAS is FASTER than ECDSA in absolute time --
          it is not, and that cost belongs to step 1. -->
-    <section class="slide" data-part="results" data-title="The same step, done classically" data-time="0:16" data-notes="SPOKEN: This is the same question on the classical side. The ECDSA adaptor&#x27;s PreSign is 4.5 times its own Sign. So relative to its own base, LAS adds less overhead. The classical scheme is still faster in absolute time. || BACKUP: in absolute time a lattice operation still costs hundreds of microseconds against tens; LAS is not faster than ECDSA. All three bars are one quantity -- PreSign over that scheme&#x27;s own Sign. The LAS C driver reports mean &plusmn; sample SD; the Rust Criterion cross-check uses a 3 s warm-up, 300 samples and bootstrap 95% CI. The classical figure is derived from a single mixed native-API tier, not a paired interleaved measurement, which is why the LAS byte tier is shown beside the core tier: the comparison has to survive the conservative pairing. And at application level the proof, not the signature, dominates: 98.6 percent of end-to-end swap time.">
+    <section class="slide" data-part="results" data-title="The same step, done classically" data-time="0:16" data-notes="SPOKEN: This is the same question on the classical side. The ECDSA adaptor&#x27;s PreSign is 4.6 times its own Sign. So relative to its own base, LAS adds less overhead. The classical scheme is still faster in absolute time. || BACKUP: in absolute time a lattice operation still costs hundreds of microseconds against tens; LAS is not faster than ECDSA. All three bars are one quantity -- PreSign over that scheme&#x27;s own Sign. The LAS C driver reports mean &plusmn; sample SD; the Rust Criterion cross-check uses a 3 s warm-up, 300 samples and bootstrap 95% CI. The classical figure is derived from a single mixed native-API tier, not a paired interleaved measurement, which is why the LAS byte tier is shown beside the core tier: the comparison has to survive the conservative pairing. And at application level the proof, not the signature, dominates: 98.6 percent of end-to-end swap time.">
       <h1 class="headline">Relative to its own base, the adaptor layer costs <strong class="hi">less in LAS</strong> than classically.</h1>
       <div class="bars mini" style="flex:1;min-height:0;justify-content:center">
-        <div class="bar" title="ECDSA adaptor PreSign over plain ECDSA Sign: 4.5 times, it carries a DLEQ proof">
+        <div class="bar" title="ECDSA adaptor PreSign over plain ECDSA Sign: 4.6 times, it carries a DLEQ proof">
           <div class="lab">ECDSA adaptor<br>includes a DLEQ proof</div>
           <div class="track"><div class="fill b" style="--w:100.00%"></div></div>
-          <div class="val">&#215;4.5 its own Sign</div></div>
-        <div class="bar" title="LAS PreSign over Sign at the byte tier: +15.8 percent">
+          <div class="val">&#215;4.6 its own Sign</div></div>
+        <div class="bar" title="LAS PreSign over Sign at the byte tier: +19.7 percent">
           <div class="lab">LAS &#183; with encoding<br><span style="font-weight:400;opacity:.75">byte tier</span></div>
-          <div class="track"><div class="fill ad" style="--w:4.51%"></div></div>
-          <div class="val">+15.8%</div></div>
-        <div class="bar" title="LAS PreSign over Sign at the core tier: +2.2 percent">
+          <div class="track"><div class="fill ad" style="--w:5.47%"></div></div>
+          <div class="val">+19.7%</div></div>
+        <div class="bar" title="LAS PreSign over Sign at the core tier: +1.8 percent">
           <div class="lab">LAS &#183; crypto only<br><span style="font-weight:400;opacity:.75">core tier</span></div>
-          <div class="track"><div class="fill ad" style="--w:0.63%"></div></div>
-          <div class="val">+2.2%</div></div>
+          <div class="track"><div class="fill ad" style="--w:0.50%"></div></div>
+          <div class="val">+1.8%</div></div>
       </div>
     </section>
 

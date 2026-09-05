@@ -5,15 +5,15 @@
 \contentsline {chapter}{Acknowledgements}{12}{chapter*.8}%
 \contentsline {chapter}{\numberline {1}Introduction}{13}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Context and motivation}{13}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Subject area and related work}{15}{section.1.2}%
-\contentsline {paragraph}{Lattice signatures and Dilithium.}{15}{section*.9}%
+\contentsline {section}{\numberline {1.2}Subject area and related work}{16}{section.1.2}%
+\contentsline {paragraph}{Lattice signatures and Dilithium.}{16}{section*.9}%
 \contentsline {paragraph}{Adaptor signatures.}{16}{section*.10}%
-\contentsline {paragraph}{Post-quantum adaptor signatures.}{17}{section*.11}%
-\contentsline {paragraph}{Classical baseline.}{17}{section*.12}%
+\contentsline {paragraph}{Post-quantum adaptor signatures.}{16}{section*.11}%
+\contentsline {paragraph}{Classical baseline.}{16}{section*.12}%
 \contentsline {section}{\numberline {1.3}Aim and objectives}{17}{section.1.3}%
 \contentsline {paragraph}{Aim.}{17}{section*.13}%
 \contentsline {paragraph}{Objectives.}{17}{section*.14}%
-\contentsline {section}{\numberline {1.4}Contributions}{18}{section.1.4}%
+\contentsline {section}{\numberline {1.4}Contributions}{17}{section.1.4}%
 \contentsline {section}{\numberline {1.5}Dissertation structure}{18}{section.1.5}%
 \contentsline {chapter}{\numberline {2}Methodology}{19}{chapter.2}%
 \contentsline {section}{\numberline {2.1}The LAS construction}{19}{section.2.1}%
@@ -45,60 +45,60 @@
 \contentsline {section}{\numberline {3.2}Computation cost}{31}{section.3.2}%
 \contentsline {section}{\numberline {3.3}Cross-implementation check: C implementation versus Rust port}{34}{section.3.3}%
 \contentsline {section}{\numberline {3.4}Communication cost and component breakdown}{36}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}The price of post-quantum: classical adaptor baseline}{38}{subsection.3.4.1}%
+\contentsline {paragraph}{The price of post-quantum: classical adaptor baseline.}{38}{section*.32}%
 \contentsline {section}{\numberline {3.5}Testing the simplification: the adaptor with ML-DSA verification}{38}{section.3.5}%
 \contentsline {section}{\numberline {3.6}UTXO swap execution result}{40}{section.3.6}%
 \contentsline {section}{\numberline {3.7}The swap on a UTXO chain: three configurations compared}{41}{section.3.7}%
-\contentsline {paragraph}{The proof, not the signature, dominates execution time.}{41}{section*.32}%
-\contentsline {paragraph}{The controlled comparison inverts the expected trade-off.}{41}{section*.33}%
-\contentsline {paragraph}{Configuration~2's trade is worse than it looks.}{42}{section*.34}%
-\contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{42}{section*.35}%
-\contentsline {section}{\numberline {3.8}Transaction structure and what a UTXO chain would charge}{43}{section.3.8}%
-\contentsline {paragraph}{The witness discount absorbs more than half of the post-quantum penalty.}{44}{section*.36}%
-\contentsline {paragraph}{It fits the weight limits, not the element-size or verification rules.}{45}{section*.37}%
-\contentsline {paragraph}{Both obstacles were put to a real client.}{46}{section*.38}%
-\contentsline {section}{\numberline {3.9}EVM verification as a separate venue check}{46}{section.3.9}%
-\contentsline {section}{\numberline {3.10}Threats to validity}{48}{section.3.10}%
-\contentsline {chapter}{\numberline {4}Evaluation}{50}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Evaluation strategy and its justification}{50}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Achievement of the objectives}{51}{section.4.2}%
+\contentsline {paragraph}{The proof, not the signature, dominates execution time.}{41}{section*.33}%
+\contentsline {paragraph}{The controlled comparison inverts the expected trade-off.}{41}{section*.34}%
+\contentsline {paragraph}{Configuration~2's trade is worse than it looks.}{42}{section*.35}%
+\contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{43}{section*.36}%
+\contentsline {section}{\numberline {3.8}Transaction structure and what a UTXO chain would charge}{44}{section.3.8}%
+\contentsline {paragraph}{The witness discount absorbs more than half of the post-quantum penalty.}{45}{section*.37}%
+\contentsline {paragraph}{It fits the weight limits, not the element-size or verification rules.}{46}{section*.38}%
+\contentsline {paragraph}{Both obstacles were put to a real client.}{46}{section*.39}%
+\contentsline {section}{\numberline {3.9}EVM verification as a separate venue check}{47}{section.3.9}%
+\contentsline {section}{\numberline {3.10}Threats to validity}{47}{section.3.10}%
+\contentsline {chapter}{\numberline {4}Evaluation}{51}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Evaluation strategy and its justification}{51}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Achievement of the objectives}{52}{section.4.2}%
 \contentsline {section}{\numberline {4.3}Implementation challenges}{52}{section.4.3}%
-\contentsline {section}{\numberline {4.4}Limitations}{53}{section.4.4}%
-\contentsline {chapter}{\numberline {5}Conclusion and future work}{54}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Conclusions}{54}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Critical reflection}{55}{section.5.2}%
-\contentsline {subsection}{\numberline {5.2.1}What was achieved}{55}{subsection.5.2.1}%
-\contentsline {subsection}{\numberline {5.2.2}What fell short}{56}{subsection.5.2.2}%
-\contentsline {subsection}{\numberline {5.2.3}What would be done differently}{56}{subsection.5.2.3}%
-\contentsline {section}{\numberline {5.3}Future work}{56}{section.5.3}%
-\contentsline {chapter}{Bibliography}{58}{chapter*.39}%
-\contentsline {chapter}{\numberline {A}Supporting evidence and reproducibility}{62}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{62}{section.A.1}%
-\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{65}{section.A.2}%
-\contentsline {section}{\numberline {A.3}Methodology details}{66}{section.A.3}%
-\contentsline {paragraph}{Why the per-attempt acceptance probability is secret-independent.}{66}{section*.40}%
-\contentsline {paragraph}{The run-validity gate in full.}{67}{section*.41}%
-\contentsline {paragraph}{The design of the ML-DSA compatibility experiment.}{67}{section*.42}%
-\contentsline {paragraph}{The Groth16 circuit.}{68}{section*.43}%
-\contentsline {paragraph}{Measurement invariants of the UTXO study.}{68}{section*.44}%
-\contentsline {paragraph}{Matching the boundaries of the classical comparison.}{68}{section*.45}%
-\contentsline {paragraph}{What the restructured on-chain verifier changes, and how it was checked.}{69}{section*.46}%
-\contentsline {paragraph}{The registration invariant, and what is \emph {not} enforced.}{69}{section*.47}%
-\contentsline {paragraph}{Carrying the one-transaction result to the neighbouring parameter sets.}{70}{section*.48}%
-\contentsline {paragraph}{One deliberate exception to reproducibility.}{71}{section*.49}%
-\contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{72}{section.A.4}%
-\contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{72}{section.A.5}%
-\contentsline {section}{\numberline {A.6}The atomic-swap demonstration and proof of knowledge}{74}{section.A.6}%
-\contentsline {section}{\numberline {A.7}The six implementation challenges}{75}{section.A.7}%
-\contentsline {section}{\numberline {A.8}Test types and parameter notation}{77}{section.A.8}%
-\contentsline {section}{\numberline {A.9}Supporting benchmark evidence}{80}{section.A.9}%
-\contentsline {subsection}{\numberline {A.9.1}Supplementary computation and rejection-sampling evidence}{80}{subsection.A.9.1}%
-\contentsline {subsection}{\numberline {A.9.2}Complete timing and component tables}{82}{subsection.A.9.2}%
-\contentsline {section}{\numberline {A.10}Auditing the reuse claim}{83}{section.A.10}%
-\contentsline {section}{\numberline {A.11}Selected code listings: PreSign, Adapt and Extract}{84}{section.A.11}%
-\contentsline {section}{\numberline {A.12}Settling on a real node}{86}{section.A.12}%
-\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{87}{section*.50}%
-\contentsline {paragraph}{Verification on a patched node.}{87}{section*.51}%
-\contentsline {paragraph}{A whole swap, not a single spend.}{88}{section*.52}%
-\contentsline {paragraph}{One swap across two kinds of ledger.}{89}{section*.53}%
-\contentsline {paragraph}{What the rule charges a validating node.}{90}{section*.54}%
+\contentsline {section}{\numberline {4.4}Limitations}{54}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Conclusion and future work}{55}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Conclusions}{55}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Critical reflection}{56}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}What was achieved}{56}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}What fell short}{57}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}What would be done differently}{57}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}Future work}{57}{section.5.3}%
+\contentsline {chapter}{Bibliography}{59}{chapter*.40}%
+\contentsline {chapter}{\numberline {A}Supporting evidence and reproducibility}{63}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Building and reproducing the benchmarks}{63}{section.A.1}%
+\contentsline {section}{\numberline {A.2}The timing-benchmark procedure}{66}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Methodology details}{67}{section.A.3}%
+\contentsline {paragraph}{Why the per-attempt acceptance probability is secret-independent.}{67}{section*.41}%
+\contentsline {paragraph}{The run-validity gate in full.}{68}{section*.42}%
+\contentsline {paragraph}{The design of the ML-DSA compatibility experiment.}{68}{section*.43}%
+\contentsline {paragraph}{The Groth16 circuit.}{69}{section*.44}%
+\contentsline {paragraph}{Measurement invariants of the UTXO study.}{69}{section*.45}%
+\contentsline {paragraph}{Matching the boundaries of the classical comparison.}{69}{section*.46}%
+\contentsline {paragraph}{What the restructured on-chain verifier changes, and how it was checked.}{70}{section*.47}%
+\contentsline {paragraph}{The registration invariant, and what is \emph {not} enforced.}{70}{section*.48}%
+\contentsline {paragraph}{Carrying the one-transaction result to the neighbouring parameter sets.}{71}{section*.49}%
+\contentsline {paragraph}{One deliberate exception to reproducibility.}{72}{section*.50}%
+\contentsline {section}{\numberline {A.4}The modelled UTXO ledger}{73}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Wire encoding and the typed codec}{73}{section.A.5}%
+\contentsline {section}{\numberline {A.6}The atomic-swap demonstration and proof of knowledge}{75}{section.A.6}%
+\contentsline {section}{\numberline {A.7}The six implementation challenges}{76}{section.A.7}%
+\contentsline {section}{\numberline {A.8}Test types and parameter notation}{78}{section.A.8}%
+\contentsline {section}{\numberline {A.9}Supporting benchmark evidence}{81}{section.A.9}%
+\contentsline {subsection}{\numberline {A.9.1}Supplementary computation and rejection-sampling evidence}{81}{subsection.A.9.1}%
+\contentsline {subsection}{\numberline {A.9.2}Complete timing and component tables}{83}{subsection.A.9.2}%
+\contentsline {section}{\numberline {A.10}Auditing the reuse claim}{84}{section.A.10}%
+\contentsline {section}{\numberline {A.11}Selected code listings: PreSign, Adapt and Extract}{85}{section.A.11}%
+\contentsline {section}{\numberline {A.12}Settling on a real node}{87}{section.A.12}%
+\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{88}{section*.51}%
+\contentsline {paragraph}{Verification on a patched node.}{88}{section*.52}%
+\contentsline {paragraph}{A whole swap, not a single spend.}{89}{section*.53}%
+\contentsline {paragraph}{One swap across two kinds of ledger.}{90}{section*.54}%
+\contentsline {paragraph}{What the rule charges a validating node.}{91}{section*.55}%

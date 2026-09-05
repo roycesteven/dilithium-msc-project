@@ -1,0 +1,13 @@
+claim transaction    : 0x6f1d1aaf154eab172e7b4bfc927f644c751cd573270a924684df8809205d949c
+status               : SUCCESS
+gasLimit ON THE TX   : 16777216
+EIP-7825 cap         : 16777216
+gasUsed (by client)  : 16413275
+headroom             : 363941 gas  (97.8% of the cap used)
+calldata bytes       : 50148 received / 50148 expected / 50148 declared
+calldata byte-equal  : YES
+beneficiary paid     : 1000000000000000000 wei (escrow was 1000000000000000000)
+
+RESULT: full on-chain LAS verification settled the swap in ONE transaction,
+        mined by the client under a gasLimit at or below EIP-7825's cap,
+        over byte-identical calldata, paying the exact escrowed amount.

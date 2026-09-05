@@ -55,7 +55,7 @@ const _: () = assert!(REPS >= 5, "benchmark validity requires >= 5 repetitions f
 // large enough for attempts/op to converge to the ~e design target on BOTH
 // paths; otherwise the PreSign-vs-Sign ratio is dominated by sampling luck.
 // The per-attempt (rejection-normalised) diagnostic below removes what remains.
-const NITER_SIGN: usize = 500;
+const NITER_SIGN: usize = 1000;
 const NITER_FAST: usize = 1000; // verify-class ops
 const MSG: &[u8] = b"bench message, thirty-three bytes";
 
@@ -87,7 +87,7 @@ fn mean_sd(xs: &[f64]) -> (f64, f64) {
 /// paper's rejection bounds (eprint 2020/845 Alg. 1 step 11 / Alg. 2 step 6;
 /// see `las_expected_attempts`). Attempts/call over `calls` i.i.d. geometric
 /// draws has SD = E*sqrt(1-1/E), so the band is 5*SD/sqrt(calls) — at this
-/// driver's 2500 calls that is ~+-8%: a coarse gate against gross breakage
+/// driver's 5000 calls that is ~+-6%: a coarse gate against gross breakage
 /// (the Criterion run's >=100k calls give the tight ~+-1% version).
 fn rejection_gate(label: &str, attempts: u64, calls: u64, theory: f64) {
     assert!(calls > 0, "rejection gate: no calls counted for {label}");

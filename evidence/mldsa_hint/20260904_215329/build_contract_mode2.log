@@ -1,0 +1,2 @@
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wvla -Wpointer-arith -O3 -fomit-frame-pointer -DDILITHIUM_MODE=2 \
+  -o test/test_mldsa_las2 test/test_mldsa_las.c mldsa_las.c randombytes.c sign.c packing.c polyvec.c poly.c ntt.c reduce.c rounding.c fips202.c symmetric-shake.c

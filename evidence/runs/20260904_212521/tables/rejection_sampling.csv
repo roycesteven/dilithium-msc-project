@@ -1,0 +1,9 @@
+level,operation,avg_attempts,acceptance_pct,min,max,p50,p95
+paper,Base Sign,2.805,35.6,1,16,2,7
+paper,LAS PreSign,2.779,36.0,1,19,2,7
+L2,Base Sign,2.752,36.3,1,19,2,7
+L2,LAS PreSign,2.811,35.6,1,17,2,7
+L3,Base Sign,2.662,37.6,1,20,2,7
+L3,LAS PreSign,2.817,35.5,1,19,2,7
+L5,Base Sign,2.769,36.1,1,17,2,7
+L5,LAS PreSign,2.737,36.5,1,15,2,7

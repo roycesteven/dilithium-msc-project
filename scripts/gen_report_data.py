@@ -63,10 +63,19 @@ def resolve_pointer_path(path):
     """Resolve evidence/latest pointer files while preserving ordinary paths."""
     path = Path(path)
     if path.is_file():
+        # A pointer file names ONE existing sibling run; an ordinary evidence file
+        # does not.  Runners disagree on the form of `latest` (run_onchain_gas.sh
+        # writes a symlink, others a copy-fallback file), and without the
+        # resolves-to-something test a real file reached through a symlinked
+        # `latest` was read as if its CONTENTS were a path -- gas_report.log gave
+        # OSError [Errno 36] File name too long.  Resolve only what resolves.
         target = path.read_text(errors="replace").strip()
-        if target:
+        if target and "\n" not in target:
             target_path = Path(target)
-            return target_path if target_path.is_absolute() else path.parent / target_path
+            candidate = (target_path if target_path.is_absolute()
+                         else path.parent / target_path)
+            if candidate.exists():
+                return candidate
     if not path.exists() and path.parent.is_file():
         return resolve_pointer_path(path.parent) / path.name
     return path
@@ -1003,9 +1012,20 @@ def emit_tab_classical(out, meta, timing, comm, classical, packed_l2):
     for op in ["KeyGen", "Sign", "Verify", "PreSign", "PreVerify", "Adapt", "Ext"]:
         label = "Extract" if op == "Ext" else op
         las = l2[op][0] if op in CORE_LIKE else packed_l2[op][0]
+        # BOLD MARKS THE OPERAND, NOT THE RESULT: the final column divides the
+        # classical figure into the LAS figure at ONE of its two tiers, and which
+        # tier that is varies by row (CORE_LIKE above).  Bolding the cell actually
+        # used makes the tier-matching legible instead of leaving the reader to
+        # infer it from the caption.  \textbf does not bold math, hence \boldmath,
+        # scoped by the surrounding braces.
+        core_cell, packed_cell = mean_sd(l2[op]), mean_sd(packed_l2[op])
+        if op in CORE_LIKE:
+            core_cell = "{\\boldmath %s}" % core_cell
+        else:
+            packed_cell = "{\\boldmath %s}" % packed_cell
         b += ("  %s & %s & %s & %s & %s$\\times$ \\\\\n"
-              % (label, mean_sd(classical[op]), mean_sd(l2[op]),
-                 mean_sd(packed_l2[op]), ov(las, classical[op][0])))
+              % (label, mean_sd(classical[op]), core_cell, packed_cell,
+                 ov(las, classical[op][0])))
     b += "  \\midrule\n"
     b += "  \\multicolumn{5}{@{}l}{\\textit{Communication (bytes)}} \\\\\n"
     for label, ck, lk in (("Public key / statement", "pk", "pk = t"),
@@ -1013,7 +1033,8 @@ def emit_tab_classical(out, meta, timing, comm, classical, packed_l2):
                           ("Signature             ", "sig", "signature (c,z)"),
                           ("Pre-signature         ", "presig",
                            "pre-signature (c,z_hat)")):
-        b += ("  %s & %d & \\multicolumn{2}{c}{%d} & %s$\\times$ \\\\\n"
+        # Sizes are tier-independent, so the single LAS cell is always the operand.
+        b += ("  %s & %d & \\multicolumn{2}{c}{\\textbf{%d}} & %s$\\times$ \\\\\n"
               % (label, classical[ck], cc[lk], ov(cc[lk], classical[ck])))
     b += "  \\bottomrule\n\\end{tabular}\n"
     (out / "tab_classical.tex").write_text(b)

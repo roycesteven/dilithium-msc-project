@@ -19,7 +19,8 @@ source and evidence artefacts remain in the project repository.
 The benchmarks and tests are reproducible from the commands below; the application
 experiments --- the Stage-2 swap, the on-chain measurements and the real-client node runs
 --- are recorded with their own evidence paths in the later sections of this appendix.
-This report's numbers are regenerated from the C and the Rust logs together, so on a clean
+The standalone-signature benchmark numbers are regenerated from the C and the Rust logs
+together, so on a clean
 checkout the C suite saves its evidence and defers the report sync, leaving the report
 untouched; running the Rust suite next completes it. The upstream Dilithium
 reference is pinned at the repository's initial commit (\texttt{2374d22}); the
@@ -186,9 +187,9 @@ $\inftynorm{c\,r}\le\kappa$, because the challenge has exactly $\kappa$ nonzero
 coefficients of $\pm1$ and the secret is ternary. Each response coefficient
 $z_i = y_i + (c\,r)_i$ is therefore uniform on a window of $2\gamma+1$ consecutive
 integers whose centre is displaced from zero by at most $\kappa$. \textsc{Sign}'s acceptance
-interval $[-(\gamma-\kappa),\,\gamma-\kappa]$ is narrower than that window by exactly
-$\kappa$ on each side, so it lies wholly inside the window \emph{wherever} the
-displacement falls. Each coefficient is thus accepted with probability exactly
+interval $[-(\gamma-\kappa),\,\gamma-\kappa]$ contains $2(\gamma-\kappa)+1$ integers and
+lies wholly inside every such shifted window, because the displacement has magnitude at
+most $\kappa$. Each coefficient is thus accepted with probability exactly
 $\bigl(2(\gamma-\kappa)+1\bigr)/(2\gamma+1)$, independently of the secret --- which is
 precisely why rejection sampling makes the published response simulatable, and hence
 why it leaks nothing about $r$. Raising this to the $(n+\ell)\,d$ coefficients of one
@@ -202,7 +203,7 @@ $|\bar{A} - E| \le 5\,\sigma/\sqrt{n_{\mathrm{calls}}}$, where $E=1/p_{\mathrm{a
 is the closed-form expectation of \cref{eq:rejacc} and $\sigma = E\sqrt{1-1/E}$ is the
 geometric standard deviation. The test is applied separately for Sign and for PreSign,
 at both timing tiers, in C and in Rust, and a run that fails it aborts instead of
-producing evidence. The resulting band is $\pm\!\sim\!8\%$ at the C drivers' 2500
+producing evidence. The resulting band is $\pm\!\sim\!6\%$ at the C drivers' 5000
 timed calls and $\pm\!\sim\!1\%$ at the Criterion harness's $\approx\!10^5$, which is
 why only the latter resolves the $2\%$ theoretical separation between Sign and
 PreSign. The gate is a consistency check on the observed rejection rate, not a proof
@@ -996,7 +997,7 @@ int las_ext(witness *s, const signature *sig, const pre_signature *presig,
 
 \section{Settling on a real node}\label{app:btcnode}
 
-The transaction sizes of \cref{sec:res-stage2} are arithmetic over the serialisation of
+The Bitcoin transaction structures of \cref{sec:res-txstruct} follow the serialisation of
 \cite{bip141,bip144,bip341}. This appendix records what happened when transactions of those
 shapes were put to a real Bitcoin client, in two stages that must not be conflated: the
 first carries lattice-sized objects past a \emph{stock} node, the second verifies a lattice

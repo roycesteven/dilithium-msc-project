@@ -8,8 +8,10 @@ Public blockchains commonly authorise transactions with the Elliptic Curve Digit
 Signature Algorithm (ECDSA) or Schnorr. Their security relies on the hardness of the
 elliptic-curve discrete logarithm problem, which Shor's algorithm solves in polynomial
 time on a sufficiently large quantum computer \cite{shor1999polynomial}, allowing an
-adversary to forge signatures and spend other users' funds. A published 2026 resource
-estimate addresses that curve directly (\cref{fig:whynow}). A
+adversary to forge signatures and spend other users' funds. A published 2026 estimate
+puts secp256k1 key recovery within minutes at fewer than $500{,}000$ physical qubits
+\cite{babbush2026securing}, and NIST disallows quantum-vulnerable signatures at this
+strength after 2035 \cite{nistir8547}. A
 chain cannot treat that as distant: its record is permanent, so a break reaches keys
 already exposed, and changing how it verifies signatures requires a coordinated
 consensus-rule change, not merely a local software update. ``Post-quantum'' (PQ)
@@ -22,7 +24,7 @@ Algorithm), derived from CRYSTALS-Dilithium
 \cite{1274601,ducas2018crystals}. A basic signature authenticates a message and nothing
 more. Blockchains, however, depend on \emph{exotic} signatures that add functionality
 on top of a basic scheme: multi-signatures, aggregate signatures, threshold
-signatures, and \emph{adaptor signatures}. A recent survey documents that their exotic
+signatures, and \emph{adaptor signatures} (\cref{fig:whynow}). A recent survey documents that their exotic
 counterparts remain unevenly served by practical implementations
 in blockchain settings \cite{buser2023survey}. Turning one such paper design into a
 tested, measured artefact is the problem this project addresses.
@@ -43,7 +45,9 @@ tested, measured artefact is the problem this project addresses.
                    text width=120mm, inner xsep=1.5mm, inner ysep=1.2mm,
                    line width=0.5pt},
       head/.style={font=\normalsize\bfseries, align=center, text width=47mm},
-      row/.style={font=\normalsize\bfseries, align=right, text width=26mm},
+      % 31mm, not 26: at 26 the label broke as "extra func-tionality".  Widening the
+      % box is the fix; the type floor forbids shrinking the font to make it fit.
+      row/.style={font=\normalsize\bfseries, align=right, text width=31mm},
       cell/.style={draw, rounded corners=2pt, align=center, text width=44mm,
                    minimum height=22mm, inner xsep=1.5mm, inner ysep=1.2mm,
                    line width=0.6pt},
@@ -53,68 +57,41 @@ tested, measured artefact is the problem this project addresses.
     %% but the reader's first mental image should be "current chain signatures -> quantum
     %% key recovery -> replacement pressure", followed by the simple basic/exotic map.
 
-    %% ---- (a) current chain signatures under quantum pressure ----
-    %% RSA is deliberately absent.  Wang's objection was that the motivation should start
-    %% from Bitcoin/Ethereum signatures, not a cryptosystem neither chain uses.
-    \node[ttl] at (0mm,0mm) {(a) Why current chain signatures need replacement};
+    %% SINGLE PANEL since 2026-09-05.  The old sub-figure (a) redrew the quantum
+    %% argument -- current chain signatures -> Shor -> replacement pressure -- that
+    %% section 1.1's opening paragraph already makes sentence for sentence, which is
+    %% why Wang suggested dropping it ("you have already mentioned this in the text").
+    %% Its two evidence markers were NOT lost with it: they moved into that paragraph,
+    %% which is where babbush2026securing and nistir8547 are now cited, so the
+    %% bibliography and the deck's matching claims keep their support.
+    \node[ttl] at (0mm,0mm)
+      {Where LAS sits: basic vs.\ exotic $\times$ classical vs.\ post-quantum};
 
-    \node[flow, fill=black!5, draw=black!55] (today) at (-48mm,-20mm)
-      {\textbf{Current chains}\\
-       Bitcoin:\\
-       ECDSA, Schnorr\\
-       Ethereum: ECDSA\\
-       \emph{over secp256k1}};
-    \node[flow, fill=purple!8, draw=purple!60!black] (quantum) at (0mm,-20mm)
-      {\textbf{Quantum attack}\\
-       Shor recovers\\
-       signing keys\\
-       % The year is the ESTIMATE'S VINTAGE (babbush2026securing), never a date by
-       % which the attack arrives -- "resource" is what keeps the two readings apart.
-       \emph{2026 resource estimate}};
-    \node[flow, fill=red!7, draw=red!60!black] (risk) at (48mm,-20mm)
-      {\textbf{Replacement}\\
-       \textbf{pressure}\\
-       forged spends\\
-       exposed keys\\
-       consensus change};
+    \node[head] at (-14mm,-14mm) {\textbf{Classical}\\breaks under Shor};
+    \node[head] at (40mm,-14mm) {\textbf{Post-quantum}\\quantum-resistant};
 
-    \draw[->, line width=0.75pt, red!60!black] (today.east) -- (quantum.west);
-    \draw[->, line width=0.75pt, red!60!black] (quantum.east) -- (risk.west);
-    \node[note, fill=yellow!12, draw=yellow!55!black] at (0mm,-45mm)
-      {Evidence markers: $<500{,}000$ physical qubits and minutes for secp256k1 key
-       recovery \cite{babbush2026securing}; NIST disallows vulnerable signatures at
-       this strength after 2035 \cite{nistir8547}.};
-
-    %% ---- (b) LAS in the basic/exotic and classical/PQ map ----
-    \node[ttl] at (0mm,-66mm)
-      {(b) Where LAS sits: basic vs.\ exotic $\times$ classical vs.\ post-quantum};
-
-    \node[head] at (-14mm,-80mm) {\textbf{Classical}\\breaks under Shor};
-    \node[head] at (40mm,-80mm) {\textbf{Post-quantum}\\quantum-resistant};
-
-    \node[row] at (-52mm,-100mm) {Basic\\{\normalfont just sign}};
+    \node[row] at (-52mm,-34mm) {Basic\\{\normalfont just sign}};
     % "sign + a condition" describes the ADAPTOR only: multi-signatures change who must
     % authorise and aggregate signatures compress, so that label mis-defined the class.
-    \node[row] at (-52mm,-126mm) {Exotic\\{\normalfont extra functionality}};
+    \node[row] at (-52mm,-60mm) {Exotic\\{\normalfont extra functionality}};
 
-    \node[cell, fill=black!5, draw=black!55] at (-14mm,-100mm)
+    \node[cell, fill=black!5, draw=black!55] at (-14mm,-34mm)
       {\textbf{ECDSA / Schnorr}\\current chain authentication};
-    \node[cell, fill=green!8, draw=green!50!black] at (40mm,-100mm)
+    \node[cell, fill=green!8, draw=green!50!black] at (40mm,-34mm)
       {\textbf{Dilithium / ML-DSA}\\NIST standard \cite{1274601}\\deployment started
        \cite{valenta2026pqauth}};
-    \node[cell, fill=black!5, draw=black!55] at (-14mm,-126mm)
+    \node[cell, fill=black!5, draw=black!55] at (-14mm,-60mm)
       {\textbf{ECDSA adaptor}\\scriptless swaps\\and channels};
-    \node[cell, fill=red!7, draw=red!60!black, line width=0.9pt] at (40mm,-126mm)
+    \node[cell, fill=red!7, draw=red!60!black, line width=0.9pt] at (40mm,-60mm)
       {\textbf{LAS --- this project}\\post-quantum\\adaptor signature};
   \end{tikzpicture}
-  \caption[Why now, and where the gap is]{Why the problem is timely, and where this
-  project sits within it. \textbf{(a)} The quantum argument is made from the signatures
-  Bitcoin and Ethereum actually use, not from RSA: a published 2026 estimate gives the
-  cost of recovering secp256k1 keys, while the 2035 marker is the independent NIST
-  transition deadline for quantum-vulnerable signatures at this strength. \textbf{(b)}
-  Basic post-quantum signatures are standardised, but blockchain applications need
-  exotic signatures such as adaptors. That post-quantum exotic cell is the gap this
-  dissertation addresses.}
+  \caption[Where the gap is]{Where this project sits. Signatures divide along two
+  axes: whether they survive Shor, and whether they do more than authenticate a
+  message. Basic post-quantum signatures are standardised and deployment has begun,
+  and the classical exotic cell is well served, but blockchain applications need
+  exotic signatures that are also post-quantum. That remaining cell, holding the
+  lattice adaptor signature this dissertation implements and measures, is the gap it
+  addresses.}
   \label{fig:whynow}
 \end{figure}
 \FloatBarrier

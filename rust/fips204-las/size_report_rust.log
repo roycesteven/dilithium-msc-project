@@ -1,0 +1,28 @@
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running `target/release/examples/size_report`
+Communication cost — component-level packed sizes (measured)
+Setting: Simplified Dilithium-III (n=6, ell=5, kappa=49), ring degree d=256
+Wire format: serialize.rs (byte-for-byte identical to C ref/serialize.c;
+             cross-checked against the C pinned KAT digest b4a10ffb…03be)
+
+component                                    bytes   % of signature
+public key pk = t                             4416           65.56%
+secret key sk = r                              704           10.45%
+statement Y = t' (adaptor lock)               4416           65.56%
+witness r'                                     704           10.45%
+challenge c_tilde (H digest)                    48            0.71%
+response z                                    6688           99.29%
+response z_hat (in pre-signature)             6688           99.29%
+signature (c, z)                              6736          100.00%
+pre-signature (c, z_hat)                      6736          100.00%
+adapted signature (c, z)                      6736          100.00%
+
+Finding: the response z drives the size (6688 of 6736 B = 99.29%);
+the challenge c_tilde is negligible (48 B = 0.71%).
+Signature, pre-signature and adapted signature are byte-identical in size:
+Adapt only adds the ternary witness (|y|_inf <= 1) to z_hat, so |z|_inf grows
+by at most 1 and stays inside the same 19-bit packed field.
+The only extra object the adaptor protocol communicates is the statement Y
+(4416 B = one public key).
+
+ALL SIZE CHECKS PASSED (constants, C evidence row L3, sig==presig==adapted)

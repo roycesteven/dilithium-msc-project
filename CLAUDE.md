@@ -583,18 +583,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-04 19:05 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-05 01:43 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD 3cc7fae · 2026-09-04 · 4/09 6:28pm
-- Working tree: 42 modified tracked file(s), 3 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD c4064a2 · 2026-09-04 ·  4/09 7:15 pm
+- Working tree: 505 modified tracked file(s), 37 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `c4064a2 2026-09-04  4/09 7:15 pm`
   - `3cc7fae 2026-09-04 4/09 6:28pm`
   - `5abb6ec 2026-09-04 04_09__14_09`
   - `86fb0fd 2026-09-02 2/09 11:35pm`
   - `9ec1980 2026-09-02  2/09/2026 4:58pm`
-  - `a7dddb2 2026-09-01 final report audit fixes 1/09 10:22pm`
 
 ### Target parameter set — anchors parsed from source
 
@@ -605,12 +605,12 @@ Mechanics that matter:
 
 ### Latest measured evidence (pointers only — never retype a number)
 
-- Stage-1 benchmark suite: `evidence/latest` → `runs/20260904_134842` (dir mtime 2026-09-04)
+- Stage-1 benchmark suite: `evidence/latest` → `runs/20260904_212521` (dir mtime 2026-09-04)
 - Stage-2 UTXO swap: `evidence/stage2/latest` → `latest` (dir mtime 2026-08-25)
-- On-chain gas (EVM): `evidence/onchain/latest` → `latest` (dir mtime 2026-08-25)
-- Criterion micro-bench: `evidence/criterion/latest` → `20260901_215744` (dir mtime 2026-09-01)
+- On-chain gas (EVM): `evidence/onchain/latest` → `20260904_215518` (dir mtime 2026-09-04)
+- Criterion micro-bench: `evidence/criterion/latest` → `20260904_214411` (dir mtime 2026-09-04)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8998** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8975** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -629,7 +629,7 @@ Mechanics that matter:
 ### Freshness tripwires
 
 - Stage-1 evidence (2026-09-04) is newer than the newest scheme source (2026-09-02) — measurements match the code.
-- `CLAUDE.md` hand-written sections last touched 2026-09-04.
+- `CLAUDE.md` hand-written sections last touched 2026-09-05.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -696,10 +696,23 @@ model with no error when it does not**, and the only visible tell is the legend 
 Per-call counts come from `bench_levels.c`'s print-only `histogram k=…` block; the summary
 statistics alone cannot reconstruct a distribution, so never rebuild one from them.
 
-**Rejection gate (never weaken or rename):** every C and Rust benchmark driver hard-asserts
-measured attempts/call against exact theory — **Sign 2.71875**, **PreSign 2.77483** at the
-target set, 5σ tolerance. A drifting run fails loudly instead of quietly producing a
-publishable-looking number.
+**Rejection gate (never weaken or rename):** the C and Rust **LAS sign-class** benchmark
+drivers hard-assert measured attempts/call against exact theory — **Sign 2.71875**,
+**PreSign 2.77483** at the target set, 5σ tolerance. A drifting run fails loudly instead of
+quietly producing a publishable-looking number. ⚠️ **Not "every driver"** (this file said so
+until 2026-09-04): `bench_classical.c` benchmarks the classical ECDSA/adaptor operations —
+Sign and PreSign included — and simply has no LAS rejection sampler;
+`bench_las_consensus.c` is verification-oriented. Neither carries the LAS Sign/PreSign
+rejection-rate gate.
+⚠️ **`bench_levels` in BOTH languages runs `5 × 1000` since 2026-09-04 (Royce), so the gate
+sees 5000 timed calls and the band is ±~6%, NOT the old 2500/±~8%** — the band is `5σ/√n`, so
+it moves with the iteration count, and two report **literals** encode it (`03-results.tex`
+§res-compute, `app:benchalg`) that no macro will update. ⚠️ **`gen_report_data.py:1185`
+REFUSES to emit when the C and Rust EVIDENCE disagree on the scheme** — it compares the two
+parsed **logs**, never the sources, so re-running one driver under a changed scheme without
+re-running the other aborts the sync rather than pairing mismatched evidence.
+`bench_mldsa_compare.c` is a **separate** driver, still at `5 × 500` (2500 timed calls) —
+never quote one driver's call count for the other.
 
 **Known caveat (note in the thesis; do NOT solve):** the "knowledge gap" — here the
 extracted `y` is exact, whereas in the paper's relaxed setting the witness can carry noise
@@ -772,10 +785,16 @@ KAT-locked to C byte-for-byte.
   Rust identical). PreVerify and Ext are *asserted*, never hashed, so never write that it
   "covers the four adaptor operations", nor that "any divergence would flip it": a hash
   equality witnesses OUTPUT agreement only. Report wording fixed 2026-08-12.
-- Benchmarks: `bench_levels` (primary fair base-vs-LAS, ≥5 runs, mean±SD), `bench_las`,
-  `bench_compare` (context only — optimised Dilithium is *not* algorithm-matched),
+- Benchmarks: `bench_levels` (primary fair base-vs-LAS, ≥5 runs, mean±SD),
   `bench_classical` (ECDSA adaptor via vendored `secp256k1-zkp`), Rust Criterion. Two baselines,
-  per Meeting 2. Headline: the price of post-quantum here is **communication, not computation**;
+  per Meeting 2. ⚠️ **`bench_las.c` and `bench_compare.c` are DELETED** — `ref/Makefile:214`
+  records the removal and that their outputs are no longer primary evidence; this list named
+  both as live until 2026-09-04, the **third** instance of describing an artefact without
+  checking the target is built (cf. `test_contract`, `app:swapdemo`). There is therefore no
+  current live Optimised-Dilithium benchmark target: the old `bench_compare` head-to-head is
+  retired and is not reported as current benchmark evidence. Optimised Dilithium survives only
+  as the methodological contrast Ch.4 draws (not algorithm-matched), not as a reported
+  benchmark baseline. Headline: the price of post-quantum here is **communication, not computation**;
   LAS's adaptor overhead is small, where the classical adaptor pays ~4× for its DLEQ proof.
 - ⚠️ **Absolute C-vs-Rust timing agreement is NOT a safe report claim** — it has already swung
   far outside "close" between evidence runs, and **no cause is established: never explain a

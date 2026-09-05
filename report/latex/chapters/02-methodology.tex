@@ -60,24 +60,30 @@ $\vecz \leftarrow \hat{\vecz} + r'$, producing a signature the base verifier acc
       {Base signature reused unchanged\\
        \textsc{KeyGen}\qquad \textsc{Sign}\qquad \textsc{Verify}};
 
-    \node[opbox] (ps) at (-42mm,-31mm)
+    % 32mm between centres, not 28.  An opbox is 25mm of text plus inner sep=4pt on
+    % each side, so its border box is ~27.8mm: at 28mm spacing the four boxes almost
+    % touched, which is the crowding Wang asked about in M13 ("four boxes ... some
+    % overlaps ... more isolated").  32mm leaves a visible ~4mm channel between them.
+    % The four functions stay side by side (M8) and no type is shrunk (the type floor).
+    \node[opbox] (ps) at (-48mm,-31mm)
       {PreSign\\locked $\hat{\sigma}$};
-    \node[opbox] (pv) at (-14mm,-31mm)
+    \node[opbox] (pv) at (-16mm,-31mm)
       {PreVerify\\check $\hat{\sigma}$};
-    \node[opbox] (ad) at (14mm,-31mm)
+    \node[opbox] (ad) at (16mm,-31mm)
       {Adapt\\$\hat{\sigma}+r'$\\$\to\sigma$};
-    \node[opbox] (ex) at (42mm,-31mm)
+    \node[opbox] (ex) at (48mm,-31mm)
       {Extract\\$\sigma-\hat{\sigma}$\\$\to s$};
 
     \draw[->] (ps) -- (pv);
     \draw[->] (pv) -- (ad);
     \draw[->] (ad) -- (ex);
 
-    \node[note] (hash) at (-28mm,-15mm) {statement $Y$\\in challenge hash};
+    % Centred over the two boxes it feeds, so neither dashed arrow crosses the other.
+    \node[note] (hash) at (-32mm,-15mm) {statement $Y$\\in challenge hash};
     \draw[->, dashed] (hash) -- (ps);
     \draw[->, dashed] (hash) -- (pv);
 
-    \node[note] (wit) at (14mm,-53mm) {secret witness $r'$};
+    \node[note] (wit) at (16mm,-53mm) {secret witness $r'$};
     \draw[->, dashed] (wit) -- (ad);
 
     \node[wire] at (0mm,-70mm)
@@ -130,14 +136,19 @@ adapted signatures exceed the bound and be rejected.
     \node[ann, below=of ad] (y) {witness $r'$\\(secret)};
     \draw[->, dashed] (y) -- (ad);
     % anchored to ex's right edge so the wrapped annotation grows leftwards and cannot
-    % push the picture's bounding box past \textwidth at 12pt.
+    % push the picture's bounding box past \textwidth at 12pt.  That offset puts yo's
+    % centre left of ex.south, so a straight connector would be DIAGONAL: every
+    % connector in this figure is vertical or horizontal only, so the link is routed as
+    % an orthogonal staircase (down, across, down) rather than by re-centring the node,
+    % which would grow the bounding box to the right.
     \node[ann, text width=38mm, anchor=north east] (yo) at ([yshift=-7mm]ex.south east)
       {$s$, recovered only with\\the matching pre-signature};
-    \draw[->, dashed] (ex.south) -- (yo.north);
+    \draw[->, dashed] (ex.south) -- ++(0mm,-3.5mm) -| (yo.north);
   \end{tikzpicture}
   \caption[The LAS adaptor data flow]{The LAS adaptor data flow, in the symbols of
   \cref{fig:lasfuncs}: $y$ is PreSign's mask, $r'$ the honest witness, $s$ what Extract
-  recovers. The statement $Y$ is folded into the challenge
+  recovers, and $c=\textsf{SampleInBall}(\tilde c)$, with $\tilde c$ the transmitted
+  challenge digest. The statement $Y$ is folded into the challenge
   hash during PreSign and PreVerify; the witness is added by Adapt to turn the
   pre-signature into a base signature; and publishing that signature lets anyone
   holding the pre-signature run Extract to recover it. This last step is what an atomic
@@ -292,9 +303,8 @@ construction (\cref{fig:repostructure}).
 % correctness argument's "short of a formal proof" clause is the REASON cross-validation
 % counts, and agreement DEFENDS the C numbers -- it does not "detect" artefacts, since
 % detection is what disagreement would do.
-The port serves two purposes. \emph{Cross-validation}: short of a formal proof, the
-strongest practical argument for correctness is a second implementation agreeing on pinned
-vectors. \emph{An independent
+The port serves two purposes. \emph{Cross-validation}: short of a formal proof, a second
+implementation reproducing the pinned vectors is practical evidence of correctness. \emph{An independent
 benchmark methodology}: Criterion.rs \cite{criterionrs} shares no timing code with the C
 harness, so agreement defends the C numbers against harness artefacts.
 
@@ -317,8 +327,8 @@ The evaluation separates \emph{computation} cost (wall-clock time per operation)
 Undocumented boundaries are a recognised benchmarking pitfall for lattice signatures
 \cite{riou2026apples}, so every timing belongs to one of the three declared boundaries of
 \cref{tab:tiers}: a \emph{core tier} isolating the adaptor algebra from encoding, a
-\emph{packed tier} giving what an on-chain consumer pays, and, for the classical baseline
-alone, the \emph{hybrid} boundary its library exposes.
+\emph{packed tier} adding the wire codec a consumer reading from bytes must run, and,
+for the classical baseline alone, the \emph{hybrid} boundary its library exposes.
 % NOT "every base-versus-LAS comparison shows both": only the target-setting comparison
 % (tab:overhead-l3, and the prose around fig:timing) reports core AND packed.  The
 % parameter sweep is core-tier ONLY -- fig:overhead's own caption says so, and tab:timing
@@ -672,12 +682,12 @@ public matrix, derive all key material from one pinned seed, and prove the
 \emph{identical} relation
 $\exists\, r' : A r' = t' \wedge \inftynorm{r'} \le 1$: the hard relation of the
 statement/witness pair, \emph{not} the signer's key pair, and including the norm bound,
-since proving only $A r' = t'$ would fail to close the knowledge gap. This is verified
-rather than assumed: a configuration whose two halves disagree on a \emph{relation
-binding} each computes independently refuses to run (\cref{app:methoddetail}).
+since proving only $A r' = t'$ would fail to close the knowledge gap. Each half computes
+the \emph{relation binding} independently, and the run aborts on disagreement
+(\cref{app:methoddetail}).
 The $1\to2$ step is not controlled (it changes the signature scheme, the relation and
 whether a role-A proof exists), so it is a whole-stack comparison, the signature-only
-question being answered by \cref{sec:res-classical}.
+question being answered by \cref{sec:res-comm}.
 
 \paragraph{The Groth16 circuit.}
 % TRIMMED 2026-09-02 to pay for the two bridges above.  This paragraph restated

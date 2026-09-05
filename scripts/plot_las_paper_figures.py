@@ -306,15 +306,22 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
             ax.bar(gi + w / 2, lm, w, yerr=ls, capsize=3, color=ADPT_COL,
                    edgecolor="black", linewidth=0.4)
             tops += [bm + bs, lm + ls]
-            ax.text(gi - w / 2, bm + bs, "%.0f" % bm, ha="center", va="bottom",
+            # ONE DECIMAL, not %.0f: the overhead printed above the orange bar is
+            # computed from the true means, so integer bar labels let a reader divide
+            # the VISIBLE numbers and get a different answer -- at the 2026-09-04 run
+            # Adapt showed "103" over "95" (+8.4%) beside a printed "+7.7%".  One
+            # decimal takes the worst such gap from 0.74 to 0.06 percentage points.
+            ax.text(gi - w / 2, bm + bs, "%.1f" % bm, ha="center", va="bottom",
                     fontsize=_pt(9.5))
-            ax.text(gi + w / 2, lm + ls, "%.0f" % lm, ha="center", va="bottom",
+            ax.text(gi + w / 2, lm + ls, "%.1f" % lm, ha="center", va="bottom",
                     fontsize=_pt(9.5))
             if okey in o:                                 # exact overhead, on the orange bar
+                # NOT bold: bold is a visual-weight/width defect a size gate passes,
+                # and requesting it here only triggered a findfont fallback warning.
                 ax.annotate("+%.1f%%" % o[okey], xy=(gi + w / 2, lm + ls),
                             xytext=(0, 19 if PRINT else 15),
                             textcoords="offset points", ha="center",
-                            va="bottom", fontsize=_pt(11), fontweight="bold",
+                            va="bottom", fontsize=_pt(11),
                             color=OI["vermillion"])
         else:                                             # single bar (shared / LAS-only)
             op = bop or lop
@@ -323,7 +330,7 @@ def fig_per_op(timing, overhead, params, hl, out_dir):
             ax.bar(gi, m, w, yerr=s, capsize=3, color=col, edgecolor="black",
                    linewidth=0.4)
             tops.append(m + s)
-            ax.text(gi, m + s, "%.0f" % m, ha="center", va="bottom", fontsize=_pt(9.5))
+            ax.text(gi, m + s, "%.1f" % m, ha="center", va="bottom", fontsize=_pt(9.5))
     top = max(tops)
     # More headroom in print mode: the legend and the bar labels are 12pt there,
     # so the old 1.30 let the legend sit on the tallest pair.
@@ -379,8 +386,9 @@ def fig_comm(comm, params, hl, out_dir):
             linewidth=0.4, height=0.66)
     maxv = max(r[1] for r in rows)
     for y, r in zip(ys, rows):
-        ax.text(r[1] + maxv * 0.01, y, "%d bytes" % r[1], va="center", fontsize=10,
-                fontweight="bold")
+        # NOT bold: no figure text is bold (bold is a weight/width defect a size
+        # gate cannot see), and requesting it only triggered a findfont fallback.
+        ax.text(r[1] + maxv * 0.01, y, "%d bytes" % r[1], va="center", fontsize=10)
     ax.set_xlim(0, maxv * 1.22)
     ax.set_yticks(ys)
     ax.set_yticklabels([r[0] for r in rows])

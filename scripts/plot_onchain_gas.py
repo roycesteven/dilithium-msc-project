@@ -31,17 +31,34 @@ def parse_gas_report(path):
     Rows look like:  | claimClassical | min | avg | median | max | #calls |
     We take the MAX column: the worst case a settlement can cost, which is the
     number the per-transaction cap must be judged against.
+
+    ⚠ CONTRACT-AWARE, and it must stay that way.  forge prints one table PER
+    CONTRACT, and more than one contract defines these entrypoints: in the
+    2026-09-04 log `AdaptorSwapBound`'s rows follow `AdaptorSwap`'s, so keying on
+    the function name alone let the later table overwrite three of the four bars
+    (claimLASVerifiedOpt became 524,010 instead of 16,438,275) while
+    claimLASVerified, which that contract does not define, survived -- leaving a
+    figure where only ONE bar agreed with tab:onchain, and the optimised path
+    appeared far below the EIP-7825 cap instead of just under it.  Pin every row
+    to the contract that owns it, exactly as scripts/gen_report_data.py does.
     """
+    owner = "src/AdaptorSwap.sol:AdaptorSwap"
     want = {"claimClassical": None, "claimLAS": None, "claimLASVerified": None,
             # OPTIONAL: the single-transaction verifier (LASVerifyOpt). Absent from
             # logs captured before it existed, so it must not be a hard requirement --
             # an old evidence log has to keep replotting.
             "claimLASVerifiedOpt": None}
     required = ("claimClassical", "claimLAS", "claimLASVerified")
+    contract = None
     for line in path.read_text(errors="replace").splitlines():
         if not line.lstrip().startswith("|"):
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if cells and cells[0].endswith(" Contract"):
+            contract = cells[0][: -len(" Contract")].strip()
+            continue
+        if contract != owner:
+            continue
         if len(cells) < 6 or cells[0] not in want:
             continue
         nums = [c for c in cells[1:] if re.fullmatch(r"[0-9]+", c)]

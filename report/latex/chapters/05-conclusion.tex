@@ -51,8 +51,8 @@ scope: no concrete security is formally analysed, and nothing settled on a live 
 \label{sec:reflection-achieved}
 
 The central choice, to build \emph{additively} on a standardised reference
-rather than reimplement lattice arithmetic, paid off twice. It made the implementation
-tractable, and it made provenance auditable: the security-critical arithmetic
+rather than reimplement lattice arithmetic, had two benefits. It made the implementation
+tractable and made provenance auditable: the security-critical arithmetic
 is byte-for-byte the published CRYSTALS-Dilithium reference, with a two-branch diff.
 Being language-agnostic, it also made the second
 implementation cheap, turning self-consistency into cross-implementation evidence and
@@ -60,14 +60,14 @@ exposing timing conclusions to an independent harness. Pairing
 a pinned known-answer value with an independent reimplementation proved a decisive way to validate a
 cryptographic port.
 
-Two things went better than expected. Comparing LAS against a parameter-matched
-base rather than optimised Dilithium turned an apparent size deficit into an attributed
-one. Counting rejection attempts rather than inferring them from timing corrected a
+Two things went better than expected. Comparing LAS with its parameter-matched
+simplified base isolated the adaptor-layer overhead from differences due to Dilithium's
+omitted optimisations. Counting rejection attempts rather than inferring them from timing corrected a
 materially wrong earlier figure, now a gate every run must pass.
 
 Two negative results matter. Compressing the statement inside the construction and
-trying the relation under a succinct post-quantum system were implemented rather than
-left as speculation, and neither paid off (\cref{sec:future}). Each now names the
+trying the relation under a succinct post-quantum system were both implemented, and
+neither paid off (\cref{sec:future}). Each now names the
 mechanism that defeats it, closing the first direction outright and the second at the
 scale measured here.
 

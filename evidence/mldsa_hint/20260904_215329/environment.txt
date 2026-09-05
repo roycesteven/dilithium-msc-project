@@ -1,0 +1,12 @@
+run_id=20260904_215329
+git=c4064a2
+branch=final-report-audit
+host=Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+cpu=AMD Ryzen 7 7745HX with Radeon Graphics
+cc=cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+modes=2 3 5
+skip_bench=no
+sources=ref/mldsa_las.c ref/test/test_mldsa_hint.c ref/test/test_mldsa_las.c ref/test/bench_mldsa_compare.c
+upstream=ref/sign.c and all ML-DSA primitives UNMODIFIED; control verifier is the stock crypto_sign_verify
+note=timings are wall-clock on a loaded desktop; the two constructions are
+note=measured sequentially in one process, so intra-run drift is not controlled for

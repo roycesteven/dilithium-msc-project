@@ -1,0 +1,3 @@
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wvla -Wpointer-arith -O3 -fomit-frame-pointer -DLAS_GIT_COMMIT=\"c4064a2\" -DLAS_GIT_BRANCH=\"final-report-audit\" -DDILITHIUM_MODE=2 -DLAS_N=4 -DELL=4 -DKAPPA=39 \
+  -o test/bench_mldsa_compare2 test/bench_mldsa_compare.c mldsa_las.c basesig.c las.c setup.c relation.c serialize.c \
+  randombytes.c sign.c packing.c polyvec.c poly.c ntt.c reduce.c rounding.c fips202.c symmetric-shake.c -lm

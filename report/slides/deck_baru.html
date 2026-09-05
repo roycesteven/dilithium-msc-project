@@ -1269,8 +1269,8 @@
         <div class="ladarrow">&#8595; step 2 &#183; <b>what this project measured</b>: against LAS&#8217;s own post-quantum base</div>
         <div class="rung s2">
           <span class="n">step 2</span>
-          <span class="t"><b>post-quantum ADAPTOR (LAS)</b>, at Simplified Dilithium-III: PreSign +2.3% &#183; PreVerify +1.6% &#183; Adapt +4.9%</span>
-          <span class="c">+6.2% max in sweep</span>
+          <span class="t"><b>post-quantum ADAPTOR (LAS)</b>, at Simplified Dilithium-III: PreSign +1.8% &#183; PreVerify +7.4% &#183; Adapt +7.7%</span>
+          <span class="c">+7.7% max in sweep</span>
         </div>
       </div>
     </section>
@@ -1281,24 +1281,24 @@
          adaptor layers.  It is DERIVED from the classical harness's single mixed
          native-API tier, which is why the LAS byte-tier figure is quoted beside
          it: the claim has to survive the conservative pairing, and at
-         +19.1% against x4.6 it does.
+         +19.7% against x4.6 it does.
          Never let this slide imply LAS is FASTER than ECDSA in absolute time --
          it is not, and that cost belongs to step 1. -->
     <section class="slide" data-part="evaluation" data-title="Evaluation: classical timing baseline" data-time="0:16" data-notes="SPOKEN: Same timing question, classical side: ECDSA adaptor PreSign is 4.6 times its own Sign. LAS is not faster absolutely, but its extra adaptor step is much smaller relative to its own signature. || BACKUP: in absolute time a lattice operation still costs hundreds of microseconds against tens; LAS is not faster than ECDSA. All three bars are one quantity -- PreSign over that scheme's own Sign. The LAS C driver reports mean ± sample SD; the Rust Criterion cross-check uses a 3 s warm-up, 300 samples and bootstrap 95% CI. The classical figure is derived from a single mixed native-API tier, not a paired interleaved measurement, which is why the LAS byte tier is shown beside the core tier: the comparison has to survive the conservative pairing. And at application level the proof, not the signature, dominates: 98.6 percent of end-to-end swap time.">
-  <h1 class="headline">PreSign timing: LAS adds <strong class="hi">+2.3%</strong>; the classical adaptor costs <strong class="hb">×4.6</strong>.</h1>
+  <h1 class="headline">PreSign timing: LAS adds <strong class="hi">+1.8%</strong>; the classical adaptor costs <strong class="hb">×4.6</strong>.</h1>
   <div class="bars mini" style="flex:1;min-height:0;justify-content:center">
     <div class="bar" title="ECDSA adaptor PreSign over plain ECDSA Sign: 4.6 times">
       <div class="lab">ECDSA adaptor<br><span style="font-weight:400;opacity:.75">classical baseline</span></div>
       <div class="track"><div class="fill b" style="--w:100.00%"></div></div>
       <div class="val">×4.6 its Sign</div></div>
-    <div class="bar" title="LAS PreSign over Sign at the byte tier: +19.1 percent">
+    <div class="bar" title="LAS PreSign over Sign at the byte tier: +19.7 percent">
       <div class="lab">LAS · with encoding<br><span style="font-weight:400;opacity:.75">byte tier</span></div>
-      <div class="track"><div class="fill ad" style="--w:5.31%"></div></div>
-      <div class="val">+19.1%</div></div>
-    <div class="bar" title="LAS PreSign over Sign at the core tier: +2.3 percent">
+      <div class="track"><div class="fill ad" style="--w:5.47%"></div></div>
+      <div class="val">+19.7%</div></div>
+    <div class="bar" title="LAS PreSign over Sign at the core tier: +1.8 percent">
       <div class="lab">LAS · crypto only<br><span style="font-weight:400;opacity:.75">core tier</span></div>
-      <div class="track"><div class="fill ad" style="--w:0.64%"></div></div>
-      <div class="val">+2.3%</div></div>
+      <div class="track"><div class="fill ad" style="--w:0.50%"></div></div>
+      <div class="val">+1.8%</div></div>
   </div>
   <p class="kicker">This is a timing comparison of <strong class="hi">extra adaptor work</strong>, not a claim that lattice signatures are faster than ECDSA.</p>
 </section>

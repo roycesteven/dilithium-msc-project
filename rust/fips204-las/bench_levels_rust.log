@@ -1,0 +1,41 @@
+   Compiling fips204 v0.4.6 (/home/melly/dilithium-msc-project/rust/fips204-las)
+    Finished `release` profile [optimized] target(s) in 2.70s
+     Running `target/release/examples/bench_levels`
+=== LAS Stage-1 benchmark (Rust port) ===
+ordinary lattice-based signature (Algorithm 1, basesig.rs)
+vs LAS adaptor signature (Algorithm 2, las.rs)
+parameter set: Simplified Dilithium-III engineering setting (n=6, ell=5, kappa=49, gamma=137984)
+packed sizes: public key 4416 B | secret key / witness 704 B | signature 6736 B (ordinary = pre-signature = adapted)
+protocol: 5 repetitions, 1000 iterations/sign-class op, 1000 iterations/verify-class op, mean +/- SD; success-path contract gated
+build: cargo --release (upstream profile: opt-level="s", lto)
+
+operation                                 mean (us)    SD (us)
+Algorithm 1  KeyGen                            52.3        2.4
+Algorithm 1  Sign                             451.3       12.4
+Algorithm 1  Verify                            95.8        1.8
+Algorithm 2  PreSign                          456.9       32.3
+Algorithm 2  PreVerify                         94.1        1.3
+Algorithm 2  Adapt (incl. PreVerify)           95.9        1.3
+Algorithm 2  Extract                           37.9        0.6
+
+adaptor overhead (per operation): PreSign vs Sign +1.2% | PreVerify vs Verify -1.8% | Adapt vs Verify +0.2%
+rejection sampling (measured via attempt counters): base 2.73 attempts/signature (acceptance 36.7%) | adaptor 2.73 attempts/pre-signature (acceptance 36.7%)
+rejection gate [Algorithm 1 Sign]: 5000 calls, measured 2.7262 attempts/call (acceptance 36.68%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.1529 => OK
+rejection gate [Algorithm 2 PreSign]: 5000 calls, measured 2.7278 attempts/call (acceptance 36.66%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.1569 => OK
+per-attempt diagnostic (rejection-normalised): Sign 165.6 +/- 6.4 us | PreSign 167.4 +/- 10.5 us | overhead +1.1%
+
+=== TIER 2: end-to-end packed (validating unpack -> core -> pack inside each call) ===
+operation                                       mean (us)    SD (us)
+Algorithm 1  KeyGen_packed                          163.3        0.2
+Algorithm 1  Sign_packed                            468.5        9.9
+Algorithm 1  Verify_packed                          125.3        0.8
+Algorithm 2  PreSign_packed                         506.2       18.8
+Algorithm 2  PreVerify_packed                       146.4        0.3
+Algorithm 2  Adapt_packed (incl. PreVerify)         165.5        0.8
+Algorithm 2  Extract_packed                          82.7        0.2
+
+packed adaptor overhead (per operation): PreSign vs Sign +8.1% | PreVerify vs Verify +16.8% | Adapt vs Verify +32.1%
+codec boundary cost (packed - core, us): KeyGen +110.9 | Sign +17.2 | Verify +29.5 | PreSign +49.3 | PreVerify +52.3 | Adapt +69.6 | Ext +44.8
+rejection gate [Algorithm 1 Sign (packed tier)]: 5000 calls, measured 2.6888 attempts/call (acceptance 37.19%) vs theory 2.7188 (36.78%), 5-sigma tolerance +-0.1529 => OK
+rejection gate [Algorithm 2 PreSign (packed tier)]: 5000 calls, measured 2.7304 attempts/call (acceptance 36.62%) vs theory 2.7748 (36.04%), 5-sigma tolerance +-0.1569 => OK
+contract (asserted before timing): ordinary verifies; pre-signature FAILS the ordinary verifier; adapted passes the independent base verifier; Ext recovers the witness exactly

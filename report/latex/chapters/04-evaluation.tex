@@ -25,10 +25,9 @@ second, independently written implementation (\cref{sec:res-rust}). Internal
 self-consistency is not correctness: \cref{sec:eval-challenges} gives a case where
 every primitive passed in isolation and the assembled whole was still wrong.
 
-The primary comparison is controlled, not merely convenient (objective~4).
+The primary comparison is controlled (objective~4).
 LAS is measured against its own simplified base at identical algorithm, parameters and
-primitives, so the difference between the two paths is the adaptor layer and nothing
-else. Comparing instead against the optimised CRYSTALS-Dilithium reference would
+primitives, so the paired comparison estimates the cost of the adaptor layer. Comparing instead against the optimised CRYSTALS-Dilithium reference would
 confound the adaptor cost with parameter, packing and hint-vector differences; that
 comparison is therefore retained only as context, and the classical ECDSA adaptor only
 as a functionality-matched ``price of post-quantum'' baseline.
@@ -96,10 +95,9 @@ two need more than a table row.
   \end{tabular}
 \end{table}
 
-Objective~4's fairness claim rests on control rather than assertion: in Stage~1 the two
-compared paths share algorithm, parameters and primitives, and in Stage~2 the two LAS
-configurations share one public matrix and receive byte-identical inputs, verified at run
-time. The measurements are then defended from two independent directions: a
+For Objective~4, the standalone-signature evaluation holds algorithm, parameters and
+primitives fixed, and the application study shares one public matrix and byte-identical
+inputs, verified at run time. The measurements are then defended from two independent directions: a
 closed-form gate on the rejection rate, and re-measurement under a different compiler and
 an independent statistical harness.
 
@@ -107,8 +105,7 @@ Objective~5 was met in the UTXO setting assumed in \cite{esgin2020post}, with a 
 venue measured against it. On a local EVM a
 \emph{complete}, validated native LAS verifier was measured at
 $\approx$\gasLasVerifiedM{} million gas (\cref{tab:onchain}), above the EIP-7825
-per-transaction cap. That negative result is quantified
-rather than assumed, and it is what the comparison contributes. That ceiling later proved to bound the
+per-transaction cap. That ceiling later proved to bound the
 % "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and that
 % equivalence holds only under the registration invariant no contract checks (tab:onchain).
 % The instance belongs here too: two verifier stages branch on coefficient values.  The

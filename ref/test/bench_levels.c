@@ -131,12 +131,12 @@
 /* Repetition scheme MIRRORS the Rust driver (rust/fips204-las/examples/
  * bench_levels.rs) exactly, so the two languages collect their evidence
  * identically and the overhead ratios are directly comparable: 5 outer
- * repetitions; 500 inner iterations per repetition for the sign-class
+ * repetitions; 1000 inner iterations per repetition for the sign-class
  * operations (each call includes its rejection restarts) and 1000 for the
  * verify-class ones.  The sign-class attempt totals over the TIMED calls feed
  * the run-validity rejection gate (see rejection_gate below). */
 #define RUNS       5        /* outer repetitions -> mean +/- sample SD              */
-#define NITER_SIGN 500      /* inner iterations per repetition, sign-class          */
+#define NITER_SIGN 1000     /* inner iterations per repetition, sign-class          */
 #define NITER_FAST 1000     /* inner iterations per repetition, verify-class        */
 #define NSIG  2000          /* signing calls sampled for the attempt distribution   */
 
@@ -248,7 +248,7 @@ static unsigned long att_pre[NSIG];
  * las_expected_attempts() derived from the paper's rejection bounds (eprint
  * 2020/845 Alg. 1 step 11 / Alg. 2 step 6).  Attempts/call over `calls` i.i.d.
  * geometric draws has SD = E*sqrt(1-1/E), so the band is 5*SD/sqrt(calls)
- * (~+-8% at RUNS x NITER_SIGN = 2500 calls -- a coarse gross-breakage check;
+ * (~+-6% at RUNS x NITER_SIGN = 5000 calls -- a coarse gross-breakage check;
  * the Rust Criterion run's >=100k calls give the tight ~+-1% version).  On
  * failure the run aborts: it is NOT valid evidence. */
 static void rejection_gate(const char *label, unsigned long attempts,
