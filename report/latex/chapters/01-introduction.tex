@@ -30,8 +30,7 @@ more. Blockchains, however, depend on \emph{exotic} signatures that add function
 on top of a basic scheme: multi-signatures, aggregate signatures, threshold
 signatures, and \emph{adaptor signatures} (\cref{fig:whynow}). A recent survey documents that their exotic
 counterparts remain unevenly served by practical implementations
-in blockchain settings \cite{buser2023survey}. Turning one such paper design into a
-tested, measured artefact is the problem this project addresses.
+in blockchain settings \cite{buser2023survey}. Turning one such design, the LAS construction of Esgin et al.\ \cite{esgin2020post}, into a tested, measured artefact is the problem this project addresses.
 
 \begin{figure}[htbp]
   \centering
@@ -346,10 +345,8 @@ signature verification on Ethereum, ruling out Dilithium for its key sizes.
 % removed rather than left in place -- it is not a permanent setting.
 \enlargethispage{\baselineskip}
 \paragraph{Classical baseline.}
-The natural answer to ``what does post-quantum cost'' is a comparison with a
-\emph{classical adaptor} signature rather than plain ECDSA. Mature ECDSA-adaptor
-implementations exist \cite{secp256k1zkp}; this project benchmarks against one
-(\cref{ch:methodology}).
+The natural answer to ``what does post-quantum cost'' is a comparison with a \emph{classical adaptor} signature, not with plain ECDSA. Mature ECDSA-adaptor
+implementations exist \cite{secp256k1zkp}; this project benchmarks against one.
 
 \section{Aim and objectives}
 \label{sec:aims}

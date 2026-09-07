@@ -25,7 +25,11 @@ shows that arrangement before the algebra.
       box/.style={draw, rounded corners, align=center, minimum height=11mm,
                   inner sep=4pt},
       base/.style={box, text width=88mm},
-      opbox/.style={box, text width=25mm, minimum height=20mm},
+      % 26mm, not 20: Extract carries FOUR lines and sat hard against its own border,
+      % which is the other half of the crowding (the horizontal channel was opened to
+      % ~4mm below).  Taller boxes de-crowd without shrinking any type (the type floor)
+      % and without re-stacking the four functions (M8 ordered them side by side).
+      opbox/.style={box, text width=25mm, minimum height=26mm},
       ann/.style={font=\normalsize\itshape, align=center, text width=32mm},
       >={Stealth[]}]
 
@@ -65,13 +69,25 @@ shows that arrangement before the algebra.
     % NO ALGEBRA HERE, DELIBERATELY.  This figure answers "what changes when a base
     % signature becomes LAS?"; the equations follow it in the prose, so a reader meets
     % them already knowing what each operation is for.  Every box names its output.
-    \node[opbox] (ps) at (-48mm,-31mm)
+    % ROW DROPPED -31mm -> -38mm (2026-09-06).  Two reasons, and the second is the reason
+    % the amount is what it is.  (a) De-crowding: at -31mm with 20mm boxes the row sat
+    % ~14mm under the base box with the statement label wedged into that gap; the row is
+    % now ~19mm clear and the label has air on both sides.  (b) Page fill: p.19 held
+    % figure + caption + prose + eq:signbound and then stopped ~60pt short, because the
+    % three-line paragraph that follows the equation needs ~66pt and fell whole to p.20.
+    % Growing the FIGURE takes that space instead, so the page carries the same body
+    % content as before and NOTHING after it moves -- a fix that pulled those three lines
+    % up onto p.19 would have re-flowed every page to the end of the chapter.
+    % ⚠ The headroom is finite: ~59.6pt was free, this spends ~44pt.  Re-measure the page
+    % bottom (pdftotext -bbox-layout) after ANY further growth here -- overshoot pushes a
+    % prose line to p.20 and the cascade this avoids comes straight back.
+    \node[opbox] (ps) at (-48mm,-38mm)
       {\textbf{PreSign}\\lock to $Y$\\$\to\hat{\sigma}$};
-    \node[opbox] (pv) at (-16mm,-31mm)
+    \node[opbox] (pv) at (-16mm,-38mm)
       {\textbf{PreVerify}\\check $\hat{\sigma}$};
-    \node[opbox] (ad) at (16mm,-31mm)
+    \node[opbox] (ad) at (16mm,-38mm)
       {\textbf{Adapt}\\unlock with $r'$\\$\to\sigma$};
-    \node[opbox] (ex) at (48mm,-31mm)
+    \node[opbox] (ex) at (48mm,-38mm)
       {\textbf{Extract}\\from $\sigma$ and\\matching $\hat{\sigma}$\\$\to$ witness};
 
     \draw[->] (ps) -- (pv);
@@ -85,16 +101,18 @@ shows that arrangement before the algebra.
     % the rendered page.  The base box is 11mm high centred at 0 plus a 4pt inset, so its
     % bottom edge is ~-6.9mm; "above=8mm of ps" put this label's TOP at ~-4mm, i.e. ~3mm
     % inside it, and horizontally the base spans +-45mm against this label's -64..-32mm.
-    % anchor=north at -9mm clears the base by ~2mm and still leaves a gap above ps
-    % (north -21mm).  Re-render after changing the base box height or this label's lines.
+    % anchor=north at -11.5mm clears the base by ~4.6mm and still leaves a gap above ps
+    % (north -25mm).  Re-render after changing the base box height or this label's lines.
+    % Moved -9mm -> -11.5mm with the row drop above, so the label stays centred in the
+    % widened channel instead of hugging the base box.
     % One line, not two: anchored north, so dropping "(into the hash)" lifts the label's
     % BOTTOM edge and widens the gap to PreSign without moving the picture's bounding box
     % -- no page re-flow.  The hash mechanism is stated in the prose below, where the
     % algebra is; this figure is deliberately conceptual.
-    \node[ann, anchor=north] (Y) at (-48mm,-9mm) {statement $Y$};
+    \node[ann, anchor=north] (Y) at (-48mm,-11.5mm) {statement $Y$};
     \draw[->, dashed] (Y) -- (ps);
     \draw[->, dashed] (Y) -| (pv);
-    \node[ann, below=8mm of ad] (wit) {witness $r'$\\(secret)};
+    \node[ann, below=13mm of ad] (wit) {witness $r'$\\(secret)};
     \draw[->, dashed] (wit) -- (ad);
   \end{tikzpicture}
   \caption[The four functions LAS adds to the base signature]{What changes when a base
@@ -134,9 +152,7 @@ $r'$, compute $Y=A\,r'$, and
 return $(Y,r')$. Thus \textsc{Gen} is not a further primitive but \textsc{KeyGen}
 with its public key $t$ relabelled as the statement $Y$ and its secret $r$
 relabelled as the witness $r'$. \emph{Key generation is shared.} The implementation
-mirrors that split:
-\texttt{relation\_gen} implements \textsc{Gen}, while \texttt{las.c} and
-\texttt{las.rs} hold the adaptor layer alone.
+mirrors that split: a relation module implements \textsc{Gen}, while the adaptor module in each language holds the four adaptor operations alone.
 
 The base signature commits to a mask $y$ as $w = A\,y$, forms a challenge
 $c = H(\mathit{pk}, w, M)$, computes the response $\vecz = y + c\,r$ and rejects when
@@ -148,9 +164,10 @@ $\gamma-\kappa-1$; \textsc{PreVerify}, which recomputes $w' = A\hat{\vecz} - c\,
 $c = H(\mathit{pk}, w'+Y, M)$; % NOT "$r' := y$": Algorithm 2 parses the pair that way, but this report reserves $y$ for
 % the mask alone (see fig:lasfuncs' caption).  Writing the paper's local parse here made the
 % sentence read as Adapt adding the masking randomness.
-\textsc{Adapt}, which adds the witness $r'$,
+\textsc{Adapt}, which runs \textsc{PreVerify} and then adds the witness $r'$,
 $\vecz \leftarrow \hat{\vecz} + r'$, producing a signature the base verifier accepts; and
-\textsc{Extract}, which recovers $s = \vecz - \hat{\vecz}$ (\cref{fig:lasfuncs}).
+\textsc{Extract}, which recovers $s = \vecz - \hat{\vecz}$ and returns it only if
+$A\,s = Y$ (\cref{fig:lasfuncs}).
 
 
 % The bound is framed as a CONSEQUENCE of Adapt rather than announced as "the subtle
@@ -223,9 +240,6 @@ $q=8\,380\,417\approx 2^{23}$, FIPS~204's own modulus \cite{1274601}, rather tha
 $q\approx 2^{24}$ of \cite{esgin2020post}; correctness is unaffected since
 $q>2\gamma$, and only the Module-SIS/LWE margin differs. No module depends on a
 mode-specific constant, so identical code runs at every parameter set.
-
-With the in-memory construction fixed, the next requirement is a canonical byte
-representation and a verification interface that consumes those bytes.
 
 \begin{figure}[htbp]
   \centering
@@ -316,7 +330,7 @@ full in \cref{tab:tests}. Functional tests assume an honest caller and assert th
 adaptor cycle, including the \emph{tripwire} clause (a pre-signature must \emph{fail}
 basic verification), which is what distinguishes an adaptor signature from a signature.
 Serialization and tamper tests assume a hostile caller; the known-answer test assumes a
-different machine, and its digest is what the second implementation is checked against
+different machine, and its pinned known-answer value is what the second implementation is checked against
 (\cref{sec:rustport}).
 
 \section{An independent second implementation: the Rust port}
@@ -376,9 +390,7 @@ rejection rates but not rejected-attempt work
     \draw[->] (rsrc.south) -- (reuse);
 
     \node[layer] (laslayer) at (0mm,-42mm)
-      {\textbf{Project LAS layer, added in both languages}\\
-       \texttt{setup}, \texttt{las\_types}, \texttt{relation}\\
-       \texttt{basesig}, \texttt{las}, \texttt{serialize}};
+      {\textbf{Project LAS layer, added in both languages}\\ public parameters, object types, the relation\\ the simplified base signature, adaptor layer, serialization};
     \draw[->] (reuse) -- (laslayer.north);
 
     \node[note] (format) at (0mm,-63mm)
@@ -409,10 +421,9 @@ rejection rates but not rejected-attempt work
 \section{Benchmarking methodology and fair comparison}
 \label{sec:benchmethod}
 
+\paragraph{Measurement boundaries.}
 The evaluation separates \emph{computation} cost (wall-clock time per operation) from
 \emph{communication} cost (bytes transmitted or stored).
-
-\paragraph{Measurement boundaries.}
 Undocumented boundaries are a recognised benchmarking pitfall for lattice signatures
 \cite{riou2026apples}, so every timing belongs to one of the three declared boundaries of
 \cref{tab:tiers}: a \emph{core tier} isolating the adaptor algebra from encoding, a
@@ -511,14 +522,15 @@ comparison is repeated at the four parameter sets of \cref{tab:params} (symbols 
 \begin{table}[htbp]
   \centering
   \caption[Parameter sets used in the evaluation]{Parameter sets used in the evaluation. The \emph{LAS-2020/845 reference}
-  set is \emph{paper-derived} rather than that paper's exact set: it takes the dimensions
-  of \cite{esgin2020post}, a historical reference point corresponding to no ML-DSA set,
+  set takes its dimensions from Esgin et al.\ \cite{esgin2020post}. It is not an exact
+  reproduction of that parameter set: it keeps those dimensions as a historical reference
+  point, corresponding to no ML-DSA set,
   % NOT "which the paper permits": that paper fixes $q\approx2^{24}$ *to meet* its M-SIS /
   % M-LWE requirements and only then says the concrete value may be chosen for a fast NTT
   % -- a licence at a FIXED SIZE, which does not cover changing the size.  Wording now
   % matches sec:impl and sec:res-validity, which both already had it right.
-  but runs at FIPS~204's $q\approx 2^{23}$ \cite{1274601} rather than the
-  $q\approx 2^{24}$ of \cite{esgin2020post}: correctness is unaffected ($q>2\gamma$),
+  and runs at FIPS~204's $q\approx 2^{23}$ \cite{1274601}, while Esgin et al.\
+  \cite{esgin2020post} set $q\approx 2^{24}$. Correctness is unaffected ($q>2\gamma$),
   while the security margin changes. The \emph{Simplified
   Dilithium-II/III/V} sets reuse the dimensions of Dilithium modes~2/3/5, aligning the
   reusable ML-DSA primitives and the challenge-digest strength $\lvert\tilde c\rvert$
@@ -559,11 +571,6 @@ fair counterpart of an adaptor signature being another adaptor signature.
 
 \section{Application methodology: the UTXO swap study}
 \label{sec:stage2method}
-
-This section defines the application protocol and the measurement boundary used for the
-Stage-2 results. The protocol follows Figure~1 in
-\cite{esgin2020post} over two UTXO ledgers; \cref{sec:res-app} later reports the execution
-evidence, while \cref{sec:res-stage2,sec:res-txstruct} report cost.
 
 \paragraph{The venue, and why it is modelled.}
 The construction \cite{esgin2020post} states its applications over ``a UTXO-based
@@ -745,10 +752,10 @@ and the settled transaction. Conflating them would misreport communication cost.
   \caption[The three measured configurations]{The three configurations. Only the
   $2\to3$ step is controlled, so those two differ in the proof system alone;
   configuration~1 differs in signature scheme, relation and proof alike. Its missing
-  role-A proof is a finding rather than an omission: an ECDSA adaptor has no knowledge
+  role-A proof is a finding, not an omission: an ECDSA adaptor has no knowledge
   gap, since extraction recovers the discrete logarithm exactly, so the unmodified
   \texttt{secp256k1-zkp} construction needs no $\pi$, and adding one would have
-  measured a modified baseline rather than the library as it stands. The DLEQ proof
+  measured a modified baseline, not the library as it stands. The DLEQ proof
   carried \emph{inside} its pre-signature is a different object and is not counted as
   $\pi$: its author is the pre-signer, and its claim is pre-signature well-formedness,
   not knowledge of the role-A statement witness $r'$. Its cost is included in the bytes

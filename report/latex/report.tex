@@ -17,7 +17,7 @@
 % contents (muthesis.cls: "A word count now (Sep 17) seems to be required").
 % Regenerate word.count first:
 %   texcount -1 -sum -relaxed -inc report.tex > word.count
-\documentclass[12pt,MSc,wordcount,anon]{muthesis}
+\documentclass[12pt,MSc,wordcount]{muthesis}
 
 % Silences "PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed",
 % raised by figures/fig_criterion_presign.pdf.  Raising the TARGET is deliberate rather
@@ -36,7 +36,7 @@
 \usepackage{booktabs}        % \toprule \midrule \bottomrule
 \usepackage{array}           % ragged-right fixed-width columns (see \newcolumntype L below)
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}  % left-aligned wrapping column
-\usepackage{longtable}       % page-breaking tables (tab:challenges is taller than a page)
+\usepackage{longtable}       % page-breaking tables (tab:notation is taller than a page)
 \usepackage{float}           % [H] for appendix reference tables that should not float
 \usepackage{graphicx}
 \usepackage{xcolor}
@@ -97,6 +97,13 @@
 \setcounter{totalnumber}{5}
 
 \usepackage{placeins}        % explicit \FloatBarrier where section order needs it
+
+% Widow/orphan control, document level.  Several pages were opening with a single
+% paragraph-final line (a widow).  These are the standard TeX penalties: they forbid the
+% break rather than patching individual pages with \enlargethispage, which is
+% pagination-dependent and goes stale on the next edit.
+\widowpenalty=10000
+\clubpenalty=10000
 
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,
         columns=fullflexible,showstringspaces=false}

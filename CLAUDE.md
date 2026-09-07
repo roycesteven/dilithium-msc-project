@@ -583,18 +583,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-05 14:35 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-07 07:53 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD 0e6da21 · 2026-09-05 · Remove accidental benchmark artifacts and restore rubric
-- Working tree: 19 modified tracked file(s), 37 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 889b130 · 2026-09-05 ·  report super final 5/9 3:02 pm
+- Working tree: 33 modified tracked file(s), 41 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `889b130 2026-09-05  report super final 5/9 3:02 pm`
   - `0e6da21 2026-09-05 Remove accidental benchmark artifacts and restore rubric`
   - `4465a86 2026-09-05 report final 1cd`
   - `24abd32 2026-09-05 report final 1`
   - `c4064a2 2026-09-04  4/09 7:15 pm`
-  - `3cc7fae 2026-09-04 4/09 6:28pm`
 
 ### Target parameter set — anchors parsed from source
 
@@ -610,7 +610,7 @@ Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260904_215518` (dir mtime 2026-09-04)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260904_214411` (dir mtime 2026-09-04)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8965** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8833** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -618,7 +618,7 @@ Mechanics that matter:
 - Next action recorded there:
   - Ask Royce which way to settle sec:res-rust (re-run vs rewrite), then re-run
   - `python3 scripts/gen_slides.py --check` if any Stage-1 macro changes again.
-- `CONTEXT.md` (long-form handoff): CONTEXT — session handoff (updated 2026-07-29; ninth-session update first)
+- `CONTEXT.md` (long-form handoff): CONTEXT — session handoff (updated 2026-09-05; newest section first)
 
 ### Supervisor meetings on record
 
@@ -629,7 +629,7 @@ Mechanics that matter:
 ### Freshness tripwires
 
 - Stage-1 evidence (2026-09-04) is newer than the newest scheme source (2026-09-02) — measurements match the code.
-- `CLAUDE.md` hand-written sections last touched 2026-09-05.
+- `CLAUDE.md` hand-written sections last touched 2026-09-07.
 
 <!-- END AUTO-CONTEXT -->
 
@@ -1514,6 +1514,16 @@ any of it.
    after any change to what sits beside it. Buying the size means CUTTING: what went was byte
    figures repeated from the slide that owns them, arrow captions restating the box beside them,
    and a duplicate opcode badge — never a caveat, a scope note or a warrant.
+   ⚠️ **RAISING THE MARKUP NUMBER IS NOT RAISING THE TYPE, AND A SCENE PAYS FOR EVERY LINE
+   STACKED AROUND IT** (2026-09-05, `deck_baru.html` slide 7: 29 labels had been raised to
+   `font-size="22"` and the deck signed off on that number, while all 27 runs painted at
+   **17.5–19.1 px** — the deck's only floor violations, invisible to every check but
+   `audit_type.js`). `contain` scales a scene by `min(W/vbW, H/vbH)`, and **H is whatever the
+   eyebrow, headline and kicker leave**, so a two-line headline silently shrinks the whole
+   picture. The fix is to raise the **scale**, not the numbers — raising numbers overflows the
+   boxes — by giving the scene the height back: a one-line headline and dropping a kicker that
+   the picture and the spoken script already carried took it from 0.795 to width-bound 1.007.
+   ⚠️ Do not add a line above or below a scene without re-running the gate.
    ⚠ **ONE ORIENTATION PER SLIDE — columns are allowed, MIXING is not (Royce, 2026-08-30:
    "boleh 2 kolom, tapi pilih salah satu antara vertikal atau horizontal saja").** Two vertical
    stacks side by side is the banned shape, and the fix is to **split it into two slides**, not to

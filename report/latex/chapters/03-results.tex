@@ -1,9 +1,6 @@
 \chapter{Results and discussion}
 \label{ch:results}
 
-This chapter reports what was measured and why the results should be believed:
-correctness, computation cost, communication cost, and the application results.
-
 \section{Correctness and robustness}
 \label{sec:res-correctness}
 
@@ -22,11 +19,10 @@ swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
   % Run metadata is not printed: Stage-1 evidence run of record = \benchRunId
   in the evidence run of record; all pass. Clauses~1--4
   and~5a are asserted on every one of the 1000 randomised iterations of the
-  functional suite \texttt{test\_las}; 5b and~6 by \texttt{test\_serde}, which also
-  performs 256 randomised serialization round trips; 7 by the known-answer test
-  \texttt{test\_kat}, whose pinned cross-language value binds the packed public
+  functional suite; 5b and~6 by the serialization suite, which also
+  performs 256 randomised serialization round trips; 7 by the known-answer test, whose pinned cross-language value binds the packed public
   key, secret key, signature, pre-signature and adapted signature over four fixed
-  vectors. PreVerify and Extract are asserted in all three tests, but produce no
+  vectors. PreVerify and Extract are asserted in all three suites, but produce no
   object that value covers.}
   \label{tab:contract}
   \small
@@ -74,7 +70,7 @@ and every operation completes in well under two milliseconds.
   measured \textsc{KeyGen} timing also gives the cost of relation generation. Extract
   has no basic analogue. The packed-tier overheads are larger because the byte API
   does codec work on the adaptor's own objects that the basic operation does not:
-  serialization rather than adaptor arithmetic, itemised per operation in the text;
+  codec work, not adaptor arithmetic, itemised per operation in the text;
   the core tier isolates the adaptor computation itself. Absolute core-tier timings at
   every parameter set are in \cref{tab:timing} (appendix).}
   \label{tab:overhead-l3}
@@ -112,8 +108,7 @@ verification or less each (\cref{tab:overhead-l3}).
 
 At the packed boundary the premium grows to $+\packedOvPreSign\%$,
 $+\packedOvPreVerify\%$ and $+\packedOvAdapt\%$, several times the core-tier
-percentages. The increase is codec work on the adaptor's own objects rather than adaptor
-arithmetic: PreSign and PreVerify additionally decode the statement, while Adapt also
+percentages. The increase is codec work on the adaptor's own objects, not adaptor arithmetic: PreSign and PreVerify additionally decode the statement, while Adapt also
 decodes the witness and re-encodes the signature. A deployment working from bytes should
 budget for the packed row; reported lattice timings are notoriously sensitive to this
 boundary \cite{riou2026apples}.
@@ -123,15 +118,17 @@ Fiat--Shamir-with-aborts.
 \Cref{eq:rejacc} predicts 2.719 attempts per Sign and 2.775 per PreSign, the latter
 expected to restart about $2\%$ more often because its bound is tighter by one; counted directly
 rather than estimated from a timing ratio, the run of record observed \rejAttBase{} and
-\rejAttLas{}. The supporting rejection table and CDF are deferred to
-Appendix~\ref{app:compute-support}: \cref{tab:rejstats,fig:rejcdf} show that measured
-rejection behaviour matches the geometric model and that every measured row passes the
-five-standard-error validity gate of \cref{sec:benchmethod}. At 5000 timed calls the gate band
+\rejAttLas{}. \Cref{tab:rejstats,fig:rejcdf} compare the measured rejection behaviour
+with the geometric model. All measured runs fall within five standard errors of the
+expected attempt count defined in \cref{sec:benchmethod}. At 5000 timed calls the gate band
 ($\pm\!\sim\!6\%$) is wider than that $2\%$ separation, so the core-tier PreSign overhead
-($+\ovPreSign\%$) should be read as of the same order as the prediction rather than as a
-precise constant; only the $\approx\!10^5$-call Criterion harness resolves it.
+($+\ovPreSign\%$) should be read as of the same order as the prediction, not as a precise constant; only the $\approx\!10^5$-call Criterion harness resolves it.
 
-\FloatBarrier
+% NO \FloatBarrier HERE.  With fig:timing still pending, a barrier before this section
+% flushed it and ended the previous page early, leaving tab:overhead-l3 with three lines
+% of prose and ~147pt of white.  Without it the next section's prose fills that page and
+% the figure is set on the following one, still inside its own section.
+% ⚠ Pagination-dependent -- re-check placement of fig:timing on rebuild.
 \section{Cross-implementation check: C implementation versus Rust port}
 \label{sec:res-rust}
 
@@ -202,7 +199,9 @@ appears in both implementations and under the independent Criterion harness
   \label{fig:criterion}
 \end{figure}
 
-\FloatBarrier
+% NO \FloatBarrier HERE either, for the same reason: it flushed fig:criterion and left
+% tab:rust stranded with ~109pt of white.  Measured: p32 147->8pt, p34 109->12pt, floats
+% still land in their own sections, page count unchanged.
 \section{Communication cost and component breakdown}
 \label{sec:res-comm}
 
@@ -255,7 +254,7 @@ reducing that footprint (\cref{sec:future}).
 \paragraph{The price of post-quantum: classical adaptor baseline.}
 The second baseline is a classical secp256k1 ECDSA adaptor signature
 \cite{secp256k1zkp}: the natural functional counterpart of LAS, driving the same
-scriptless swaps but resting on discrete-log rather than lattice hardness. It measures
+scriptless swaps but resting on discrete-log, not lattice, hardness. It measures
 the practical cost of moving from a classical adaptor signature to a post-quantum one.
 LAS is instantiated at \emph{Simplified Dilithium-II} and only there: secp256k1 offers
 roughly 128-bit classical security, so those dimensions are the most like-for-like
@@ -298,7 +297,7 @@ size: LAS's signature and public key are roughly $\clRatioSig\times$ and
 $\clRatioPk\times$ larger than the classical adaptor's, while every LAS operation stays
 well under a millisecond. Even the largest per-operation factor (\clRatioTimeMaxOp,
 $\clRatioTimeMax\times$) repays decomposition, because it compares two different
-\emph{quantities of work} rather than two speeds for the same work: Algorithm~2 of
+\emph{quantities of work}, not two speeds for the same work: Algorithm~2 of
 \cite{esgin2020post} obliges \textsc{Adapt} to run \textsc{PreVerify} before returning, so
 \adaptPreVerifyPct\% of LAS's \lasAdaptPackedUs\,$\mu$s is a full lattice verification and
 the rest is largely codec, whereas \texttt{secp256k1\_ecdsa\_adaptor\_decrypt}
@@ -318,7 +317,7 @@ overhead.
 \section{Testing the simplification: the adaptor with ML-DSA verification}
 \label{sec:res-mldsa}
 
-\Cref{sec:impl} follows the LAS paper's simplified Dilithium-style base, which omits
+\Cref{sec:impl} follows the simplified Dilithium-style base of \cite{esgin2020post}, which omits
 Dilithium's hint vector, Power2Round and high/low-bit decomposition. In this simplified
 form, the exact identity $A\vecz-c\,t=w+Y$ is exposed. This section tests whether those
 omitted optimisations can coexist with the adaptor layer: the four adaptor operations were
@@ -344,12 +343,11 @@ tamper rejections and byte-identical determinism), and, decisively, the unmodifi
 FIPS~204 verifier accepts the adapted signature (\mldsaRepairedP{}/\mldsaIters{}). So
 % "necessarily new" was stronger than the evidence: what the naive port establishes is
 % that THAT reuse fails (0/200), not that no reuse-based construction exists.  Same
-% correction tab:challenges row 2 already records for the disabled optimisations.
+% correction sec:eval-challenges already records for the disabled optimisations.
 \textsc{PreSign} and \textsc{PreVerify} require adaptor-specific algorithms, while
 \textsc{Verify} does not: a post-quantum adaptor swap could settle against a standard
 ML-DSA verifier. A matched no-statement baseline reproduces FIPS~204's own published repetition
-rates, which is what makes these rows attributable to the adaptor rather than to a porting
-error.
+rates, which is what makes these rows attributable to the adaptor, not to a porting error.
 
 The size gain is real but bounded, and it relocates the bottleneck. Measured
 against the scheme of record in one process, the adaptor layer stays single-digit on both
@@ -362,8 +360,7 @@ not shrink at all (the same \mldsaStmtBytes\,B), because Power2Round compresses
 a public key while $Y$ enters the verification identity \emph{before} any rounding. The
 signature-plus-statement payload ($\sigma+Y$) therefore improves only to
 \mldsaPayloadRatio$\times$, and $Y$ becomes larger
-than the signature it accompanies. Compressing the signature moves the bottleneck
-to the statement rather than removing it, redirecting the size question of
+than the signature it accompanies. Compressing the signature moves the bottleneck to the statement without removing it, redirecting the size question of
 \cref{sec:res-comm} and the future work of \cref{sec:future}.
 
 This is a functional demonstration, not a security argument: whether committing to
@@ -373,20 +370,21 @@ exactly the kind of claim \cref{sec:eval-limitations} declares out of scope.
 \section{UTXO swap execution result}
 \label{sec:res-app}
 
+% PAGINATION: this page had ~99pt spare, too little for the next section's heading to
+% start, so it broke early.  One extra line lets that heading pull back.  This paragraph
+% begins on the page concerned, which is where \enlargethispage takes effect.
+% ⚠ Pagination-dependent -- re-check on rebuild.
+\enlargethispage{2\baselineskip}
 The protocol defined in \cref{fig:swapflow} was driven end-to-end on the model UTXO
 ledger of \cref{sec:stage2method}. Two results matter. First, the protocol runs and every
 step is asserted, including the counterfactuals that a pre-adaptation signature fails
 basic verification and that $\pi$ is rejected against any other statement. Second, $\pi$
-is what makes Bob's final step \emph{guaranteed} rather than merely expected: by the
+is what makes Bob's final step \emph{guaranteed}, not merely expected: by the
 Module-SIS uniqueness argument of \cite{esgin2020post} the extracted witness equals the
 proven ternary one, so the adapted signature is certain to clear the verification bound.
 Without $\pi$ a malicious counterparty could claim and leave an unadaptable
 pre-signature behind. The proof measures \cmpProofTo\,B on the wire at a knowledge error
 at most $2^{-\piKnowledgeError}$ and is exchanged off-chain only.
-
-This section therefore reports execution evidence, not the protocol definition itself.
-The UTXO cost study follows in \cref{sec:res-stage2,sec:res-txstruct}; the separate
-gas-metered venue check is isolated in \cref{sec:res-evm}.
 
 \section{The swap on a UTXO chain: three configurations compared}
 \label{sec:res-stage2}
@@ -523,8 +521,7 @@ must be destroyed for soundness, whereas LaZer's parameters are transparent.
 classical swap moves \cfgOneBytesTotal{}\,B; the fully post-quantum swap moves
 \cfgThreeBytesTotal{}\,B, about \stageTwoBytesRatioThree{}$\times$ more, and puts
 \stageTwoOnChainRatio{}$\times$ more on the ledgers, the multiple that would matter
-economically on a Bitcoin-like chain, which charges by transaction size rather than by
-computation; the model ledger itself has no fee market. A fully post-quantum swap needs
+economically on a Bitcoin-like chain, which charges by transaction size, not computation; the model ledger itself has no fee market. A fully post-quantum swap needs
 \cfgThreeTotalMean{}\,$\mu$s and tens of kilobytes of off-chain messaging per exchange,
 overwhelmingly the proof, against \cfgOneTotalMean{}\,$\mu$s classically: comfortable on
 a laptop, but a wide enough gap that a mobile wallet's assumptions would not port
@@ -593,8 +590,7 @@ regtest, the swap leg on the node carrying the experimental rule.
   \cref{app:btcnode}. \textbf{No field is added, removed or reordered}, and the base is
   byte-identical at \btcMeasBase\,B: the swap condition needs no on-chain script of
   its own, which is what \emph{scriptless} means. Exactly one row differs, and the
-  difference does not come from the adaptor layer: the witness carries lattice objects
-  rather than an elliptic-curve signature and key, and because each stack element is
+  difference does not come from the adaptor layer: the witness carries lattice objects, not an elliptic-curve signature and key, and because each stack element is
   capped at \btcChunkWidth\,B they arrive chunked, alongside the tapscript and its
   control block. Both transactions pay to the same output form, so the output does not
   grow; a settlement paying to taproot instead would add 12\,B of base, which is not what
@@ -655,8 +651,7 @@ consensus stack-item limit of \cite{bip342} and \btcSigOverStdElement$\times$ ov
 % v31.1 ExecuteWitnessScript settled that the 520 B limit does bind the INITIAL witness
 % stack, so chunking is required rather than prudent -- and the patched opcode reassembles
 % a fixed number of length-checked chunks, which is why no limit has to be raised.
-Both travel as length-checked 520\,B chunks the new rule reassembles, satisfying the
-consensus limit rather than raising it. Both apply equally to an ordinary post-quantum
+Both travel as length-checked 520\,B chunks the new rule reassembles, satisfying the consensus limit without raising it. Both apply equally to an ordinary post-quantum
 payment: they are properties of lattice signature sizes.
 
 \paragraph{Both obstacles were put to a real client.} A stock Bitcoin Core node carries the
@@ -682,84 +677,18 @@ conclusion stands; the exercise is functional, with no security argument (\cref{
 \section{EVM verification as a separate venue check}
 \label{sec:res-evm}
 
-As a separate check on deployability, native on-chain LAS verification was
-\emph{implemented} and measured on a real Solidity stack: one claim transaction running
-full verification and releasing one leg's escrow costs $\approx$\gasLasVerifiedM{} million
-gas (\cref{tab:onchain}; \cref{fig:onchain}), $\approx$\gasRatioVerified{}$\times$ the
-classical claim and over the EIP-7825 cap. The application is built on the UTXO
-setting assumed in \cite{esgin2020post} (\cref{sec:stage2method}); this section measures what
-a gas-metered venue charges for the same verification.
-
-That figure measures one \emph{implementation}, not the scheme. A restructured verifier
-(same parameters, bounds and challenge preimage, differing in how the computation is
-expressed) was mined by a real client, running full LAS verification and releasing the
-escrow at \gasOptReceipt{} gas: \gasOptCapPct\% of the EIP-7825 cap, which bounds the
-transaction gas limit and so covers calldata as well as execution. Its equivalence is
-conditional on a registration invariant, and both are set out in \cref{tab:onchain}.
-On-chain verification therefore fits in one transaction at \emph{Simplified
-Dilithium-III} for the 32-byte signed message and signature instance measured, with a
-thin margin. Verification alone at \emph{Simplified Dilithium-II}, charged as one
-transaction, is \gasDTwoCapPct\% of the cap; at \emph{Simplified Dilithium-V} one
-transaction is exceeded, derived rather than measured (\cref{app:methoddetail}). The
-contrast with the application's own venue remains: the UTXO constraint is a transaction
-\emph{weight} limit one settlement sits well inside (\cref{sec:res-txstruct}). The same
-distinction is structural, not only numerical: \cref{fig:evmtx} sets the EVM claim
-transaction against the UTXO counterpart in \cref{fig:txstruct}.
-
-\begin{table}[!htbp]
-  \centering
-  \caption[On-chain settlement gas: classical vs.\ post-quantum]{On-chain gas for the
-  swap's claim step, measured on a local EVM (\texttt{forge\ --gas-report}); EVM gas is
-  deterministic for fixed bytecode, revision, inputs and state. \textbf{These are the
-  \texttt{--gas-report} charge for each claim path, not transaction totals and not
-  client measurements}: they come from one table and are therefore comparable with
-  \emph{each other}, but they are not directly comparable with a receipt, which is
-  measured by a real client at a different accounting boundary and additionally carries
-  the 21{,}000 intrinsic charge and the transaction's EIP-7623 calldata cost. The
-  under-the-cap claim in the text therefore rests on the client receipt of
-  \gasOptReceipt{} gas, never on this table.
-  \texttt{claimLAS} performs \emph{no} lattice verification and is a strict lower bound;
-  ECDSA verifies in the native \texttt{ecrecover} precompile, whereas both LAS rows run
-  in EVM bytecode. The two \texttt{claimLASVerified*} rows decide the same predicate as
-  \texttt{base\_verify} (\cref{sec:construction}), the second restructuring that
-  computation rather than changing it, but \textbf{only under a registration invariant
-  that neither row checks}, and where it fails a \emph{different} predicate is decided;
-  the equivalence testing, the invariant and the cost of breaking it are set out in
-  \cref{app:methoddetail}. The client run used anvil at a pinned
-  \texttt{osaka} revision with EIP-7825 enforced, over \gasOptCalldata{}\,B of calldata.
-  \textbf{Scope}: \emph{Simplified Dilithium-III}, a 32-byte signed message, that
-  revision, and one signature instance; two stages of the verifier branch on
-  coefficient values, so variation across instances is unquantified. The
-  \gasOptHeadroom{}\,gas of headroom is \emph{measured}; that it
-  corresponds to a few hundred further bytes of signed message is \emph{derived} from it
-  and the measured per-permutation hash cost.}
-  \label{tab:onchain}
-  \small
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{@{}L{0.33\linewidth}L{0.30\linewidth}rr@{}}
-    \toprule
-    Claim path & On-chain verification & Gas & $\times$ classical \\
-    \midrule
-    Classical ECDSA adaptor (\texttt{claimClassical})
-      & full, \texttt{ecrecover} precompile   & \gasClassical{}     & 1$\times$ \\
-    LAS floor (\texttt{claimLAS})
-      & none (calldata + \texttt{keccak256})   & \gasLasFloor{}    & \gasRatioFloor{}$\times$ \\
-    LAS full verify (\texttt{claimLASVerified})
-      & full \texttt{base\_verify}, in Solidity & \gasLasVerified{} & \gasRatioVerified{}$\times$ \\
-    LAS full verify, restructured (\texttt{claimLASVerifiedOpt})
-      & full \texttt{base\_verify}, in Solidity & \gasLasOpt{} & \gasRatioOpt{}$\times$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-% The one-sentence bridge that stood here was merged into the end of the paragraph above
-% (2026-09-05): it introduced no new argument, and standing alone after tab:onchain it
-% left the section reading table -> one-line filler -> figure.  Merging also dissolves the
-% "of fig. 3.3." orphan at its source -- the sentence is no longer the last thing before
-% the float -- so the \enlargethispage that targeted it is removed rather than left
-% behind, a stray one being worse than the orphan it was meant to fix.
-
-% Keep these as ordinary floats so they can share nearby body text.
+% BOTH EVM FIGURES ARE DECLARED BEFORE THE PARAGRAPH THAT INTRODUCES THEM (2026-09-06).
+% They previously stood together at the END of this section, under the comment "let the
+% final section absorb any remaining EVM floats" -- and that is exactly what went wrong:
+% this section carries ~20 lines of prose against three large exhibits, so the queue
+% overran the section boundary and both figures were deferred into "Threats to validity".
+% fig:onchain then split one of its paragraphs (the prose under the caption resumed
+% mid-sentence, "and the real leak channel atomicity depends on"), and fig:evmtx, being
+% last before a \chapter boundary, took a page of its own -- the no-float-only-page rule.
+% Same remedy as tab:configs and tab:rejstats: declare the float ahead of its own prose so
+% text sets underneath it.  ⚠ The two are deliberately kept APART, one per paragraph:
+% stacked at a single declaration point their combined height (~2 x 300pt) exceeds
+% \floatpagefraction and they make the float page this change exists to remove.
 \begingroup
 \setlength{\intextsep}{6pt}
 \setlength{\abovecaptionskip}{3pt}
@@ -772,8 +701,8 @@ transaction against the UTXO counterpart in \cref{fig:txstruct}.
   \caption[On-chain settlement gas for the four claim paths]{The claim paths of
   \cref{tab:onchain} on a logarithmic axis, which is what makes the spread legible. The
   dashed line is the EIP-7825 cap on the transaction gas limit ($16\,777\,216 = 2^{24}$):
-  the baseline verifier's bar crosses it, while the restructured
-  \texttt{claimLASVerifiedOpt} (same scheme, same predicate under the registration
+  the baseline verifier's bar crosses it, while
+  the restructured path (same scheme, same predicate under the registration
   invariant of \cref{tab:onchain}, different expression) falls below. All four bars
   come from one \texttt{--gas-report} table and so are mutually comparable; the
   under-the-cap claim itself rests on the separate real-client run described in
@@ -781,7 +710,17 @@ transaction against the UTXO counterpart in \cref{fig:txstruct}.
   \label{fig:onchain}
 \end{figure}
 
-% EVM counterpart to the UTXO transaction-structure figure.
+As a separate check on deployability, native on-chain LAS verification was
+\emph{implemented} and measured on a real Solidity stack: one claim transaction running
+full verification and releasing one leg's escrow costs $\approx$\gasLasVerifiedM{} million
+gas (\cref{tab:onchain}; \cref{fig:onchain}), $\approx$\gasRatioVerified{}$\times$ the
+classical claim and over the EIP-7825 cap. The application is built on the UTXO
+setting assumed in \cite{esgin2020post} (\cref{sec:stage2method}); this section measures what
+a gas-metered venue charges for the same verification.
+
+% EVM counterpart to the UTXO transaction-structure figure.  Declared before the paragraph
+% whose closing sentence introduces it, one paragraph after fig:onchain -- see the note at
+% the head of this section for why the two must not share a declaration point.
 \begin{figure}[tbp]
   \centering
   \begin{tikzpicture}[
@@ -817,7 +756,79 @@ transaction against the UTXO counterpart in \cref{fig:txstruct}.
 \end{figure}
 \endgroup
 
-% Let the final section absorb any remaining EVM floats.
+That figure measures one \emph{implementation}, not the scheme. A restructured verifier
+(same parameters, bounds and challenge preimage, differing in how the computation is
+expressed) was mined by a real client, running full LAS verification and releasing the
+escrow at \gasOptReceipt{} gas: \gasOptCapPct\% of the EIP-7825 cap, which bounds the
+transaction gas limit and so covers calldata as well as execution. Its equivalence is
+conditional on a registration invariant, and both are set out in \cref{tab:onchain}.
+On-chain verification therefore fits in one transaction at \emph{Simplified
+Dilithium-III} for the 32-byte signed message and signature instance measured, with a
+thin margin. Verification alone at \emph{Simplified Dilithium-II}, charged as one
+transaction, is \gasDTwoCapPct\% of the cap; at \emph{Simplified Dilithium-V} one
+transaction is exceeded, derived rather than measured (\cref{app:methoddetail}). The
+contrast with the application's own venue remains: the UTXO constraint is a transaction
+\emph{weight} limit one settlement sits well inside (\cref{sec:res-txstruct}). The same
+distinction is structural, not only numerical: \cref{fig:evmtx} sets the EVM claim
+transaction against the UTXO counterpart in \cref{fig:txstruct}.
+
+\begin{table}[!htbp]
+  \centering
+  \caption[On-chain settlement gas: classical vs.\ post-quantum]{On-chain gas for the
+  swap's claim step, measured on a local EVM (\texttt{forge\ --gas-report}); EVM gas is
+  deterministic for fixed bytecode, revision, inputs and state. \textbf{These are the
+  \texttt{--gas-report} charge for each claim path, not transaction totals and not
+  client measurements}: they come from one table and are therefore comparable with
+  \emph{each other}, but they are not directly comparable with a receipt, which is
+  measured by a real client at a different accounting boundary and additionally carries
+  the 21{,}000 intrinsic charge and the transaction's EIP-7623 calldata cost. The
+  under-the-cap claim in the text therefore rests on the client receipt of
+  \gasOptReceipt{} gas, never on this table.
+  The floor path performs \emph{no} lattice verification and is a strict lower bound;
+  ECDSA verifies in the native \texttt{ecrecover} precompile, whereas both LAS rows run
+  in EVM bytecode. The two verifying rows decide the same predicate as
+  base-signature verification (\cref{sec:construction}), the second restructuring that
+  computation without changing it, but \textbf{only under a registration invariant
+  that neither row checks}, and where it fails a \emph{different} predicate is decided;
+  the equivalence testing, the invariant and the cost of breaking it are set out in
+  \cref{app:methoddetail}. The client run used anvil at a pinned
+  \texttt{osaka} revision with EIP-7825 enforced, over \gasOptCalldata{}\,B of calldata.
+  \textbf{Scope}: \emph{Simplified Dilithium-III}, a 32-byte signed message, that
+  revision, and one signature instance; two stages of the verifier branch on
+  coefficient values, so variation across instances is unquantified. The
+  \gasOptHeadroom{}\,gas of headroom is \emph{measured}; that it
+  corresponds to a few hundred further bytes of signed message is \emph{derived} from it
+  and the measured per-permutation hash cost.}
+  \label{tab:onchain}
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}L{0.33\linewidth}L{0.30\linewidth}rr@{}}
+    \toprule
+    Claim path & On-chain verification & Gas & $\times$ classical \\
+    \midrule
+    Classical ECDSA adaptor
+      & full, \texttt{ecrecover} precompile   & \gasClassical{}     & 1$\times$ \\
+    LAS floor, no verification
+      & none (calldata + \texttt{keccak256})   & \gasLasFloor{}    & \gasRatioFloor{}$\times$ \\
+    LAS full verify
+      & full base-signature verification, in Solidity & \gasLasVerified{} & \gasRatioVerified{}$\times$ \\
+    LAS full verify, restructured
+      & full base-signature verification, in Solidity & \gasLasOpt{} & \gasRatioOpt{}$\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% The one-sentence bridge that stood here was merged into the end of the paragraph above
+% (2026-09-05): it introduced no new argument, and standing alone after tab:onchain it
+% left the section reading table -> one-line filler -> figure.  Merging also dissolves the
+% "of fig. 3.3." orphan at its source -- the sentence is no longer the last thing before
+% the float -- so the \enlargethispage that targeted it is removed rather than left
+% behind, a stray one being worse than the orphan it was meant to fix.
+
+% The two EVM figures used to stand HERE, after all of this section's prose, and that is
+% what deferred them into "Threats to validity" (one split paragraph) and onto a float-only
+% page.  They are now declared ahead of the paragraphs that introduce them, at the head of
+% this section -- do not move them back down.
 \section{Threats to validity}
 \label{sec:res-validity}
 
@@ -830,7 +841,7 @@ reporting standard deviations, fixing one machine and compiler, emphasising rati
 absolutes, and by the cross-implementation check (\cref{sec:res-rust}). The parameter
 set's concrete security level is not formally established, security proofs being out of
 scope, so every cross-scheme claim is qualified by \cref{tab:params}; the modulus is
-FIPS~204's $q\approx 2^{23}$ rather than the $2^{24}$ of \cite{esgin2020post}, which
+FIPS~204's $q\approx 2^{23}$, not the $2^{24}$ of \cite{esgin2020post}, which
 leaves correctness unaffected ($q>2\gamma$) but changes the security margin. The extracted
 witness is exact here, whereas the relaxed setting of \cite{esgin2020post} allows witness
 noise that can grow across long payment paths.
@@ -839,8 +850,7 @@ Two further factors are specific to \cref{sec:res-stage2}. The UTXO ledger is a 
 rather than a node (\cref{app:utxomodel}): real transaction objects, real serialised sizes
 and the real leak channel atomicity depends on, but no fees or confirmation latency, so
 its byte counts are a model-level communication measure; \cref{sec:res-txstruct}
-separately reports Bitcoin's fee-relevant virtual size. That limit belongs to the venue rather than the
-study: configurations~2 and~3 need a consensus change, built and run in
+separately reports Bitcoin's fee-relevant virtual size. That limit belongs to the venue, not the study: configurations~2 and~3 need a consensus change, built and run in
 \cref{app:btcnode}. Finally, the Stage-2 timings come from a single desktop machine
 (\stageTwoCpu{}), so performance on mobile or other constrained hardware was not
 measured.

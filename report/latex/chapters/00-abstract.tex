@@ -1,48 +1,60 @@
 % Abstract — informative executive summary; self-contained; NO references.
-% Rubric: state the actual results and conclusions, not just what the report is about.
+% Rubric 3.1.1: state the actual results and conclusions, not just what the report is
+% about.  Shape follows the primary style reference: problem and purpose, what was done,
+% strongest findings, main implication.
+%
+% ⚠ ONE RENDERED PAGE IS A HARD CONSTRAINT (Royce, 2026-09-06).  The muthesis preface page
+% holds roughly 275 rendered words including the heading, so there is no room here for a
+% compressed Results chapter: only findings needed to understand the contribution belong
+% in it.  Re-check the RENDERED page after any edit -- a macro that gains a digit between
+% evidence runs can push the last line over.
+%
+% ⚠ SIX SCOPINGS ARE LOAD-BEARING AND MUST NOT BE TRIMMED FOR LENGTH.  The introduction
+% carries them all; the abstract must never end up the least scoped statement in the report.
+%   (1) Adaptor signatures are scoped to what they make SCRIPTLESS.  They are not the only
+%       route to an atomic swap -- hash-lock techniques do it too (Wang, M13) -- so a bare
+%       "the adaptor signatures underlying atomic swaps" overclaims.  sec:motivation's own
+%       framing is "useful for scriptless blockchain protocols".
+%   (2) The adaptor overhead is against LAS's OWN simplified base at identical parameters,
+%       never against ECDSA, where it is emphatically not cheap.
+%   (3) The packed increase is CODEC work, not arithmetic -- and NOT "each adaptor
+%       operation decoding Y", since Adapt also decodes the witness and re-encodes the
+%       signature (bench_levels.c's own printed note).
+%   (4) FIPS 204 specifies ML-DSA, NEVER the adaptor construction: the phrasing is "on
+%       ML-DSA as FIPS 204 specifies it", matching sec:res-mldsa.  The adaptor layer over
+%       it is this project's, and PreSign/PreVerify there are adaptor-specific.
+%   (5) Configuration 2 is NOT fully post-quantum: Groth16 rests on a pairing assumption
+%       Shor breaks, so the two lattice configurations must never both be called
+%       post-quantum swaps.
+%   (6) The EVM fit carries the UNCHECKED REGISTRATION INVARIANT together with the measured
+%       parameter set, message length and single signature instance.  Dropping the invariant
+%       contradicts tab:onchain, which records that no contract checks it.
 
-Blockchains authenticate transactions with elliptic-curve signatures, which a large
-quantum computer would break. Basic post-quantum signatures are now standardised, but
-the \emph{exotic} signatures that give blockchains their advanced features (in
-particular \emph{adaptor signatures}, the cryptographic core of atomic swaps and
-payment channels) remain unevenly implemented in the post-quantum setting. This
-dissertation implements and evaluates one such scheme, LAS, a lattice-based adaptor
-signature, by reusing the CRYSTALS-Dilithium reference primitives, and demonstrates it
-end-to-end in a post-quantum atomic swap.
+Blockchains authenticate transactions with elliptic-curve signatures that a large quantum
+computer would break. Basic post-quantum signatures are now standardised, but the
+\emph{exotic} ones behind blockchains' advanced features, among them the \emph{adaptor
+signatures} that make swaps and payment channels scriptless, remain unevenly implemented
+in the post-quantum setting. This dissertation implements one of them, LAS, by adding an
+adaptor layer and a wire encoding to the unmodified CRYSTALS-Dilithium reference
+primitives, cross-validated by a second, independent implementation reproducing the wire
+format and a pinned known-answer value byte for byte, and demonstrates it in a
+post-quantum atomic swap.
 
-The artefact is built \emph{additively}: the entire lattice core is reused unchanged,
-while the adaptor layer (PreSign, PreVerify, Adapt, Extract), a wire encoding, and the
-application are added as new code. It passes functional, serialization, tamper and
-known-answer tests, and an independent Rust implementation reproduces the wire format and
-pinned value byte-for-byte under a different compiler and harness.
+Against its own simplified Dilithium-style base at identical parameters and primitives,
+the adaptor layer is computationally cheap: PreSign, PreVerify and Adapt add
+$+\ovPreSign\%$, $+\ovPreVerify\%$ and $+\ovAdapt\%$ at the core boundary,
+rising to $+\packedOvPreSign$--$\packedOvAdapt\%$ once the wire codec is counted, an
+increase that is codec work rather than arithmetic. The real cost is communication: the
+signature is \zPctTarget\% response vector, an adaptor swap transmits a public-key-sized
+statement, and against a classical ECDSA adaptor the signature and public key are
+$\clRatioSig\times$ and $\clRatioPk\times$ larger. Rebuilding the adaptor path on ML-DSA
+as FIPS~204 specifies it roughly halves the signature but leaves the statement untouched,
+relocating that bottleneck rather than removing it.
 
-The primary comparison is LAS against its own simplified Dilithium-style base at
-identical parameters and primitives, which isolates the adaptor layer's cost; a classical
-elliptic-curve (ECDSA) adaptor provides a functionality-matched ``price of post-quantum''
-baseline. At the target core measurement boundary the adaptor layer adds small
-compute overheads: PreSign, PreVerify and Adapt add $+\ovPreSign\%$,
-$+\ovPreVerify\%$ and $+\ovAdapt\%$ over the basic operations they mirror, and stay within
-$+\ovMaxAll\%$ across the parameter sweep. The real cost is
-\emph{communication}: the signature is \zPctTarget\% lattice response vector, and an
-adaptor swap additionally transmits a public-key-sized statement, which each adaptor
-operation must also decode, raising the computation premium to
-$+\packedOvPreSign$--$\packedOvAdapt\%$ once encoding is counted.
-
-A further experiment tests whether the adaptor layer can coexist with ML-DSA's hint and
-rounding machinery. PreSign and PreVerify require adaptor-specific algorithms, but the
-unmodified FIPS~204 verifier accepts the adapted signature. This route roughly
-halves the signature at close to equal computation while leaving the statement untouched,
-relocating rather than removing the communication bottleneck.
-
-Taking the protocol to a UTXO ledger, the setting the original construction assumes,
-sharpens the conclusion: measured across three configurations, at the application level
-the signature is not the dominant cost. The zero-knowledge proof of knowledge
-consumes \cfgThreeProofPct--\cfgTwoProofPct\% of each post-quantum swap, and substituting
-a lattice prover for a pairing-based one
-makes the swap \emph{faster} while making it larger. Native on-chain verification also
-fits in one Ethereum transaction for the single setting and signature instance measured,
-and a Bitcoin client extended with one consensus rule settles a two-leg swap carrying no
-elliptic-curve signature. A working, tested, end-to-end
-post-quantum exotic signature is therefore achievable by reuse of standardised
-primitives, and the proof system, not the signature, is where a post-quantum swap should
-next be optimised.
+At application scale the signature is not the dominant cost: across three
+configurations of a swap over a UTXO ledger, the zero-knowledge proof of knowledge takes
+\cfgThreeProofPct--\cfgTwoProofPct\% of end-to-end time in the two lattice configurations,
+only one of which is fully post-quantum. A restructured verifier also fits one Ethereum
+transaction, at the parameter set, message length and signature instance measured, and
+under an unchecked registration invariant. On this evidence the proof system, not the
+signature, is where such a swap should next be optimised.

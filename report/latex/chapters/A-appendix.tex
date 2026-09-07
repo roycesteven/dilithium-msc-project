@@ -1,14 +1,12 @@
-\chapter{Supporting evidence and reproducibility}
+\chapter{Supporting evidence and technical details}
 \label{app:code}
 
 This appendix carries the supporting implementation, methodology and reproducibility
-material that would interrupt the main report if presented in full: the commands needed to
-reproduce the benchmarks and tests, the derivations deferred from \cref{ch:methodology}, the
+material that would interrupt the main report if presented in full: the provenance of the benchmarks and tests, the derivations deferred from \cref{ch:methodology}, the
 representative \textsc{PreSign}, \textsc{Adapt} and \textsc{Extract} routines,
-supplementary benchmark data, and the real-client blockchain experiments. The complete
-source and evidence artefacts remain in the project repository.
+supplementary benchmark data, and the real-client blockchain experiments.
 
-\section{Building and reproducing the benchmarks}
+\section{Provenance of the benchmarks and tests}
 \label{app:repro}
 
 % SCOPE, not decoration.  This section reproduces the benchmarks and tests; the Stage-2
@@ -16,122 +14,53 @@ source and evidence artefacts remain in the project repository.
 % evidence paths in the later sections, which an unscoped "the evaluation is reproducible
 % from the commands below" claimed as well.  NOT labelled "Stage-1": the same listing also
 % builds test_zkp3, test_swap3 and the LaZer library, which are application targets.
-The benchmarks and tests are reproducible from the commands below; the application
+This section records how the reported benchmarks and tests were produced. The application
 experiments --- the Stage-2 swap, the on-chain measurements and the real-client node runs
---- are recorded with their own evidence paths in the later sections of this appendix.
-The standalone-signature benchmark numbers are regenerated from the C and the Rust logs
-together, so on a clean
-checkout the C suite saves its evidence and defers the report sync, leaving the report
-untouched; running the Rust suite next completes it. The upstream Dilithium
-reference is pinned at the repository's initial commit (\texttt{2374d22}); the
-classical baseline library is the BlockstreamResearch \texttt{secp256k1-zkp}
-\texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}; the proof-of-knowledge library
-is LaZer at commit \texttt{2fa3dfb}; the Rust port builds on a
-vendored copy of the \texttt{fips204} crate (commit \texttt{c948882}). The two external
-libraries are unmodified, and the commands below explicitly check out the pinned
-\texttt{secp256k1-zkp} and LaZer commits rather than their current default branches. The C
-toolchain is the system compiler (\texttt{cc}, Ubuntu GCC 13.3.0) with \texttt{-O3};
-the Rust toolchain is stable \texttt{rustc} (the committed run used 1.96.0) in
-release profile.
+--- are described in the later sections of this appendix.
 
-% "runs the tests and benchmarks below" was wrong twice over: STAGE1_ONLY=1 does NOT run
-% the application targets listed individually further down, and the sync no longer always
-% regenerates -- on a clean checkout it defers until the Rust logs exist.
-\begin{lstlisting}[language=bash,caption={Fair benchmark and tests (first-stage
-evaluation). The suite script saves the Stage-1 C logs and parsed tables as a timestamped
-evidence run; the application targets listed individually below are outside that subset.
-It then calls the report sync, which regenerates this report's figures, tables and inline
-numbers from the C and the Rust logs together --- so on a clean checkout, where the Rust
-logs do not yet exist, that step defers and leaves the report untouched until the suite in
-\cref{lst:rust} has run.},label={lst:benchfair}]
-# the supported evidence pipeline: Stage-1 tests + benchmarks, then report sync.
-# STAGE1_ONLY=1 skips the four application targets -- test_contract3, test_pcn3 and
-# bench_app3, superseded pre-seven-type files that no longer compile, and test_swap3,
-# which is current but needs the LaZer build below.
-# This is how the Stage-1 run of record (evidence/latest) was produced.
-STAGE1_ONLY=1 scripts/run_benchmark_suite.sh
+\paragraph{Provenance of the measurements.}
+The standalone-signature figures come from two independently built suites, one per
+implementation, whose logs are parsed together to produce this report's figures, tables and
+inline numbers. The upstream Dilithium reference is vendored at import commit
+\texttt{2374d22}; the classical baseline library is the BlockstreamResearch
+\texttt{secp256k1-zkp} \texttt{ecdsa\_adaptor} module at commit \texttt{95b9835}; the
+proof-of-knowledge library is LaZer at commit \texttt{2fa3dfb}; and the Rust port builds on
+a vendored copy of the \texttt{fips204} crate (commit \texttt{c948882}). Both external
+libraries were used unmodified and at those pinned commits, not at their current default
+branches. The C toolchain was the system compiler (\texttt{cc}, Ubuntu GCC 13.3.0) at
+\texttt{-O3}; the Rust toolchain was stable \texttt{rustc}, version 1.96.0 for the reported
+run, in release profile.
 
-# or individually:
-cd ref
-# fair, parameter-matched base-vs-adaptor benchmark at each parameter set
-make test/bench_levels_paper && ./test/bench_levels_paper
-make test/bench_levels2      && ./test/bench_levels2
-make test/bench_levels3      && ./test/bench_levels3   # target setting
-make test/bench_levels5      && ./test/bench_levels5
-# correctness, serialization/tamper, known-answer tests
-# (test_serde_l3 is the TARGET set (6,5,49); test_serde3 builds the paper dims)
-make test/test_las3     && ./test/test_las3
-make test/test_serde_l3 && ./test/test_serde_l3
-make test/test_kat3     && ./test/test_kat3
-# end-to-end atomic swap incl. the proof of knowledge pi
-# (needs the one-time LaZer build below)
-make test/test_zkp3   && ./test/test_zkp3
-make test/test_swap3  && ./test/test_swap3
-\end{lstlisting}
+\paragraph{What was executed.}
+The first-stage evaluation ran the parameter-matched base-versus-adaptor benchmark at each
+of the four parameter sets, then the functional, serialization and tamper, and known-answer
+tests at the target setting. The serialization test was built at the target dimensions,
+which are distinct from the LAS-2020/845 dimensions. The proof-of-knowledge and end-to-end swap
+tests ran once the proof library had been built; three superseded programs from an earlier
+type layout were excluded, no longer compiling against the current headers. Logs and parsed
+tables were captured before any figure was regenerated from them.
 
-\begin{lstlisting}[language=bash,caption={Classical adaptor baseline (one-time
-clone).},label={lst:classical}]
-git clone https://github.com/BlockstreamResearch/secp256k1-zkp third_party/secp256k1-zkp
-git -C third_party/secp256k1-zkp checkout 95b9835   # the measured commit
-cd ref && make test/bench_classical && ./test/bench_classical
-\end{lstlisting}
-
-\begin{lstlisting}[language=bash,caption={Proof-of-knowledge library (one-time
-clone and build; see the repository README for the dependency recipe).},
-label={lst:lazer}]
-git clone https://github.com/lazer-crypto/lazer third_party/lazer
-git -C third_party/lazer checkout 2fa3dfb          # the measured commit
-cd third_party/lazer && make lazer.h liblazer.a
-# the generated proof parameters (ref/relation_zk_params.h) are committed,
-# so SageMath is needed only to REgenerate them, never to build
-\end{lstlisting}
-
-The Rust port is reproduced with the standard Cargo tooling; the test gate runs
-first because the benchmarks refuse to time unverified code, and the known-answer
-test asserts the same pinned value as the C implementation.
+\paragraph{The Rust port.}
+The port was exercised with the standard Cargo tooling: the test gate first, because the
+benchmarks refuse to time unverified code, then the Criterion.rs statistical harness, the
+protocol driver that mirrors the C one, and the packed-size report. The gate skipped the
+vendored crate's hint and Power2Round conversion tests, which the LAS port does not use,
+having its own serialization module. Its known-answer test asserted the same pinned value
+as the C implementation.
 % Value is not printed: pinned KAT digest = \katDigestHead\ldots\katDigestTail
 
-\begin{lstlisting}[language=bash,caption={Rust port: test gate, statistical
-benchmark, protocol driver, and size report (one suite script, or the four steps
-individually).},label={lst:rust}]
-# the one supported Rust evidence pipeline (tests + benchmarks + report sync)
-scripts/run_rust_bench_suite.sh
-
-# or individually:
-cd rust/fips204-las
-# conversion::tests cover the vendored crate's hint/Power2Round helpers, which the
-# LAS port does not use (it has its own serialize.rs), so the gate skips them
-cargo test --lib --tests -- --skip conversion::tests  # gate: known-answer value
-cargo bench --bench las_bench               # Criterion.rs statistical harness
-cargo run --release --example bench_levels  # protocol driver (mirrors the C driver)
-cargo run --release --example size_report   # packed component sizes
-\end{lstlisting}
-
-% The ML-DSA experiment is a TEST + BENCHMARK, so it falls inside this section's claim
-% ("the benchmarks and tests are reproducible from the commands below") -- whose carve-out
-% names only the application experiments.  It is NOT run by run_benchmark_suite.sh (checked:
-% no mldsa reference in it), and before this listing no runner and no evidence path for it
-% appeared anywhere in the report, while sec:res-mldsa quotes nine measured macros from it.
-% Evidence paths stay printed: the path is part of the warrant.
-The ML-DSA adaptor experiment of \cref{sec:res-mldsa} has its own runner and its own
-evidence stream, because it measures a different construction: its logs are kept apart
-from the suite above and its numbers are never mixed with them.
-
-\begin{lstlisting}[language=bash,caption={The ML-DSA adaptor experiment: hint diagnostic,
-adaptor contract and head-to-head benchmark against the implementation of record, at all
-three parameter sets. Evidence is written to \texttt{evidence/mldsa\_hint/}; the variants
-and measurement design are set out in \cref{app:methoddetail}.},label={lst:mldsa}]
-# diagnostic + contract + benchmark at ML-DSA-44, -65 and -87
-scripts/run_mldsa_hint_experiment.sh
-# --mode N restricts to one parameter set; --skip-bench runs correctness only
-\end{lstlisting}
+\paragraph{The ML-DSA adaptor experiment.}
+The experiment of \cref{sec:res-mldsa} was run and recorded separately, because it measures
+a different construction: its logs are kept apart from those above and its numbers are
+never mixed with them. A single invocation covered the hint diagnostic, the adaptor
+contract and the head-to-head benchmark against the implementation of record, at ML-DSA-44,
+-65 and -87. The variants and the measurement design are set out in
+\cref{app:methoddetail}.
 
 \section{The timing-benchmark procedure}
 \label{app:benchalg}
 
-The pseudocode below is the procedure both protocol drivers implement
-(\texttt{ref/\allowbreak test/\allowbreak bench\_levels.c} and the Rust
-\texttt{examples/bench\_levels.rs}, deliberately line-for-line mirrors), backing
+The pseudocode below is the procedure both protocol drivers implement, the C driver and its Rust counterpart being deliberately line-for-line mirrors, backing
 the methodology of \cref{sec:benchmethod}. Ordering matters: correctness is
 asserted \emph{before} timing on the very objects about to be timed, so no
 failure path is ever measured, and the rejection gate runs over the \emph{timed}
@@ -171,14 +100,10 @@ The Criterion.rs harness measures the same operations under its own protocol
 (3\,s warm-up, \critSamples{} samples per operation, outlier classification,
 bootstrap confidence intervals) and applies the same Gate~1; it shares no
 timing code with the drivers, which is what makes its agreement an independent
-check rather than a re-run.
+check, not a re-run.
 
 \section{Methodology details}
 \label{app:methoddetail}
-
-This section carries the derivations and experimental-design detail deferred from
-\cref{ch:methodology}, so that the body states the decisions and this appendix
-justifies them in full.
 
 \paragraph{Why the per-attempt acceptance probability is secret-independent.}
 Each coefficient of the mask is uniform on the $2\gamma+1$ values of
@@ -231,16 +156,14 @@ the low-bits rejection test and \textsc{MakeHint} still use $w$. A \emph{repaire
 moves that entire path onto $w+Y$ and tightens \textsc{PreSign}'s rejection bound by the
 witness norm. The stock FIPS~204 \texttt{crypto\_sign\_verify} is never modified: it is the
 acceptance oracle, which is what allows the decisive row to be read as a property of the
-construction rather than of a re-implemented verifier. The control is a precondition rather
-than a result --- were its signatures not accepted by that unmodified verifier, and did it
+construction itself; no re-implemented verifier is involved. The control is a precondition, not a result --- were its signatures not accepted by that unmodified verifier, and did it
 not reproduce FIPS~204's published repetition rates, the mirror would be wrong and nothing
 else in the section interpretable. The diagnostic and the itemised adaptor contract each run
 over \mldsaIters{} randomised iterations per variant, at each of ML-DSA-44, -65 and -87.
 Cost is measured by the procedure of \cref{app:benchalg}, both constructions in one process
 on one machine under one toolchain; within each construction the base and adaptor calls are
 paired and interleaved per repetition, so drift is common-mode there, whereas the two
-constructions themselves run in sequence, leaving drift between those two blocks a caveat
-rather than something the design cancels.
+constructions themselves run in sequence, leaving drift between those two blocks a caveat the design does not cancel.
 
 \paragraph{The Groth16 circuit.}
 No pairing-based proof of this lattice statement was available to reuse, so the
@@ -251,24 +174,23 @@ expensive ingredient in a rank-one constraint system. The public linear map is s
 enforced, through linear constraints; the only non-linear and range constraints are
 the ternary bound, enforced as $r'^3 = r'$ per coefficient, and the reduction modulo
 $q$, enforced with a range-checked quotient per row. The constraint count is therefore
-linear in the parameter set's dimensions rather than in their product, and the same
+linear in the parameter set's dimensions, not in their product, and the same
 statement would have been intractable had it involved products of two \emph{secret}
 polynomials. Because the
 matrix is held in the number-theoretic-transform domain and is exported by neither
 implementation, it is recovered by evaluating the scheme's own linear map on unit
-vectors, so the circuit encodes the map the signature scheme actually computes with
-rather than a re-derivation that could drift from it.
+vectors, so the circuit encodes the map the signature scheme actually computes with; no re-derivation is formed that could drift from it.
 
 \paragraph{Measurement invariants of the UTXO study.}
-Two invariants are enforced rather than assumed. A phase must be timed in \emph{every}
+Two invariants are enforced, not assumed. A phase must be timed in \emph{every}
 run or in none, so that no mean is silently taken over the subset of swaps that
 reached it; and communication subtotals are computed within each run before being
 reduced across runs, since summing each message's minimum would describe a swap that
 never occurred. One-time costs --- expanding $A$, building the elliptic-curve context,
 and Groth16's trusted setup --- are performed before timing begins and reported
-separately, being amortised over every swap rather than paid per swap. The rejection
+separately, being amortised over every swap, not paid per swap. The rejection
 gate applies here too, but on a dedicated batch of \cfgTwoRejCalls{} pre-signature
-calls rather than on the two per swap the protocol itself performs: over so few calls
+calls, not on the two per swap the protocol itself performs: over so few calls
 the five-sigma band is wider than the distance from the expected attempt rate to a
 loop that never rejects at all, so a gate on that sample would have been vacuous.
 
@@ -286,7 +208,7 @@ are the mean $\pm$ sample standard deviation over \clReps{} runs $\times$ \clIte
 iterations classically and \benchReps{} repetitions $\times$
 \benchItersSign{}/\benchItersVerify{} iterations for LAS, on the same machine. Comparing every row against a single LAS tier
 instead would count the wire codec on one side only, for four of the seven operations,
-which is why the matching is done per operation rather than per table. Two
+which is why the matching is done per operation, not per table. Two
 object-level differences lie behind the size rows: LAS KeyGen also produces the
 statement and witness, which take the public-key and secret-key size, and the classical
 pre-signature is a syntactically distinct object --- an ECDSA signature plus a
@@ -299,13 +221,13 @@ format exactly.
 % decided.  The next paragraph sets the invariant out; this sentence must not assert the
 % equivalence before the reader reaches it.
 Subject to the registration invariant set out in the next paragraph, which neither
-verifier checks, the two \texttt{claimLASVerified*} rows of \cref{tab:onchain} decide the
+verifier checks, the two verifying rows of \cref{tab:onchain} decide the
 same predicate as
-\texttt{base\_verify}: decode, norm bound, $w'=A\vecz-c\,t$, and the SHAKE256 challenge
+base-signature verification: decode, norm bound, $w'=A\vecz-c\,t$, and the SHAKE256 challenge
 check. The first mirrors those steps directly from the vendored ZKNox primitives and is
 validated against the C reference. The second re-expresses them: the public key is
 registered in the number-theoretic-transform domain and $c\,t$ folded before a single
-inverse transform, parameters are read from calldata rather than decoded into memory, and
+inverse transform, parameters are read from calldata without being decoded into memory, and
 the sponge avoids the per-byte absorb. It reproduces the first verifier's packed $w'$
 byte-for-byte on the C golden vectors, and agrees with it on accept and reject for the
 golden signature and for a tampered response, challenge and message.
@@ -315,7 +237,7 @@ Neither verifier derives its public parameters: the matrix arrives already trans
 both, and the restructured one additionally takes the public key twice --- transformed for
 the arithmetic, packed for the challenge preimage
 $\mathrm{pack}(t)\,\|\,\mathrm{pack}(w')\,\|\,M$, which is the only one of the three the
-hash ever sees. Equality with \texttt{base\_verify} therefore holds exactly where three
+hash ever sees. Equality with base-signature verification therefore holds exactly where three
 things are true together: the registered matrix is $\mathrm{NTT}(A')$ for the agreed $A'$,
 the registered key is $\mathrm{NTT}(t)$ for some key $t$, and the packed bytes that are
 hashed are $\mathrm{pack}(t)$ for that \emph{same} $t$. The escrow contract commits to all
@@ -325,8 +247,7 @@ recomputes one from another. The obligation rests on whoever funds the escrow.
 
 What follows from breaking it is, in general, only that a \emph{different} predicate is
 decided --- not that a weaker one is, and no analysis here covers the general case. Some
-registrations are weaker, though, and one suffices to show the condition is load-bearing
-rather than pedantic: register both transformed objects as zero and every product
+registrations are weaker, though, and one suffices to show the condition is load-bearing, not pedantic: register both transformed objects as zero and every product
 vanishes, leaving $w'=\vecz_{\mathrm{top}}$ and an acceptance test that anyone can satisfy
 for any in-bound $\vecz$, with no key and no signature. The escrow would then pay out
 without the adapted signature ever reaching a chain --- and that publication is exactly
@@ -341,7 +262,7 @@ verification path as it stands.
 
 \paragraph{Carrying the one-transaction result to the neighbouring parameter sets.}
 The restructured verifier fixes its dimensions at build time, so a second copy was
-instantiated at \emph{Simplified Dilithium-II}: duplicated rather than parameterised, so
+instantiated at \emph{Simplified Dilithium-II}: duplicated, not parameterised, so
 that nothing could move the Dilithium-III figures already measured, and given its own
 golden vectors exported from the C implementation. What is charged there is
 \emph{verification only} --- the calldata goes to a harness entry point that runs the
@@ -349,15 +270,14 @@ verifier and returns its verdict, so none of the escrow work in the claim path i
 included: no context re-derivation, no state transition, no event, no payout. Charged as
 one transaction under EIP-7623 it comes to \gasDTwoTotal{} gas, \gasDTwoCapPct\% of the
 cap, \gasDTwoHeadroom{} short of it, with the standard branch rather than the calldata
-floor binding (\texttt{evidence/onchain\_d2/}). It is therefore a harness computation over
+floor binding. It is therefore a harness computation over
 a narrower boundary than the Dilithium-III client receipt of \cref{sec:res-evm}, and the
 two are not interchangeable. The accepted verdict is asserted before the figure is
 reported --- a rejecting run would have measured the early exit rather than verification
---- though the assertion follows the measurement rather than preceding it.
+--- though the assertion follows the measurement and does not precede it.
 
 \emph{Simplified Dilithium-V} was not built, and the asymmetry between the two directions
-is why a derivation could still settle it. Deriving that a set \emph{fits}, rather than
-measuring an instance of it, needs an upper bound over the whole computation, and two
+is why a derivation could still settle it. Deriving that a set \emph{fits}, without measuring an instance of it, needs an upper bound over the whole computation, and two
 stages resist one: the challenge sampler's rejection loop and the response decoder both
 branch on coefficient values. Deriving that a set is \emph{exceeded} needs only a lower
 bound, which tolerates dropping exactly those stages. The derivation therefore pushes the
@@ -365,11 +285,11 @@ calldata the way that favours fitting, subtracts both data-dependent stages whol
 every remaining stage at zero growth --- each being a loop over the dimensions with no
 value-dependent branch --- and adds one measured quantity: the difference between the two
 challenge-preimage absorptions, taken against a fixed-size memory arena so that the
-scratch allocated inside the timed call cancels rather than inflating the difference. That
+scratch allocated inside the timed call cancels and does not inflate the difference. That
 this measured difference clears the gap the other terms leave is what the result rests on
-(gate \texttt{evm/test/\allowbreak LASShakeGrowth.t.sol}, arithmetic
-\texttt{scripts/\allowbreak derive\_onchain\_\allowbreak d5\_bound.py}, run
-\texttt{evidence/\allowbreak onchain\_d5bound/}). What follows is that one transaction is exceeded at
+(a growth gate measuring the two absorptions against a fixed-size arena, and a separate
+arithmetic step assembling the bound from that gate's output). What follows is that one
+transaction is exceeded at
 that set; no gas total for it follows, a lower bound not being a value, and neither does
 any claim about what further optimisation would achieve there.
 
@@ -380,10 +300,9 @@ bound assembled from Dilithium-III measurements and one measured absorption diff
 
 \paragraph{One deliberate exception to reproducibility.}
 Every other input derives from the pinned seed, but Groth16's trusted setup and each
-of its proofs draw fresh operating-system entropy. Both are security requirements
-rather than preferences: a reproducible setup would leave the toxic waste recoverable
+of its proofs draw fresh operating-system entropy. Both are security requirements, not preferences: a reproducible setup would leave the toxic waste recoverable
 and void soundness, and reusing proof randomness across statements breaks
-zero-knowledge. The measurement consequence is stated rather than hidden --- proof
+zero-knowledge. The measurement consequence is stated openly --- proof
 \emph{size} is unaffected, since a Groth16 proof is three group elements regardless,
 but proving \emph{time} includes the entropy draw and so carries a little extra
 run-to-run variance.
@@ -438,7 +357,7 @@ rejection belongs to Verify, which recomputes the challenge from the decoded res
 compares digests. Encoding is the strict direction: it refuses a non-ternary secret or
 witness and a response exceeding $\gamma-\kappa$, so the serializer cannot emit an
 out-of-band response, even though one can be handed to the decoder. The byte-level entry point
-\texttt{base\_verify\_packed} decides the predicate over these bytes, and it --- not the
+The byte-level verification interface decides the predicate over these bytes, and it --- not the
 decoder --- is what rejects all \tamperFlips{} tampered signatures in
 \cref{sec:res-correctness}.
 
@@ -457,7 +376,7 @@ for ML-DSA-44, -65 and -87 giving 32, 48 and 64~bytes. The width tracks the LAS
 parameter set and not the reference build mode, since the sweep compiles several LAS
 sets against a mode chosen only to satisfy the reference's parameter header: the
 ML-DSA-65-aligned target set takes 48~bytes, the ML-DSA-44- and ML-DSA-87-aligned LAS
-sets take 32 and 64, and the historical paper-parameter reference set, which corresponds
+sets take 32 and 64, and the historical LAS-2020/845 reference set, which corresponds
 to no ML-DSA parameter set, takes 32 by this project's choice. Matching these reusable
 parameters aligns the primitives and the challenge-digest strength only --- LAS retains
 its own ternary secret distribution, rejection bounds, exact hint-free relation and
@@ -487,8 +406,7 @@ The demonstration prints this narrative and asserts every step, including the
 counterfactuals that a pre-adaptation signature fails basic verification and that $\pi$
 is rejected against any other statement.
 
-The proof $\pi$ reuses the LaZer lattice zero-knowledge library \cite{lazer} rather than
-a proof system written from scratch --- the same reuse posture applied throughout.
+The proof $\pi$ reuses the LaZer lattice zero-knowledge library \cite{lazer}; no proof system was written from scratch --- the same reuse posture applied throughout.
 Because LaZer proves per-partition binary coefficients or exact Euclidean norms, the
 ternary statement is encoded by binary decomposition,
 $[\mathbf{A} \mid -\mathbf{A}]\,(r_{+}\,\|\,r_{-}) = Y$ with both halves proven binary,
@@ -505,97 +423,8 @@ refuses a non-ternary witness. The modelled ledger of \cref{app:utxomodel} addit
 tests a separate timeout/refund edge case that Figure~1 in \cite{esgin2020post} omits. In
 this one-chain test, a coin is funded to an output claimable by the counterparty and
 refundable by its funder after a timeout; the counterparty never responds, an early
-refund is rejected as a \emph{timing} failure rather than a cryptographic one, and after
+refund is rejected as a \emph{timing} failure, not a cryptographic one, and after
 the timeout the funder recovers its coin.
-
-\section{The six implementation challenges}
-\label{app:challenges}
-
-The themes drawn from these six challenges are discussed in \cref{sec:eval-challenges}; the table itself is placed here because it runs to more
-than a page.
-
-% This table is taller than one page, so it is a longtable (breaks across pages
-% with a repeated header) rather than a float.
-\begingroup
-\small
-\singlespacing
-\setlength{\LTcapwidth}{\textwidth}
-\begin{longtable}{@{}L{0.21\linewidth}L{0.38\linewidth}L{0.33\linewidth}@{}}
-    \caption[The six implementation challenges]{\normalsize The six challenges that
-    shaped the implementation. A seventh, cross-cutting difficulty --- reproducing the
-    C scheme byte-for-byte in Rust, down to how each language's uniform sampler
-    discards rejected blocks --- is discussed with the cross-validation results
-    (\cref{sec:res-rust}); the pinned known-answer value is what turned it into a mechanical
-    process. One caveat belongs with the gas figure of challenge~5: the reused ZKNox
-    primitives come from a self-described non-production library, so the measurement is
-    the honest cost of \emph{a} numerically-correct verifier, not an endorsement of
-    that library.}
-    \label{tab:challenges} \\
-    \toprule
-    Challenge & The problem & Resolution and lesson \\
-    \midrule
-    \endfirsthead
-    \multicolumn{3}{@{}l@{}}{\emph{\tablename~\thetable{} --- continued from the
-      previous page}} \\[2pt]
-    \toprule
-    Challenge & The problem & Resolution and lesson \\
-    \midrule
-    \endhead
-    \midrule
-    \multicolumn{3}{@{}r@{}}{\emph{continued on the next page}} \\
-    \endfoot
-    \bottomrule
-    \endlastfoot
-    1. The rejection-bound budget
-      & PreSign must reject at $\gamma-\kappa-1$, one tighter than \cref{eq:signbound}.
-        At $\gamma-\kappa$ instead, PreSign, PreVerify and Extract all still succeed, but
-        the \emph{adapted} signature can exceed the bound and be rejected by ordinary
-        Verify --- silently, probabilistically, two operations from the cause.
-      & Prevented by reasoning through the norm budget (an honest witness has
-        $\inftynorm{r'}\le 1$, hence $\inftynorm{\hat{\vecz}+r'}\le\gamma-\kappa$)
-        rather than found by testing. \\[3pt]
-    2. Reference optimisations appear to fight the adaptor identity
-      & Power2Round, the hint vector and high/low-bit decomposition discard low-order
-        information, which appeared to rule out the exact identity
-        $A\vecz - c\,t = w + Y$; disabling them was treated as a design requirement.
-      & Establishing \emph{which} to disable was a prerequisite to a working PreVerify.
-        The belief that they \emph{had} to be was later tested and proved too strong:
-        with the whole commitment path moved onto $w+Y$ the adaptor works with all three
-        enabled (\cref{sec:res-mldsa}): a sufficient route, not a necessary one. \\[3pt]
-    3. Living in another scheme's namespace
-      & The reference globally defines single-letter parameter macros --- its
-        \texttt{N} is the ring degree, its \texttt{K} the module rank --- while LAS
-        needs different dimensions with the same natural names, so a constant silently
-        inherits the wrong value through the preprocessor instead of failing to
-        compile.
-      & Forced prefixed parameters and a documented C--Rust--paper name map. \\[3pt]
-    4. Benchmarking a variable-time scheme fairly
-      & Rejection sampling makes sign-class timings right-skewed. An acceptance rate
-        inferred from a timing ratio was biased ($\approx\!23\%$ where direct counting
-        gives \rejAccBase\%), and the two languages' base signing paths initially used
-        different norm-check strategies \emph{inside} the timed loop --- invisible to the
-        known-answer test, but a work-profile asymmetry biasing the comparison.
-      & Attempts are now counted and gated against theory, the drivers mirror each
-        other line-for-line, and every boundary is declared
-        (\cref{sec:benchmethod}). \\[3pt]
-    5. An error that was self-consistent
-      & Porting the verifier to Solidity, the public matrix $A'$ --- stored by the
-        reference \emph{already in the NTT domain} --- was transformed a second time. The
-        recomputed commitment and challenge agreed \emph{with each other}, so every
-        primitive passed in isolation while the whole disagreed with the C
-        implementation.
-      & Found only by recomputing the challenge digest against the reference's;
-        thereafter the port was validated in stages against exported vectors. \\[3pt]
-    6. A constraint system that was asymptotically wrong
-      & The Groth16 circuit first accumulated its dense rows with ordinary field-element
-        arithmetic, cloning the accumulated linear combination on each addition and so
-        costing work quadratic in the row width. The symptom was an apparent hang, the
-        work happening during setup before the driver prints.
-      & Rebuilding each row once as an explicit linear combination against the low-level
-        constraint-system interface made the cost linear; setup now completes in
-        \cfgTwoSetupTime{}. \\
-\end{longtable}
-\endgroup
 
 \section{Test types and parameter notation}
 \label{app:tests}
@@ -648,7 +477,7 @@ the evaluation.
 Interpreting those tests across the parameter sets requires a common notation.
 \Cref{tab:notation} therefore collects the symbols used throughout the construction
 and the value each takes at the four evaluated settings; the figures and tables in
-\cref{ch:results} refer back to these definitions rather than restating them. The
+\cref{ch:results} refer back to these definitions and do not restate them. The
 notation follows the LAS paper \cite{esgin2020post}: the ring degree is its $d$, and
 this build runs at $d=256$, the ring degree of the reused Dilithium NTT. Two entries
 are exceptions, the challenge digest $\tilde c$ and its width $\lvert\tilde c\rvert$: the
@@ -770,7 +599,7 @@ than folded into a single tier.
 \setlength{\belowcaptionskip}{0pt}
 
 The tables in \cref{ch:results} carry the primary results; this section gives the
-supporting computation data produced by the commands above (\cref{lst:benchfair}).
+supporting computation data produced by the evaluation of \cref{app:repro}.
 
 % Short TOC title: the full heading ran the width of the contents line, swallowing the
 % leader dots and pushing the page number out.  The heading in the appendix is unchanged.
@@ -840,7 +669,7 @@ three Simplified Dilithium parameter sets (with the target setting reported in
   \centering
   \caption[Per-operation timing across the parameter sets]{\small
   Core-tier timings ($\mu$s per operation; mean $\pm$ sample standard deviation)
-  from \texttt{bench\_levels}. KeyGen, Sign and Verify are the reused basic
+  from the parameter-matched benchmark. KeyGen, Sign and Verify are the reused basic
   operations; PreSign, PreVerify, Adapt and Extract are LAS adaptor operations.
   Setup is a one-time cost and is omitted.}
   \label{tab:timing}
@@ -868,34 +697,30 @@ three Simplified Dilithium parameter sets (with the target setting reported in
 
 \Cref{tab:reuse} gives the per-file classification behind the ``reused vs.\ modified
 vs.\ added'' claim of \cref{sec:impl}. The claim was established by keeping the pristine
-upstream tree on its own branch and diffing it against the project branch: the commands
+upstream tree on its own branch and diffing it against the project branch: the difference
 below print nothing for the lattice core, which is what makes ``zero upstream functions
-modified'' an auditable statement rather than an assertion.
+modified'' an auditable statement, not an assertion.
 
 \begin{table}[htbp]
   \centering
-  \caption[Source files: reused, modified, and added]{Source files of the implementation, classified by how the reference is
-  used. The lattice core is reused unchanged; inside the reference tree the only modified
-  files are \texttt{ref/Makefile}, which adds targets, and \texttt{ref/test/.gitignore},
-  which lists the new test binaries. The branch diff also shows one deletion,
-  \texttt{ref/sign copy.c} --- an annotated copy of \texttt{ref/sign.c} carried in the
-  pinned baseline, differing from it by comment blocks only, named by no build rule, and
-  removed here. The adaptor scheme, serialization, application integration, and evaluation
+  \caption[Implementation components: reused, modified, and added]{Components of the implementation, classified by how the reference is
+  used. The lattice core is reused unchanged; inside the reference tree the only modified files are the build description, which gains targets, and the list of built artefacts to ignore. The branch diff also shows one deletion: an annotated duplicate of the reference signing module, carried in the pinned baseline, differing from it by comment blocks alone, named by no build rule, and removed here. The adaptor scheme, serialization, application integration, and evaluation
   harnesses are project-specific additions.}
   \label{tab:reuse}
   \small
   \begin{tabular}{@{}lll@{}}
     \toprule
-    Category & Files & Role \\
+    Category & Component & Role \\
     \midrule
-    Reused unchanged & \texttt{poly/polyvec/ntt/reduce/rounding}, & the entire \\
-                     & \texttt{packing}, \texttt{sign}, \texttt{fips202}, \texttt{params} & lattice core \\
-    Modified         & \texttt{Makefile}, & new targets; \\
-                     & \texttt{test/.gitignore} & built artefacts \\
-    Added            & \texttt{las.\{c,h\}}, \texttt{serialize.\{c,h\}}, & this work \\
-                     & \texttt{relation\_zk.\{c,h\}} (+ LaZer bridge), & \\
-                     & \texttt{basesig}, \texttt{setup}, \texttt{relation}, & \\
-                     & tests, benchmarks & \\
+    Reused unchanged & polynomial and vector arithmetic, the number & the entire \\
+                     & theoretic transform, modular reduction, rounding, & lattice core \\
+                     & packing, signing, hashing, parameters & \\
+    Modified         & the build description, & new targets; \\
+                     & the list of ignored build artefacts & no source \\
+    Added            & the adaptor layer and its wire encoding, & this work \\
+                     & the relation and its zero-knowledge proof & \\
+                     & (over the external prover), the base signature, & \\
+                     & setup, tests and benchmarks & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -905,12 +730,12 @@ modified'' an auditable statement rather than an assertion.
 % separating the code from the discussion that introduces it.
 \FloatBarrier
 
-\begin{lstlisting}[language=bash,caption={Branch diff establishing that the lattice core
-is untouched (no output means identical).},label={lst:diff}]
-git diff --name-status dilithium-baseline main -- ref/
-git diff dilithium-baseline main -- ref/poly.c ref/ntt.c ref/sign.c \
-    ref/packing.c ref/polyvec.c ref/reduce.c ref/rounding.c ref/params.h
-\end{lstlisting}
+The check is a difference between the two branches over the reference tree, taken twice:
+first by name and status, which enumerates everything that changed at all, and then over
+the eight modules making up the lattice core --- polynomial and vector arithmetic, the
+number theoretic transform, signing, packing, modular reduction, rounding, and the
+parameter header. Empty output on the second difference is what establishes that the core
+is byte-for-byte the pinned baseline.
 
 \FloatBarrier
 
@@ -926,11 +751,9 @@ LAS-specific response-vector subtraction required by \textsc{Extract}. The latte
 recomputes $A\,s$ using the same matrix and vector operations that key generation uses to
 form $t$.
 
-\begin{lstlisting}[language=C,caption={Selected implementation cores from
-\texttt{ref/las.c}. The \textsc{PreSign} excerpt retains the adaptor-specific statement
+\begin{lstlisting}[language=C,caption={Selected implementation cores from the C adaptor module. The \textsc{PreSign} excerpt retains the adaptor-specific statement
 binding, challenge construction, response computation and rejection gate, while eliding
-the reference-derived matrix/vector setup around them; \texttt{las\_adapt} and
-\texttt{las\_ext} are shown in full, apart from abridged provenance
+the reference-derived matrix/vector setup around them; \textsc{Adapt} and \textsc{Extract} are shown in full, apart from abridged provenance
 comments.},label={lst:lasc}]
 /* --- PreSign: the adaptor-specific core, Algorithm 2 steps 2-7 (abridged) --- */
 rej:
@@ -1010,8 +833,7 @@ The Bitcoin transaction structures of \cref{sec:res-txstruct} follow the seriali
 shapes were put to a real Bitcoin client, in two stages that must not be conflated: the
 first carries lattice-sized objects past a \emph{stock} node, the second verifies a lattice
 signature on a \emph{patched} one. Full method, scope and caveats are in
-\texttt{docs/03-results/TWO\_LEG\_REAL\_CLIENT\_EXPERIMENT.md}; the evidence is under
-\texttt{evidence/btc\_regtest/} and \texttt{evidence/btc\_las\_node/}.
+a separate write-up, and each stage was captured as its own evidence run.
 
 \paragraph{Carriage on stock Bitcoin Core.}
 Against an unmodified Bitcoin Core \btcNodeTag{} regtest node (source commit
@@ -1031,8 +853,7 @@ carriage of a LAS signature and key & \btcMeasCarriageVsize & \btcMeasCarriageWe
 \end{center}
 
 Three observations. The two reference spends reproduced the published figures the size
-model self-checks against, so that model is now one a client has confirmed rather than one
-this study asserts. The carriage transaction is refused by default relay policy --- the
+model self-checks against, so that model is now one a client has confirmed, not one this study asserts. The carriage transaction is refused by default relay policy --- the
 reason string is the node's own --- yet is consensus-valid, was mined, and the
 default-policy node accepted the containing block: standardness and validity are distinct
 questions, and only the second bears on whether a post-quantum settlement is possible.
@@ -1052,8 +873,7 @@ interface of \cref{sec:serialize}, with the signed message being the transaction
 digest of \cite{bip341}, gives a node that can settle a spend carrying no elliptic-curve
 signature at all. Such a spend was accepted and mined
 (\btcLasVsize\,vB, \btcLasWeight\,WU, \btcLasItems{} witness items); the consensus diff is
-recorded as a patch against the same release
-(\texttt{sha256:\btcLasPatchSha}) and applies to a pristine checkout of it.
+recorded as a patch against the same release, and applies to a pristine checkout of it.
 
 That a node accepts a transaction proves little on its own, so each case was put to both the
 patched node and a stock one. On the stock node the opcode is still \texttt{OP\_SUCCESS},
@@ -1063,8 +883,7 @@ payment's value or destination, spending a different coin, computing the digest 
 false input value, presenting a signature made for another transaction or over something
 that is not a transaction digest at all, truncating or transposing a chunk, and substituting
 a key the output never committed to. Every one was refused by the patched node and accepted
-by the stock node, which attributes the refusals to the new rule rather than to some other
-defect.
+by the stock node, which attributes the refusals to the new rule, not some other defect.
 
 \paragraph{A whole swap, not a single spend.}
 Verifying one signature is not settling a swap. The property the protocol exists for is that
@@ -1075,8 +894,7 @@ their first block. Each leg's signed message is its own transaction digest \cite
 it commits to that leg's input, value and recipient; the two digests differ, which is what
 stops one signature settling both. \textsc{PreSign} and \textsc{PreVerify} run on both legs,
 $u_1$ adapts leg~B and settles it, and the adapted signature is then read back out of the
-\emph{mined} witness --- its boundary located by the key hash the funding output committed to
-rather than by an assumed signature length. Leg~A is adapted with the recovered witness and
+\emph{mined} witness --- its boundary located by the key hash the funding output committed to, not by an assumed signature length. Leg~A is adapted with the recovered witness and
 settles on the other chain. Each leg is \btcSwapLegVsize\,vB, \btcSwapLegWeight\,WU and
 \btcSwapItems{} witness items: \btcSwapLegBase\,bytes of non-witness transaction, the two
 bytes BIP-141 adds as a marker and flag \cite{bip141}, and \btcSwapLegWitness\,bytes of
@@ -1090,11 +908,10 @@ recovery read it faithfully. What attributes leg~A's \emph{witness} to the ledge
 different: \textsc{Extract} runs as a separate program, given only the recovered bytes as an
 argument and unable to reach the copy the adapting party held. \btcSwapControls{} negative
 controls were refused by the patched node and accepted by the stock one, among them the
-cross-leg case --- leg~B's settlement signature presented on leg~A. Evidence:
-\texttt{evidence/btc\_twoleg/}.
+cross-leg case --- leg~B's settlement signature presented on leg~A. Both were captured as a single evidence run.
 
 One asymmetry with the Ethereum settlement of \cref{tab:onchain} is worth stating, since it
-is a property of the venue rather than of the scheme. Bitcoin binds the transaction, not the
+is a property of the venue, not of the scheme. Bitcoin binds the transaction, not the
 chain: the digest of \cite{bip341} carries no chain identifier, whereas the Ethereum escrow's
 message is derived from \texttt{block.chainid} among other state. Offering leg~B's settled
 transaction to the other chain is therefore refused because that coin does not exist there
@@ -1113,20 +930,19 @@ above is not the choreography, which is the same, but that the two halves are di
 ledger models: the venue changes while the cryptographic object does not.
 
 The timeout side was exercised on both venues, each on a recovery-test object of that
-venue's own kind --- a control coin on Bitcoin, a second escrow on Ethereum --- rather than
-by refunding either settled leg, since both were claimed. Each was refused before its own
+venue's own kind --- a control coin on Bitcoin, a second escrow on Ethereum --- not by refunding either settled leg, since both were claimed. Each was refused before its own
 deadline and, once matured, returned the coin. The two deadlines are set as absolute
 UNIX-second values so their ordering is checkable, with the leg settled first carrying the
 shorter one, following the classical setup recalled in Section~4.1 of
 \cite{esgin2020post} --- the LAS choreography of Figure~1 restates no timeout, so this is an
-addition around that figure rather than part of it. The ordering is \emph{configured and
+addition around that figure, not part of it. The ordering is \emph{configured and
 checked, not enforced}: Bitcoin judges a timestamp locktime against median time past and
 the contract against \texttt{block.timestamp}, so the two are one numeric domain and not
 one clock, and neither venue inspects the other's deadline. None of this establishes a fair
 atomic swap. The Bitcoin claim leaf is a single-key check under the funder's own key, so the
 funder need not wait for the timeout, and the mempool exposes the adapted signature before
 confirmation, leaving a conflicting-spend race that a timeout does not close. Evidence:
-\texttt{evidence/btc\_eth\_swap/}.
+its own evidence run.
 
 Three limits travel with this. A patched node is not Bitcoin, so the claim that
 configurations~2 and~3 cannot settle on Bitcoin as deployed is unaffected. Implementing one
@@ -1136,7 +952,7 @@ argument is offered for the new rule.
 
 \paragraph{What the rule charges a validating node.}
 Changing a consensus rule buys something and charges something, and the charge falls on every
-node that ever validates the chain, so the cost was measured rather than left as a remark.
+node that ever validates the chain, so the cost was measured, not left as a remark.
 The quantity that matters is script-validation time per input, since that is what scales with
 the number of signatures in a block. Timed over \btcLasBenchReps{} repetitions $\times$
 \btcLasBenchIters{} iterations, paired and interleaved, one \texttt{OP\_CHECKLASSIGVERIFY}
@@ -1148,14 +964,12 @@ parse inside the timed call, as the interpreter does per input; timing a packed 
 verifier against an already-parsed curve key would charge the wire codec to one side only.
 The reject path is a \emph{valid} signature checked against a different 32-byte digest, so
 every stage before the final challenge comparison must still run --- a corrupted signature
-can trip an early structural check, which would measure how quickly the verifier gives up
-rather than what a rejection costs. Rejection comes to \btcLasRejectUs\,$\mu$s,
+can trip an early structural check, which would measure how quickly the verifier gives up, not what a rejection costs. Rejection comes to \btcLasRejectUs\,$\mu$s,
 \btcLasRejectRatio$\times$ an acceptance. The narrow reading is the only one supported: a LAS
 signature that fails at the final comparison costs a node approximately as much as one that
 verifies, so there is no early exit to be had on this path. It says nothing about the rule's
 denial-of-service surface more broadly --- malformed inputs take other paths, which were not
-timed. Runner \texttt{scripts/run\_btc\_las\_bench.sh}; evidence under
-\texttt{evidence/btc\_las\_bench/}.
+timed. The benchmark was captured as its own evidence run.
 
 Three caveats bound those figures, and they are separate claims. First, the curve baseline is
 a pinned \texttt{libsecp256k1-zkp} --- a fork of \texttt{libsecp256k1} running the same

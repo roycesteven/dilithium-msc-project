@@ -36,6 +36,11 @@ M.~Buser, R.~Dowsley, M.~Esgin, C.~Gritti, S.~Kasra~Kermanshahi, V.~Kuchta,
   exotic signatures for post-quantum blockchain: Challenges and research
   directions,'' {\em ACM Computing Surveys}, vol.~55, no.~12, pp.~1--32, 2023.
 
+\bibitem{esgin2020post}
+M.~F. Esgin, O.~Ersoy, and Z.~Erkin, ``Post-quantum adaptor signatures and
+  payment channel networks,'' in {\em Computer Security -- ESORICS 2020},
+  pp.~378--397, Springer International Publishing, 2020.
+
 \bibitem{valenta2026pqauth}
 L.~Valenta and K.~Guthrie, ``Post-quantum authentication to origins is now
   supported.'' Cloudflare Blog, July 2026.
@@ -52,11 +57,6 @@ L.~Aumayr, O.~Ersoy, A.~Erwig, S.~Faust, K.~Host{\'a}kov{\'a}, M.~Maffei,
   P.~Moreno-Sanchez, and S.~Riahi, ``Generalized channels from limited
   blockchain scripts and adaptor signatures,'' in {\em Advances in Cryptology
   -- ASIACRYPT 2021}, pp.~635--664, Springer International Publishing, 2021.
-
-\bibitem{esgin2020post}
-M.~F. Esgin, O.~Ersoy, and Z.~Erkin, ``Post-quantum adaptor signatures and
-  payment channel networks,'' in {\em Computer Security -- ESORICS 2020},
-  pp.~378--397, Springer International Publishing, 2020.
 
 \bibitem{lyubashevsky2012lattice}
 V.~Lyubashevsky, ``Lattice signatures without trapdoors,'' in {\em Advances in

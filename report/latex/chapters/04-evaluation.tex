@@ -1,172 +1,193 @@
 \chapter{Evaluation}
 \label{ch:evaluation}
 
-This chapter judges the work against the objectives of \cref{sec:aims}: the evaluation
-strategy and its alignment with those objectives, each objective against the evidence of
-\cref{ch:results}, then the implementation challenges that shaped the outcome and the
-limitations that bound it. Judgement of \emph{what the artefact achieves} is made here;
-\cref{sec:reflection} steps back to the process.
-
 \section{Evaluation strategy and its justification}
 \label{sec:eval-strategy}
 
-% "The aim" collided with sec:aims, which states a broader aim (implement, evaluate,
-% demonstrate).  The chapter opening four lines above cites that very label, so two
-% different things were called "the aim" within one page.  This is the evaluation
-% question, not the project aim.
-The central evaluation question was what adaptor functionality \emph{costs}, so each
-measured difference had to be attributable to one cause. Four decisions follow, each
-tied to an objective.
+% "The aim" collided with sec:aims, which states a broader project aim.  This is the
+% evaluation question, not the project aim, and the two must not share a name.
+The project set out to measure what adaptor functionality \emph{costs}, so the evaluation
+was built around one requirement: every measured difference had to have a single
+attributable cause. Four decisions follow from it.
 
-Correctness is established before any cost is reported (objective~3). Performance is
-meaningless without correctness, and no formal proof was in scope, so correctness rests
-principally on differential evidence: a pinned known-answer value reproduced byte-for-byte by a
-second, independently written implementation (\cref{sec:res-rust}). Internal
-self-consistency is not correctness: \cref{sec:eval-challenges} gives a case where
-every primitive passed in isolation and the assembled whole was still wrong.
+Correctness comes before cost. Performance figures for an incorrect implementation are
+worthless, and no formal proof was in scope, so correctness rests principally on
+differential evidence: a pinned known-answer value reproduced byte for byte by a second,
+independently written implementation. Internal self-consistency is not enough, and one
+error described below left every primitive passing in isolation while the assembled whole
+was wrong.
 
-The primary comparison is controlled (objective~4).
-LAS is measured against its own simplified base at identical algorithm, parameters and
-primitives, so the paired comparison estimates the cost of the adaptor layer. Comparing instead against the optimised CRYSTALS-Dilithium reference would
-confound the adaptor cost with parameter, packing and hint-vector differences; that
-comparison is therefore retained only as context, and the classical ECDSA adaptor only
-as a functionality-matched ``price of post-quantum'' baseline.
+The primary comparison is controlled. LAS is measured against its own simplified base at
+identical algorithm, parameters and primitives, so the paired difference estimates the
+cost of the adaptor layer and of nothing else. Measuring against optimised
+CRYSTALS-Dilithium instead would confound that cost with parameter, packing and
+hint-vector differences; that contrast is therefore kept only as context, and the
+classical ECDSA adaptor only as a functionality-matched price of post-quantum.
 
-% Two fixes, paid for within the paragraph.  (1) This was the one of the four decisions
-% that named no objective, weakening the decision-to-objective pattern the paragraph
-% above announces.  (2) "the commonest way a benchmark misleads" was an uncited
-% superlative about benchmarking in general; the em-dash clause already carries the only
-% warrant there is, which is local ("twice here").
 % NOT "two tiers": sec:benchmethod declares THREE boundaries -- core, packed, and the
-% hybrid one the classical library exposes -- so the count contradicted that section.
-Every measurement declares its boundary (objective~4). Results are reported at declared
-boundaries
-(\cref{sec:benchmethod}), because an undeclared boundary misleads quietly, as it did
-twice here before the tiers were fixed. For the same reason each
-run gates on a directly counted rejection rate against its closed-form prediction, rather
-than inferring acceptance from timing.
+% hybrid one the classical library exposes.  The warrant for "misleads quietly" is local
+% ("twice here"), never a general claim about benchmarking.
+Every measurement declares its boundary, because an undeclared boundary misleads quietly,
+as it did twice here before the tiers were fixed. For the same reason each run gates a
+directly counted rejection rate against its closed-form prediction rather than inferring
+acceptance from a timing ratio.
 
-Metrics follow the venue (objective~5). The application study reports execution
-time and communication bytes with off-chain messages counted, because the evaluated UTXO
-ledger has no gas metric, and because off-chain messaging is where the post-quantum
-cost lands.
+Metrics follow the venue. The application study reports execution time and communication
+bytes, counting off-chain messages, because the evaluated UTXO ledger carries no gas
+metric and because off-chain messaging is where the post-quantum cost lands.
 
 \section{Achievement of the objectives}
 \label{sec:eval-objectives}
 
-% "two carry qualifications" was a count claim the two paragraphs below do not discharge:
-% objective 4's is a DEFENCE of how fairness was controlled, only objective 5's is a
-% qualification.  Same class as the theme-count fixed further down this chapter.
-\Cref{tab:objectives} sets out the evidence behind each objective. All five were met;
-two need more than a table row.
-
 \begin{table}[htbp]
   \centering
-  % Not all of it is in ch:results: objective 1 rests on sec:relatedwork (Chapter 1) and
-  % objective 2 on tab:reuse (appendix).  Captions are free of the word count, so naming
-  % the three homes costs nothing.
-  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} against its
-           evidence, which spans the introduction, \cref{ch:results} and the appendix.
-           All five were met; the evidence column states what each rests on.}
+  % ⚠ This table is referenced from 01-introduction.tex ("All five objectives were met"),
+  % so tab:objectives must not be deleted: doing so leaves a dangling \cref in Chapter 1,
+  % which is also why the caption no longer repeats that verdict.  Its pointers ARE the
+  % point of it -- a marker without the repository needs to know where each claim is
+  % evidenced -- so the row text is what compresses, never the references.
+  \caption[Objectives against evidence]{Each objective of \cref{sec:aims} against the
+           evidence for it, which spans the introduction, \cref{ch:results} and the
+           appendix.}
   \label{tab:objectives}
   \begin{tabular}{@{}p{0.24\textwidth}p{0.68\textwidth}@{}}
     \toprule
     \textbf{Objective} & \textbf{Evidence} \\
     \midrule
     1. Literature and scheme selection
-      & Adaptor signature selected for its direct relevance to atomic swaps;
-        LAS \cite{esgin2020post} selected as the design with the shortest path from a
-        standardised lattice signature (\cref{sec:relatedwork}). \\[3pt]
+      & Adaptor signature chosen for its direct relevance to atomic swaps; LAS
+        \cite{esgin2020post} for the shortest path from a standardised lattice signature
+        (\cref{sec:relatedwork}). \\[3pt]
     2. Additive implementation
-      & Lattice core reused byte-for-byte, zero upstream functions modified, made
-        auditable by a two-branch diff; adaptor layer, wire encoding and application
-        are new code (\cref{tab:reuse}). \\[3pt]
+      & Lattice core reused byte-for-byte with no upstream function modified, audited by
+        a two-branch diff; adaptor layer, wire encoding and application are new code
+        (\cref{tab:reuse}). \\[3pt]
     3. Validation
       & Functional, serialization, tamper and known-answer tests pass
-        (\cref{sec:res-correctness}); an independent Rust implementation reproduces
-        the wire format and the pinned value byte-for-byte (\cref{sec:res-rust}). \\[3pt]
+        (\cref{sec:res-correctness}); an independent Rust implementation reproduces the
+        wire format and the pinned value byte-for-byte (\cref{sec:res-rust}). \\[3pt]
     4. Fair benchmarking
       & Adaptor overhead isolated per operation at two declared tiers
-        (\cref{tab:overhead-l3}); two further baselines, computation separated from
-        communication, rejection rate gated against theory, relative conclusions
-        reproduced by the Rust port (\cref{tab:rust}). \\[3pt]
+        (\cref{tab:overhead-l3}), against two further baselines, with the rejection rate
+        gated against theory and the relative conclusions reproduced by the Rust port
+        (\cref{tab:rust}). \\[3pt]
     5. Atomic-swap demonstration
       & End-to-end two-party, two-chain swap settling both legs and asserting
-        unspendability before adaptation (\cref{sec:res-app}); extended to a measured
+        unspendability before adaptation (\cref{sec:res-app}), extended to a measured
         three-configuration study on a UTXO ledger (\cref{sec:res-stage2}). \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 % SCOPE: only configurations 2 and 3 share one public matrix and byte-identical inputs
-% (backend.rs "configurations()": they share one LasParams, hence one A, and derive key
-% material from one master seed).  Configuration 1 is secp256k1 and has no lattice matrix
-% at all, so the unscoped version claimed a control the study explicitly does not have --
-% sec:res-stage2 says "only the 2->3 step is controlled" on its own page.
-For Objective~4, the standalone-signature evaluation holds algorithm, parameters and
-primitives fixed, and the application's controlled $2\to3$ comparison shares one public
-matrix and byte-identical inputs, verified at run time. The measurements are then defended from two independent directions: a
+% (backend.rs "configurations()": one LasParams, hence one A, key material from one master
+% seed).  Configuration 1 is secp256k1 and has no lattice matrix at all, so an unscoped
+% sentence claims a control the study does not have -- sec:res-stage2 says "only the 2->3
+% step is controlled" on its own page.
+% PAGINATION: pulls one line from the next page back onto this one, so the section
+% heading that follows is not left with only two lines beneath it.  This paragraph
+% begins on that page, which is where \enlargethispage takes effect.
+% ⚠ Pagination-dependent -- re-check on rebuild.
+\enlargethispage{\baselineskip}
+Fairness was not simply asserted. The standalone evaluation holds algorithm, parameters
+and primitives fixed; in the application study the step from Groth16 to LaZer shares one
+public matrix and byte-identical inputs, verified at run time, while the classical
+configuration rests on a different curve and is a whole-stack contrast rather than a
+controlled one. The figures are then defended from two independent directions: a
 closed-form gate on the rejection rate, and re-measurement under a different compiler and
-an independent statistical harness.
+an independent statistical harness. That second check is also where the claims stop.
+Absolute per-operation times do not reproduce across the two implementations and are not
+offered as a comparison between them; what reproduces, and what the conclusions rest on,
+is the relative cost of the adaptor layer.
 
-Objective~5 was met in the UTXO setting assumed in \cite{esgin2020post}, with a gas-metered
-venue measured against it. On a local EVM a
 % tab:onchain's own caption says its rows are --gas-report CHARGES, "not transaction
-% totals and not client measurements", so putting the figure straight against a
-% per-transaction cap conflated the two accounting boundaries that caption separates.
-\emph{complete}, validated native LAS verifier was charged
-$\approx$\gasLasVerifiedM{} million gas in \cref{tab:onchain}'s \texttt{--gas-report}
-accounting, already above the EIP-7825
-per-transaction cap. That ceiling later proved to bound the
-% "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and that
-% equivalence holds only under the registration invariant no contract checks (tab:onchain).
-% The instance belongs here too: two verifier stages branch on coefficient values.  The
-% introduction carries the same two scopings, so leaving them out here would have made the
-% chapter that JUDGES the objective the least scoped statement of it in the report.
-\emph{implementation} rather than the scheme: a claim transaction running a restructured
-verifier was mined inside the cap, under \cref{tab:onchain}'s registration invariant,
-at the target set, message length and signature instance measured
-(\cref{sec:res-evm}). The venue decision therefore rests on cost, not impossibility.
+% totals and not client measurements", so setting the figure straight against a
+% per-transaction cap conflates the two accounting boundaries that caption separates.
+The demonstration was built in the UTXO setting assumed in \cite{esgin2020post}, then
+measured against a gas-metered venue for contrast. There a \emph{complete}, validated
+native LAS verifier was charged $\approx$\gasLasVerifiedM{} million gas for its claim
+path, beyond the EIP-7825 per-transaction cap, though that figure is a
+% "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and the
+% equivalence holds only under the registration invariant no contract checks (tab:onchain),
+% which is why that reference stays: without it the caveat has no warrant in this chapter.
+% The single instance belongs here too: two verifier stages branch on coefficient values.
+\texttt{--gas-report} charge rather than a transaction receipt. The cap turned out to
+bound the \emph{implementation} rather than the scheme: a restructured verifier was mined
+by a real client inside it, at the target parameter set, for the message length and single
+signature instance measured, and only under the registration invariant that
+\cref{tab:onchain} records as unchecked. The venue decision rests on cost, not on
+impossibility.
 
 \section{Implementation challenges}
 \label{sec:eval-challenges}
 
-Turning the simplified-Dilithium base into LAS was conceptually small (four added
-operations and one extra term in a hash), but the six problems of \cref{tab:challenges}
-% "Two are failures ... Two more are ... The third" read as 2+2+1 items rather than as
-% three THEMES, two of which have two instances.  Numbering the themes removes the
-% arithmetic a reader can falsify; the colons still enumerate the instances.
-consumed most of the engineering effort. Three themes recur. The first is failures that
-\emph{pass every local test}: a loosened PreSign bound leaves the adaptor operations
-working while breaking ordinary verification two steps later, and a doubly-transformed
-public matrix produces a verifier whose parts agree with each other but not with the C
-implementation; both caught only by checking outside the component, which is why
-\cref{sec:eval-strategy} treats internal self-consistency as insufficient.
+% REWRITTEN 2026-09-06 as continuous synthesis.  The previous version framed the section
+% around "the six problems of tab:challenges" and three recurring themes; both were
+% scaffolding rather than content, and the cross-reference made a body section depend on an
+% appendix table (now deleted).  Each challenge is stated as problem -> why it resisted
+% ordinary debugging -> fix, and every reference points at a main chapter.
+%
+% ⚠ SCOPES THAT MUST NOT DRIFT, each corrected during drafting:
+%  - NOT "all four adaptor operations still succeed": app:challenges named THREE (PreSign,
+%    PreVerify, Extract).  "the adaptor operations can still succeed" avoids the count.
+%  - NOT "no local test observes it": an unbounded universal.  Scope it to the tests run.
+%  - NOT "restores the adaptor properties" for ML-DSA: that experiment is a FUNCTIONAL
+%    demonstration only and the security of committing to HighBits(w+Y) is unanalysed, so
+%    the claim is scoped to the tested contract.
+%  - NOT "the known-answer value exposed divergences": its purpose is cross-checking, and
+%    nothing on record says it caught a specific divergence.  Say what it made possible.
+%  - ORDER: the Solidity error was found by comparing the recomputed challenge digest
+%    against the C reference; correction, then stagewise validation, then the gas-cap
+%    restructuring followed.  Stagewise validation must not be named as what exposed it.
+%  - The patched rule's SECURITY is unanalysed (a caveat that never lapses).  It is carried
+%    here by "experimental" plus sec:res-txstruct, whose own prose states it in full.
+\textsc{PreSign} must reject at $\gamma-\kappa-1$, one tighter than \cref{eq:signbound}.
+At the looser bound the adaptor operations can still succeed while the adapted signature
+later exceeds the norm ordinary \textsc{Verify} accepts; local adaptor tests did not expose
+it, and accounting for the witness norm identified the tighter bound. A related assumption,
+that Dilithium's hint and bit-splitting optimisations had to be disabled, also proved too
+strong: carrying the commitment path on $w+Y$ satisfies the tested adaptor contract with
+them enabled (\cref{sec:res-mldsa}).
 
-% "The last" implied the three themes enumerated all six rows of tab:challenges; they do
-% not -- rows 2 and 3 are one-offs, which is what "recur" already licenses.  Numbering the
-% theme instead of calling it the last removes a count a reader can falsify.
-The second is measurement artefacts that would have biased the headline
-result had they survived, and are why every boundary is now declared and every run
-% NOT "generalises past this project: in constraint-system libraries...".  The evidence is
-% one library's behaviour, so the plural generalisation was unwarranted.
-gated. The third is asymptotic rather than arithmetic: in the constraint-system library
-used here, the ergonomic interface and the scalable interface were not the same
-interface.
+Implementing the scheme independently in Rust required byte-identical agreement, including
+deterministic sampling and serialization; the pinned known-answer value made that agreement
+directly testable (\cref{sec:rustport}). Benchmarking raised a separate problem, because
+rejection sampling makes sign-class timings right-skewed: acceptance inferred from a timing
+ratio was biased, and the two timed loops initially performed unequal work. Attempts are
+therefore counted directly, checked against theory, and measured at declared boundaries
+(\cref{sec:benchmethod}).
 
+The Groth16 circuit initially cloned growing linear combinations while constructing dense
+rows, making the work quadratic in row width; building each row once through the
+lower-level constraint interface reduced it to linear cost. In Solidity, an
+already-NTT-domain public matrix was transformed again, producing a verifier that disagreed
+with the C reference; comparing the recomputed challenge digest against C exposed the
+error, the corrected port was validated in stages, and the verifier was then restructured
+to fit the per-transaction gas cap (\cref{sec:res-evm}). Bitcoin imposed different
+constraints: Script has no native lattice-signature verifier, and its \btcChunkWidth\,B
+element limit prevents LAS signatures and public keys from being supplied as single
+elements. The integration therefore chunks these objects and reassembles them inside an
+experimental patched consensus rule (\cref{sec:res-txstruct}).
 
 \section{Limitations}
 \label{sec:eval-limitations}
 
-The validity threats of \cref{sec:res-validity} bound what the results \emph{mean}. Two
-further limitations belong to the artefact rather than the measurement. The hint-free
-construction yields larger keys and signatures than optimised Dilithium
-(cryptographic optimisation given up for a transparent, testable artefact), and
-\cref{sec:res-mldsa} quantifies that price and shows it recoverable in principle, though
+% "three", not "two": the ZKNox dependency below is the third.  It was previously carried
+% only in the deleted app:challenges caption, and it scopes a MEASURED gas figure, so it
+% belongs in the body rather than an appendix (2026-09-06).
+The threats of \cref{sec:res-validity} bound what the results \emph{mean}, and three further
+limitations belong to the artefact itself, not to the measurement. The EVM verifiers reuse
+lattice primitives from a library its authors describe as not production-ready, so the gas
+figures characterise a numerically-correct verifier rather than a deployable one. The
+hint-free
+construction yields larger keys and signatures than optimised Dilithium: cryptographic
+optimisation traded for a transparent and testable artefact. \Cref{sec:res-mldsa}
+quantifies that price and shows it recoverable in principle, but only for the signature
+and not for the statement.
+
 % NOT "not a stack anyone should deploy": a normative absolute the evidence does not
 % carry.  What is supported is that it is not fully post-quantum.
-only for the signature and not the statement. Configuration~2 instead gives up end-to-end
-post-quantum assurance for a controlled
-comparison: it is the intermediate point that makes the proof-system comparison possible,
-not a fully post-quantum stack, since a post-quantum signature does not protect a swap
-whose fairness rests on a pairing assumption.
+Configuration~2 gives up something different. Groth16's soundness rests on a pairing
+assumption Shor breaks, so a post-quantum signature does not protect a swap whose fairness
+rests on a classical proof. That configuration is the intermediate point which makes the
+controlled proof-system comparison possible, and is reported as that and nothing more.
