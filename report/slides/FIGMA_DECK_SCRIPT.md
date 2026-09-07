@@ -40,7 +40,7 @@ payment.
 ---
 
 ## 04 · Why: the gap
-**SPOKEN:** So where is the gap? The signature authorising an ordinary payment already has post-quantum standards; the one that makes a swap work does not. Other advanced types are being built; the adaptor case much less so. Hence three questions: can we build it, what does it cost, and can a chain verify it?
+**SPOKEN:** So where is the gap? What the chains sign with today is vulnerable to Shor. Its replacement is already standardised, and migration is under way well beyond blockchains: Cloudflare is already moving its own infrastructure. But the signature that makes a swap work is much less mature. Other advanced types are being built; the adaptor case much less so. Hence: can we build it, what does it cost, and can a chain verify it?
 
 **BACKUP:** Why pay for this rather than a hash-time-locked contract? The hash lock shows — a
 script on both chains, the same hash on both, and larger transactions. An adaptor signature
@@ -60,7 +60,7 @@ primitive of the scheme.
 ---
 
 ## 06 · Method: what I built
-**SPOKEN:** The implementation boundary matters. I did not rewrite lattice arithmetic — I reused Dilithium's and added the adaptor behaviour and its encoding around it. I then built it again in Rust, independently; the two agree byte for byte on a pinned known-answer value. That is an implementation check, not a security proof.
+**SPOKEN:** Here is the method itself. The lattice core is reused; the adaptor layer is what I added. What makes a signature adaptable is a single substitution: the ordinary signature hashes its commitment, while the pre-signature hashes that commitment plus the public statement. That one addition is the whole mechanism. I then built the scheme again in Rust, independently, and the two agree byte for byte on a pinned known-answer value: an implementation check, not a security proof.
 
 **BACKUP:** The pinned value covers packed outputs over four fixed vectors — public key, secret
 key, signature, pre-signature and the adapted signature. Pre-verification and extraction are
@@ -79,7 +79,7 @@ pre-signature, and Bob must then complete Alice's pre-signature with the recover
 ---
 
 ## 08 · Result: cost in time
-**SPOKEN:** Now the cost — and it depends entirely on what it is measured against. Step one, classical to a post-quantum base, is the expensive one, and organisations are already taking it. Step two is what I measured: adding the adaptor layer to that same base, under eight percent per operation. The classical adaptor costs four-point-six times its own signing. So relative to its own base ours is cheaper — though in absolute time a lattice operation still costs more.
+**SPOKEN:** Now the cost, and it depends entirely on what it is measured against. Step one, classical to a post-quantum base, is the expensive one. Step two is what I measured: adding the adaptor layer to that same base, under eight percent per operation. The classical adaptor costs four-point-six times its own signing. So relative to its own base ours is cheaper, though in absolute time a lattice operation still costs more.
 
 **BACKUP:** Overheads are paired and interleaved within each repetition; rejection attempts are
 counted directly, never inferred from a timing ratio. The classical figure is derived from a
@@ -90,7 +90,7 @@ FIPS 204 route measures a smaller signature.
 ---
 
 ## 09 · Result: cost in bytes
-**SPOKEN:** Size is where post-quantum actually hurts. Against a classical adaptor signature the lattice one is about seventy-two times larger — a size ratio, not a timing one. Almost all of it is one response component, and a swap also carries a public statement. So the dominant cost is communication, not adaptor arithmetic.
+**SPOKEN:** Size is where post-quantum actually hurts. Against a classical adaptor signature the lattice one is about seventy-two times larger, and that is a size ratio, not a timing one. So the dominant cost here is communication, not adaptor arithmetic.
 
 **BACKUP:** As objects: 4,640 bytes against a 64-byte compact ECDSA signature, at Simplified
 Dilithium-II. Inside a Bitcoin witness the classical item is DER-encoded and larger, which is
@@ -100,7 +100,7 @@ not plain ECDSA; the level match is engineering, not a proof.
 ---
 
 ## 10 · Result: what lands on chain
-**SPOKEN:** What actually lands on chain? On Bitcoin the fields are those of an ordinary payment; only the witness slot grows, which is why native verification needs a consensus rule. On Ethereum the authorising signature is still elliptic-curve, and the lattice signature rides in contract data, paying in gas. Neither adds an adaptor-specific field.
+**SPOKEN:** What actually lands on chain? On Bitcoin the fields are those of an ordinary payment; only the witness slot grows. Bitcoin is more restricted, because its fields cannot be modified, so verifying this natively needs a consensus rule. Ethereum is more flexible: the lattice signature rides in contract data, verified by a contract at a gas cost. Neither venue adds an adaptor-specific field.
 
 **BACKUP:** The Bitcoin column is read from a mined regtest swap leg and reconstructed against
 BIP144 weight accounting; the Ethereum figure is one real-client receipt under EIP-7623. The
@@ -120,7 +120,7 @@ recover the secret, complete A, mine A.
 ---
 
 ## 12 · Result: two boundary questions
-**SPOKEN:** Two boundary questions, settled by measurement. Does one full verification fit in a single Ethereum transaction? It does — using ninety-seven point eight percent of the per-transaction cap, for one measured instance. Two shortcuts I tested changed neither. Does the adaptor need the simplified research signature? Functionally, no: the unchanged NIST verifier accepted two hundred of two hundred adapted signatures. That route's security is not analysed.
+**SPOKEN:** Two boundary questions, both settled by measurement. Does one full verification fit in a single Ethereum transaction? It does, at ninety-seven point eight percent of the cap, for one measured instance; two shortcuts I tested changed neither. And does the adaptor need the simplified research signature? Functionally, no, though that route's security is not analysed.
 
 **BACKUP:** Shortcut one, statement truncation, failed at extraction every depth tested;
 shortcut two, a succinct post-quantum proof route, was larger and slower than the deployed
@@ -131,7 +131,7 @@ Pre-signing and pre-verification still need adaptor-specific algorithms.
 ---
 
 ## 13 · Takeaways
-**SPOKEN:** Back to the three questions. Can we build it? Yes — in two languages, cross-checked, with a working two-ledger swap. What does it cost? Little in adaptor computation, many more bytes. Can a chain use it? Ethereum verifies it in a contract with almost no margin; Bitcoin needs a new consensus rule. What limits deployment is size, verification cost and platform integration — not the adaptor layer. For Bitcoin: analyse that rule before shipping. For Ethereum: drive verification cost down. For protocol designers: budget the proof and the statement first. Thank you.
+**SPOKEN:** Back to the three questions. Can we build it? Yes, with a working two-ledger swap. What does it cost? Little in adaptor computation, many more bytes. Can a chain use it? Ethereum yes, through a contract with almost no margin; Bitcoin only with a new consensus rule. What limits deployment is size, verification cost and platform integration — not the adaptor layer. For Bitcoin: analyse that rule before shipping. For Ethereum: drive verification cost down. For protocol designers: budget the proof and the statement first. Thank you.
 
 **BACKUP:** The Bitcoin rule costs 374 microseconds per input, about 11.3 times a Schnorr check
 — and that ratio overstates it, because the security levels are not matched. The proof accounts
