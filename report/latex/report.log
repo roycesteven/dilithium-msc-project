@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  11 SEP 2026 09:20
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  11 SEP 2026 11:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -980,21 +980,21 @@ Package pdftex.def Info: figures/fig_criterion_presign.pdf  used on input line
  (./generated/tab_complete_target.tex) [34]
 [35 <./figures/fig_criterion_presign.pdf>] (./generated/tab_classical.tex)
 [36] [37]
-Overfull \hbox (0.41318pt too wide) in paragraph at lines 320--326
+Overfull \hbox (0.41318pt too wide) in paragraph at lines 321--327
 \T1/lmr/m/n/12 (-20) Section []2.2[] fol-lows the sim-pli-fied Dilithium-style 
 base of [[]], which omits Dilithium's
  []
 
 [38] [39] [40] [41] (./generated/tab_btctx_measured.tex) [42] [43] [44]
-<figures/fig_onchain.pdf, id=962, 412.6617pt x 284.02109pt>
+<figures/fig_onchain.pdf, id=960, 412.6617pt x 284.02109pt>
 File: figures/fig_onchain.pdf Graphic file (type pdf)
 <use figures/fig_onchain.pdf>
-Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 700.
+Package pdftex.def Info: figures/fig_onchain.pdf  used on input line 701.
 (pdftex.def)             Requested size: 412.56496pt x 283.95537pt.
 
 [45 <./figures/fig_onchain.pdf>]
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <12> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 801.
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 802.
  [46] [47]) (./chapters/04-evaluation.tex
 [48]
 Chapter 4.
@@ -1089,12 +1089,12 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             See the microtype manual for details.
  [70]
 [71] [72] [73] [74] [75] [76] (./generated/tab_rejstats.tex)
-<figures/fig_overhead.pdf, id=1370, 412.6617pt x 404.712pt>
+<figures/fig_overhead.pdf, id=1368, 412.6617pt x 404.712pt>
 File: figures/fig_overhead.pdf Graphic file (type pdf)
 <use figures/fig_overhead.pdf>
 Package pdftex.def Info: figures/fig_overhead.pdf  used on input line 634.
 (pdftex.def)             Requested size: 297.04727pt x 291.3245pt.
-<figures/fig_rejection_cdf.pdf, id=1377, 412.6617pt x 346.89601pt>
+<figures/fig_rejection_cdf.pdf, id=1375, 412.6617pt x 346.89601pt>
 File: figures/fig_rejection_cdf.pdf Graphic file (type pdf)
 <use figures/fig_rejection_cdf.pdf>
 Package pdftex.def Info: figures/fig_rejection_cdf.pdf  used on input line 645.
@@ -1152,10 +1152,10 @@ hare/texmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public
 exmf/fonts/type1/public/lm/lmtt12.pfb></usr/share/texmf/fonts/type1/public/lm/l
 mtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
 sbm10.pfb>
-Output written on report.pdf (87 pages, 860135 bytes).
+Output written on report.pdf (87 pages, 860176 bytes).
 PDF statistics:
- 1880 PDF objects out of 2073 (max. 8388607)
- 1423 compressed objects within 15 object streams
+ 1878 PDF objects out of 2073 (max. 8388607)
+ 1422 compressed objects within 15 object streams
  358 named destinations out of 1000 (max. 500000)
  95219 words of extra memory for PDF output out of 106986 (max. 10000000)
 

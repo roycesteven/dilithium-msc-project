@@ -283,8 +283,9 @@ differences.
   classical adaptor-layer ratios quoted in the text are each taken over \emph{their own}
   base operation: PreSign over plain Sign ($\clOvPreSignX\times$), PreVerify over
   plain Verify ($\clOvPreVerifyX\times$). Both are \emph{derived} from this library's
-  single mixed native-API tier, not a paired, interleaved measurement of the kind
-  \cref{sec:res-compute} reports for LAS. The corresponding LAS figures are the
+  single mixed native-API tier. On both sides the adaptor overhead is a ratio of
+  separately timed means, so neither figure cancels clock drift between the two
+  operations it compares. The corresponding LAS figures are the
   byte-tier ones, $+\packedOvPreSign\%$ for PreSign and $+\packedOvPreVerify\%$ for
   PreVerify, that tier being the more conservative of the two reported for LAS.}
   \label{tab:classical}

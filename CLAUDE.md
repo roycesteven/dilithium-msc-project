@@ -192,6 +192,12 @@ session that repeats one of these has failed even when its output looks right.
    moved the whitespace instead of removing it (see the float-page rule). **A relayed critique's
    FACTS and its CAUSAL STORY are separate claims; verify them separately, and settle a layout
    claim by building the page, never by argument.**
+   ⚠️ **2026-09-11 — a critique can be RIGHT and already FIXED, and its follow-up can expose a
+   defect THIS FILE licensed.** The relayed "fatal" abstract sentence was real but had never been
+   committed: it lived only in the working tree and was repaired in `44ddb5a` before the session —
+   **check HEAD, the built PDF's mtime and the committed PDFs before treating a finding as live.**
+   The same day a relayed claim that `bench_levels` interleaves was checked against the driver and
+   found FALSE (→ Measurement gates); Royce then ruled the fix is documentation, not code.
    ⚠️ **THE NOTES ARE THE SPOKEN SCRIPT, SO THEY HAVE A WORD BUDGET (2026-08-25).** Fused script
    and backup detail had reached **3,558 words — 471 wpm, unspeakable**. Every `data-notes` is now
    **`SPOKEN: … || BACKUP: …`**; only SPOKEN is delivered, `data-time` is **derived from it at
@@ -301,8 +307,9 @@ the base signature.** Results/evaluation must lead with this
   `gen_report_data.py`) = the ECDSA adaptor's PreSign ÷ **its own Sign** and PreVerify ÷
   **its own Verify** — ⚠️ **each over ITS OWN base, never both over Sign**: this line said
   "both ÷ Sign" until 2026-08-25 and was wrong; `gen_report_data.py:531-532` is the authority.
-  ⚠️ Those two are **DERIVED from the classical harness's single mixed native-API tier**, not
-  the paired interleaved measurement — never call them a paired overhead, and quote the
+  ⚠️ Those two are **DERIVED from the classical harness's single mixed native-API tier** —
+  **the difference from `\ovPreSign` is the BOUNDARY, never the timing method** (both sides
+  divide two separately timed means; see Measurement gates) — and quote the
   **packed** LAS figures beside them so the comparison survives the conservative pairing —
   **both** of them (`\packedOvPreSign`, `\packedOvPreVerify`): two classical operations need
   two LAS ones. Report home = `tab:classical`'s caption + `sec:res-classical` (2026-08-25).
@@ -516,6 +523,10 @@ the base signature.** Results/evaluation must lead with this
   spending the bottom half of the chapter-opening page (**4 lone pages without it, 2 with**),
   and beyond that only **removing an exhibit** helps — moving `tab:rejstats` to the appendix
   measured 4→2 and both tables 4→1. Do not re-derive this; quote it.
+  ✅ **THE SHIPPED BUILD NOW MEASURES ZERO float-only pages** (2026-09-11, whole-PDF
+  head-and-tail sweep: every page opening on a `Figure`/`Table` ends in body prose). Those
+  counts belong to that *experiment*, not to the current PDF — quote them as the trade's
+  arithmetic, **never as a live defect**, and re-measure before asserting one.
 - **Criterion figure is NOT "reproduced unmodified"** — Criterion's 12-unit type renders at
   ~4 pt at `\linewidth`, and its key column spends a fifth of the width on five strings.
   `scripts/gen_criterion_figure.py` enlarges the type, **moves the legend from the right column
@@ -583,18 +594,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-11 09:51 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-11 10:47 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD 893f541 · 2026-09-07 ·  slide 1
-- Working tree: 7 modified tracked file(s), 0 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 44ddb5a · 2026-09-11 · Repair abstract sentence, rebuild report and word count
+- Working tree: 6 modified tracked file(s), 0 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `44ddb5a 2026-09-11 Repair abstract sentence, rebuild report and word count`
   - `893f541 2026-09-07  slide 1`
   - `e207aab 2026-09-07  7/9 8:14 am`
   - `889b130 2026-09-05  report super final 5/9 3:02 pm`
   - `0e6da21 2026-09-05 Remove accidental benchmark artifacts and restore rubric`
-  - `4465a86 2026-09-05 report final 1cd`
 
 ### Target parameter set — anchors parsed from source
 
@@ -723,12 +734,28 @@ that grows across long payment-channel chains.
 Four faults each shipped a plausible-looking wrong number before a gate caught it: a missing FIPS
 204 empty-context prefix in `mu`; re-signing one fixed instance (deterministic rejection loop); a
 KeyGen benchmark replacing the keypair so `Verify` timed the rejection path; and Sign/PreSign
-timed in separate blocks, letting clock drift invert the overhead's sign. Therefore, in every
-benchmark: (1) overhead ratios are **PAIRED and INTERLEAVED within each repetition**; (2)
-sign-class pairs are compared **per attempt**, never per call; (3) every timed block is followed
-by a **success-path assertion**; (4) attempt counters are checked to actually track their loop;
-(5) an untimed **warm-up** precedes the first measurement. `bench_mldsa_compare` exits non-zero if
-any of these fails; the rejection gate above is the same discipline for the acceptance rate.
+timed in separate blocks, letting clock drift invert the overhead's sign. The remedies: (1)
+overhead ratios are **PAIRED and INTERLEAVED within each repetition**; (2) sign-class pairs are
+compared **per attempt**, never per call; (3) every timed block is followed by a **success-path
+assertion**; (4) attempt counters are checked to actually track their loop; (5) an untimed
+**warm-up** precedes the first measurement. `bench_mldsa_compare` exits non-zero if any of these
+fails; the rejection gate above is the same discipline for the acceptance rate.
+⚠️ **THOSE FIVE ARE `bench_mldsa_compare`'s DESIGN — "in every benchmark" was FALSE and stood
+here until 2026-09-11** (relayed critique RIGHT, verified in source). Only `bench_mldsa_compare`
+(`PAIR_RATIO`/`PAIR_RATIO_ATT`) and `bench_las_consensus` alternate a pair within a repetition.
+**`bench_levels` — the PRIMARY driver behind `\ovPreSign` & co. — does NOT**: it gates the whole
+success contract **once before** timing, times each operation in its own `MEASURE` block, and
+prints `100*(presign_mean − sign_mean)/sign_mean`, i.e. **per call, from separately timed means,
+with no warm-up declared**; its per-attempt line is labelled a *diagnostic*. `bench_classical`
+is the **same shape**, so the two sides of `tab:classical` are formed alike — **the classical
+comparison differs by BOUNDARY, not by timing method**, and calling `\ovPreSign` "paired,
+interleaved" is an unwarranted claim wherever it appears (report caption, generator comment and
+deck slide all carried it; all three fixed). "Paired" alone is fine — it means each adaptor
+operation is **matched to the base operation it mirrors**, which is what `sec:benchmethod` says.
+⚠️ **This is a documentation fix, NOT a benchmark change** (Royce, 2026-09-11: if neither is
+interleaved, neither gets made interleaved) — the M10 freeze stands, so do not "harmonise" the
+drivers. It does mean the drift the fourth fault names is **uncancelled in the Stage-1 overheads**,
+which is the already-recorded ~1–2 point run-to-run movement, not a new finding.
 
 ## Status — what exists today
 
@@ -1556,6 +1583,15 @@ any of it.
    quote one evidence run (`--check` fails when stale; **edit the template, never the
    output**; re-run after every `sync_report.sh`). Bar geometry is derived from the same
    macros as the labels, so a width cannot drift from its number.
+   ⚠ **THE DECK NOW LIVES IN FIGMA (Royce, 2026-09-11):
+   `https://www.figma.com/design/8Vs37oLXZw8x3z6T5mA1j4` — inspect and edit it through the Figma
+   MCP (`get_metadata` / `get_screenshot` / `use_figma`), never by grepping the HTML.** Slides are
+   top-level frames named `NN · …` on page `0:1` (e.g. `281:1158` = "08 · Result: cost in time",
+   whose caption `281:1181` carried "paired interleaved runs" until 2026-09-11). Consequences:
+   it is **hand-built and literal** — no generator, so `gen_slides.py --check` and
+   `check_deck_subset.py` see none of it; after any re-run or report wording change, **sync its
+   figures and claims by hand and re-grep the HTML decks too**, which still exist and still carried
+   the same false claim (four copies, all fixed the same day).
    ⚠ **UoM FORMAT LIVES IN THE HTML DECK — a .pptx conversion was built and REJECTED (Royce,
    2026-08-19).** `video_deck_uom.pptx` + `scripts/gen_slides_pptx.py` survive **only** as a
    fallback if a submission demands PowerPoint: never recorded, never edited, stale the moment
@@ -2178,6 +2214,15 @@ captions, figure labels — never one in isolation):
   *honest* `r'`. ⚠ **`fig:lasfuncs` must carry the response `ẑ = y + c·r` (Step 5)**: it was
   missing until 2026-08-21, so the panel named an output it never computed — a figure that
   states a function's inputs, bound and output must state the line producing that output.
+  ⚠️ **THE RULE IS VIOLATED IN THE SHIPPED REPORT — §2.1 OBEYS IT, §2.7 DOES NOT**
+  (2026-09-11, relayed critique RIGHT). §2.1 and `fig:lasfuncs` use `r'`, and
+  `02-methodology.tex:164` even carries a comment reserving `y` for the mask — while
+  **§2.7, `fig:swapflow` and `fig:evmtx` call the witness `y`**, and `fig:swapflow` writes
+  Bob's extracted value `y'` where the rule says **`s`**. So one chapter gives one object
+  two names and drops the third symbol entirely. ⚠️ **A REPORT-ONLY FIX IS OVERWRITTEN**:
+  the row `Witness $y$ (LAS only)` is emitted by `gen_report_data.py` into
+  `generated/tab_complete_target.tex`, so **fix the generator in the same edit** or the
+  next `sync_report.sh` restores it.
 
 **⚠️ IN-TEXT CITATIONS ARE IEEE, AND THE NUMBER IS NEVER A WORD** (Royce, 2026-09-01;
 swept report-wide). Author-prominent mentions are **`Esgin et al.\ \cite{...}`** — never a

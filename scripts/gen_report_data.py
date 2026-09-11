@@ -548,9 +548,13 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     # plain ECDSA Sign, its adaptor PreVerify over plain Verify -- which is what makes
     # the two comparable: each scheme's adaptor layer against its own base.
     # DERIVED, and from the classical side's single mixed native-API tier rather than
-    # the paired, interleaved measurement behind \ovPreSign: quote as a ratio of
-    # published means, never as a paired overhead, and never mix the two tiers'
-    # numbers in one sentence without saying so.
+    # the core/packed tiers behind \ovPreSign: never mix the two tiers' numbers in one
+    # sentence without saying so.  The DIFFERENCE IS THE BOUNDARY, NOT THE TIMING
+    # METHOD: bench_levels.c times each operation in its own block and prints
+    # 100*(presign_mean - sign_mean)/sign_mean, exactly as these two lines divide two
+    # separately measured classical means, so neither side is drift-cancelled.  Only
+    # bench_mldsa_compare.c and bench_las_consensus.c alternate the pair within a
+    # repetition -- do not describe \ovPreSign as a paired, interleaved measurement.
     m.append(("clOvPreSignX", "%.1f" % (classical["PreSign"][0] / classical["Sign"][0])))
     m.append(("clOvPreVerifyX", "%.1f" % (classical["PreVerify"][0] / classical["Verify"][0])))
     # --- Adapt decomposition (the supervisor-requested explanation of the ~270x
