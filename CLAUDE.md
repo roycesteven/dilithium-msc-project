@@ -603,18 +603,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-11 11:53 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-11 11:55 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`main`** · HEAD 5050009 · 2026-09-11 · fix report audit findings
-- Working tree: 26 modified tracked file(s), 39 untracked path(s) · vs `origin/main`: 1 ahead, 0 behind
+- Branch **`main`** · HEAD 43e203e · 2026-09-11 · Fix report audit findings: citations, scope, notation, figure scale
+- Working tree: 0 modified tracked file(s), 0 untracked path(s) · vs `origin/main`: 2 ahead, 0 behind
 - Recent commits:
+  - `43e203e 2026-09-11 Fix report audit findings: citations, scope, notation, figure scale`
   - `5050009 2026-09-11 fix report audit findings`
   - `44ddb5a 2026-09-11 Repair abstract sentence, rebuild report and word count`
   - `893f541 2026-09-07  slide 1`
   - `e207aab 2026-09-07  7/9 8:14 am`
-  - `889b130 2026-09-05  report super final 5/9 3:02 pm`
 
 ### Target parameter set — anchors parsed from source
 
