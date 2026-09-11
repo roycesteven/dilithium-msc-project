@@ -485,7 +485,6 @@ $(n+\ell)\,d$ pass:
   \label{eq:rejacc}
   p_{\mathrm{acc}}
   = \left(\frac{2(\gamma-\kappa)+1}{2\gamma+1}\right)^{(n+\ell)d}
-  \approx \left(1-\frac{\kappa}{\gamma}\right)^{(n+\ell)d}
   \approx e^{-\kappa (n+\ell) d/\gamma} = e^{-1}\approx 36.8\%,
 \end{equation}
 the last step using the design choice $\gamma=\kappa\,d\,(n+\ell)$ from
@@ -581,7 +580,7 @@ every configuration and any measured difference is the cryptography, not the led
 a model, not a node; the boundary is set out in \cref{app:utxomodel}.
 
 \paragraph{The protocol that is executed.}
-\Cref{fig:swapflow} is the run book implemented by the driver. Alice, $u_1$ in \cite{esgin2020post}, holds the witness $y$ and therefore moves first;
+\Cref{fig:swapflow} is the run book implemented by the driver. Alice, $u_1$ in \cite{esgin2020post}, holds the witness $r'$ and therefore moves first;
 % Configuration 1 carries NO pi (backend.rs: RoleAProof::NotRequired), and protocol.rs
 % generates and verifies one only under RoleAProof::Required -- PreVerify runs in all
 % three.  Unscoped, this sentence contradicted tab:configs, which makes config 1's
@@ -641,15 +640,15 @@ transaction bytes.
     \draw[lane] (86mm,7mm) rectangle (122mm,-92mm);
 
     \node[actor, fill=orange!10, draw=orange!60!black] (u1) at (0mm,0mm)
-      {Alice wallet\\$(u_1)$ knows $y$};
+      {Alice wallet\\$(u_1)$ knows $r'$};
     \node[actor, fill=blue!7, draw=blue!55!black] (ledgers) at (52mm,0mm)
       {UTXO ledgers\\settle spends};
     \node[actor, fill=yellow!13, draw=yellow!55!black] (u2) at (104mm,0mm)
-      {Bob wallet\\$(u_2)$ extracts $y'$};
+      {Bob wallet\\$(u_2)$ extracts $s$};
 
     \node[off] (m1) at (0mm,-20mm)
       {\textbf{1. off-chain}\\
-       Gen $(Y,y)$; prove $\pi$\\
+       Gen $(Y,r')$; prove $\pi$\\
        \textsc{PreSign} $\hat{\sigma}_1$};
     \node[off] (m2) at (104mm,-20mm)
       {\textbf{2. off-chain}\\
@@ -661,7 +660,7 @@ transaction bytes.
 
     \node[local] (adapt2) at (0mm,-49mm)
       {\textsc{Adapt} $\hat{\sigma}_2$\\
-       with $y \to \sigma_2$};
+       with $r' \to \sigma_2$};
     \draw[flow]
       (m2.south) -- (104mm,-36mm) -- node[payload, above=1mm]
       {$\hat{\sigma}_2,\mathit{tx}_2$ template} (0mm,-36mm) -- (adapt2.north);
@@ -675,7 +674,7 @@ transaction bytes.
       {publish\\$\mathit{tx}_2+\sigma_2$} (chain2.west);
 
     \node[local] (extract) at (104mm,-49mm)
-      {\textsc{Extract} $y'$\\
+      {\textsc{Extract} $s$\\
        \textsc{Adapt} $\hat{\sigma}_1 \to \sigma_1$};
     \draw[flow] (chain2.east) -- node[payload, above=1mm]
       {read\\$\sigma_2$} (extract.west);
@@ -702,7 +701,7 @@ Of the adaptor-protocol objects exchanged by
 the swap, only the adapted signature $\sigma$ reaches a ledger, occupying the slot in
 which an ordinary signature already appears: since SegWit
 \cite{bip141}, a segregated \emph{witness} field. The statement $Y$, the proof $\pi$ and
-both pre-signatures stay off-chain, while the witness $y$ is never transmitted: $u_2$
+both pre-signatures stay off-chain, while the witness $r'$ is never transmitted: $u_2$
 derives it from the published $\sigma$ and its own pre-signature. The construction
 therefore adds \emph{no adaptor-specific on-chain field} --- what \emph{scriptless}
 means: the swap condition need not appear as a separate on-chain script. The resulting
@@ -755,7 +754,9 @@ and the settled transaction. Conflating them would misreport communication cost.
   role-A proof is a finding, not an omission: an ECDSA adaptor has no knowledge
   gap, since extraction recovers the discrete logarithm exactly, so the unmodified
   \texttt{secp256k1-zkp} construction needs no $\pi$, and adding one would have
-  measured a modified baseline, not the library as it stands. The DLEQ proof
+  measured a modified baseline, not the library as it stands. Configuration~2 proves with
+  Groth16 \cite{Groth_2016} and configuration~3 with LaZer \cite{lazer}.
+  The discrete-logarithm-equality (DLEQ) proof
   carried \emph{inside} its pre-signature is a different object and is not counted as
   $\pi$: its author is the pre-signer, and its claim is pre-signature well-formedness,
   not knowledge of the role-A statement witness $r'$. Its cost is included in the bytes

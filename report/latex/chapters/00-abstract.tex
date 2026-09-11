@@ -34,8 +34,8 @@ Many blockchains authenticate transactions with elliptic-curve digital signature
 computer would break. Basic post-quantum digital signatures are now standardised, but the
 \emph{exotic} ones behind blockchains' advanced features, among them the \emph{adaptor
 signatures} that make swaps and payment channels scriptless, remain unevenly implemented
-in the post-quantum setting. This dissertation implements one of them, LAS, by adding an
-adaptor layer and a wire encoding to the unmodified CRYSTALS-Dilithium reference
+in the post-quantum setting. This dissertation implements one of them, the lattice-based
+adaptor signature (LAS), by adding an adaptor layer and a wire encoding to the unmodified CRYSTALS-Dilithium reference
 primitives, cross-validated by a second, independent implementation reproducing the wire
 format and a pinned known-answer value byte for byte, and demonstrates it in a
 post-quantum atomic swap.

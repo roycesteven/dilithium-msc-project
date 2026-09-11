@@ -36,7 +36,7 @@ swap atomic. Clauses~5--6 are robustness, clause~7 reproducibility.
     4 & Extract recovers the witness \emph{exactly} ($s=r'$) & pass \\
     5a & a tampered message fails Verify & pass \\
     5b & a low-bit flip in each of the \tamperFlips{} packed-signature bytes is rejected & pass \\
-    6 & malformed bytes rejected on decode ($pk\!\ge\!Q$, ternary code-3), out-of-range objects on encode ($z$, non-ternary secret) & pass \\
+    6 & malformed bytes rejected on decode ($pk\!\ge\!q$, ternary code-3), out-of-range objects on encode ($z$, non-ternary secret) & pass \\
     7 & the deterministic API is byte-identical on re-run & pass \\
     \bottomrule
   \end{tabular}
@@ -100,10 +100,8 @@ PreSign ($+\ovPreSign\%$ over Sign) runs the same reject loop, adding only $Y$ t
 commitment and a tighter bound; PreVerify ($+\ovPreVerify\%$) recomputes the same
 commitment shape with the extra $+Y$; Adapt ($+\ovAdapt\%$) runs a PreVerify then adds
 the witness vector; Extract merely subtracts $s=z-\hat z$ and checks $A\,s=Y$. None changes
-the asymptotic work. \emph{At the core tier} adaptor functionality is single-digit at the
-target setting and stays within $+\ovMaxAll\%$ across the parameter sweep. The supporting sensitivity plot is
-deferred to Appendix~\ref{app:compute-support}, where \cref{fig:overhead} records the
-same comparison across all four parameter sets. Adapt and Extract cost about a
+the asymptotic work. Across the parameter sweep the core-tier overhead stays within
+$+\ovMaxAll\%$ (\cref{fig:overhead}, appendix). Adapt and Extract cost about a
 verification or less each (\cref{tab:overhead-l3}).
 
 At the packed boundary the premium grows to $+\packedOvPreSign\%$,
@@ -286,8 +284,10 @@ differences.
   single mixed native-API tier. On both sides the adaptor overhead is a ratio of
   separately timed means, so neither figure cancels clock drift between the two
   operations it compares. The corresponding LAS figures are the
-  byte-tier ones, $+\packedOvPreSign\%$ for PreSign and $+\packedOvPreVerify\%$ for
-  PreVerify, that tier being the more conservative of the two reported for LAS.}
+  byte-tier ones \emph{at the target setting}, $+\packedOvPreSign\%$ for PreSign and
+  $+\packedOvPreVerify\%$ for PreVerify --- \emph{Simplified Dilithium-III}, not the
+  Dilithium-II setting of this table, so they are not recoverable from the rows above ---
+  that tier being the more conservative of the two reported for LAS.}
   \label{tab:classical}
   \small
   \input{generated/tab_classical}
@@ -416,10 +416,10 @@ tier the signature workload is not the bottleneck.
 \begin{table}[htbp]
   \centering
   \caption[Per-phase execution time of the swap]{Per-phase execution time of one
-  complete swap, mean $\pm$ sample SD over \stageTwoRuns{} swaps
+  complete swap, mean over \stageTwoRuns{} swaps (per-phase dispersion is not shown)
   % Run metadata is not printed: Stage-2 evidence run = \stageTwoRunId{}
-  ($\mu$s; \stageTwoCpu{}). Unlike the Stage-1 tables, these timings are the \emph{Rust}
-  implementation's: the Stage-2 driver is a Rust program built on the port of
+  ($\mu$s; \stageTwoCpu{}). Unlike the standalone-signature tables, these timings are the
+  \emph{Rust} implementation's: the swap driver is a Rust program built on the port of
   \cref{sec:rustport}. Dashes mark phases a
   configuration does not have. End-to-end is context, not the headline.}
   \label{tab:stage2-time}
@@ -583,7 +583,7 @@ regtest, the swap leg on the node carrying the experimental rule.
     \node[off, anchor=north] at (35mm,-72mm)
       {\textbf{Never on chain:} statement $Y$ (\cfgThreeMsgY\,B), proof $\pi$, both
        pre-signatures $\hat{\sigma}_1,\hat{\sigma}_2$ --- exchanged off-chain only.
-       \textbf{Never transmitted at all:} the witness $y$, which $u_2$ recovers as $y'$
+       \textbf{Never transmitted at all:} the witness $r'$, which $u_2$ recovers as $s$
        from the published $\sigma$ and its own $\hat{\sigma}_2$ via \textsc{Ext}.};
   \end{tikzpicture}
   \caption[Standard payment versus adaptor swap settlement]{Two \emph{mined}
@@ -628,7 +628,7 @@ charged on) only \btcMeasVsizeRatio$\times$, a post-quantum signature being
 penalty; on the original structure the same settlement would pay the undiscounted rate
 throughout. It has no counterpart
 % Keep the venue argument on transaction weight; gas is handled in sec:res-evm.
-on the EVM, where calldata carries no
+on the Ethereum Virtual Machine (EVM), where calldata carries no
 comparable discount; \cref{sec:res-evm} measures what a gas-metered venue charges.
 
 \paragraph{It fits the weight limits, not the element-size or verification rules.}
@@ -705,7 +705,7 @@ conclusion stands; the exercise is functional, with no security argument (\cref{
   the baseline verifier's bar crosses it, while
   the restructured path (same scheme, same predicate under the registration
   invariant of \cref{tab:onchain}, different expression) falls below. All four bars
-  come from one \texttt{--gas-report} table and so are mutually comparable; the
+  come from one \texttt{-{}-gas-report} table and so are mutually comparable; the
   under-the-cap claim itself rests on the separate real-client run described in
   \cref{tab:onchain}.}
   \label{fig:onchain}
@@ -741,7 +741,7 @@ a gas-metered venue charges for the same verification.
       {\texttt{data}\\LAS signature and verifier inputs\\\gasOptCalldata\,B};
     \node[off] (e4) at (60mm,-49mm)
       {off-chain only: $Y$, $\pi$, $\hat{\sigma}_1$, $\hat{\sigma}_2$\\
-       never transmitted at all: the witness $y$};
+       never transmitted at all: the witness $r'$};
   \end{tikzpicture}
   \caption[The claim transaction on the EVM]{The same settlement on Ethereum: the claim
   transaction of the client run in \cref{tab:onchain}, read against the UTXO counterpart
@@ -776,13 +776,15 @@ transaction against the UTXO counterpart in \cref{fig:txstruct}.
 \begin{table}[!htbp]
   \centering
   \caption[On-chain settlement gas: classical vs.\ post-quantum]{On-chain gas for the
-  swap's claim step, measured on a local EVM (\texttt{forge\ --gas-report}); EVM gas is
+  swap's claim step, measured on a local EVM (\texttt{forge\ -{}-gas-report}); EVM gas is
   deterministic for fixed bytecode, revision, inputs and state. \textbf{These are the
-  \texttt{--gas-report} charge for each claim path, not transaction totals and not
+  \texttt{-{}-gas-report} charge for each claim path, not transaction totals and not
   client measurements}: they come from one table and are therefore comparable with
   \emph{each other}, but they are not directly comparable with a receipt, which is
-  measured by a real client at a different accounting boundary and additionally carries
-  the 21{,}000 intrinsic charge and the transaction's EIP-7623 calldata cost. The
+  measured by a real client at a different accounting boundary: a receipt adds the
+  21{,}000 intrinsic charge and the transaction's EIP-7623 calldata cost, but is taken
+  over different execution state, so it bounds these rows in neither direction --- the
+  measured receipt is in fact the smaller number. The
   under-the-cap claim in the text therefore rests on the client receipt of
   \gasOptReceipt{} gas, never on this table.
   The floor path performs \emph{no} lattice verification and is a strict lower bound;
@@ -852,6 +854,6 @@ rather than a node (\cref{app:utxomodel}): real transaction objects, real serial
 and the real leak channel atomicity depends on, but no fees or confirmation latency, so
 its byte counts are a model-level communication measure; \cref{sec:res-txstruct}
 separately reports Bitcoin's fee-relevant virtual size. That limit belongs to the venue, not the study: configurations~2 and~3 need a consensus change, built and run in
-\cref{app:btcnode}. Finally, the Stage-2 timings come from a single desktop machine
+\cref{app:btcnode}. Finally, the swap timings come from a single laptop machine
 (\stageTwoCpu{}), so performance on mobile or other constrained hardware was not
 measured.

@@ -607,7 +607,7 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     if onchain:
         cap = 16_777_216
         def g(k):
-            return "{:,}".format(onchain[k]).replace(",", "\\,")
+            return "{:,}".format(onchain[k]).replace(",", "{,}")
         m.append(("gasClassical", g("claimClassical")))
         m.append(("gasLasFloor", g("claimLAS")))
         m.append(("gasLasVerified", g("claimLASVerified")))
@@ -633,21 +633,21 @@ def emit_macros(out, meta, proto, params, timing, over, rej, comm, classical,
     # The one-transaction result, from a real client's receipt (NOT the harness).
     if onetx:
         cap = 16_777_216
-        m.append(("gasOptReceipt", "{:,}".format(onetx["gasUsed"]).replace(",", "\\,")))
+        m.append(("gasOptReceipt", "{:,}".format(onetx["gasUsed"]).replace(",", "{,}")))
         m.append(("gasOptCapPct", "%.1f" % (100.0 * onetx["gasUsed"] / cap)))
         m.append(("gasOptHeadroom",
-                  "{:,}".format(cap - onetx["gasUsed"]).replace(",", "\\,")))
+                  "{:,}".format(cap - onetx["gasUsed"]).replace(",", "{,}")))
         m.append(("gasOptCalldata",
-                  "{:,}".format(onetx["calldata"]).replace(",", "\\,")))
+                  "{:,}".format(onetx["calldata"]).replace(",", "{,}")))
 
     # The same accounting one parameter set down (harness, one instance).
     if onchain_d2:
         cap = 16_777_216
         m.append(("gasDTwoTotal",
-                  "{:,}".format(onchain_d2["total"]).replace(",", "\\,")))
+                  "{:,}".format(onchain_d2["total"]).replace(",", "{,}")))
         m.append(("gasDTwoCapPct", "%.0f" % (100.0 * onchain_d2["total"] / cap)))
         m.append(("gasDTwoHeadroom",
-                  "{:,}".format(onchain_d2["headroom"]).replace(",", "\\,")))
+                  "{:,}".format(onchain_d2["headroom"]).replace(",", "{,}")))
     # Rust port (protocol driver mirrors the C driver; Criterion is the
     # statistical harness)
     m.append(("rustOvPreSign", pct(rust_over["PreSign vs Sign"])))
@@ -734,7 +734,7 @@ def emit_tab_overhead_target(out, meta, timing, over, packed_t, packed_over):
           % mean_sd(t["Ext"]))
     b += "  \\midrule\n"
     b += ("  \\multicolumn{4}{@{}l}{\\textit{Packed tier (wire bytes "
-          "in/out --- incl.\\ decode + encode)}} \\\\\n")
+          "in/out --- includes\\ decode and encode)}} \\\\\n")
     b += ("  KeyGen             & %s & %s (shared) & --- \\\\\n"
           % (mean_sd(p["KeyGen"]), mean_sd(p["KeyGen"])))
     b += ("  Sign / PreSign     & %s & %s & $+%s\\%%$ \\\\\n"
@@ -780,7 +780,10 @@ def emit_tab_components(out, meta, params, comm):
     b += "  Public key $pk$          & %s \\\\\n" % b3("pk = t")
     b += "  Secret key $sk$          & %s \\\\\n" % b3("sk = r")
     b += "  Statement $Y$ (LAS only) & %s \\\\\n" % b3("Y = t'")
-    b += "  Witness $y$ (LAS only)   & %s \\\\\n" % b3("r'")
+    # The witness is r' everywhere else in the report (sec:construction, tab:contract);
+    # emitting "$y$" here made tab:complete-l3 the one place that renamed it, and y is
+    # reserved for the signing mask.
+    b += "  Witness $r'$ (LAS only)  & %s \\\\\n" % b3("r'")
     b += "  Pre-signature (LAS only) & %s \\\\\n" % b3("pre-signature (c,z_hat)")
     b += "  \\bottomrule\n\\end{tabular}\n"
     (out / "tab_components.tex").write_text(b)
@@ -796,7 +799,7 @@ def emit_tab_complete_target(out, meta, comm):
         ("Signature", "$(\\tilde c,z)$", c["signature (c,z)"],
          "yes (basic signature)"),
         ("Statement", "$Y=t'$", c["Y = t'"], "LAS only (public)"),
-        ("Witness", "$y=r'$", c["r'"], "LAS only (private)"),
+        ("Witness", "$r'$", c["r'"], "LAS only (private)"),
         ("Pre-signature", "$(\\tilde c,\\hat z)$", c["pre-signature (c,z_hat)"],
          "LAS only"),
         ("Adapted signature", "$(\\tilde c,z)$", c["final adapted sig (c,z)"],
@@ -885,7 +888,7 @@ def parse_pi_params(path):
         die("ref/relation_zk_params.h reports %s KiB, which is not a whole number of "
             "bytes -- the unit in that header may not be KiB after all" % sz.group(1))
     return {"knowledge_error": ("%g" % float(ke.group(1))),
-            "proof_bytes": "{:,}".format(int(round(b))).replace(",", "\\,")}
+            "proof_bytes": "{:,}".format(int(round(b))).replace(",", "{,}")}
 
 
 def parse_onchain_onetx(d):

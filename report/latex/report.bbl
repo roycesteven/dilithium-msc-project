@@ -22,7 +22,10 @@ D.~Moody, R.~Perlner, A.~Regenscheid, A.~Robinson, and D.~Cooper, ``Transition
 \bibitem{1274601}
 {National Institute of Standards and Technology (NIST)}, T.~Dang,
   J.~Lichtinger, Y.-K. Liu, C.~Miller, D.~Moody, R.~Peralta, R.~Perlner, and
-  A.~Robinson, ``Module-lattice-based digital signature standard,'' Aug. 2024.
+  A.~Robinson, ``Module-lattice-based digital signature standard.'' Federal
+  Inf. Process. Stds. (NIST FIPS), National Institute of Standards and
+  Technology, Gaithersburg, MD, Aug. 2024.
+\newblock \url{https://doi.org/10.6028/NIST.FIPS.204}.
 
 \bibitem{ducas2018crystals}
 L.~Ducas, E.~Kiltz, T.~Lepoint, V.~Lyubashevsky, P.~Schwabe, G.~Seiler, and
@@ -134,6 +137,11 @@ P.~Wuille, J.~Nick, and A.~Towns, ``{BIP} 341: Taproot: {SegWit} version 1
   spending rules.'' Bitcoin Improvement Proposal, 2020.
 \newblock \url{https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki}.
 
+\bibitem{Groth_2016}
+J.~Groth, ``On the size of pairing-based non-interactive arguments,'' in {\em
+  Advances in Cryptology – EUROCRYPT 2016}, p.~305–326, Springer Berlin
+  Heidelberg, 2016.
+
 \bibitem{bip342}
 P.~Wuille, J.~Nick, and A.~Towns, ``{BIP} 342: Validation of taproot scripts.''
   Bitcoin Improvement Proposal, 2020.
@@ -160,5 +168,8 @@ T.~Beiko, A.~Stokes, A.~Dietrichs, Nixo, and P.~Jayanthi, ``{EIP-7773}:
   2024.
 \newblock Records which proposals are scheduled for, or declined from, the
   Glamsterdam upgrade. \url{https://eips.ethereum.org/EIPS/eip-7773}.
+
+\bibitem{arkworks}
+arkworks contributors, ``\texttt{arkworks} zk{SNARK} ecosystem,'' 2022.
 
 \end{thebibliography}

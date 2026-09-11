@@ -52,7 +52,7 @@
 \contentsline {paragraph}{The proof, not the signature, dominates execution time.}{40}{section*.33}%
 \contentsline {paragraph}{The controlled comparison: LaZer proves faster, Groth16 proves smaller.}{40}{section*.34}%
 \contentsline {paragraph}{Groth16 does not provide a post-quantum proof layer.}{41}{section*.35}%
-\contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{42}{section*.36}%
+\contentsline {paragraph}{Communication is again the real price, with a usability consequence.}{41}{section*.36}%
 \contentsline {section}{\numberline {3.8}Transaction structure and what a UTXO chain would charge}{42}{section.3.8}%
 \contentsline {paragraph}{The witness discount absorbs more than half of the post-quantum penalty.}{42}{section*.37}%
 \contentsline {paragraph}{It fits the weight limits, not the element-size or verification rules.}{42}{section*.38}%
@@ -96,12 +96,12 @@
 \contentsline {section}{\numberline {A.7}Test types and parameter notation}{72}{section.A.7}%
 \contentsline {section}{\numberline {A.8}Supporting benchmark evidence}{76}{section.A.8}%
 \contentsline {subsection}{\numberline {A.8.1}Computation and rejection-sampling evidence}{76}{subsection.A.8.1}%
-\contentsline {subsection}{\numberline {A.8.2}Complete timing and component tables}{78}{subsection.A.8.2}%
-\contentsline {section}{\numberline {A.9}Auditing the reuse claim}{79}{section.A.9}%
-\contentsline {section}{\numberline {A.10}Selected code listings: PreSign, Adapt and Extract}{80}{section.A.10}%
-\contentsline {section}{\numberline {A.11}Settling on a real node}{82}{section.A.11}%
-\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{83}{section*.55}%
-\contentsline {paragraph}{Verification on a patched node.}{83}{section*.56}%
-\contentsline {paragraph}{A whole swap, not a single spend.}{84}{section*.57}%
-\contentsline {paragraph}{One swap across two kinds of ledger.}{85}{section*.58}%
-\contentsline {paragraph}{What the rule charges a validating node.}{86}{section*.59}%
+\contentsline {subsection}{\numberline {A.8.2}Complete timing and component tables}{80}{subsection.A.8.2}%
+\contentsline {section}{\numberline {A.9}Auditing the reuse claim}{80}{section.A.9}%
+\contentsline {section}{\numberline {A.10}Selected code listings: PreSign, Adapt and Extract}{81}{section.A.10}%
+\contentsline {section}{\numberline {A.11}Settling on a real node}{84}{section.A.11}%
+\contentsline {paragraph}{Carriage on stock Bitcoin Core.}{84}{section*.55}%
+\contentsline {paragraph}{Verification on a patched node.}{85}{section*.56}%
+\contentsline {paragraph}{A whole swap, not a single spend.}{85}{section*.57}%
+\contentsline {paragraph}{One swap across two kinds of ledger.}{86}{section*.58}%
+\contentsline {paragraph}{What the rule charges a validating node.}{87}{section*.59}%

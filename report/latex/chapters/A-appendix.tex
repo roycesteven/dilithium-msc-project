@@ -30,6 +30,16 @@ libraries were used unmodified and at those pinned commits, not at their current
 branches. The C toolchain was the system compiler (\texttt{cc}, Ubuntu GCC 13.3.0) at
 \texttt{-O3}; the Rust toolchain was stable \texttt{rustc}, version 1.96.0 for the reported
 run, in release profile.
+% MACHINE OF RECORD.  sec:benchmethod and tab:overhead-l3 both send the reader here for
+% it, and until 2026-09-11 this section named only the toolchain, so the trail dead-ended.
+% CPU, core count and OS are read from the run's own metadata.txt; the memory figure is
+% NOT in that record and was read from the same machine afterwards (same host name and
+% same WSL2 kernel build), which is why it is stated as the guest allocation rather than
+% as part of the captured run.
+All reported timings were measured on one machine: an AMD Ryzen~7 7745HX (16 cores) running
+Ubuntu 24.04 under WSL2, with 7.4\,GiB of memory allocated to the Linux guest. It is a
+laptop part, and no attempt was made to pin frequency or isolate cores, so the repetition
+and variance reporting of \cref{app:benchalg} carries that noise rather than removing it.
 
 \paragraph{What was executed.}
 The first-stage evaluation ran the parameter-matched base-versus-adaptor benchmark at each
@@ -167,7 +177,7 @@ constructions themselves run in sequence, leaving drift between those two blocks
 
 \paragraph{The Groth16 circuit.}
 No pairing-based proof of this lattice statement was available to reuse, so the
-circuit is new, and it is far cheaper than the statement suggests. The map
+circuit is new; it is proved with \texttt{ark-groth16} 0.4.0 \cite{arkworks}, and it is far cheaper than the statement suggests. The map
 $r' \mapsto A r'$ is linear with public coefficients, so each row is an affine
 combination of witness variables and needs no witness--witness multiplication --- the
 expensive ingredient in a rank-one constraint system. The public linear map is still
@@ -356,7 +366,7 @@ the valid band. That is intentional: there is no decode-time norm test to fail. 
 rejection belongs to Verify, which recomputes the challenge from the decoded response and
 compares digests. Encoding is the strict direction: it refuses a non-ternary secret or
 witness and a response exceeding $\gamma-\kappa$, so the serializer cannot emit an
-out-of-band response, even though one can be handed to the decoder. The byte-level entry point
+out-of-band response, even though one can be handed to the decoder.
 The byte-level verification interface decides the predicate over these bytes, and it --- not the
 decoder --- is what rejects all \tamperFlips{} tampered signatures in
 \cref{sec:res-correctness}.
@@ -631,7 +641,7 @@ geometric model and the validity gate.
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.72\linewidth]{figures/fig_overhead}
+  \includegraphics[width=\linewidth]{figures/fig_overhead}
   \caption[Adaptor overhead across the parameter sets (sensitivity check)]{\small
   Core-tier adaptor overhead across the four parameter sets of \cref{tab:params}.
   PreSign is compared with Sign; PreVerify and Adapt with Verify; Extract is
@@ -642,7 +652,7 @@ geometric model and the validity gate.
 
 \begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.72\linewidth]{figures/fig_rejection_cdf}
+  \includegraphics[width=\linewidth]{figures/fig_rejection_cdf}
   \caption[Cumulative probability of acceptance at the target setting]{\small
   Cumulative acceptance within $k$ rejection-sampling attempts at the target
   setting. Solid curves are the C sample in \cref{tab:rejstats}; dashed curves are
@@ -697,7 +707,7 @@ three Simplified Dilithium parameter sets (with the target setting reported in
 
 \Cref{tab:reuse} gives the per-file classification behind the ``reused vs.\ modified
 vs.\ added'' claim of \cref{sec:impl}. The claim was established by keeping the pristine
-upstream tree on its own branch and diffing it against the project branch: the difference
+upstream tree on its own branch and diffing it against the project branch: the diffs
 below print nothing for the lattice core, which is what makes ``zero upstream functions
 modified'' an auditable statement, not an assertion.
 
@@ -971,7 +981,7 @@ verifies, so there is no early exit to be had on this path. It says nothing abou
 denial-of-service surface more broadly --- malformed inputs take other paths, which were not
 timed. The benchmark was captured as its own evidence run.
 
-Three caveats bound those figures, and they are separate claims. First, the curve baseline is
+Four caveats bound those figures, and they are separate claims. First, the curve baseline is
 a pinned \texttt{libsecp256k1-zkp} --- a fork of \texttt{libsecp256k1} running the same
 verification algorithms, but not the library the patched client links, so these are not
 Bitcoin Core's own numbers. Second, the security of the consensus modification remains

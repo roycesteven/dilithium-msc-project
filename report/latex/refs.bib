@@ -37,6 +37,12 @@
 % rendered as two authors ("National Institute of Standards, Technology (NIST)").
 % NOTE: BibTeX has no comment syntax INSIDE an entry -- these lines must stay
 % outside the braces, where everything between entries is ignored.
+% FIELDS RELOCATED, NOT INVENTED (2026-09-11).  ieeetr.bst prints neither `publisher`
+% (for misc) nor `url` nor `doi`, so this entry rendered as bare author/title/date and a
+% reader could not tell that it is the FIPS 204 standard the text cites by name.  The
+% howpublished and note fields below repeat strings ALREADY IN this entry; nothing is
+% added.  Crossref's record for the DOI was checked first and is near-empty (no title, no
+% author), so it is not a better source.
 @misc{1274601,
   author = {{National Institute of Standards and Technology (NIST)} and Thinh Dang and Jacob Lichtinger and Yi-Kai Liu and Carl Miller and Dustin Moody and Rene Peralta and Ray Perlner and Angela Robinson},
   title = {Module-Lattice-Based Digital Signature Standard},
@@ -46,6 +52,8 @@
   url = {https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=958463},
   doi = {https://doi.org/10.6028/NIST.FIPS.204},
   language = {en},
+  howpublished = {Federal Inf. Process. Stds. (NIST FIPS), National Institute of Standards and Technology, Gaithersburg, MD},
+  note = {\url{https://doi.org/10.6028/NIST.FIPS.204}},
 }
 
 
@@ -321,4 +329,51 @@
   year={2021},
   doi={10.1007/978-3-662-64331-0_7},
   publisher={Springer Berlin Heidelberg}
+}
+
+
+%% ---------------------------------------------------------------------------
+%% Added 2026-09-11.  Both entries are taken from the source, not composed here.
+%%
+%% Groth_2016: retrieved by DOI content negotiation --
+%%   curl -sL -H "Accept: application/x-bibtex" \
+%%        "https://doi.org/10.1007/978-3-662-49896-5_11"
+%%   which redirects (302) to api.crossref.org/v1/works/.../transform and returns
+%%   content-type: application/x-bibtex.  Field values below are byte-identical to
+%%   that response (sha256 179d3602...72982); only line breaks were added.
+%%
+%% arkworks: the BibTeX template the arkworks organisation publishes for citing
+%%   its libraries, reproduced verbatim from its README.  ark-groth16 0.4.0 is the
+%%   Groth16 prover this project builds configuration 2 on.
+%%
+%% NOT ADDED, deliberately: EIP-7825 and EIP-7623.  Neither has a DOI, neither is
+%%   served as BibTeX by content negotiation, and eips.ethereum.org publishes no
+%%   .bib endpoint -- only a prose "Please cite this document as" string.  No
+%%   source-provided entry therefore exists, so none is invented.  (Note that the
+%%   pre-existing eip8051 and eip7773 entries above ARE transcriptions of that
+%%   prose string, so they do not meet this standard either.)
+%% ---------------------------------------------------------------------------
+
+@incollection{Groth_2016,
+  title={On the Size of Pairing-Based Non-interactive Arguments},
+  ISBN={9783662498965},
+  ISSN={1611-3349},
+  url={http://dx.doi.org/10.1007/978-3-662-49896-5_11},
+  DOI={10.1007/978-3-662-49896-5_11},
+  booktitle={Advances in Cryptology – EUROCRYPT 2016},
+  publisher={Springer Berlin Heidelberg},
+  author={Groth, Jens},
+  year={2016},
+  pages={305–326}
+}
+
+% TYPE ADAPTED, FIELDS VERBATIM: arkworks publishes this as software (a biblatex type).
+% ieeetr.bst does not define software and drops the entry with a warning, so the type
+% token -- and only the type token -- is misc here.  zkSNARK is brace-protected because
+% the style lowercases titles; the string itself is the template's.
+@misc{arkworks,
+  author = {arkworks contributors},
+  title = {\texttt{arkworks} zk{SNARK} ecosystem},
+  url = {https://arkworks.rs},
+  year = {2022},
 }

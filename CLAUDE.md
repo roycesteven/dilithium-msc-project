@@ -384,6 +384,15 @@ the base signature.** Results/evaluation must lead with this
   12pt type at **~8.3pt** beside a 12pt paragraph, and the gate stayed green. Both are removed;
   `fig:evmtx`'s 104mm boxes fit the 145mm text width unscaled, so nothing had to be rewrapped.
   **Grep for `\scalebox` and for `width=0.<n>\linewidth` — the gate will never flag either.**
+  ⚠️ **SECOND INSTANCE, FOUND ONLY BY THAT GREP (2026-09-11): `fig:overhead` and `fig:rejcdf`
+  shipped at `width=0.72\linewidth`** — 12pt interior type painted at ~8.6pt while
+  `check_figure_type.py` reported both `12.0 OK`, because it reads the file and not the page.
+  Fixed to `\linewidth` (+1 page, no new exhibit-only page). **Run that grep every time; two
+  separate sessions have now shipped this, and no gate in the repo can catch it.**
+  ⚠️ Related correction: **five appendix captions DO use `\small`** (`tab:rejstats`,
+  `fig:overhead`, `fig:rejcdf`, `tab:timing`, `tab:components`), so the float-page rule's
+  "captions here are set at BODY size" is true of the other 27 captions only. Left as they
+  are — a deliberate local choice for dense supporting material, and Royce's call to unify.
   ⚠️ `fig:onchain` no longer takes a text-free page — see the float-page rule below.
   ⚠️ **The family name does NOT pin the face, and BOLD is a VISUAL-WEIGHT/WIDTH defect —
   not a size defect** (2026-08-28, `fig_onchain` rejected as "bigger than the caption and
@@ -594,18 +603,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-11 10:47 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-11 11:53 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD 44ddb5a · 2026-09-11 · Repair abstract sentence, rebuild report and word count
-- Working tree: 6 modified tracked file(s), 0 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`main`** · HEAD 5050009 · 2026-09-11 · fix report audit findings
+- Working tree: 26 modified tracked file(s), 39 untracked path(s) · vs `origin/main`: 1 ahead, 0 behind
 - Recent commits:
+  - `5050009 2026-09-11 fix report audit findings`
   - `44ddb5a 2026-09-11 Repair abstract sentence, rebuild report and word count`
   - `893f541 2026-09-07  slide 1`
   - `e207aab 2026-09-07  7/9 8:14 am`
   - `889b130 2026-09-05  report super final 5/9 3:02 pm`
-  - `0e6da21 2026-09-05 Remove accidental benchmark artifacts and restore rubric`
 
 ### Target parameter set — anchors parsed from source
 
@@ -621,7 +630,7 @@ Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260904_215518` (dir mtime 2026-09-04)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260904_214411` (dir mtime 2026-09-04)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8988** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8984** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -1592,6 +1601,23 @@ any of it.
    `check_deck_subset.py` see none of it; after any re-run or report wording change, **sync its
    figures and claims by hand and re-grep the HTML decks too**, which still exist and still carried
    the same false claim (four copies, all fixed the same day).
+   ⚠ **Structure: 19 frames = 11 slides + build variants, inside SECTION `95:2`; page children are
+   the two sections, NOT the slides** — `currentPage.children.filter(FRAME)` returns nothing.
+   A second section holds superseded drafts.
+   ⚠ **AUDIT IT IN CODE, THEN LOOK — the two find different things** (2026-09-11 pass). In
+   `use_figma`: sweep every visible TEXT for banned wording, for escaping the slide box, and for
+   sibling overlap. That found a real collision (slide 13's ETH line painting through BTC) and two
+   real escapes. But **a bounding-box overrun is NOT a defect and "fixed" one broke a slide**:
+   `×4.6` has ~45px of trailing slack, so nudging it inside a margin threshold hid it behind its
+   own bar — visible only in the render. **Never move a node on box geometry alone; re-render.**
+   ⚠ **A longer string silently rewraps a fixed-width box and the extra line lands under whatever
+   is below it** (slide 08's caption was clipped by the cards; slide 03's closing line crowded the
+   footer). Fix by **widening the box**, never by shrinking type; re-measure `height` after every
+   text change and treat any growth as a wrap.
+   ⚠ **Type floor: the deck's dominant size is 22px (107 runs), but ~94 runs sit below it** and 8
+   are 14–15px (slide 07's scope line, slide 11's field labels, slide 03's source line). Royce's
+   22px floor was set for the HTML deck; applying it here is a **re-layout, so it is his call** —
+   flagged, not changed.
    ⚠ **UoM FORMAT LIVES IN THE HTML DECK — a .pptx conversion was built and REJECTED (Royce,
    2026-08-19).** `video_deck_uom.pptx` + `scripts/gen_slides_pptx.py` survive **only** as a
    fallback if a submission demands PowerPoint: never recorded, never edited, stale the moment
@@ -2234,9 +2260,18 @@ prefer the shorter prepositional form where *who* is not the point. ⚠️ Choos
 noun is a **claim**: it must be the thing that actually does the verb — the *application
 setting* assumes a venue, an *implementation detail* is unprescribed, and neither "LAS" nor
 "the specification" is a safe default (three drafts failed this on 2026-09-01).
-⚠️ **THE LIST IS A SEPARATE QUESTION FROM THE IN-TEXT FORM, and `plain` SORTS ALPHABETICALLY**
-— numbering does **not** follow first appearance (verified 2026-09-02: Aumayr is [1] while
-Shor, the opening citation, renders [23]). That is a real gap against
+⚠️ **THE SWITCH HAS HAPPENED: `report.tex` now loads `ieeetr.bst`, so numbering IS
+first-appearance** (verified 2026-09-11 — Shor, the opening citation, is [1]). Everything
+below is the record of *why*, kept because it says what each style costs; do not quote its
+"`plain` sorts alphabetically" finding as the current state. ⚠️ **`ieeetr` defines no
+`@software` type** — arkworks' own published template uses it, and the entry is dropped with
+a warning unless the type token is changed to `@misc`. ⚠️ **`@inbook` IGNORES `booktitle`**,
+so Crossref's `@inbook` for a EUROCRYPT paper renders with **no venue**; `@incollection` is
+the type whose field set matches. Both are one-token adaptations of a source-provided entry,
+and both are documented above the entry.
+⚠️ **`plain` SORTED ALPHABETICALLY**
+— numbering did **not** follow first appearance (2026-09-02: Aumayr was [1] while
+Shor, the opening citation, rendered [23]). That was a real gap against
 `research_writing_guide.md`'s numerical style (*"in order of appearance"*), but **not
 separately imposed by muthesis.cls or the rubric**: the class records *"no particular rules…
 I would recommend the alpha style"* and rubric 3.1.6 asks only for consistency — so a relayed
@@ -2259,7 +2294,21 @@ record says `Legrow, Jason` and `1--32`; adopting DBLP would have been a regress
 quoted, or the shell reads `<doi>` as a redirection. ⚠️ A cited DOI can be **superseded**:
 TCHES moved `10.13154/…` → `10.46586/…`. ⚠️ **Classic BibTeX has no `%`-style comments inside
 an entry**: `%` is not a database comment character there and may pass through as data,
-potentially breaking the generated LaTeX. Keep comments between entries, above `@type{...}`.
+potentially breaking the generated LaTeX. Keep comments between entries, above the entry.
+⚠️ **AND NO `@` ANYWHERE IN A BETWEEN-ENTRY COMMENT** (cost two failed BibTeX runs,
+2026-09-11): BibTeX scans for `@` and starts a new entry at one, so a comment that merely
+*mentions* `@misc` is parsed as data and silently eats the next entry. Write the type name
+without its sigil.
+⚠️ **STANDING, STRICTER (Royce, 2026-09-11): DO NOT WRITE A BIBLIOGRAPHY ENTRY YOURSELF —
+take the source's own BibTeX.** A publisher's prose *"Please cite this document as…"* string
+is **not** BibTeX and does not satisfy this, so transcribing one into `@misc` is barred.
+Consequence, established by checking every route: **EIP-7825 and EIP-7623 cannot be cited** —
+no DOI, no content negotiation, no `.bib` endpoint, site-level JSON-LD only — so they stay
+**named in text by their canonical identifier and uncited**, which is Royce's call to revisit.
+The pre-existing `eip8051` / `eip7773` entries **are** transcriptions of that prose string and
+so do not meet this standard either; they ship as they are. **Show the raw response** when
+claiming an entry is source-provided (headers + body + sha256): a claim of provenance without
+it was rejected once.
 
 Claim precision for report prose is governed by **EVIDENCE-OR-SILENCE** above — one home, not two.
 

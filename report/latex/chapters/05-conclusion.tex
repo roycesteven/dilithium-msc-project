@@ -80,7 +80,7 @@ Three shortfalls remain beyond the scoped limitations of \cref{sec:eval-limitati
 % from transaction totals and client measurements.  Writing that it "sat far above the cap"
 % flatly puts a charge straight against a per-transaction cap and conflates the two.
 On-chain settlement was measured, then solved narrowly, and still not deployed. The first
-Solidity verifier was charged far above the cap in \texttt{--gas-report} accounting rather
+Solidity verifier was charged far above the cap in \texttt{-{}-gas-report} accounting rather
 than in a mined receipt, and the wrong lesson was drawn from it: the gap was treated as
 % The equivalence IS the same-predicate claim, and tab:onchain records that nothing checks
 % the registration invariant it rests on.  The introduction and ch:evaluation both carry
@@ -91,7 +91,7 @@ target parameter set, for one signature instance and one message length, and onl
 registration invariant no contract checks. What remains unsolved is cost: settlement is
 still far more expensive than a classical claim, and the margin is thin.
 
-The applications remain exploratory, since Stage~2 runs over a ledger model and the
+The applications remain exploratory, since the swap study runs over a ledger model and the
 real-client runs are local. For the UTXO study that is partly forced: Bitcoin Script cannot
 % ⚠ NOT "the costs reported here are estimates": they are MEASUREMENTS over a model ledger
 % (bench_swap, timed over complete swaps), so calling them estimates mislabels the warrant
@@ -153,8 +153,8 @@ had already argued at length.
         small to reach it. What remains open is a proof small at \emph{this} scale.
   \item \textbf{Reduce the cost of one-transaction verification.} Fitting under the cap was
         proposed here and then answered, though only for one signature instance and message
-        length at both measured sets, verification alone at the smaller, with the largest
-        exceeded by derivation. Fitting is not the same as being worth doing: settlement
+        length: a full claim at the target setting, verification alone at the smaller set,
+        and at the largest, one transaction exceeded by derivation. Fitting is not the same as being worth doing: settlement
         remains far above a classical claim, and the hash is the dominant measured term. A
         draft ML-DSA verification precompile covers NIST level~II only \cite{eip8051} and
         was declined from the next scheduled upgrade \cite{eip7773}; it would not verify

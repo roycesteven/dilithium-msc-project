@@ -30,7 +30,7 @@ more. Blockchains, however, depend on \emph{exotic} signatures that add function
 on top of a basic scheme: multi-signatures, aggregate signatures, threshold
 signatures, and \emph{adaptor signatures} (\cref{fig:whynow}). A recent survey documents that their exotic
 counterparts remain unevenly served by practical implementations
-in blockchain settings \cite{buser2023survey}. Turning one such design, the LAS construction of Esgin et al.\ \cite{esgin2020post}, into a tested, measured artefact is the problem this project addresses.
+in blockchain settings \cite{buser2023survey}. Turning one such design, the lattice-based adaptor signature (LAS) of Esgin et al.\ \cite{esgin2020post}, into a tested, measured artefact is the problem this project addresses.
 
 \begin{figure}[htbp]
   \centering
@@ -321,7 +321,7 @@ $(Y,y)$.
 % job is related-work positioning.
 
 \paragraph{Post-quantum adaptor signatures.}
-Esgin et al.\ \cite{esgin2020post} proposed LAS, a lattice-based adaptor signature on a
+Esgin et al.\ \cite{esgin2020post} proposed LAS on a
 Dilithium-style base; it is the design implemented here. Their work
 is primarily theoretical (definitions, a construction and security proofs), leaving
 the practical, benchmarked, blockchain-facing implementation open.
@@ -329,12 +329,16 @@ the practical, benchmarked, blockchain-facing implementation open.
 % about Esgin et al. alone, and IAS itself reports an implementation and an evaluation.
 A second post-quantum route is isogeny-based: Tairi et al.\ \cite{tairi2021post} build IAS
 on CSI-FiSh, prove it secure in the quantum random oracle model, and report an
-implementation with measured costs. Kysil et al.\ \cite{kysil2025poqeth} put basic PQ
+implementation with measured costs. LAS was preferred here because it reuses the
+primitives of a standardised lattice signature. Kysil et al.\ \cite{kysil2025poqeth} put basic PQ
 signature verification on Ethereum, ruling out Dilithium for its key sizes.
 
-% PAGINATION ONLY, and pagination-state-dependent: this paragraph's closing
-% "(\cref{ch:methodology})." was falling alone at the top of the next page.  One extra
-% line on THIS page pulls it back.  ⚠ \enlargethispage acts on whichever page it is
+% PAGINATION ONLY, and pagination-state-dependent.  RE-CHECKED 2026-09-11: the comment
+% here used to describe a paragraph closing "(\cref{ch:methodology})", which now sets on
+% a later page entirely -- the description had gone stale while the command kept working.
+% What it actually does today is keep the LAST line of the preceding related-work
+% paragraph on this page; without it that line orphans above the "Classical baseline"
+% heading.  ⚠ \enlargethispage acts on whichever page it is
 % executed on, so if the widow moves after a content edit this must be re-checked and
 % removed rather than left in place -- it is not a permanent setting.
 \enlargethispage{\baselineskip}
@@ -364,7 +368,7 @@ protocol.
   \item Benchmark LAS fairly (at explicitly stated parameters, with repeated runs and
         reported variance) against a simplified Dilithium baseline at identical
         parameters and a classical ECDSA-adaptor baseline, separating computation from
-        communication cost across the five standard signature metrics.
+        communication cost.
   \item Demonstrate an end-to-end post-quantum atomic swap using the implementation
         (following the protocol of \cite{esgin2020post}, including its
         zero-knowledge proof of knowledge $\pi$) and discuss its feasibility.

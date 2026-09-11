@@ -62,7 +62,21 @@ def fmt_range(value: str) -> str:
     """
     if ".." in value:
         lo, hi = value.split("..", 1)
-        return f"{lo}--{hi}"
+        return f"{_group(lo)}--{_group(hi)}"
+    return _group(value)
+
+
+def _group(value: str) -> str:
+    """Thousands-separate a bare integer; leave anything else untouched.
+
+    The report uses one separator everywhere (the comma, braced so BibTeX-style
+    spacing does not creep in).  This generator used to emit byte counts with no
+    separator at all, which made "80108 B" sit next to "16,413,275 gas" and
+    "2,905 vB" on neighbouring pages.
+    """
+    v = value.strip()
+    if v.isdigit() and len(v) > 4:
+        return f"{int(v):,}".replace(",", "{,}")
     return value
 
 
@@ -110,7 +124,19 @@ def parse(log: str) -> dict:
             cfg["fully_pq"] = mm.group(1)
         if mm := re.search(r"setup:\s*(.+?)\s*\(([^()]+)\)\s*$", block, re.M):
             cfg["setup_kind"] = mm.group(1).strip()
-            cfg["setup_time"] = mm.group(2).strip()
+            # The driver prints full float precision ("1.225142318s").  Ten significant
+            # figures of a one-off setup is false precision in a report, and the bare "s"
+            # runs into the digits, so round to three significant figures and set the unit
+            # off with a space (tex_escape() rewrites backslashes, so no thin space here).
+            # The raw value stays in the evidence log.
+            _st = mm.group(2).strip()
+            if _st.endswith("s") and not _st.endswith("ms"):
+                try:
+                    cfg["setup_time"] = "%.3g s" % float(_st[:-1])
+                except ValueError:
+                    cfg["setup_time"] = _st
+            else:
+                cfg["setup_time"] = _st
 
         if mm := re.search(
             r"Rejection gate:\s*([\d.]+) attempts/PreSign over (\d+) calls\s*\n"

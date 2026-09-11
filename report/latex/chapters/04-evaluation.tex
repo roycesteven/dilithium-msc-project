@@ -103,7 +103,7 @@ is the relative cost of the adaptor layer.
 The demonstration was built in the UTXO setting assumed in \cite{esgin2020post}, then
 measured on the EVM as a gas-metered contrast. A \emph{complete}, validated native LAS
 verifier incurred approximately \gasLasVerifiedM{} million gas for its claim path under
-Foundry's \texttt{--gas-report} accounting. Because this figure is not a transaction
+Foundry's \texttt{-{}-gas-report} accounting. Because this figure is not a transaction
 receipt, it is not directly comparable with the EIP-7825 per-transaction cap.
 
 % The fit claim is conditional on the registration invariant that no contract checks
@@ -129,7 +129,7 @@ on cost, not impossibility.
 % % equivalence holds only under the registration invariant no contract checks (tab:onchain),
 % % which is why that reference stays: without it the caveat has no warrant in this chapter.
 % % The single instance belongs here too: two verifier stages branch on coefficient values.
-% \texttt{--gas-report} charge rather than a transaction receipt. The cap turned out to
+% \texttt{-{}-gas-report} charge rather than a transaction receipt. The cap turned out to
 % bound the \emph{implementation} rather than the scheme: a restructured verifier was mined
 % by a real client inside it, at the target parameter set, for the message length and single
 % signature instance measured, and only under the registration invariant that
@@ -195,7 +195,8 @@ experimental patched consensus rule (\cref{sec:res-txstruct}).
 % belongs in the body rather than an appendix (2026-09-06).
 The threats of \cref{sec:res-validity} bound what the results \emph{mean}, and three further
 limitations belong to the artefact itself, not to the measurement. The EVM verifiers reuse
-lattice primitives from a library its authors describe as not production-ready, so the gas
+lattice primitives from ZKNox's ETHDILITHIUM, which its authors describe as experimental
+and unaudited, so the gas
 figures characterise a numerically-correct verifier rather than a deployable one. The
 hint-free
 construction yields larger keys and signatures than optimised Dilithium: cryptographic
