@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  7 SEP 2026 07:58
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.6.27)  11 SEP 2026 09:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -932,7 +932,7 @@ anchester . ac . uk / about / regulations/$[]\T1/lmr/m/n/12 (-20) )
 ] (./chapters/01-introduction.tex
 Chapter 1.
 
-Overfull \hbox (0.56741pt too wide) in paragraph at lines 97--104
+Overfull \hbox (0.56741pt too wide) in paragraph at lines 97--98
  [][] 
  []
 
@@ -942,7 +942,7 @@ Overfull \hbox (0.56741pt too wide) in paragraph at lines 97--104
 <figures/bitcoin-symbol.pdf, id=455, 108.405pt x 109.1578pt>
 File: figures/bitcoin-symbol.pdf Graphic file (type pdf)
 <use figures/bitcoin-symbol.pdf>
-Package pdftex.def Info: figures/bitcoin-symbol.pdf  used on input line 208.
+Package pdftex.def Info: figures/bitcoin-symbol.pdf  used on input line 202.
 (pdftex.def)             Requested size: 36.98857pt x 37.24474pt.
  [14 <./figures/bitcoin-symbol.pdf>] [15] [16])
 (./chapters/02-methodology.tex [17]
@@ -1127,11 +1127,11 @@ Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 6FCE6D25414024C6FBAEDCC097513172;12047.
  ) 
 Here is how much of TeX's memory you used:
- 29157 strings out of 476182
- 530960 string characters out of 5795595
+ 29155 strings out of 476182
+ 530936 string characters out of 5795595
  2235975 words of memory out of 5000000
  49762 multiletter control sequences out of 15000+600000
- 739118 words of font info for 369 fonts, out of 8000000 for 9000
+ 738989 words of font info for 368 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,13n,87p,1003b,2213s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf/fonts/type1/public/lm/lmbsy10.pfb></usr/share/texmf/fonts/t
@@ -1152,7 +1152,7 @@ hare/texmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public
 exmf/fonts/type1/public/lm/lmtt12.pfb></usr/share/texmf/fonts/type1/public/lm/l
 mtti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/m
 sbm10.pfb>
-Output written on report.pdf (87 pages, 859990 bytes).
+Output written on report.pdf (87 pages, 860135 bytes).
 PDF statistics:
  1880 PDF objects out of 2073 (max. 8388607)
  1423 compressed objects within 15 object streams

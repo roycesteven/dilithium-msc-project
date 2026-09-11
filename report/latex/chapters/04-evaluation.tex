@@ -100,23 +100,41 @@ Absolute per-operation times do not reproduce across the two implementations and
 offered as a comparison between them; what reproduces, and what the conclusions rest on,
 is the relative cost of the adaptor layer.
 
-% tab:onchain's own caption says its rows are --gas-report CHARGES, "not transaction
-% totals and not client measurements", so setting the figure straight against a
-% per-transaction cap conflates the two accounting boundaries that caption separates.
 The demonstration was built in the UTXO setting assumed in \cite{esgin2020post}, then
-measured against a gas-metered venue for contrast. There a \emph{complete}, validated
-native LAS verifier was charged $\approx$\gasLasVerifiedM{} million gas for its claim
-path, beyond the EIP-7825 per-transaction cap, though that figure is a
-% "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and the
-% equivalence holds only under the registration invariant no contract checks (tab:onchain),
-% which is why that reference stays: without it the caveat has no warrant in this chapter.
-% The single instance belongs here too: two verifier stages branch on coefficient values.
-\texttt{--gas-report} charge rather than a transaction receipt. The cap turned out to
-bound the \emph{implementation} rather than the scheme: a restructured verifier was mined
-by a real client inside it, at the target parameter set, for the message length and single
-signature instance measured, and only under the registration invariant that
-\cref{tab:onchain} records as unchecked. The venue decision rests on cost, not on
-impossibility.
+measured on the EVM as a gas-metered contrast. A \emph{complete}, validated native LAS
+verifier incurred approximately \gasLasVerifiedM{} million gas for its claim path under
+Foundry's \texttt{--gas-report} accounting. Because this figure is not a transaction
+receipt, it is not directly comparable with the EIP-7825 per-transaction cap.
+
+% The fit claim is conditional on the registration invariant that no contract checks
+% (tab:onchain), and on the measured parameter set, message length, and signature
+% instance. Two verifier stages branch on coefficient values, so the single-instance
+% scope is load-bearing.
+
+A restructured verifier was subsequently mined by a real client within that cap, at the
+target parameter set, for the measured message length and single signature instance, and
+only under the registration invariant that \cref{tab:onchain} records as unchecked.
+This shows that the native implementation exceeded the practical venue limit, rather than
+that LAS verification is inherently impossible there. The venue decision therefore rests
+on cost, not impossibility.
+
+% % tab:onchain's own caption says its rows are --gas-report CHARGES, "not transaction
+% % totals and not client measurements", so setting the figure straight against a
+% % per-transaction cap conflates the two accounting boundaries that caption separates.
+% The demonstration was built in the UTXO setting assumed in \cite{esgin2020post}, then
+% measured against a gas-metered venue for contrast. There a \emph{complete}, validated
+% native LAS verifier was charged $\approx$\gasLasVerifiedM{} million gas for its claim
+% path, beyond the EIP-7825 per-transaction cap, though that figure is a
+% % "bound the IMPLEMENTATION rather than the scheme" is an equivalence claim, and the
+% % equivalence holds only under the registration invariant no contract checks (tab:onchain),
+% % which is why that reference stays: without it the caveat has no warrant in this chapter.
+% % The single instance belongs here too: two verifier stages branch on coefficient values.
+% \texttt{--gas-report} charge rather than a transaction receipt. The cap turned out to
+% bound the \emph{implementation} rather than the scheme: a restructured verifier was mined
+% by a real client inside it, at the target parameter set, for the message length and single
+% signature instance measured, and only under the registration invariant that
+% \cref{tab:onchain} records as unchecked. The venue decision rests on cost, not on
+% impossibility.
 
 \section{Implementation challenges}
 \label{sec:eval-challenges}

@@ -583,18 +583,18 @@ Mechanics that matter:
 
 ## 🔄 Live project state (auto-generated)
 
-*Regenerated 2026-09-07 08:22 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
+*Regenerated 2026-09-11 09:51 by `scripts/update_claude_context.py`, which only reads files and git metadata — it never builds, tests, or benchmarks, and never estimates a number. Anything it could not parse says (not found).*
 
 ### Repository right now
 
-- Branch **`final-report-audit`** · HEAD e207aab · 2026-09-07 ·  7/9 8:14 am
-- Working tree: 3 modified tracked file(s), 39 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
+- Branch **`final-report-audit`** · HEAD 893f541 · 2026-09-07 ·  slide 1
+- Working tree: 7 modified tracked file(s), 0 untracked path(s) · vs `origin/final-report-audit`: 0 ahead, 0 behind
 - Recent commits:
+  - `893f541 2026-09-07  slide 1`
   - `e207aab 2026-09-07  7/9 8:14 am`
   - `889b130 2026-09-05  report super final 5/9 3:02 pm`
   - `0e6da21 2026-09-05 Remove accidental benchmark artifacts and restore rubric`
   - `4465a86 2026-09-05 report final 1cd`
-  - `24abd32 2026-09-05 report final 1`
 
 ### Target parameter set — anchors parsed from source
 
@@ -610,7 +610,7 @@ Mechanics that matter:
 - On-chain gas (EVM): `evidence/onchain/latest` → `20260904_215518` (dir mtime 2026-09-04)
 - Criterion micro-bench: `evidence/criterion/latest` → `20260904_214411` (dir mtime 2026-09-04)
 - las-stark: `evidence/stark/latest` → `latest` (dir mtime 2026-08-25)
-- Report word count: **8963** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
+- Report word count: **8988** (`report/latex/word.count`, rubric bound 7,000–9,000; `make -C report/latex wordcount`)
 
 ### Where the last session stopped
 
@@ -629,7 +629,7 @@ Mechanics that matter:
 ### Freshness tripwires
 
 - Stage-1 evidence (2026-09-04) is newer than the newest scheme source (2026-09-02) — measurements match the code.
-- `CLAUDE.md` hand-written sections last touched 2026-09-07.
+- `CLAUDE.md` hand-written sections last touched 2026-09-11.
 
 <!-- END AUTO-CONTEXT -->
 

@@ -9,12 +9,12 @@ Signature Algorithm (ECDSA) or Schnorr. Their security relies on the hardness of
 elliptic-curve discrete logarithm problem, which Shor's algorithm solves in polynomial
 time on a sufficiently large quantum computer \cite{shor1999polynomial}, allowing an
 adversary to forge signatures and spend other users' funds. A published 2026 estimate
-puts secp256k1 key recovery within minutes at fewer than $500{,}000$ physical qubits
+puts secp256k1 key recovery within minutes at fewer than $500{,}000$ physical qubits under the assumptions of that estimate
 % NIST IR 8547 is an INITIAL PUBLIC DRAFT (Nov 2024; comment period closed Jan 2025, no
 % final version), which is what the refs.bib entry records.  "NIST disallows" stated a
 % draft transition plan as a rule already in force; "would disallow" cannot be misread.
 \cite{babbush2026securing}, and NIST's draft transition schedule would disallow
-quantum-vulnerable signatures at this
+ECDSA at this classical security
 strength after 2035 \cite{nistir8547}. A
 chain cannot treat that as distant: its record is permanent, so a break reaches keys
 already exposed, and changing how it verifies signatures requires a coordinated
@@ -95,13 +95,7 @@ in blockchain settings \cite{buser2023survey}. Turning one such design, the LAS 
     \node[cell, fill=red!7, draw=red!60!black, line width=0.9pt] at (40mm,-60mm)
       {\textbf{LAS --- this project}\\post-quantum\\adaptor signature};
   \end{tikzpicture}
-  \caption[Where the gap is]{Where this project sits. Signatures divide along two
-  axes: whether they survive Shor, and whether they do more than authenticate a
-  message. Basic post-quantum signatures are standardised and deployment has begun,
-  and the classical exotic cell is well served, but blockchain applications need
-  exotic signatures that are also post-quantum. That remaining cell, holding the
-  lattice adaptor signature this dissertation implements and measures, is the gap it
-  addresses.}
+  \caption[Where the gap is]{Signatures divide along two axes: whether they are post-quantum secure, and whether they do more than authenticate a message. Basic post-quantum signatures are now mature, while classical exotic signatures are well established. The less mature quadrant is post-quantum exotic signatures, particularly their practical implementation and blockchain integration. This dissertation addresses that implementation gap by building and evaluating a lattice adaptor signature.}
   \label{fig:whynow}
 \end{figure}
 \FloatBarrier
